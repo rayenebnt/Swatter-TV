@@ -74,8 +74,11 @@ export function articleImage(a: { id: number; image?: MediaRef; imageUrl?: strin
 
 /** Accroche : « Annemasse · Faits divers » (département à défaut de commune). */
 export function kickerLine(a: { city?: string | null; kicker?: string | null; department?: string | null }): string {
-  return [a.city?.trim() || departmentLabel(a.department), a.kicker?.trim()].filter(Boolean).join(' · ')
+  return [a.city?.trim() || departmentLabel(a.department), a.kicker?.trim()].filter(Boolean).join('\u00a0· ')
 }
+
+/** Typographie française des textes saisis ou importés : espace insécable avant : ; ! ? » et après « (pas de retour à la ligne avant « : »). */
+export const frenchSpaces = (s: string) => s.replace(/ (?=[:;!?»])/g, '\u00a0').replace(/« /g, '«\u00a0')
 
 /** « 16 oct. · 16:34 » */
 export function shortDateTime(iso: string): string {
@@ -93,12 +96,12 @@ export const fullDateTime = (iso: string) => `${formatDate(iso)} à ${formatTime
 export function toTeaser(a: ArticleListItem, { image = true, thumb = false, excerpt = true } = {}): ArticleTeaser {
   return {
     id: a.id,
-    title: a.title,
+    title: frenchSpaces(a.title),
     href: articleUrl(a),
     department: a.department,
     departmentLabel: departmentLabel(a.department),
     kicker: kickerLine(a),
-    excerpt: excerpt ? a.excerpt?.trim() || null : null,
+    excerpt: excerpt && a.excerpt?.trim() ? frenchSpaces(a.excerpt.trim()) : null,
     publishedAt: new Date(a.publishedAt).toISOString(),
     clock: formatTime(a.publishedAt),
     short: shortDateTime(a.publishedAt),

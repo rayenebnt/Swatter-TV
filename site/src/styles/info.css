@@ -67,6 +67,8 @@
 
 /* ----- Fiche article ----- */
 .art-page { padding-top: calc(var(--header-h) + clamp(24px, 4.5vw, 56px)); background: radial-gradient(60% 440px at 85% 0%, rgba(217, 170, 69, .13), rgba(217, 170, 69, 0) 70%), linear-gradient(180deg, #0b1a33 0, var(--bg) 560px); }
+/* Fil d'Ariane : le titre de l'article (dernier élément) tient sur une ligne, tronqué */
+.art-page .crumbs li:last-child { flex: 1 1 14ch; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .art__layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: clamp(32px, 4vw, 64px); align-items: start; }
 .art { min-width: 0; max-width: 880px; }
 .art__head .kicker { font-size: 12.5px; }
@@ -118,7 +120,7 @@
   .info-pager__info { font-size: 13px; }
   .art__media { border-radius: var(--r-lg); }
 }
-@media (max-width: 420px) {
+@media (max-width: 520px) {
   /* Pagination : flèches seules, la position reste lisible */
   .info-pager .btn { width: 44px; padding: 0; font-size: 0; gap: 0; }
 }

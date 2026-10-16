@@ -6,7 +6,7 @@ import { ArticleCard } from '@/components/info/ArticleCard'
 import { LiveItem } from '@/components/info/LiveItem'
 import { inPlace, ofPlace } from '@/components/info/places'
 import { RelativeTime } from '@/components/info/RelativeTime'
-import { articleImage, externalImage, fullDateTime, hasOwnContent, httpUrl, plainText, toTeaser, truncate } from '@/components/info/utils'
+import { articleImage, externalImage, frenchSpaces, fullDateTime, hasOwnContent, httpUrl, plainText, toTeaser, truncate } from '@/components/info/utils'
 import { AdSlot } from '@/components/layout/AdSlot'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
@@ -144,9 +144,9 @@ export default async function ArticlePage({ params }: { params: Params }) {
               <header className="art__head">
                 <p className="kicker">{kicker}</p>
                 <h1 id="art-title" className="art__title">
-                  {article.title}
+                  {frenchSpaces(article.title)}
                 </h1>
-                {article.excerpt?.trim() && <p className="art__chapo">{article.excerpt.trim()}</p>}
+                {article.excerpt?.trim() && <p className="art__chapo">{frenchSpaces(article.excerpt.trim())}</p>}
                 <ul className="art__meta">
                   <li>
                     <Icon name="clock" />

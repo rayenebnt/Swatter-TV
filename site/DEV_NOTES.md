@@ -83,6 +83,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `/` | accueil |
 | `/direct` | le direct |
 | `/info`, `/info/[departement]`, `/info/[departement]/[slug]` | l'info, par département, article |
+| `/info/rss.xml` | flux RSS sortant (articles de la rédaction) |
 | `/meteo` | la météo |
 | `/agenda`, `/agenda/[slug]` | agenda, événement |
 | `/programme-tv` | programme TV |
