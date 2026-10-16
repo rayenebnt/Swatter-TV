@@ -45,6 +45,8 @@ td p{color:var(--muted);margin-top:1.5mm;line-height:1.55;font-size:9.6pt}
 .sign{display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-top:10mm}
 .sign div{border:1.5px dashed #CFC6E4;border-radius:3mm;height:30mm;padding:4mm}
 .sign small{font-family:"Bebas Neue";font-size:12pt;letter-spacing:.04em;color:var(--v2)}
+.me-sign{position:relative}
+.stamp{position:absolute;right:8mm;top:50%;width:31mm;height:31mm;transform:translateY(-50%);mix-blend-mode:multiply}
 .sign p{color:var(--muted);font-size:9pt;margin-top:1mm}
 .ph{background:#FFF1C2;color:#6A5208;border-radius:2px;padding:0 2px}
 footer{background:var(--v1);color:#fff;padding:5mm 16mm;display:flex;justify-content:space-between;align-items:center;font-size:9pt}
@@ -91,7 +93,32 @@ footer b{font-family:"Bebas Neue";font-weight:400;font-size:15pt;letter-spacing:
     </div>
 
     <div class="sign">
-      <div><small>LTNS</small><p>Date et signature</p></div>
+      <div class="me-sign"><small>LTNS</small><p>Le 16 octobre 2026</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="stamp">
+  <defs>
+    <path id="arcHaut" d="M 30 100 A 70 70 0 0 1 170 100"/>
+    <path id="arcBas" d="M 36 100 A 64 64 0 0 0 164 100"/>
+    <filter id="encre" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7" result="bruit"/>
+      <feColorMatrix in="bruit" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.35" result="trous"/>
+      <feComposite in="SourceGraphic" in2="trous" operator="in"/>
+    </filter>
+  </defs>
+  <g fill="none" stroke="#5A23C9" font-family="'Space Grotesk','Bebas Neue',Arial,sans-serif" filter="url(#encre)" transform="rotate(-8 100 100)" opacity=".92">
+    <circle cx="100" cy="100" r="94" stroke-width="4"/>
+    <circle cx="100" cy="100" r="86" stroke-width="1.5"/>
+    <circle cx="100" cy="100" r="50" stroke-width="1.5"/>
+    <g fill="#5A23C9" stroke="none">
+      <text font-size="12.5" font-weight="700" letter-spacing="1.1" text-anchor="middle"><textPath href="#arcHaut" startOffset="50%">SITES WEB &amp; APPS MOBILES</textPath></text>
+      <text font-size="12" font-weight="700" letter-spacing="1.2" text-anchor="middle" dominant-baseline="hanging"><textPath href="#arcBas" startOffset="50%">LTNS.FR · 06 25 20 64 93</textPath></text>
+      <circle cx="24" cy="100" r="3"/><circle cx="176" cy="100" r="3"/>
+      <text x="100" y="108" font-size="30" font-weight="700" letter-spacing="-1" text-anchor="middle">LTNS</text>
+    </g>
+    <g stroke-width="2.6" stroke-linecap="round" transform="translate(91 64) scale(.75)"><circle cx="12" cy="14" r="8"/><path d="M12 2v5"/></g>
+    <path d="M72 120 H128" stroke-width="1.5"/>
+    <text x="100" y="134" fill="#5A23C9" stroke="none" font-size="8.5" font-weight="700" letter-spacing="2" text-anchor="middle">★  ★  ★</text>
+  </g>
+</svg>
+</div>
       <div><small>Bon pour accord — Swatter TV</small><p>Date, signature et mention « Bon pour accord »</p></div>
     </div>
   </main>
