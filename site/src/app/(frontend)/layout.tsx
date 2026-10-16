@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import type { ReactNode } from 'react'
 
+// Styles communs chargés AVANT ceux des composants (sinon ils l'emportent à spécificité égale).
+import '@/styles/globals.css'
+
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
@@ -11,7 +14,6 @@ import { SiteJsonLd } from '@/components/seo/SiteJsonLd'
 import { Effects } from '@/components/ui/Effects'
 import { IconSprite } from '@/components/ui/Icon'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site'
-import '@/styles/globals.css'
 
 const outfit = localFont({ src: '../fonts/outfit.woff2', variable: '--font-outfit', weight: '100 900', display: 'swap' })
 const inter = localFont({ src: '../fonts/inter.woff2', variable: '--font-inter', weight: '100 900', display: 'swap' })

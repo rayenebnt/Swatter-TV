@@ -12,6 +12,7 @@
 //   Utiliser openCookieSettings(bouton) pour que le focus revienne au bouton à la fermeture.
 // - Les contenus externes (YouTube, Bunny) ne doivent être chargés que si `externes` est vrai ;
 //   la mesure d'audience uniquement si `audience` est vrai. Sans choix enregistré : tout est refusé.
+// À importer uniquement depuis un composant client ('use client') : le choix n'existe que dans le navigateur.
 import { useSyncExternalStore } from 'react'
 
 export type ConsentChoice = {

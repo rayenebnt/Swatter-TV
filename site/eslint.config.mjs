@@ -1,11 +1,10 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
+import nextVitals from 'eslint-config-next/core-web-vitals'
+import nextTs from 'eslint-config-next/typescript'
 
-const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)) })
-
+// eslint-config-next 16 est déjà au format « flat » : pas de FlatCompat.
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  ...nextVitals,
+  ...nextTs,
   {
     rules: {
       '@typescript-eslint/ban-ts-comment': 'warn',
@@ -14,7 +13,7 @@ const eslintConfig = [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^(_|ignore)' }],
     },
   },
-  { ignores: ['.next/', 'node_modules/', 'src/payload-types.ts', 'src/app/(payload)/', 'public/'] },
+  { ignores: ['.next/', 'node_modules/', 'media/', 'test-results/', 'playwright-report/', 'src/payload-types.ts', 'src/app/(payload)/', 'public/'] },
 ]
 
 export default eslintConfig

@@ -86,14 +86,16 @@ export function RailArrows({ target }: { target: string }) {
   const update = useCallback(() => {
     const el = document.getElementById(target)
     if (!el) return
-    setState({ prev: el.scrollLeft > 4, next: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 })
+    const prev = el.scrollLeft > 4
+    const next = el.scrollLeft + el.clientWidth < el.scrollWidth - 4
+    setState((s) => (s.prev === prev && s.next === next ? s : { prev, next }))
   }, [target])
 
   useEffect(() => {
     const el = document.getElementById(target)
     if (!el) return
-    update()
     el.addEventListener('scroll', update, { passive: true })
+    // ResizeObserver appelle update() dès l'observation : état initial sans setState synchrone dans l'effet
     const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => {

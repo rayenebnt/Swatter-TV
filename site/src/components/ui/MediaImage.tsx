@@ -32,7 +32,6 @@ export function MediaImage({
   const { width, height } = mediaSize(media, size)
   const common = {
     src,
-    alt: alt ?? mediaAlt(media),
     className,
     preload: priority,
     fetchPriority: priority ? ('high' as const) : undefined,
@@ -40,5 +39,6 @@ export function MediaImage({
     unoptimized: external,
     style: { objectPosition: mediaFocal(media) },
   }
-  return fill ? <Image {...common} fill /> : <Image {...common} width={width} height={height} />
+  const altText = alt ?? mediaAlt(media)
+  return fill ? <Image {...common} alt={altText} fill /> : <Image {...common} alt={altText} width={width} height={height} />
 }
