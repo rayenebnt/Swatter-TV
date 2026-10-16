@@ -6,7 +6,7 @@ Proposition de design pour la refonte du site : page d'accueil complète, respon
 |---|---|
 | `swatter-tv-maquette.html` | **À envoyer au client** : un seul fichier (2,3 Mo), s'ouvre par double-clic, fonctionne hors ligne |
 | `apercus/demo-animations.mp4` | Vidéo de 55 s qui montre les animations et les interactions |
-| `apercus/*.jpg` | Captures desktop et mobile (premier écran et page complète) |
+| `apercus/ordinateur/`, `apercus/mobile/` | Captures haute définition, écran par écran |
 | `index.html` + `assets/` | Source de la maquette |
 | `build.py` | Régénère `swatter-tv-maquette.html` après une modification : `python3 build.py` |
 | `outils/render.c` | Moteur qui a calculé les paysages 3D provisoires (`assets/visuels/`) |
