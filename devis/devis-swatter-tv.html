@@ -2,251 +2,101 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Devis 2026-001 — Refonte du site Swatter TV</title>
+<title>Devis LTNS 2026-001 — Swatter TV</title>
 <style>
-@font-face{font-family:"Outfit";src:url("../maquette/assets/fonts/outfit.woff2") format("woff2");font-weight:100 900}
-@font-face{font-family:"Inter";src:url("../maquette/assets/fonts/inter.woff2") format("woff2");font-weight:100 900}
+@font-face{font-family:"Space Grotesk";src:url("fonts/space-grotesk-latin-400-normal.woff2") format("woff2");font-weight:400}
+@font-face{font-family:"Space Grotesk";src:url("fonts/space-grotesk-latin-500-normal.woff2") format("woff2");font-weight:500}
+@font-face{font-family:"Space Grotesk";src:url("fonts/space-grotesk-latin-700-normal.woff2") format("woff2");font-weight:700}
+@font-face{font-family:"Bebas Neue";src:url("fonts/bebas-neue-latin-400-normal.woff2") format("woff2")}
 @page{size:A4;margin:0}
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--navy:#0C1B35;--ink:#1D2433;--muted:#5E6A80;--line:#E3E6EC;--gold:#C9962F;--gold-soft:#FBF4E4;--bg:#F7F8FA}
-body{font-family:"Inter",sans-serif;font-size:9.6pt;line-height:1.5;color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.page{width:210mm;height:297mm;padding:16mm 16mm 18mm;position:relative;page-break-after:always;overflow:hidden}
-.page:last-child{page-break-after:auto}
-h1,h2,h3,.f{font-family:"Outfit",sans-serif}
-.band{position:absolute;top:0;left:0;right:0;height:5mm;background:linear-gradient(90deg,#0C1B35 0 70%,#C9962F 70%)}
-.top{display:flex;justify-content:space-between;align-items:flex-start;margin-top:4mm}
-.me b{display:block;font-family:"Outfit";font-size:15pt;color:var(--navy)}
-.me,.client{font-size:9pt;color:var(--muted);line-height:1.55}
-.ph{background:#FFF3D6;color:#7A5A12;padding:0 3px;border-radius:3px}
-.doc{text-align:right}
-.doc h1{font-size:30pt;font-weight:800;letter-spacing:-.02em;color:var(--navy);line-height:1}
-.doc p{font-size:9pt;color:var(--muted);margin-top:4px}
-.doc p b{color:var(--ink)}
-.parties{display:grid;grid-template-columns:1fr 1fr;gap:8mm;margin-top:9mm}
-.box{border:1px solid var(--line);border-radius:3mm;padding:4mm 5mm}
-.box small{display:block;font-size:7.5pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:2mm}
-.client b{display:block;color:var(--ink);font-size:10.5pt;font-family:"Outfit"}
-.obj{margin-top:8mm;padding:5mm 6mm;background:var(--navy);color:#fff;border-radius:3mm}
-.obj small{font-size:7.5pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#E8C87A}
-.obj h2{font-size:15pt;margin-top:1mm}
-.obj p{font-size:9pt;color:#C9D2E3;margin-top:1.5mm}
-h3.sec{font-size:12pt;color:var(--navy);margin:8mm 0 3mm;display:flex;align-items:center;gap:3mm}
-h3.sec::before{content:"";width:6mm;height:1.2mm;background:var(--gold);border-radius:1mm}
-.incl{display:grid;grid-template-columns:1fr 1fr;gap:1.6mm 8mm}
-.incl li{list-style:none;padding-left:5mm;position:relative;font-size:9pt}
-.incl li::before{content:"";position:absolute;left:0;top:1.9mm;width:2mm;height:2mm;border-radius:50%;background:var(--gold)}
-.formules{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin-top:2mm}
-.fm{border:1px solid var(--line);border-radius:3mm;padding:5mm 4.5mm;display:flex;flex-direction:column;background:#fff}
-.fm.reco{border:1.6px solid var(--gold);background:var(--gold-soft);position:relative}
-.fm .tag{position:absolute;top:-3mm;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;font-size:7pt;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:1mm 3mm;border-radius:10mm;white-space:nowrap}
-.fm h4{font-family:"Outfit";font-size:12pt;color:var(--navy)}
-.fm .sub{font-size:8pt;color:var(--muted);min-height:9mm}
-.fm .price{font-family:"Outfit";font-size:21pt;font-weight:800;color:var(--navy);margin:2mm 0 0;letter-spacing:-.02em}
-.fm .price span{font-size:9pt;font-weight:600;color:var(--muted)}
-.fm ul{margin-top:3mm;border-top:1px solid var(--line);padding-top:3mm}
-.fm li{list-style:none;font-size:8.3pt;padding:.7mm 0 .7mm 4.5mm;position:relative;line-height:1.4}
-.fm li::before{content:"✓";position:absolute;left:0;color:var(--gold);font-weight:700}
-.fm li.plus{font-weight:600;color:var(--navy)}
-table{width:100%;border-collapse:collapse;font-size:9pt}
-th{text-align:left;font-size:7.5pt;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:2mm 3mm;border-bottom:1.5px solid var(--navy)}
-td{padding:2.3mm 3mm;border-bottom:1px solid var(--line);vertical-align:top}
-td.r,th.r{text-align:right;white-space:nowrap}
-td small{display:block;color:var(--muted);font-size:8pt}
-.maint{display:grid;grid-template-columns:1.3fr 1fr;gap:5mm;align-items:stretch}
-.maint .box{background:var(--bg)}
-.maint .big{font-family:"Outfit";font-size:18pt;font-weight:800;color:var(--navy)}
-.cond{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
-.cond ul li{list-style:none;font-size:8.6pt;padding:1mm 0 1mm 4.5mm;position:relative}
-.cond ul li::before{content:"–";position:absolute;left:0;color:var(--gold);font-weight:700}
-.ech{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm;margin-top:1mm}
-.ech div{border:1px solid var(--line);border-radius:2.5mm;padding:3mm;text-align:center}
-.ech b{display:block;font-family:"Outfit";font-size:16pt;color:var(--gold)}
-.ech span{font-size:8pt;color:var(--muted)}
-.sign{display:grid;grid-template-columns:1fr 1fr;gap:8mm;margin-top:7mm}
-.sign .box{height:48mm}
-.sign p{font-size:8pt;color:var(--muted)}
-.foot{position:absolute;left:16mm;right:16mm;bottom:8mm;display:flex;justify-content:space-between;font-size:7.5pt;color:var(--muted);border-top:1px solid var(--line);padding-top:2.5mm}
-.note{font-size:8pt;color:var(--muted);margin-top:2.5mm}
+:root{--v1:#3E1185;--v2:#7B3FF0;--ink:#1B1530;--muted:#6B6580;--line:#E7E3F0}
+body{font-family:"Space Grotesk",sans-serif;font-size:10.5pt;color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.rainbow{height:3.5mm;background:linear-gradient(90deg,#38C6E8,#4F7BF2 25%,#F5C518 55%,#F7941D 78%,#EF4136)}
+.head{background:linear-gradient(135deg,var(--v2) 0%,#5A23C9 45%,var(--v1) 100%);color:#fff;padding:12mm 16mm 11mm;display:flex;justify-content:space-between;align-items:flex-end}
+.logo{display:flex;align-items:flex-start;gap:1.5mm;font-weight:700;font-size:26pt;letter-spacing:-.04em;line-height:1}
+.logo svg{width:5.5mm;height:5.5mm;margin-top:.5mm}
+.head p{font-size:9pt;opacity:.85;margin-top:3mm;line-height:1.5}
+.title{text-align:right}
+.title h1{font-family:"Bebas Neue";font-weight:400;font-size:58pt;line-height:.85;letter-spacing:.01em}
+.title p{margin-top:2mm}
+main{padding:12mm 16mm 0;flex:1}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:10mm}
+.who small{display:block;font-family:"Bebas Neue";font-size:13pt;letter-spacing:.04em;color:var(--v2);margin-bottom:1.5mm}
+.who p{line-height:1.6;color:var(--muted)}
+.who b{color:var(--ink)}
+table{width:100%;border-collapse:collapse;margin-top:14mm}
+th{font-family:"Bebas Neue";font-weight:400;font-size:13pt;letter-spacing:.04em;text-align:left;color:#fff;background:var(--v1);padding:2.5mm 4mm}
+th:last-child,td:last-child{text-align:right;white-space:nowrap}
+td{padding:5mm 4mm;border-bottom:1px solid var(--line);vertical-align:top}
+td b{font-size:12pt}
+td p{color:var(--muted);margin-top:1.5mm;line-height:1.55;font-size:9.6pt}
+.total{display:flex;justify-content:flex-end;margin-top:6mm}
+.total div{background:linear-gradient(135deg,var(--v2),var(--v1));color:#fff;border-radius:3mm;padding:4mm 7mm;text-align:right}
+.total>div>span{font-family:"Bebas Neue";font-size:13pt;letter-spacing:.04em;opacity:.85}
+.total strong{display:block;font-family:"Bebas Neue";font-weight:400;font-size:38pt;line-height:1}
+.total em{font-style:normal;font-size:8.5pt;opacity:.85}
+.infos{display:grid;grid-template-columns:repeat(3,1fr);gap:5mm;margin-top:12mm}
+.infos div{border:1.5px solid var(--line);border-radius:3mm;padding:4mm}
+.infos small{display:block;font-family:"Bebas Neue";font-size:12pt;letter-spacing:.04em;color:var(--v2)}
+.infos b{display:block;font-size:12pt;margin-top:1mm}
+.infos p{color:var(--muted);font-size:9pt;margin-top:1mm}
+.sign{display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-top:10mm}
+.sign div{border:1.5px dashed #CFC6E4;border-radius:3mm;height:30mm;padding:4mm}
+.sign small{font-family:"Bebas Neue";font-size:12pt;letter-spacing:.04em;color:var(--v2)}
+.sign p{color:var(--muted);font-size:9pt;margin-top:1mm}
+.ph{background:#FFF1C2;color:#6A5208;border-radius:2px;padding:0 2px}
+footer{background:var(--v1);color:#fff;padding:5mm 16mm;display:flex;justify-content:space-between;align-items:center;font-size:9pt}
+footer b{font-family:"Bebas Neue";font-weight:400;font-size:15pt;letter-spacing:.03em}
 </style>
 </head>
 <body>
-
-<!-- ============ PAGE 1 ============ -->
 <section class="page">
-  <div class="band"></div>
-  <div class="top">
-    <div class="me">
-      <b><span class="ph">[Votre nom ou raison sociale]</span></b>
-      Développement &amp; design web<br>
-      <span class="ph">[Adresse]</span><br>
-      <span class="ph">[Code postal, ville]</span><br>
-      <span class="ph">[Téléphone]</span> · <span class="ph">[E-mail]</span><br>
-      SIRET : <span class="ph">[N° SIRET]</span>
+  <div class="rainbow"></div>
+  <div class="head">
+    <div>
+      <div class="logo">LTNS<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="14" r="8"/><path d="M12 2v5"/></svg></div>
+      <p>Sites web &amp; apps mobiles<br>06 25 20 64 93 · ltns.fr<br>SIRET : <span class="ph">[N° SIRET]</span></p>
     </div>
-    <div class="doc">
+    <div class="title">
       <h1>DEVIS</h1>
-      <p>N° <b>2026-001</b></p>
-      <p>Date : <b>16 octobre 2026</b></p>
-      <p>Valable jusqu'au : <b>15 novembre 2026</b></p>
+      <p>N° 2026-001 · 16 octobre 2026<br>Valable 30 jours</p>
     </div>
   </div>
 
-  <div class="parties">
-    <div class="box client">
-      <small>Client</small>
-      <b>Swatter TV &amp; Info</b>
-      À l'attention de <span class="ph">[Nom du client]</span><br>
-      36 rue de la Chaumière<br>
-      74300 Thyez<br>
-      contact@swatter-tv.fr
+  <main>
+    <div class="who">
+      <div><small>Client</small><p><b>Swatter TV &amp; Info</b><br>36 rue de la Chaumière<br>74300 Thyez<br>contact@swatter-tv.fr</p></div>
+      <div><small>Projet</small><p><b>Refonte du site swatter-tv.fr</b><br>Nouveau design moderne, adapté au mobile,<br>selon la maquette présentée.</p></div>
     </div>
-    <div class="box client">
-      <small>Projet</small>
-      <b>Refonte du site swatter-tv.fr</b>
-      Nouveau design, nouvelle base technique<br>
-      et interface d'administration.<br>
-      Délai de réalisation : <b style="display:inline;font-size:9pt">6 à 8 semaines</b><br>
-      après acompte et validation de la maquette.
+
+    <table>
+      <thead><tr><th>Prestation</th><th>Montant</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Refonte complète du site Swatter TV</b>
+            <p>Nouveau design selon la maquette validée, reprise de toutes les rubriques existantes (Direct, Info, Météo, Agenda, Programme TV, Replay, Webcams), site adapté au mobile, rapide et optimisé pour Google, mise en ligne.</p></td>
+          <td><b>750,00 €</b></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="total"><div><span>Total</span><strong>750,00 €</strong><em>TVA non applicable, art. 293 B du CGI</em></div></div>
+
+    <div class="infos">
+      <div><small>Délai</small><b>2 semaines</b><p>à compter de l'acceptation du devis</p></div>
+      <div><small>Hébergement</small><b>À la charge du client</b><p>nom de domaine et hébergement non inclus</p></div>
+      <div><small>Paiement</small><b>50 % / 50 %</b><p>à la signature, puis à la livraison</p></div>
     </div>
-  </div>
 
-  <div class="obj">
-    <small>Objet</small>
-    <h2>Refonte complète du site, à fonctionnalités identiques</h2>
-    <p>Reprise de toutes les rubriques existantes (Direct, Info, Météo, Agenda, Programme TV, Replay, Webcams) avec le design présenté dans la maquette, une base technique moderne, rapide et bien référencée, et une interface pour gérer vous-même vos contenus.</p>
-  </div>
-
-  <h3 class="sec">Trois formules au choix</h3>
-  <div class="formules">
-    <div class="fm">
-      <h4>Essentielle</h4>
-      <p class="sub">Le nouveau site complet, prêt à l'emploi.</p>
-      <p class="price">6 900 € <span>HT</span></p>
-      <ul>
-        <li>Tout le socle commun ci-dessus</li>
-        <li>Formation à l'administration (1 h)</li>
-        <li>Garantie de correction : 1 mois</li>
-      </ul>
+    <div class="sign">
+      <div><small>LTNS</small><p>Date et signature</p></div>
+      <div><small>Bon pour accord — Swatter TV</small><p>Date, signature et mention « Bon pour accord »</p></div>
     </div>
-    <div class="fm reco">
-      <span class="tag">Recommandée</span>
-      <h4>Confort</h4>
-      <p class="sub">Le site, votre image modernisée et un accompagnement de 3 mois.</p>
-      <p class="price">8 900 € <span>HT</span></p>
-      <ul>
-        <li>Tout ce qui est dans Essentielle</li>
-        <li class="plus">Logo modernisé + déclinaisons (couleur, noir, favicon)</li>
-        <li class="plus">Reprise des contenus existants (articles, replays)</li>
-        <li class="plus">Site installable sur téléphone (comme une application)</li>
-        <li class="plus">Maintenance offerte pendant 3 mois</li>
-        <li>Formation (2 h) · garantie : 3 mois</li>
-      </ul>
-    </div>
-    <div class="fm">
-      <h4>Premium</h4>
-      <p class="sub">Pour aller plus loin en audience et en visibilité.</p>
-      <p class="price">11 900 € <span>HT</span></p>
-      <ul>
-        <li>Tout ce qui est dans Confort</li>
-        <li class="plus">Diffusion optimisée sur TV (Chromecast, AirPlay)</li>
-        <li class="plus">Newsletter et e-mails automatiques</li>
-        <li class="plus">Pack référencement : 30 pages optimisées</li>
-        <li class="plus">Tableau de bord d'audience</li>
-        <li class="plus">Maintenance offerte pendant 6 mois</li>
-      </ul>
-    </div>
-  </div>
+  </main>
 
-  <div class="foot"><span><span class="ph">[Votre nom]</span> · SIRET <span class="ph">[N°]</span></span><span>Devis 2026-001 · page 1/3</span></div>
-</section>
-
-<!-- ============ PAGE 2 ============ -->
-<section class="page">
-  <div class="band"></div>
-
-  <h3 class="sec" style="margin-top:6mm">Inclus dans toutes les formules</h3>
-  <ul class="incl">
-    <li>Design fidèle à la maquette validée (bleu nuit et or)</li>
-    <li>Site adapté au mobile, à la tablette et à l'ordinateur</li>
-    <li>Toutes les rubriques actuelles du site</li>
-    <li>Interface d'administration (vidéos, articles, agenda, programme TV, publicités)</li>
-    <li>Import automatique des actualités, de la météo et de l'agenda</li>
-    <li>Grille du programme TV et lecteur pour le direct et le replay</li>
-    <li>Référencement technique Google (balisage, plan du site, données structurées)</li>
-    <li>Redirection des anciennes adresses pour ne pas perdre de visibilité</li>
-    <li>Site rapide : objectif score Google Lighthouse ≥ 90</li>
-    <li>Conformité RGPD : bandeau cookies, mesure d'audience respectueuse</li>
-    <li>Mise en ligne et configuration de l'hébergement</li>
-    <li>2 séries de retouches sur le design</li>
-  </ul>
-
-  <h3 class="sec">Options à la carte</h3>
-  <table>
-    <thead><tr><th>Option</th><th class="r">Prix HT</th></tr></thead>
-    <tbody>
-      <tr><td>Version anglaise du site<small>Traduction de l'interface, contenus traduits par vos soins ou sur devis</small></td><td class="r">1 500 €</td></tr>
-      <tr><td>Logo modernisé + déclinaisons<small>Inclus dans les formules Confort et Premium</small></td><td class="r">600 €</td></tr>
-      <tr><td>Site installable sur téléphone<small>Inclus dans les formules Confort et Premium</small></td><td class="r">900 €</td></tr>
-      <tr><td>Diffusion optimisée sur TV (Chromecast, AirPlay)</td><td class="r">1 000 €</td></tr>
-      <tr><td>Newsletter et e-mails automatiques (Brevo)</td><td class="r">700 €</td></tr>
-      <tr><td>Audit d'accessibilité (RGAA) et corrections</td><td class="r">1 200 €</td></tr>
-      <tr><td>Application mobile iOS et Android</td><td class="r">sur devis</td></tr>
-      <tr><td>Journée supplémentaire de développement</td><td class="r">450 € / jour</td></tr>
-    </tbody>
-  </table>
-
-  <div class="foot"><span><span class="ph">[Votre nom]</span> · SIRET <span class="ph">[N°]</span></span><span>Devis 2026-001 · page 2/3</span></div>
-</section>
-
-<!-- ============ PAGE 3 ============ -->
-<section class="page">
-  <div class="band"></div>
-  <h3 class="sec" style="margin-top:6mm">Maintenance et hébergement (après la période offerte)</h3>
-  <div class="maint">
-    <div class="box">
-      <small>Forfait mensuel, sans engagement au-delà de 12 mois</small>
-      <p class="big">150 € HT / mois</p>
-      <ul class="incl" style="grid-template-columns:1fr;margin-top:2mm">
-        <li>Hébergement géré et nom de domaine</li>
-        <li>Mises à jour de sécurité et sauvegardes quotidiennes</li>
-        <li>Surveillance du site 24 h/24</li>
-        <li>1 h de petites modifications par mois</li>
-      </ul>
-    </div>
-    <div class="box">
-      <small>Frais tiers, à votre nom</small>
-      <p style="font-size:8.6pt">L'hébergement des vidéos (direct et replay) et les éventuels services de webcams sont facturés directement par les fournisseurs, au réel, selon votre audience.</p>
-      <p class="note">Ordre de grandeur : de 10 à 50 € par mois pour une chaîne locale. Une estimation précise vous sera remise avant la mise en ligne.</p>
-    </div>
-  </div>
-
-  <h3 class="sec">Échéancier de paiement</h3>
-  <div class="ech">
-    <div><b>40 %</b><span>à la signature du devis</span></div>
-    <div><b>30 %</b><span>à la validation du design final</span></div>
-    <div><b>30 %</b><span>à la mise en ligne du site</span></div>
-  </div>
-
-  <h3 class="sec">Conditions</h3>
-  <div class="cond">
-    <ul>
-      <li>Le devis couvre les fonctionnalités du site actuel. Toute demande nouvelle fera l'objet d'un devis complémentaire.</li>
-      <li>2 séries de retouches sur le design sont incluses. Au-delà : 450 € HT par jour.</li>
-      <li>Le client fournit le logo, les textes, les photos et les accès (nom de domaine, hébergement actuel, flux).</li>
-    </ul>
-    <ul>
-      <li>Le code et les droits sur le site sont cédés au client après paiement complet.</li>
-      <li>Paiement par virement à 30 jours. Pénalités de retard au taux légal et indemnité forfaitaire de 40 €.</li>
-      <li><span class="ph">[Micro-entreprise : « TVA non applicable, art. 293 B du CGI » — ou ajoutez la TVA à 20 %]</span></li>
-    </ul>
-  </div>
-
-  <div class="sign">
-    <div class="box"><small>Le prestataire</small><p><span class="ph">[Votre nom]</span></p></div>
-    <div class="box"><small>Bon pour accord — le client</small><p>Formule choisie : ☐ Essentielle ☐ Confort ☐ Premium<br>Options : ……………………………………<br><br>Date, signature et mention « Bon pour accord »</p></div>
-  </div>
-
-  <div class="foot"><span><span class="ph">[Votre nom]</span> · SIRET <span class="ph">[N°]</span></span><span>Devis 2026-001 · page 3/3</span></div>
+  <footer><b>LTNS.FR</b><span>Sites web &amp; apps mobiles · 06 25 20 64 93</span></footer>
 </section>
 </body>
 </html>
