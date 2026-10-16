@@ -69,7 +69,23 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
-    meta: { titleSuffix: ' — Swatter TV', description: 'Administration du site Swatter TV' },
+    meta: {
+      titleSuffix: ' — Swatter TV',
+      description: 'Administration du site Swatter TV',
+      icons: [
+        { rel: 'icon', type: 'image/png', url: '/favicon.png' },
+        { rel: 'apple-touch-icon', url: '/apple-touch-icon.png' },
+      ],
+      robots: { index: false, follow: false },
+    },
+    // Habillage aux couleurs de Swatter TV (styles : src/app/(payload)/custom.scss)
+    components: {
+      graphics: {
+        Logo: '/components/admin/Logo#Logo',
+        Icon: '/components/admin/Icon#Icon',
+      },
+    },
+    dateFormat: 'dd/MM/yyyy HH:mm',
   },
   i18n: { supportedLanguages: { fr }, fallbackLanguage: 'fr' },
   collections: [Videos, Replays, Articles, Events, Webcams, Ads, Pages, Programs, Schedule, Media, RssFeeds, Users],

@@ -47,21 +47,6 @@ const addDays = (day: string, n: number) => {
   return d.toISOString().slice(0, 10)
 }
 const weekday = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay()
-/** Minutes écoulées depuis l'époque pour une date et une heure « murales » (sans fuseau). */
-const wallMinutes = (day: string, time: string) => Date.parse(`${day}T${time}:00Z`) / 60_000
-/**
- * Instant UTC de « AAAA-MM-JJ HH:MM » heure de Paris, via parisDateTime, avec contrôle :
- * si l'heure affichée à Paris ne correspond pas (décalage d'heure d'été), on corrige.
- */
-function parisAt(day: string, time: string): Date {
-  let d = parisDateTime(day, time)
-  for (let k = 0; k < 2; k++) {
-    const diff = wallMinutes(day, time) - wallMinutes(parisDay(d), formatTime(d))
-    if (!diff) break
-    d = new Date(d.getTime() + diff * 60_000)
-  }
-  return d
-}
 /** Samedi qui vient (aujourd'hui si l'on est samedi). */
 const saturday = addDays(today, (6 - weekday(today) + 7) % 7)
 const relDay = (r: RelDay) => addDays(r.from === 'saturday' ? saturday : today, r.days)
@@ -141,10 +126,10 @@ const programId = (key: string): number => {
 }
 
 const firstDay = addDays(today, -1)
-const gridEnd = parisAt(addDays(firstDay, 8), '00:00')
+const gridEnd = parisDateTime(addDays(firstDay, 8), '00:00')
 const slots = Array.from({ length: 8 }, (_, i) => {
   const day = addDays(firstDay, i)
-  return daySlots(i, weekday(day)).map((s) => ({ ...s, start: parisAt(day, s.time) }))
+  return daySlots(i, weekday(day)).map((s) => ({ ...s, start: parisDateTime(day, s.time) }))
 }).flat()
 
 const schedule = slots.map((s, i) => {
@@ -183,7 +168,7 @@ for (const v of VIDEOS) {
 
 const DATED = new Set(['journal', 'sport', 'agenda'])
 for (const r of REPLAYS) {
-  const broadcastAt = parisAt(addDays(today, r.day), r.time)
+  const broadcastAt = parisDateTime(addDays(today, r.day), r.time)
   await payload.create({
     collection: 'replays',
     data: {
@@ -235,15 +220,15 @@ log(`${ARTICLES.length} articles créés.`)
 // 6. Agenda
 // ---------------------------------------------------------------------------------------------
 let weekendPickHref = '/agenda'
-let weekendPickDate = parisAt(saturday, '10:30')
+let weekendPickDate = parisDateTime(saturday, '10:30')
 for (const e of EVENTS) {
-  const startDate = parisAt(relDay(e.start), e.start.time)
+  const startDate = parisDateTime(relDay(e.start), e.start.time)
   const doc = await payload.create({
     collection: 'events',
     data: {
       title: e.title,
       startDate: startDate.toISOString(),
-      endDate: e.end ? parisAt(relDay(e.end), e.end.time).toISOString() : null,
+      endDate: e.end ? parisDateTime(relDay(e.end), e.end.time).toISOString() : null,
       city: e.city,
       place: e.place,
       category: e.category,
@@ -316,7 +301,7 @@ await payload.create({
 // 8. Réglages du site
 // ---------------------------------------------------------------------------------------------
 const prime = PROGRAMS.find((p) => p.key === primeOf(1))
-const primeAt = parisAt(today, '20:45')
+const primeAt = parisDateTime(today, '20:45')
 const primeTrailer = VIDEOS.find((v) => v.title.startsWith(`${prime?.title ?? ''} — bande-annonce`))
 // Titre sur deux lignes (la seconde en doré) : « La Vallée » / « blanche »
 const primeWords = (prime?.title ?? 'Ce soir').split(' ')

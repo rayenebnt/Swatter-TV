@@ -1,4 +1,116 @@
-/* Couleurs de l'administration aux couleurs de Swatter TV */
+/* Administration aux couleurs de Swatter TV : accents dorés discrets, contrastes conservés (thèmes clair et sombre). */
 :root {
+  --swatter-navy: #071224;
+  --swatter-gold: #d9aa45;
+  --swatter-gold-light: #f4c752;
+  --swatter-gold-grad: linear-gradient(135deg, #fbe6a6 0%, #e4b64c 45%, #af7e24 100%);
+  /* doré foncé lisible sur fond clair (contraste ≥ 4,5:1 sur blanc) */
+  --swatter-accent: #8a6116;
   --theme-success-500: #d9aa45;
+}
+
+html[data-theme='dark'] {
+  --swatter-accent: #f0c766;
+}
+
+/* ---------- Logo (page de connexion) et icône (navigation) ---------- */
+.swatter-admin-logo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  &__shield {
+    width: 64px;
+    height: 67px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 6px 18px rgba(217, 170, 69, 0.28));
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.15;
+
+    strong {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--theme-text);
+    }
+
+    span {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--swatter-accent);
+    }
+  }
+}
+
+.swatter-admin-icon {
+  display: block;
+  width: 26px;
+  height: 27px;
+}
+
+/* ---------- Boutons principaux : fond doré, texte bleu nuit ---------- */
+.btn--style-primary:not(.btn--disabled) {
+  --color: var(--swatter-navy);
+  --bg-color: var(--swatter-gold);
+  --hover-bg: var(--swatter-gold-light);
+  --hover-color: var(--swatter-navy);
+  font-weight: 600;
+}
+
+/* ---------- Focus clavier bien visible ---------- */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--swatter-gold);
+  outline-offset: 2px;
+}
+
+/* ---------- Navigation : rubrique active soulignée d'or ---------- */
+.nav__link.active {
+  color: var(--swatter-accent);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(var(--nav-padding-inline-start, 20px) * -1);
+    top: 15%;
+    bottom: 15%;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--swatter-gold-grad);
+  }
+}
+
+.nav__link:hover {
+  color: var(--swatter-accent);
+}
+
+/* ---------- Tableau de bord : cartes au survol ---------- */
+.card:hover,
+.card:focus-within {
+  border-color: var(--swatter-gold);
+}
+
+/* ---------- Page de connexion : halo doré discret ---------- */
+.template-minimal {
+  background-image: radial-gradient(60% 45% at 50% 0%, rgba(217, 170, 69, 0.1), transparent 70%);
+}
+
+html[data-theme='dark'] .template-minimal {
+  background-color: var(--swatter-navy);
+}
+
+/* ---------- Cases à cocher et liens ---------- */
+input[type='checkbox'] {
+  accent-color: var(--swatter-gold);
+}
+
+.rich-text-lexical a,
+.field-description a {
+  color: var(--swatter-accent);
 }

@@ -1,0 +1,28 @@
+# Dépendances et builds locaux (réinstallés / reconstruits dans l'image)
+node_modules
+.next
+out
+*.tsbuildinfo
+next-env.d.ts
+
+# Secrets et données locales
+.env
+.env.*
+!.env.example
+media
+
+# Tests et rapports
+test-results
+playwright-report
+tests
+
+# Outils et éditeurs
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+npm-debug.log*
+Dockerfile
+.dockerignore
+docker-compose.yml
