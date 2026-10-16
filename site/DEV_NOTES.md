@@ -69,6 +69,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 
 | Fichier | Contenu |
 |---|---|
+| `lib/queries/schedule.ts` | `Slot`, `toSlot`, `getScheduleBetween(from, to)`, `getOnAir(now, n)` : créneaux de la grille (sérialisables) |
 | `lib/urls.ts` | `articleUrl`, `videoUrl`, `replayUrl`, `eventUrl`, `webcamUrl`, `programUrl`, `pageUrl`, `departmentUrl` : **toujours** les utiliser pour les liens |
 | `lib/meteo-types.ts` | `Forecast`, `ForecastDay`, `ForecastCity`, `WeatherKind`, `isForecast` : format du champ `forecast` du global météo |
 | `components/ui/RichText` | rendu du contenu riche Lexical (classe `.prose`) |
