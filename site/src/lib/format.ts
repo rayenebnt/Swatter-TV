@@ -25,16 +25,18 @@ export const parisDay = (d: Date | string = new Date()) => {
   const get = (t: string) => p.find((x) => x.type === t)?.value ?? ''
   return `${get('year')}-${get('month')}-${get('day')}`
 }
-/** Décalage horaire de Paris (en minutes) pour une date donnée. */
+/** Décalage horaire de Paris (en minutes) à un instant donné, sans dépendre du libellé du fuseau (« GMT+2 », « UTC+2 »…). */
 function parisOffsetMinutes(at: Date): number {
-  const p = fmt({ timeZoneName: 'shortOffset' }).formatToParts(at).find((x) => x.type === 'timeZoneName')?.value ?? 'GMT+1'
-  const m = p.match(/GMT([+-]\d+)(?::(\d+))?/)
-  return m ? Number(m[1]) * 60 + Math.sign(Number(m[1])) * Number(m[2] ?? 0) : 60
+  const p = fmt({ year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(at)
+  const get = (t: string) => Number(p.find((x) => x.type === t)?.value ?? 0)
+  const wall = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
+  return Math.round((wall - at.getTime()) / 60_000)
 }
-/** Instant UTC correspondant à « AAAA-MM-JJ HH:MM » heure de Paris. */
+/** Instant UTC correspondant à « AAAA-MM-JJ HH:MM » heure de Paris (seconde passe pour les jours de changement d'heure). */
 export function parisDateTime(day: string, time = '00:00'): Date {
   const guess = new Date(`${day}T${time}:00Z`)
-  return new Date(guess.getTime() - parisOffsetMinutes(guess) * 60_000)
+  const first = guess.getTime() - parisOffsetMinutes(guess) * 60_000
+  return new Date(guess.getTime() - parisOffsetMinutes(new Date(first)) * 60_000)
 }
 /** « Il y a 3 h », « Hier », « Il y a 2 j » */
 export function timeAgo(d: Date | string, now = new Date()): string {

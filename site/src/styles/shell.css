@@ -1,0 +1,100 @@
+/* =====================================================================
+   Coque : menu mobile, barre d'onglets, bandeau cookies, publicité, réseaux sociaux
+   (maquette : .drawer, .tabbar, .cookie, .ad, .social)
+   Pas de flou (backdrop-filter) : ces éléments passent au-dessus d'images animées.
+   globals.css est chargé APRÈS ce fichier : surcharges des classes communes plus spécifiques.
+   ===================================================================== */
+
+/* ----- Menu mobile ----- */
+.drawer { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; padding: calc(var(--header-h) + 20px) var(--gutter) calc(48px + env(safe-area-inset-bottom)); background: rgba(6, 15, 31, .985); overflow-y: auto; overscroll-behavior: contain; opacity: 0; visibility: hidden; transition: opacity .35s, visibility 0s .35s; }
+.drawer.is-open { opacity: 1; visibility: visible; transition: opacity .35s; }
+.drawer__top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; height: var(--header-h); padding-inline: var(--gutter); border-bottom: 1px solid var(--line); }
+.drawer nav a { display: flex; align-items: center; gap: 12px; padding: 16px 4px; border-bottom: 1px solid var(--line); font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: -.01em; opacity: 0; transform: translateX(-18px); transition: opacity .5s var(--ease-out), transform .5s var(--ease-out), color .25s; }
+.drawer.is-open nav a, .drawer.is-open > .btn { --delay: calc(var(--i) * 45ms + 60ms); opacity: 1; transform: none; }
+.drawer.is-open nav a { transition: opacity .5s var(--ease-out) var(--delay), transform .5s var(--ease-out) var(--delay), color .25s; }
+.drawer.is-open > .btn { transition: opacity .5s var(--ease-out) var(--delay), transform .5s var(--ease-out) var(--delay), box-shadow .3s; }
+.drawer nav a:hover { color: var(--gold-light); }
+.drawer nav a[aria-current='page'] { color: var(--gold-light); }
+.drawer__chev { width: 20px; height: 20px; margin-left: auto; color: var(--muted); transition: transform .3s var(--ease), color .25s; }
+.drawer nav a:hover .drawer__chev, .drawer nav a[aria-current='page'] .drawer__chev { color: var(--gold); transform: translateX(3px); }
+.drawer > .btn { flex-shrink: 0; margin-top: 28px; opacity: 0; transform: translateY(10px); transition: opacity .5s var(--ease-out), transform .5s var(--ease-out); }
+
+/* ----- Barre d'onglets mobile ----- */
+.tabbar { display: none; }
+
+/* ----- Bandeau cookies ----- */
+@keyframes cookieIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes cookieOut { to { opacity: 0; transform: translateY(16px); } }
+.cookie { position: fixed; z-index: 65; left: 20px; bottom: 20px; width: min(400px, calc(100% - 32px)); max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; padding: 18px; border-radius: 18px; background: rgba(12, 27, 53, .98); border: 1px solid var(--line-2); box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .75); font-size: 13.5px; color: var(--ink-2); animation: cookieIn .5s var(--ease-out) both; }
+.cookie.is-leaving { animation: cookieOut .3s var(--ease) both; pointer-events: none; }
+.cookie__title { margin-bottom: 4px; color: var(--ink); font-family: var(--font-display); font-weight: 700; font-size: 15.5px; }
+.cookie__btns { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.cookie__btns .btn { height: 38px; padding: 0 14px; font-size: 13.5px; flex: 1 1 0; min-width: 0; border-color: rgba(217, 170, 69, .4); }
+.cookie__btns .btn:hover { border-color: var(--gold); }
+.cookie__opts { display: grid; gap: 2px; margin-top: 14px; border-top: 1px solid var(--line); }
+.cookie__opt { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.cookie__opt-txt { display: grid; gap: 2px; cursor: pointer; }
+.cookie__opt-txt b { color: var(--ink); font-weight: 600; font-size: 14px; }
+.cookie__opt-txt small { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+
+/* Interrupteur : case à cocher native (role="switch") rendue invisible au-dessus d'une piste dessinée */
+.switch { position: relative; flex-shrink: 0; width: 46px; height: 28px; }
+.switch input { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.switch input:disabled { cursor: not-allowed; }
+.switch__track { position: absolute; inset: 0; border-radius: 999px; background: rgba(255, 255, 255, .12); border: 1px solid var(--line-2); transition: background .25s, border-color .25s; }
+.switch__track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); box-shadow: 0 2px 6px rgba(0, 0, 0, .4); transition: transform .3s var(--ease-out); }
+.switch input:checked + .switch__track { background: var(--gold-grad); border-color: transparent; }
+.switch input:checked + .switch__track::after { transform: translateX(18px); background: #fff; }
+.switch input:disabled + .switch__track { opacity: .55; }
+.switch input:focus-visible + .switch__track { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+
+/* ----- Publicité (le cadre .ad est dans globals.css) ----- */
+.ad__empty { display: grid; justify-items: center; gap: 6px; }
+.ad__empty b { color: var(--ink); font-family: var(--font-display); font-size: 17px; }
+.ad__empty a { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; color: var(--gold-light); font-family: var(--font-display); font-weight: 600; }
+.ad__empty a svg { width: 16px; height: 16px; transition: transform .3s var(--ease); }
+.ad__empty a:hover svg { transform: translateX(4px); }
+/* Campagne : ratio réservé d'après les dimensions du visuel (aucun décalage de mise en page) */
+.ad.ad--campaign { display: block; min-height: 0; padding: 0; border: 1px solid var(--line); background: var(--surface); }
+.ad.ad--campaign small { z-index: 1; padding: 3px 8px; border-radius: 6px; background: rgba(4, 10, 22, .72); color: var(--ink-2); font-size: 10px; }
+.ad__media { display: block; aspect-ratio: var(--ad-ratio, 970 / 250); }
+.ad__media picture { display: block; height: 100%; }
+.ad__media img { width: 100%; height: 100%; object-fit: cover; }
+a.ad__media { transition: opacity .3s; }
+a.ad__media:hover { opacity: .92; }
+
+/* ----- Réseaux sociaux (bordure conique tournante, animée en transform) -----
+   Le carré tournant couvre toute la diagonale du bandeau (côté ≥ largeur + hauteur). */
+@keyframes socialSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.social { position: relative; isolation: isolate; overflow: hidden; margin-top: clamp(64px, 8vw, 110px); padding: 2px; border-radius: 28px; background: rgba(217, 170, 69, .05); }
+.social::before { content: ''; position: absolute; z-index: -1; top: 50%; left: 50%; width: calc(100% + 320px); aspect-ratio: 1; background: conic-gradient(rgba(217, 170, 69, .05), rgba(243, 213, 138, .9), rgba(217, 170, 69, .05) 30%, rgba(217, 170, 69, .05) 60%, rgba(243, 213, 138, .6), rgba(217, 170, 69, .05)); transform: translate(-50%, -50%); animation: socialSpin 8s linear infinite; pointer-events: none; }
+.social.is-paused::before { animation-play-state: paused; }
+.social__in { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: clamp(26px, 4vw, 44px); border-radius: 26px; background: radial-gradient(60% 140% at 0% 0%, rgba(217, 170, 69, .18), rgba(217, 170, 69, 0) 60%), linear-gradient(120deg, #132a50, #0a1830); }
+.social h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(25px, 2.8vw, 34px); letter-spacing: -.02em; }
+.social p { color: var(--ink-2); margin-top: 6px; }
+.socials { display: flex; gap: 12px; flex-wrap: wrap; }
+.socials__item { display: flex; }
+.soc { display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 22px 0 18px; border-radius: 16px; background: rgba(255, 255, 255, .06); border: 1px solid var(--line-2); font-weight: 600; font-size: 14.5px; transition: background .3s, color .3s, transform .4s var(--ease), border-color .3s; }
+.soc svg { width: 22px; height: 22px; flex-shrink: 0; }
+.soc:hover { background: var(--gold-grad); color: var(--on-gold); border-color: transparent; transform: translateY(-4px); }
+
+@media (max-width: 760px) {
+  .tabbar { position: fixed; z-index: 60; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); background: rgba(6, 15, 31, .97); border-top: 1px solid var(--line); }
+  .tabbar a, .tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; font-size: 10.5px; font-weight: 600; color: var(--muted); transition: color .25s; -webkit-tap-highlight-color: transparent; }
+  .tabbar svg { width: 23px; height: 23px; transition: transform .3s var(--ease); }
+  .tabbar a:active svg, .tabbar button:active svg { transform: scale(.88); }
+  .tabbar [aria-current='page'], .tabbar [aria-expanded='true'] { color: var(--gold-light); }
+  .tabbar [aria-current='page']::before { content: ''; position: absolute; top: -6px; width: 26px; height: 3px; border-radius: 0 0 3px 3px; background: var(--gold-grad); }
+  .tabbar .dot-live { position: absolute; top: 5px; left: calc(50% + 8px); }
+  .tabbar :focus-visible { outline-offset: -2px; }
+  .cookie { bottom: calc(82px + env(safe-area-inset-bottom)); left: 16px; max-height: calc(100dvh - 82px - 80px - env(safe-area-inset-bottom)); }
+  .ad__media { aspect-ratio: var(--ad-ratio-m, var(--ad-ratio, 970 / 250)); }
+  .social__in { flex-direction: column; align-items: flex-start; }
+  .socials { width: 100%; }
+  .socials__item { flex: 1 1 calc(50% - 6px); }
+  .soc { width: 100%; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .social::before { animation: none; }
+  .drawer nav a, .drawer > .btn { transform: none; }
+}

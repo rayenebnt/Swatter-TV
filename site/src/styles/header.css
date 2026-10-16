@@ -1,0 +1,56 @@
+/* =====================================================================
+   En-tête : barre de lecture, logo, navigation, actions
+   (maquette : .readbar, .hdr, .logo, .nav, .hdr__actions, kbd.k)
+   globals.css est chargé APRÈS ce fichier : toute surcharge d'une classe commune
+   (.icon-btn, .btn…) doit être plus spécifique.
+   ===================================================================== */
+
+/* Barre de progression de lecture */
+.readbar { position: fixed; z-index: 90; top: 0; left: 0; right: 0; height: 3px; background: var(--gold-grad); transform-origin: 0 50%; transform: scaleX(0); pointer-events: none; will-change: transform; }
+
+/* En-tête fixe : transparent sur le héros, plein après défilement, masqué en descendant */
+.hdr { position: fixed; inset: 0 0 auto; z-index: 50; border-bottom: 1px solid transparent; transition: background .35s, border-color .35s, transform .45s var(--ease); }
+.hdr::before { content: ''; position: absolute; inset: 0 0 -60px; background: linear-gradient(180deg, rgba(4, 10, 22, .85), rgba(4, 10, 22, 0)); pointer-events: none; transition: opacity .35s; }
+/* Fond plein sans flou : l'en-tête passe au-dessus d'images animées (héros) */
+.hdr.is-solid { background: rgba(6, 15, 31, .93); border-color: var(--line); box-shadow: 0 18px 40px -30px rgba(0, 0, 0, .9); }
+.hdr.is-solid::before { opacity: 0; }
+.hdr.is-hidden { transform: translateY(-100%); }
+.hdr__in { position: relative; display: flex; align-items: center; gap: 22px; height: 80px; }
+
+/* Logo (en-tête, menu mobile, pied de page) */
+.logo { position: relative; display: flex; align-items: center; flex-shrink: 0; overflow: hidden; border-radius: 8px; }
+.logo svg { width: 54px; height: 56px; filter: drop-shadow(0 6px 16px rgba(217, 170, 69, .4)); }
+.logo::after { content: ''; position: absolute; inset: -20%; background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .75) 50%, transparent 60%); transform: translateX(-120%); animation: sheen 6s 1.2s var(--ease) infinite; pointer-events: none; }
+@keyframes sheen { 0%, 70% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+
+/* Navigation principale : pastille glissante au survol, soulignement doré de la rubrique active */
+.nav { position: relative; display: flex; gap: 2px; }
+.nav a { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-radius: 999px; font-family: var(--font-display); font-weight: 600; font-size: 15.5px; color: var(--ink-2); white-space: nowrap; transition: color .25s; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--ink); }
+.nav__pill { position: absolute; z-index: 0; top: 0; left: 0; width: 0; height: 100%; border-radius: 999px; background: rgba(255, 255, 255, .08); border: 1px solid var(--line); opacity: 0; pointer-events: none; transition: transform .45s var(--ease-out), width .45s var(--ease-out), opacity .25s; }
+.nav__bar { position: absolute; z-index: 0; bottom: -2px; left: 0; width: 0; height: 3px; border-radius: 3px; background: var(--gold-grad); opacity: 0; pointer-events: none; transition: transform .45s var(--ease-out), width .45s var(--ease-out), opacity .25s; }
+/* Premier placement (et sans JavaScript) : pas de glissement depuis la gauche */
+.nav:not(.is-ready) .nav__pill, .nav:not(.is-ready) .nav__bar { transition: none; }
+.no-js .nav a[aria-current='page']::after { content: ''; position: absolute; left: 13px; right: 13px; bottom: -2px; height: 3px; border-radius: 3px; background: var(--gold-grad); }
+
+/* Actions : recherche, raccourci, connexion, menu */
+.hdr__actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.hdr .burger { display: none; }
+kbd.k { font: 600 11px var(--font-body); color: var(--muted); border: 1px solid var(--line-2); border-radius: 6px; padding: 2px 6px; }
+
+@media (max-width: 1280px) {
+  .nav a { padding: 10px; font-size: 14.5px; }
+  .no-js .nav a[aria-current='page']::after { left: 10px; right: 10px; }
+}
+@media (max-width: 1100px) {
+  .nav, .hdr .login, .hdr .k { display: none; }
+  .hdr .burger { display: grid; }
+}
+@media (max-width: 760px) {
+  .hdr__in { height: 66px; }
+  .logo svg { width: 44px; height: 46px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .logo::after { animation: none; }
+  .hdr.is-hidden { transform: none; }
+}
