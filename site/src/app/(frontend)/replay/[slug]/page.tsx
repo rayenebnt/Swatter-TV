@@ -8,7 +8,7 @@ import { Crumbs } from '@/components/video/Crumbs'
 import { RelatedRail } from '@/components/video/RelatedRail'
 import { ReplayCard } from '@/components/video/ReplayCard'
 import { VideoPlayer } from '@/components/video/VideoPlayer'
-import { fallbackVisual, renderNow, spokenDuration, toAbsolute, videoLocation, videoObject } from '@/components/video/utils'
+import { fallbackVisual, renderNow, replayListUrl, spokenDuration, toAbsolute, videoLocation, videoObject } from '@/components/video/utils'
 import { labelOf, PROGRAM_GENRES } from '@/lib/categories'
 import { formatDate, formatTime } from '@/lib/format'
 import { mediaAlt, mediaSize, mediaUrl } from '@/lib/media'
@@ -27,8 +27,6 @@ export function generateStaticParams() {
 }
 
 type Params = Promise<{ slug: string }>
-
-const programHref = (slug?: string | null) => (slug ? `/replay?emission=${encodeURIComponent(slug)}` : '/replay')
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params
@@ -86,12 +84,12 @@ export default async function ReplayEpisodePage({ params }: { params: Params }) 
     <>
       <div className="watch">
         <div className="container">
-          <Crumbs items={[{ label: 'Replay', href: '/replay' }, ...(program ? [{ label: program.title, href: programHref(program.slug) }] : []), { label: replay.title }]} />
+          <Crumbs items={[{ label: 'Replay', href: '/replay' }, ...(program ? [{ label: program.title, href: replayListUrl(program.slug) }] : []), { label: replay.title }]} />
           <article className="watch__grid" aria-labelledby="watch-title">
             <VideoPlayer video={resolved} poster={poster} title={replay.title} />
             <div className="watch__info">
               <p className="kicker">
-                {program ? <Link href={programHref(program.slug)}>{program.title}</Link> : 'Replay'}
+                {program ? <Link href={replayListUrl(program.slug)}>{program.title}</Link> : 'Replay'}
                 {genre && program?.title !== genre ? ` · ${genre}` : ''}
               </p>
               <h1 id="watch-title" className="watch__title">
@@ -114,7 +112,7 @@ export default async function ReplayEpisodePage({ params }: { params: Params }) 
               </ul>
               {description && <p className="watch__desc">{description}</p>}
               <div className="watch__actions">
-                <Link className="btn btn--ghost btn--sm" href={program ? programHref(program.slug) : '/replay'}>
+                <Link className="btn btn--ghost btn--sm" href={program ? replayListUrl(program.slug) : '/replay'}>
                   {program ? 'Tous les épisodes' : 'Tous les replays'}
                   <Icon name="arrow" />
                 </Link>
@@ -134,7 +132,7 @@ export default async function ReplayEpisodePage({ params }: { params: Params }) 
           kind="replay"
           eyebrow={sameProgram && program ? program.title : 'Voir ou revoir'}
           title={sameProgram ? 'Autres épisodes' : 'Derniers replays'}
-          more={sameProgram && program ? { href: programHref(program.slug), label: 'Tout voir' } : { href: '/replay', label: 'Tous les replays' }}
+          more={sameProgram && program ? { href: replayListUrl(program.slug), label: 'Tout voir' } : { href: '/replay', label: 'Tous les replays' }}
         >
           {others.map((r) => (
             <ReplayCard key={r.id} replay={r} now={now} />

@@ -10,7 +10,7 @@ import { FilterLinks } from '@/components/video/FilterLinks'
 import { Pager } from '@/components/video/Pager'
 import { Top10Section } from '@/components/video/Top10Section'
 import { GRID_SIZES, VideoCard } from '@/components/video/VideoCard'
-import { renderNow } from '@/components/video/utils'
+import { renderNow, SHARE_VISUAL, toAbsolute, videoListUrl } from '@/components/video/utils'
 import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
 import { getVideoCategories, getVideosPage, isVideoCategory, type VideoCategory } from '@/lib/queries/videos'
 import { absoluteUrl, SITE_NAME } from '@/lib/site'
@@ -32,14 +32,6 @@ function parseParams(sp: Record<string, string | string[] | undefined>): { categ
   return { category: isVideoCategory(c) ? c : null, page: Number.isInteger(p) && p > 1 ? p : 1 }
 }
 
-function listHref(category: VideoCategory | null, page = 1) {
-  const q = new URLSearchParams()
-  if (category) q.set('categorie', category)
-  if (page > 1) q.set('page', String(page))
-  const s = q.toString()
-  return s ? `/videos?${s}` : '/videos'
-}
-
 function texts(category: VideoCategory | null, page: number) {
   const label = category ? labelOf(VIDEO_CATEGORIES, category) : null
   const suffix = page > 1 ? ` (page ${page})` : ''
@@ -55,12 +47,12 @@ function texts(category: VideoCategory | null, page: number) {
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
   const { category, page } = parseParams(await searchParams)
   const { title, description } = texts(category, page)
-  const url = listHref(category, page)
+  const url = videoListUrl(category, page)
   return {
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description },
+    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description, images: [{ url: toAbsolute(SHARE_VISUAL) }] },
   }
 }
 
@@ -96,8 +88,8 @@ export default async function VideosPage({ searchParams }: { searchParams: Searc
         <FilterLinks
           label="Filtrer les vidéos par catégorie"
           links={[
-            { href: listHref(null), label: 'Tout', current: !category },
-            ...categories.map((c) => ({ href: listHref(c), label: labelOf(VIDEO_CATEGORIES, c), current: c === category })),
+            { href: videoListUrl(), label: 'Tout', current: !category },
+            ...categories.map((c) => ({ href: videoListUrl(c), label: labelOf(VIDEO_CATEGORIES, c), current: c === category })),
           ]}
         />
         {list.docs.length ? (
@@ -117,7 +109,7 @@ export default async function VideosPage({ searchParams }: { searchParams: Searc
             </p>
           </div>
         )}
-        <Pager page={page} totalPages={list.totalPages} hrefFor={(p) => listHref(category, p)} label="Pages de la liste des vidéos" />
+        <Pager page={page} totalPages={list.totalPages} hrefFor={(p) => videoListUrl(category, p)} label="Pages de la liste des vidéos" />
       </section>
 
       {!withTop && (

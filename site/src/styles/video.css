@@ -73,6 +73,10 @@
 /* ----- Filtres par liens (pages Vidéos et Replay, rendu serveur) ----- */
 .vfilters { margin-bottom: 28px; }
 .seg--links a[aria-current='page'] { background: var(--gold-grad); box-shadow: 0 8px 22px -10px rgba(217, 170, 69, .8); }
+/* Grand écran : passage à la ligne plutôt qu'un défilement horizontal, peu commode à la souris (nombreuses émissions) */
+@media (min-width: 761px) {
+  .vfilters .seg { flex-wrap: wrap; border-radius: 24px; }
+}
 
 /* ----- Liste paginée ----- */
 /* La cellule porte la révélation au défilement, la carte garde ses propres transitions (survol) */

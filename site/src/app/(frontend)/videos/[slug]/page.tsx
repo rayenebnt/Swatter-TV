@@ -8,7 +8,7 @@ import { Crumbs } from '@/components/video/Crumbs'
 import { RelatedRail } from '@/components/video/RelatedRail'
 import { VideoCard } from '@/components/video/VideoCard'
 import { VideoPlayer } from '@/components/video/VideoPlayer'
-import { fallbackVisual, renderNow, spokenDuration, toAbsolute, videoLocation, videoObject } from '@/components/video/utils'
+import { fallbackVisual, renderNow, spokenDuration, toAbsolute, videoListUrl, videoLocation, videoObject } from '@/components/video/utils'
 import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
 import { formatDate, formatNumber } from '@/lib/format'
 import { mediaAlt, mediaSize, mediaUrl } from '@/lib/media'
@@ -27,8 +27,6 @@ export function generateStaticParams() {
 }
 
 type Params = Promise<{ slug: string }>
-
-const categoryHref = (category: string) => `/videos?categorie=${encodeURIComponent(category)}`
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params
@@ -78,12 +76,12 @@ export default async function VideoPage({ params }: { params: Params }) {
     <>
       <div className="watch">
         <div className="container">
-          <Crumbs items={[{ label: 'Vidéos', href: '/videos' }, { label, href: categoryHref(video.category) }, { label: video.title }]} />
+          <Crumbs items={[{ label: 'Vidéos', href: '/videos' }, { label, href: videoListUrl(video.category) }, { label: video.title }]} />
           <article className="watch__grid" aria-labelledby="watch-title">
             <VideoPlayer video={resolved} poster={poster} title={video.title} />
             <div className="watch__info">
               <p className="kicker">
-                <Link href={categoryHref(video.category)}>{label}</Link>
+                <Link href={videoListUrl(video.category)}>{label}</Link>
               </p>
               <h1 id="watch-title" className="watch__title">
                 {video.title}
@@ -129,7 +127,7 @@ export default async function VideoPage({ params }: { params: Params }) {
           id="rail-related"
           eyebrow={sameCategory ? label : 'À voir aussi'}
           title={sameCategory ? 'Dans la même catégorie' : 'D’autres vidéos'}
-          more={sameCategory ? { href: categoryHref(video.category), label: 'Tout voir' } : { href: '/videos', label: 'Toutes les vidéos' }}
+          more={sameCategory ? { href: videoListUrl(video.category), label: 'Tout voir' } : { href: '/videos', label: 'Toutes les vidéos' }}
         >
           {related.map((v) => (
             <VideoCard key={v.id} video={v} now={now} />

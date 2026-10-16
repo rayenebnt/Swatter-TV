@@ -169,9 +169,14 @@ function Native({ video, poster, title, autoPlay, live, onError }: { video: Nati
         hls = h
         let networkRetries = 0
         let mediaRetries = 0
+        // Un segment reçu remet le compteur à zéro : un direct de plusieurs heures survit aux coupures passagères
+        h.on(HlsJs.Events.FRAG_LOADED, () => {
+          networkRetries = 0
+        })
         h.on(HlsJs.Events.ERROR, (_event, data) => {
           if (!data.fatal) return
-          if (data.type === HlsJs.ErrorTypes.NETWORK_ERROR && networkRetries++ < 3) h.startLoad()
+          // Manifeste introuvable ou illisible (aucun niveau) : hls.js a déjà réessayé et startLoad() ne le rechargerait pas
+          if (data.type === HlsJs.ErrorTypes.NETWORK_ERROR && h.levels.length && networkRetries++ < 3) h.startLoad()
           else if (data.type === HlsJs.ErrorTypes.MEDIA_ERROR && mediaRetries++ < 2) h.recoverMediaError()
           else onError()
         })

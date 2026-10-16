@@ -26,8 +26,8 @@ export function ArticleImage({
     src: image.src,
     alt: alt ?? image.alt,
     unoptimized: image.unoptimized,
+    // Next 16 : preload seul pour l'image principale (ne pas le combiner avec fetchPriority ni loading)
     preload: priority,
-    fetchPriority: priority ? ('high' as const) : undefined,
     style: image.position ? { objectPosition: image.position } : undefined,
   }
   return width && height ? <Image {...common} width={width} height={height} sizes={sizes} /> : <Image {...common} fill sizes={sizes} />

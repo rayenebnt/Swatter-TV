@@ -23,6 +23,8 @@ export function CookieBanner() {
   const ref = useRef<HTMLDivElement>(null)
   const returnTo = useRef<HTMLElement | null>(null)
   const wantFocus = useRef(false)
+  const customizeRef = useRef<HTMLButtonElement>(null)
+  const focusCustomize = useRef(false)
   const id = useId()
 
   // Première visite sans choix enregistré : affichage différé ; réouverture sur « swatter:cookies »
@@ -54,6 +56,13 @@ export function CookieBanner() {
     ref.current?.querySelector<HTMLElement>('input:not([disabled])')?.focus()
   }, [expanded, state])
 
+  // Panneau replié au clavier (Échap) : le focus revient sur « Personnaliser » au lieu de tomber sur la page
+  useEffect(() => {
+    if (expanded || !focusCustomize.current) return
+    focusCustomize.current = false
+    customizeRef.current?.focus()
+  }, [expanded])
+
   // Sortie : démontage après l'animation de fermeture
   useEffect(() => {
     if (state !== 'leaving') return
@@ -78,8 +87,13 @@ export function CookieBanner() {
   }
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'Escape' || state !== 'open') return
-    if (reopened) close()
-    else if (expanded) setExpanded(false)
+    // Ouvert depuis un bouton (pied de page, lecteur vidéo…) ou choix déjà enregistré : Échap ferme et rend le focus au déclencheur
+    if (reopened || returnTo.current) close()
+    // Bandeau de première visite déplié : Échap le replie
+    else if (expanded) {
+      focusCustomize.current = true
+      setExpanded(false)
+    }
   }
 
   const titleId = `${id}-title`
@@ -134,6 +148,7 @@ export function CookieBanner() {
           </button>
         ) : (
           <button
+            ref={customizeRef}
             className="btn btn--ghost"
             type="button"
             onClick={() => {

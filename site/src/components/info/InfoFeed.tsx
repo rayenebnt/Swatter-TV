@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { Seg } from '@/components/ui/Seg'
 import { DEPARTMENTS, isDepartment } from '@/lib/departments'
@@ -11,13 +11,14 @@ import { LiveItem } from './LiveItem'
 import { ofPlace } from './places'
 import { agoLabel, feedLabel } from './time'
 import { useNow } from './useNow'
+import { useSegFade } from './useSegFade'
 import type { ArticleTeaser } from './utils'
 
 const ALL = 'all'
 /** Éléments du fil « En continu » sous l'article principal */
 const LIVE_COUNT = 5
 const delay = (d: number) => ({ '--d': d }) as CSSProperties
-const plural = (n: number) => `${n} info${n > 1 ? 's' : ''}`
+const plural = (n: number) => `${n}\u00a0info${n > 1 ? 's' : ''}`
 
 /**
  * Info de l'accueil (maquette : #dept-filters, .lead, .live-list) : filtre par département,
@@ -48,34 +49,18 @@ export function InfoFeed({ items }: { items: ArticleTeaser[] }) {
     const label = options.find((o) => o.value === value)?.label ?? ''
     setDept(value)
     setChanged(true)
-    setStatus(count ? `${label} : ${plural(Math.min(count, LIVE_COUNT + 1))}` : `${label} : pas encore d’info`)
+    setStatus(count ? `${label}\u00a0: ${plural(Math.min(count, LIVE_COUNT + 1))}` : `${label}\u00a0: pas encore d’info`)
   }
 
   // Filtres plus larges que la colonne : fondu sur le bord qui cache des départements
-  useEffect(() => {
-    const wrap = filters.current
-    const seg = wrap?.querySelector<HTMLElement>('.seg')
-    if (!wrap || !seg) return
-    const update = () => {
-      const hidden = seg.scrollWidth - seg.clientWidth
-      wrap.toggleAttribute('data-fade-start', seg.scrollLeft > 4)
-      wrap.toggleAttribute('data-fade-end', hidden - seg.scrollLeft > 4)
-    }
-    seg.addEventListener('scroll', update, { passive: true })
-    const ro = new ResizeObserver(update)
-    ro.observe(seg)
-    return () => {
-      seg.removeEventListener('scroll', update)
-      ro.disconnect()
-    }
-  }, [options.length])
+  useSegFade(filters, options.length)
 
   const anim = (i: number) => (changed ? { className: 'fade-in', style: delay(i) } : {})
 
   return (
     <div className="info-feed">
       {options.length > 2 && (
-        <div ref={filters} className="info-feed__filters" data-reveal>
+        <div ref={filters} className="info-filters" data-reveal>
           <Seg options={options} value={dept} onChange={select} ariaLabel="Filtrer l’info par département" className="seg--bleed" />
         </div>
       )}
@@ -97,7 +82,7 @@ export function InfoFeed({ items }: { items: ArticleTeaser[] }) {
           <Icon name="news" />
           <p>
             <b>{place ? 'Pas encore d’info pour ce département' : 'Pas encore d’info pour le moment'}</b>
-            {place ? 'Revenez plus tard ou consultez l’actualité de toute la région.' : 'Revenez bientôt : l’actualité de la région s’affichera ici.'}
+            {place ? 'Revenez plus tard ou consultez l’actualité de toute la région.' : 'Revenez bientôt\u00a0: l’actualité de la région s’affichera ici.'}
           </p>
         </div>
       )}

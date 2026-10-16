@@ -3,6 +3,7 @@ import { departmentLabel, type DepartmentSlug } from '@/lib/departments'
 import { dateChip, formatDate, formatTime } from '@/lib/format'
 import { mediaAlt, mediaFocal, mediaSize, mediaUrl, type MediaRef, type MediaSize } from '@/lib/media'
 import type { ArticleListItem } from '@/lib/queries/articles'
+import type { Article } from '@/payload-types'
 import { SITE_URL } from '@/lib/site'
 import { articleUrl } from '@/lib/urls'
 
@@ -50,11 +51,14 @@ export function imageSource(url: string): { src: string; unoptimized: boolean } 
   return { src, unoptimized: !LOCAL.test(src) }
 }
 
-/** Adresse d'image externe valide (import RSS) ou null. */
-export function externalImage(url?: string | null): string | null {
+/** Adresse http(s) absolue valide (image externe d'un import RSS, lien vers la source) ou null. */
+export function httpUrl(url?: string | null): string | null {
   const u = url?.trim()
   return u && /^https?:\/\/[^\s"'<>]+$/i.test(u) ? u : null
 }
+
+/** Adresse d'image externe valide (import RSS) ou null. */
+export const externalImage = httpUrl
 
 /** Image d'un article : média Payload, sinon image externe (RSS), sinon visuel de repli. */
 export function articleImage(a: { id: number; image?: MediaRef; imageUrl?: string | null }, size: MediaSize): ImageData {
@@ -102,4 +106,41 @@ export function toTeaser(a: ArticleListItem, { image = true, thumb = false, exce
     image: image ? articleImage(a, 'card') : null,
     thumb: thumb ? articleImage(a, 'thumb') : null,
   }
+}
+
+/* ----- Contenu riche (Lexical) ----- */
+
+type LexicalNode = { type?: unknown; text?: unknown; children?: unknown }
+
+const isNode = (n: unknown): n is LexicalNode => typeof n === 'object' && n !== null
+/** Nœuds qui comptent comme contenu même sans texte */
+const MEDIA_NODES = new Set(['upload', 'block', 'inlineBlock', 'relationship', 'horizontalrule'])
+
+function someNode(nodes: unknown, test: (n: LexicalNode) => boolean): boolean {
+  return Array.isArray(nodes) && nodes.some((n) => isNode(n) && (test(n) || someNode(n.children, test)))
+}
+
+/** Vrai si l'article a un texte propre (autre chose que des paragraphes vides) ; faux pour une reprise RSS brute. */
+export function hasOwnContent(content: Article['content']): boolean {
+  return someNode(content?.root?.children, (n) => (typeof n.text === 'string' && n.text.trim() !== '') || (typeof n.type === 'string' && MEDIA_NODES.has(n.type)))
+}
+
+const nodeText = (n: unknown): string => {
+  if (!isNode(n)) return ''
+  if (typeof n.text === 'string') return n.text
+  if (n.type === 'linebreak') return ' '
+  return Array.isArray(n.children) ? n.children.map(nodeText).join('') : ''
+}
+
+/** Texte brut du contenu riche, paragraphes séparés par une espace (description de repli). */
+export function plainText(content: Article['content']): string {
+  return (content?.root?.children ?? []).map(nodeText).join(' ').replace(/\s+/g, ' ').trim()
+}
+
+/** Texte coupé sur un mot, sans ponctuation pendante, terminé par « … ». */
+export function truncate(text: string, max: number): string {
+  if (text.length <= max) return text
+  const cut = text.slice(0, max - 1)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s\u00a0,;:.!?\-–—(«"'’]+$/u, '')}…`
 }

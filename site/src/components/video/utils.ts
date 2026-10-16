@@ -7,6 +7,23 @@ const VISUALS = ['t-crepuscule-a', 't-matin-a', 't-nuit-b', 't-ete-a', 't-hiver-
 /** Heure du rendu serveur (badges « Nouveau », dates relatives). Jamais dans le premier rendu d'un composant client. */
 export const renderNow = () => Date.now()
 
+/** Visuel de partage (Open Graph) des pages sans image propre. */
+export const SHARE_VISUAL = '/visuels/hero-crepuscule.webp'
+
+function withQuery(path: string, params: Record<string, string | null | undefined>, page: number) {
+  const q = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) if (v) q.set(k, v)
+  if (page > 1) q.set('page', String(page))
+  const s = q.toString()
+  return s ? `${path}?${s}` : path
+}
+
+/** Liste des vidéos : filtre par catégorie (?categorie=) et page (?page=). */
+export const videoListUrl = (category?: string | null, page = 1) => withQuery('/videos', { categorie: category }, page)
+
+/** Liste des replays : filtre par émission d'après son adresse (?emission=) et page (?page=). */
+export const replayListUrl = (programSlug?: string | null, page = 1) => withQuery('/replay', { emission: programSlug }, page)
+
 /** Visuel de la maquette utilisé quand un contenu n'a pas d'image (choix stable d'après l'identifiant). */
 export const fallbackVisual = (id: number | string = 0) => {
   const n = typeof id === 'number' ? id : [...id].reduce((s, c) => s + c.charCodeAt(0), 0)

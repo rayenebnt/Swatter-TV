@@ -10,7 +10,7 @@ import { FilterLinks } from '@/components/video/FilterLinks'
 import { Pager } from '@/components/video/Pager'
 import { ReplayCard } from '@/components/video/ReplayCard'
 import { GRID_SIZES } from '@/components/video/VideoCard'
-import { renderNow, toAbsolute } from '@/components/video/utils'
+import { renderNow, replayListUrl, SHARE_VISUAL, toAbsolute } from '@/components/video/utils'
 import { mediaUrl } from '@/lib/media'
 import { getReplayPrograms, getReplaysPage } from '@/lib/queries/replays'
 import { absoluteUrl, SITE_NAME } from '@/lib/site'
@@ -35,26 +35,18 @@ async function resolveParams(sp: Record<string, string | string[] | undefined>):
   return { program: (slug && programs.find((x) => x.slug === slug)) || null, programs, page: Number.isInteger(p) && p > 1 ? p : 1 }
 }
 
-function listHref(program: Pick<Program, 'slug'> | null, page = 1) {
-  const q = new URLSearchParams()
-  if (program?.slug) q.set('emission', program.slug)
-  if (page > 1) q.set('page', String(page))
-  const s = q.toString()
-  return s ? `/replay?${s}` : '/replay'
-}
-
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
   const { program, page } = await resolveParams(await searchParams)
   const suffix = page > 1 ? ` (page ${page})` : ''
   const title = `${program ? `${program.title} en replay` : 'Le Replay'}${suffix}`
   const description = (program ? program.meta?.description || program.synopsis || `Tous les épisodes de «\u00a0${program.title}\u00a0» à revoir sur Swatter TV.` : INTRO).slice(0, 200)
   const image = program ? mediaUrl(program.meta?.image && typeof program.meta.image === 'object' ? program.meta.image : program.image, 'hero') : null
-  const url = listHref(program, page)
+  const url = replayListUrl(program?.slug, page)
   return {
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description, ...(image ? { images: [{ url: toAbsolute(image) }] } : {}) },
+    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description, images: [{ url: toAbsolute(image ?? SHARE_VISUAL) }] },
   }
 }
 
@@ -83,7 +75,7 @@ export default async function ReplayPage({ searchParams }: { searchParams: Searc
         />
         <FilterLinks
           label="Filtrer les replays par émission"
-          links={[{ href: listHref(null), label: 'Toutes les émissions', current: !program }, ...programs.map((p) => ({ href: listHref(p), label: p.title, current: p.id === program?.id }))]}
+          links={[{ href: replayListUrl(), label: 'Toutes les émissions', current: !program }, ...programs.map((p) => ({ href: replayListUrl(p.slug), label: p.title, current: p.id === program?.id }))]}
         />
         {list.docs.length ? (
           <div className="grid-cards vgrid">
@@ -102,7 +94,7 @@ export default async function ReplayPage({ searchParams }: { searchParams: Searc
             </p>
           </div>
         )}
-        <Pager page={page} totalPages={list.totalPages} hrefFor={(p) => listHref(program, p)} label="Pages de la liste des replays" />
+        <Pager page={page} totalPages={list.totalPages} hrefFor={(p) => replayListUrl(program?.slug, p)} label="Pages de la liste des replays" />
       </section>
 
       <div className="container">
