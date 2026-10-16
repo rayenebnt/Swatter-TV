@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!video) return { title: 'Vidéo introuvable', robots: { index: false } }
 
   const url = videoUrl(video)
-  const description = (video.meta?.description || video.description || `Regardez « ${video.title} » sur Swatter TV, la chaîne locale de la Haute-Savoie.`).slice(0, 200)
+  const description = (video.meta?.description || video.description || `Regardez «\u00a0${video.title}\u00a0» sur Swatter TV, la chaîne locale de la Haute-Savoie.`).slice(0, 200)
   const imageMedia = video.meta?.image && typeof video.meta.image === 'object' ? video.meta.image : video.thumbnail
   const image = mediaUrl(imageMedia, 'hero')
   const { width, height } = mediaSize(imageMedia, 'hero')
@@ -97,7 +97,7 @@ export default async function VideoPage({ params }: { params: Params }) {
                 {video.duration && (
                   <li>
                     <Icon name="clock" />
-                    <span className="sr-only">Durée : {spokenDuration(video.duration)}</span>
+                    <span className="sr-only">Durée&nbsp;: {spokenDuration(video.duration)}</span>
                     <span aria-hidden="true">{video.duration}</span>
                   </li>
                 )}

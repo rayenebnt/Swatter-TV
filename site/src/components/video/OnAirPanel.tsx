@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import type { CSSProperties } from 'react'
+import { useRef, type CSSProperties } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { formatTime } from '@/lib/format'
 import type { Slot } from '@/lib/queries/schedule'
 import { programUrl } from '@/lib/urls'
 import { useNow } from './useNow'
+import { useOffscreen } from './useOffscreen'
 
 const ms = (iso: string) => new Date(iso).getTime()
 /** « 42 min », « 1 h 05 » */
@@ -23,6 +24,9 @@ function SlotTitle({ slot }: { slot: Slot }) {
  */
 export function OnAirPanel({ current, next, max = 3 }: { current: Slot | null; next: Slot[]; max?: number }) {
   const now = useNow()
+  const root = useRef<HTMLElement>(null)
+  // Point « en direct » (animation en boucle) en pause hors écran
+  const paused = useOffscreen(root)
   let cur = current
   let upcoming = next
   if (now !== null) {
@@ -35,7 +39,7 @@ export function OnAirPanel({ current, next, max = 3 }: { current: Slot | null; n
   const shown = upcoming.slice(0, max)
 
   return (
-    <aside className="onair" aria-labelledby="onair-title">
+    <aside ref={root} className={`onair${paused ? ' is-paused' : ''}`} aria-labelledby="onair-title">
       <h2 id="onair-title" className="onair__title">
         Au programme
       </h2>

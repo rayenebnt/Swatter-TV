@@ -2,13 +2,14 @@
 // Lecteur vidéo 16:9 : façade légère pour YouTube et Bunny Stream (iframe chargée au clic, selon le consentement),
 // flux HLS (natif sur Safari et iOS, sinon hls.js chargé à la demande) et fichiers MP4.
 import Image, { getImageProps } from 'next/image'
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import { preload } from 'react-dom'
 import type Hls from 'hls.js'
 import { openCookieSettings, useConsent } from '@/components/layout/consent'
 import { Icon } from '@/components/ui/Icon'
 import { SITE_URL } from '@/lib/site'
 import type { ResolvedVideo } from '@/lib/video'
+import { useOffscreen } from './useOffscreen'
 import { fallbackVisual, imageSource } from './utils'
 import '@/styles/video.css'
 
@@ -30,6 +31,10 @@ type NativeVideo = Extract<ResolvedVideo, { kind: 'hls' | 'mp4' }>
 const SIZES = '(max-width: 1100px) 100vw, 900px'
 const PROVIDERS: Record<EmbedVideo['kind'], string> = { youtube: 'YouTube', iframe: 'Bunny Stream' }
 
+const noop = () => () => {}
+/** Faux au rendu serveur et à l'hydratation, vrai ensuite (sans setState dans un effet). */
+const useHydrated = () => useSyncExternalStore(noop, () => true, () => false)
+
 const sourceKey = (v: ResolvedVideo | null) => (!v ? 'none' : v.kind === 'youtube' || v.kind === 'iframe' ? v.embedUrl : v.src)
 /** Adresse absolue du site rendue relative (même origine que la page). */
 const localize = (url: string) => (url.startsWith(`${SITE_URL}/`) ? url.slice(SITE_URL.length) : url)
@@ -43,9 +48,12 @@ function Player({ video, poster, title, autoPlay = false, live = false }: VideoP
   const [failed, setFailed] = useState(false)
   const fail = useCallback(() => setFailed(true), [])
   const playable = video && !failed ? video : null
+  const root = useRef<HTMLDivElement>(null)
+  // Badge « En direct » (animation en boucle) en pause hors écran
+  const paused = useOffscreen(root, live)
 
   return (
-    <div className={`vp${playable ? '' : ' vp--off'}`} role="region" aria-label={`Lecteur vidéo : ${title}`}>
+    <div ref={root} className={`vp${playable ? '' : ' vp--off'}${paused ? ' is-paused' : ''}`} role="region" aria-label={`Lecteur vidéo\u00a0: ${title}`}>
       {!playable ? (
         <Unavailable poster={poster} live={live} />
       ) : playable.kind === 'youtube' || playable.kind === 'iframe' ? (
@@ -73,6 +81,8 @@ function Poster({ src }: { src: string }) {
 function Embed({ video, poster, title, autoPlay }: { video: EmbedVideo; poster?: string | null; title: string; autoPlay: boolean }) {
   const consent = useConsent()
   const allowed = consent?.externes === true
+  // Mention affichée une fois le choix connu : pas de clignotement pour qui a déjà accepté les contenus externes
+  const showNotice = useHydrated() && !allowed
   const [clicked, setClicked] = useState(false)
   const frame = useRef<HTMLIFrameElement>(null)
   const noticeId = useId()
@@ -103,10 +113,10 @@ function Embed({ video, poster, title, autoPlay }: { video: EmbedVideo; poster?:
     <>
       <Poster src={img} />
       <div className="vp__overlay">
-        <button type="button" className="vp__play" onClick={() => setClicked(true)} aria-label={`Lire la vidéo : ${title}`} aria-describedby={allowed ? undefined : noticeId}>
+        <button type="button" className="vp__play" onClick={() => setClicked(true)} aria-label={`Lire la vidéo\u00a0: ${title}`} aria-describedby={showNotice ? noticeId : undefined}>
           <Icon name="play" />
         </button>
-        {!allowed && (
+        {showNotice && (
           <p className="vp__notice">
             <span id={noticeId}>La lecture charge le lecteur {PROVIDERS[video.kind]}, qui peut déposer des cookies.</span>{' '}
             <button type="button" className="vp__cookies" aria-haspopup="dialog" onClick={(e) => openCookieSettings(e.currentTarget)}>
@@ -119,28 +129,31 @@ function Embed({ video, poster, title, autoPlay }: { video: EmbedVideo; poster?:
   )
 }
 
-/** Affiche optimisée pour l'attribut poster de <video> (une seule adresse, 1920 px au plus). */
+/** Affiche optimisée pour l'attribut poster de <video> : une seule adresse, 1 200 px de large (variante « 2x » d'une largeur de 600). */
 function posterUrl(src: string): string {
   const img = imageSource(src)
   if (img.unoptimized) return img.src
-  return getImageProps({ src: img.src, alt: '', width: 960, height: 540 }).props.src
+  return getImageProps({ src: img.src, alt: '', width: 600, height: 338 }).props.src
 }
 
 /** Fichier MP4 ou flux HLS : lecteur natif du navigateur. */
 function Native({ video, poster, title, autoPlay, live, onError }: { video: NativeVideo; poster?: string | null; title: string; autoPlay: boolean; live: boolean; onError: () => void }) {
+  const { kind, src } = video
   const ref = useRef<HTMLVideoElement>(null)
   const [started, setStarted] = useState(false)
   // hls.js gère lui-même ses erreurs (et tente de les corriger) : l'événement error de <video> ne compte alors pas.
   const viaHlsJs = useRef(false)
   const posterSrc = poster ? posterUrl(poster) : undefined
+  // Fichier diffusé comme un direct (démonstration, boucle d'attente) : lecture en boucle
+  const loop = live && kind === 'mp4'
   // Affiche préchargée avec une priorité haute (élément principal de la page)
   if (posterSrc) preload(posterSrc, { as: 'image', fetchPriority: 'high' })
 
   useEffect(() => {
     const el = ref.current
-    if (!el || video.kind !== 'hls') return
+    if (!el || kind !== 'hls') return
     if (el.canPlayType('application/vnd.apple.mpegurl')) {
-      el.src = localize(video.src)
+      el.src = localize(src)
       return
     }
     let cancelled = false
@@ -162,7 +175,7 @@ function Native({ video, poster, title, autoPlay, live, onError }: { video: Nati
           else if (data.type === HlsJs.ErrorTypes.MEDIA_ERROR && mediaRetries++ < 2) h.recoverMediaError()
           else onError()
         })
-        h.loadSource(localize(video.src))
+        h.loadSource(localize(src))
         h.attachMedia(el)
         if (!el.paused) h.startLoad()
         else {
@@ -179,18 +192,26 @@ function Native({ video, poster, title, autoPlay, live, onError }: { video: Nati
       hls?.destroy()
       viaHlsJs.current = false
     }
-  }, [video, live, onError])
+  }, [kind, src, live, onError])
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
     // Erreur survenue avant l'hydratation (événement manqué)
-    if (video.kind === 'mp4' && el.error) return onError()
+    if (kind === 'mp4' && el.error) return onError()
     // Lecture automatique : forcément sans le son (règle des navigateurs)
     if (!autoPlay) return
     el.muted = true
     el.play().catch(() => {})
-  }, [video, autoPlay, onError])
+  }, [kind, autoPlay, onError])
+
+  const play = () => {
+    const el = ref.current
+    if (!el) return
+    el.play().catch(() => {})
+    // Le bouton disparaît : le focus passe au lecteur (commandes natives au clavier)
+    el.focus()
+  }
 
   return (
     <>
@@ -201,7 +222,8 @@ function Native({ video, poster, title, autoPlay, live, onError }: { video: Nati
         playsInline
         preload="metadata"
         poster={posterSrc}
-        src={video.kind === 'mp4' ? localize(video.src) : undefined}
+        src={kind === 'mp4' ? localize(src) : undefined}
+        loop={loop}
         aria-label={title}
         onPlay={() => setStarted(true)}
         onError={() => {
@@ -211,7 +233,7 @@ function Native({ video, poster, title, autoPlay, live, onError }: { video: Nati
         Votre navigateur ne permet pas de lire cette vidéo.
       </video>
       {!started && (
-        <button type="button" className="vp__play vp__play--native" onClick={() => ref.current?.play().catch(() => {})} aria-label={`Lire la vidéo : ${title}`}>
+        <button type="button" className="vp__play vp__play--native" onClick={play} aria-label={`Lire la vidéo\u00a0: ${title}`}>
           <Icon name="play" />
         </button>
       )}

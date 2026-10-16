@@ -38,6 +38,8 @@ function onVisibility() {
 function subscribe(listener: () => void) {
   listeners.add(listener)
   if (listeners.size === 1) {
+    // Premier abonné (éventuellement longtemps après le dernier) : heure rafraîchie, React relit l'instantané après l'abonnement
+    now = round()
     document.addEventListener('visibilitychange', onVisibility)
     start()
   }

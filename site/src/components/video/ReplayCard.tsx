@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import type { CSSProperties } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { labelOf, PROGRAM_GENRES } from '@/lib/categories'
@@ -15,24 +14,20 @@ export function ReplayCard({
   replay,
   now,
   sizes = CARD_SIZES,
-  style,
-  reveal = false,
 }: {
   replay: ReplayListItem
   now: number
   sizes?: string
-  style?: CSSProperties
-  reveal?: boolean
 }) {
   const program = programOf(replay)
   const kicker = (program?.genre && labelOf(PROGRAM_GENRES, program.genre)) || program?.title || 'Replay'
   return (
-    <article className="card vcard" style={style} {...(reveal ? { 'data-reveal': true } : {})}>
+    <article className="card vcard">
       <div className="media">
         <MediaImage media={replay.thumbnail} size="card" fill sizes={sizes} alt="" fallbackSrc={fallbackVisual(replay.id)} />
         {replay.duration && (
           <span className="dur">
-            <span className="sr-only">Durée : {spokenDuration(replay.duration)}</span>
+            <span className="sr-only">Durée&nbsp;: {spokenDuration(replay.duration)}</span>
             <span aria-hidden="true">{replay.duration}</span>
           </span>
         )}

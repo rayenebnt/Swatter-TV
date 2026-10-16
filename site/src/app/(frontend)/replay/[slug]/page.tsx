@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     replay.meta?.description ||
     replay.description ||
     program?.synopsis ||
-    `Revoir « ${replay.title} », diffusé le ${formatDate(replay.broadcastAt)} sur Swatter TV.`
+    `Revoir «\u00a0${replay.title}\u00a0», diffusé le ${formatDate(replay.broadcastAt)} sur Swatter TV.`
   ).slice(0, 200)
   const imageMedia = replay.meta?.image && typeof replay.meta.image === 'object' ? replay.meta.image : replay.thumbnail
   const image = mediaUrl(imageMedia, 'hero')
@@ -107,7 +107,7 @@ export default async function ReplayEpisodePage({ params }: { params: Params }) 
                 {replay.duration && (
                   <li>
                     <Icon name="clock" />
-                    <span className="sr-only">Durée : {spokenDuration(replay.duration)}</span>
+                    <span className="sr-only">Durée&nbsp;: {spokenDuration(replay.duration)}</span>
                     <span aria-hidden="true">{replay.duration}</span>
                   </li>
                 )}

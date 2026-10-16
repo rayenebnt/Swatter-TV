@@ -21,7 +21,7 @@ import '@/styles/video.css'
 export const revalidate = 60
 
 const PER_PAGE = 24
-const INTRO = 'Les émissions de Swatter TV à voir ou revoir gratuitement : journaux, magazines, documentaires et divertissements.'
+const INTRO = 'Les émissions de Swatter TV à voir ou revoir gratuitement\u00a0: journaux, magazines, documentaires et divertissements.'
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
@@ -47,7 +47,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
   const { program, page } = await resolveParams(await searchParams)
   const suffix = page > 1 ? ` (page ${page})` : ''
   const title = `${program ? `${program.title} en replay` : 'Le Replay'}${suffix}`
-  const description = (program ? program.meta?.description || program.synopsis || `Tous les épisodes de « ${program.title} » à revoir sur Swatter TV.` : INTRO).slice(0, 200)
+  const description = (program ? program.meta?.description || program.synopsis || `Tous les épisodes de «\u00a0${program.title}\u00a0» à revoir sur Swatter TV.` : INTRO).slice(0, 200)
   const image = program ? mediaUrl(program.meta?.image && typeof program.meta.image === 'object' ? program.meta.image : program.image, 'hero') : null
   const url = listHref(program, page)
   return {
@@ -71,7 +71,7 @@ export default async function ReplayPage({ searchParams }: { searchParams: Searc
       <PageHeader
         eyebrow={program ? 'Replay' : 'Voir ou revoir'}
         title={program ? program.title : 'Le Replay'}
-        description={program ? program.synopsis || `Tous les épisodes de « ${program.title} » à revoir gratuitement.` : INTRO}
+        description={program ? program.synopsis || `Tous les épisodes de «\u00a0${program.title}\u00a0» à revoir gratuitement.` : INTRO}
         crumbs={crumbs}
       />
 
@@ -88,7 +88,9 @@ export default async function ReplayPage({ searchParams }: { searchParams: Searc
         {list.docs.length ? (
           <div className="grid-cards vgrid">
             {list.docs.map((r, i) => (
-              <ReplayCard key={r.id} replay={r} now={now} sizes={GRID_SIZES} reveal style={{ '--d': i % 4 } as CSSProperties} />
+              <div key={r.id} className="vgrid__cell" data-reveal style={{ '--d': i % 4 } as CSSProperties}>
+                <ReplayCard replay={r} now={now} sizes={GRID_SIZES} />
+              </div>
             ))}
           </div>
         ) : (
@@ -96,7 +98,7 @@ export default async function ReplayPage({ searchParams }: { searchParams: Searc
             <Icon name="replay" />
             <p>
               <b>Aucun replay pour le moment</b>
-              Les émissions sont mises en ligne après leur diffusion : revenez bientôt.
+              Les émissions sont mises en ligne après leur diffusion&nbsp;: revenez bientôt.
             </p>
           </div>
         )}

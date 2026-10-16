@@ -45,10 +45,10 @@ function texts(category: VideoCategory | null, page: number) {
   const suffix = page > 1 ? ` (page ${page})` : ''
   return {
     label,
-    title: `${label ? `${label} : toutes les vidéos` : 'Vidéos'}${suffix}`,
+    title: `${label ? `${label}\u00a0: toutes les vidéos` : 'Vidéos'}${suffix}`,
     description: label
-      ? `Les vidéos « ${label} » de Swatter TV, la chaîne locale de la Haute-Savoie, à regarder gratuitement.`
-      : 'Toutes les vidéos de Swatter TV, la chaîne locale de la Haute-Savoie : à regarder gratuitement, où que vous soyez.',
+      ? `Les vidéos «\u00a0${label}\u00a0» de Swatter TV, la chaîne locale de la Haute-Savoie, à regarder gratuitement.`
+      : 'Toutes les vidéos de Swatter TV, la chaîne locale de la Haute-Savoie\u00a0: à regarder gratuitement, où que vous soyez.',
   }
 }
 
@@ -90,7 +90,7 @@ export default async function VideosPage({ searchParams }: { searchParams: Searc
       <section className="section container" aria-labelledby="all-videos-title">
         <SectionHead
           eyebrow={list.totalDocs ? `${list.totalDocs} vidéo${list.totalDocs > 1 ? 's' : ''}` : undefined}
-          title={label ? `Toutes les vidéos « ${label} »` : 'Toutes les vidéos'}
+          title={label ? `Toutes les vidéos «\u00a0${label}\u00a0»` : 'Toutes les vidéos'}
           titleId="all-videos-title"
         />
         <FilterLinks
@@ -103,7 +103,9 @@ export default async function VideosPage({ searchParams }: { searchParams: Searc
         {list.docs.length ? (
           <div className="grid-cards vgrid">
             {list.docs.map((v, i) => (
-              <VideoCard key={v.id} video={v} now={now} meta sizes={GRID_SIZES} reveal style={{ '--d': i % 4 } as CSSProperties} />
+              <div key={v.id} className="vgrid__cell" data-reveal style={{ '--d': i % 4 } as CSSProperties}>
+                <VideoCard video={v} now={now} meta sizes={GRID_SIZES} />
+              </div>
             ))}
           </div>
         ) : (
@@ -129,7 +131,7 @@ export default async function VideosPage({ searchParams }: { searchParams: Searc
           data={{
             '@context': 'https://schema.org',
             '@type': 'ItemList',
-            name: label ? `Vidéos « ${label} »` : 'Vidéos de Swatter TV',
+            name: label ? `Vidéos «\u00a0${label}\u00a0»` : 'Vidéos de Swatter TV',
             itemListElement: list.docs.map((v, i) => ({ '@type': 'ListItem', position: (page - 1) * PER_PAGE + i + 1, url: absoluteUrl(videoUrl(v)), name: v.title })),
           }}
         />

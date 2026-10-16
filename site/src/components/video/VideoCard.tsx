@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import type { CSSProperties } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
@@ -25,25 +24,21 @@ export function VideoCard({
   now,
   meta = false,
   sizes = CARD_SIZES,
-  style,
-  reveal = false,
 }: {
   video: VideoListItem
   now: number
   meta?: boolean
   sizes?: string
-  style?: CSSProperties
-  reveal?: boolean
 }) {
   const isNew = now - new Date(video.publishedAt).getTime() < NEW_MS
   return (
-    <article className="card vcard" data-cat={video.category} style={style} {...(reveal ? { 'data-reveal': true } : {})}>
+    <article className="card vcard" data-cat={video.category}>
       <div className="media">
         <MediaImage media={video.thumbnail} size="card" fill sizes={sizes} alt="" fallbackSrc={fallbackVisual(video.id)} />
         {isNew && <span className="badge badge--new">Nouveau</span>}
         {video.duration && (
           <span className="dur">
-            <span className="sr-only">Durée : {spokenDuration(video.duration)}</span>
+            <span className="sr-only">Durée&nbsp;: {spokenDuration(video.duration)}</span>
             <span aria-hidden="true">{video.duration}</span>
           </span>
         )}

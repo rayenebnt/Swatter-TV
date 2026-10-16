@@ -1,0 +1,59 @@
+/* =====================================================================
+   L'Info : section de l'accueil, pages Info (région, département), fiche article
+   (maquette : .info-grid, .lead, .live-list, .live-item, #dept-filters)
+   Les cartes (.card, .media, .kicker…), .seg, .empty et .prose sont dans globals.css ;
+   la colonne météo (.meteo) appartient à la rubrique météo.
+   ===================================================================== */
+
+/* ----- Section de l'accueil : grille info + météo ----- */
+.info-grid { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 30px; align-items: start; }
+.info-grid > * { min-width: 0; }
+/* Sans colonne météo (aucune prévision), l'info prend toute la largeur */
+.info-grid > :only-child { grid-column: 1 / -1; }
+
+/* Filtres par département (contrôle segmenté) : fondu sur le bord qui cache des départements */
+.info-feed__filters[data-fade-end] .seg { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent); }
+.info-feed__filters[data-fade-start] .seg { -webkit-mask-image: linear-gradient(90deg, transparent, #000 56px); mask-image: linear-gradient(90deg, transparent, #000 56px); }
+.info-feed__filters[data-fade-start][data-fade-end] .seg { -webkit-mask-image: linear-gradient(90deg, transparent, #000 56px, #000 calc(100% - 56px), transparent); mask-image: linear-gradient(90deg, transparent, #000 56px, #000 calc(100% - 56px), transparent); }
+.info-feed > .empty { margin-top: 20px; }
+.info-feed__more { margin-top: 24px; }
+
+/* ----- Article principal ----- */
+.lead { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); margin-top: 20px; }
+.lead .media { aspect-ratio: auto; min-height: 320px; }
+.lead .card__body { padding: 28px; }
+.lead .card__title { font-size: 25px; }
+.lead__excerpt { margin-top: 12px; color: var(--ink-2); font-size: 15px; }
+
+/* ----- Fil « En continu » ----- */
+.live-list { margin-top: 26px; position: relative; }
+.live-list__title { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.live-item { position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr) 104px; gap: 18px; align-items: center; padding: 16px 10px 16px 0; border-bottom: 1px solid var(--line); transition: background .3s; }
+.live-item:hover { background: linear-gradient(90deg, rgba(217, 170, 69, .06), transparent); }
+.live-item time { position: relative; font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--gold-light); font-variant-numeric: tabular-nums; padding-left: 20px; white-space: nowrap; }
+.live-item time::before { content: ''; position: absolute; left: 0; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; border: 2px solid var(--gold); background: var(--bg); }
+.live-item:first-of-type time::before { background: var(--gold); box-shadow: 0 0 0 4px rgba(217, 170, 69, .2); }
+.live-item__title { font-family: var(--font-display); font-weight: 600; font-size: 16px; line-height: 1.32; margin-top: 3px; text-wrap: pretty; }
+.live-item img { width: 104px; height: 66px; object-fit: cover; border-radius: 10px; transition: transform .5s var(--ease); }
+.live-item:hover img { transform: scale(1.05); }
+.live-item:focus-visible { outline-offset: -2px; }
+.live-list::before { content: ''; position: absolute; left: 4px; top: 52px; bottom: 30px; width: 1px; background: linear-gradient(var(--gold), rgba(217, 170, 69, 0)); }
+
+/* Focus clavier : contour sur toute la carte (le lien étiré couvre la carte) */
+@supports selector(:has(*)) {
+  .lead .stretched:focus-visible, .acard .stretched:focus-visible { outline: none; }
+  .lead:has(.stretched:focus-visible), .acard:has(.stretched:focus-visible) { border-color: rgba(217, 170, 69, .6); outline: 2px solid var(--gold-light); outline-offset: 3px; }
+}
+
+/* ----- Responsive ----- */
+@media (max-width: 1100px) {
+  .info-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .lead { grid-template-columns: 1fr; }
+  .lead .media { min-height: 0; aspect-ratio: 16 / 10; }
+  .lead .card__body { padding: 20px; }
+  .lead .card__title { font-size: 20px; }
+  .live-item { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
+  .live-item img { display: none; }
+}
