@@ -33,8 +33,8 @@ export function MediaImage({
   const common = {
     src,
     className,
+    // Next 16 : preload seul pour l'image principale (ne pas le combiner avec fetchPriority ni loading)
     preload: priority,
-    fetchPriority: priority ? ('high' as const) : undefined,
     sizes,
     unoptimized: external,
     style: { objectPosition: mediaFocal(media) },

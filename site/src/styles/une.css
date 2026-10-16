@@ -1,0 +1,78 @@
+/* =====================================================================
+   Mosaïque « À la une » (bento) de l'accueil
+   Référence : maquette/index.html (Bento « À la une », responsive)
+   ===================================================================== */
+
+.bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: 220px; gap: 20px; }
+
+/* ----- Tuiles ----- */
+.tile { position: relative; overflow: hidden; border-radius: var(--r-xl); border: 1px solid var(--line); background: var(--surface); isolation: isolate; transition: transform .55s var(--ease), border-color .4s, box-shadow .55s; --mx: 50%; --my: 50%; }
+.tile:hover { transform: translateY(-6px); border-color: rgba(217, 170, 69, .45); box-shadow: 0 34px 70px -34px rgba(0, 0, 0, .95); }
+.tile:focus-within { border-color: rgba(217, 170, 69, .45); }
+.tile::before { content: ''; position: absolute; z-index: 3; inset: 0; pointer-events: none; opacity: 0; transition: opacity .4s; background: radial-gradient(500px circle at var(--mx) var(--my), rgba(243, 213, 138, .15), transparent 45%); }
+.tile:hover::before { opacity: 1; }
+.tile > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform 1.2s var(--ease); }
+.tile:hover > img { transform: scale(1.06); }
+.tile::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(4, 10, 22, .25) 0%, rgba(4, 10, 22, 0) 30%, rgba(4, 10, 22, .55) 62%, rgba(4, 10, 22, .95) 100%); }
+.tile__top { position: absolute; top: 18px; left: 18px; right: 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.tile__body { position: absolute; left: 22px; right: 22px; bottom: 20px; }
+.tile__title { font-family: var(--font-display); font-weight: 700; font-size: 21px; line-height: 1.22; letter-spacing: -.015em; text-wrap: balance; }
+.tile__title a:focus-visible { outline: none; }
+.tile__title a:focus-visible::after { outline: 2px solid var(--gold-light); outline-offset: -2px; border-radius: var(--r-xl); }
+.tile--xl .tile__title { font-size: clamp(24px, 2.3vw, 32px); }
+.tile__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 10px; color: var(--ink-2); font-size: 13px; }
+.tile__meta > span { display: inline-flex; align-items: center; gap: 6px; }
+.tile__meta svg { width: 15px; height: 15px; }
+.bigplay { position: absolute; z-index: 2; top: 50%; left: 50%; width: 82px; height: 82px; margin: -41px 0 0 -41px; border-radius: 50%; display: grid; place-items: center; color: var(--on-gold); background: var(--gold-grad); transform: scale(.85); opacity: .92; transition: transform .5s var(--ease), opacity .4s; animation: ring 2.4s infinite; }
+.bigplay svg { width: 28px; height: 28px; margin-left: 4px; }
+.tile:hover .bigplay { transform: scale(1); opacity: 1; }
+@keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(217, 170, 69, .45); } 75% { box-shadow: 0 0 0 22px rgba(217, 170, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(217, 170, 69, 0); } }
+
+/* ----- Placement (maquette : 5 + 4 + 3 colonnes) ----- */
+.b-video { grid-column: span 5; grid-row: span 2; }
+.b-sortie { grid-column: span 4; grid-row: span 2; }
+.b-info { grid-column: span 3; }
+.b-info .tile__title { font-size: 17px; }
+.b-meteo { grid-column: span 3; background: radial-gradient(120% 90% at 100% 0%, rgba(217, 170, 69, .2), rgba(217, 170, 69, 0) 55%), linear-gradient(160deg, #18346a, #0c1b35 70%); }
+.b-meteo::after { display: none; }
+/* Contenu de la tuile météo (composant MiniMeteo de la rubrique météo), repris de la maquette */
+.mini-meteo { position: absolute; inset: 20px 22px; display: flex; flex-direction: column; }
+.mini-meteo__row { display: flex; align-items: center; gap: 12px; margin-top: auto; }
+.mini-meteo__t { font-family: var(--font-display); font-weight: 800; font-size: 54px; line-height: 1; letter-spacing: -.04em; }
+.mini-meteo svg.wi { width: 64px; height: 64px; }
+
+/* ----- Tuiles absentes : la grille se réorganise ----- */
+@media (min-width: 761px) {
+  /* Colonne de droite à une seule tuile : elle occupe toute la hauteur */
+  .bento:not(:has(.b-meteo)) .b-info, .bento:not(:has(.b-info)) .b-meteo { grid-row: span 2; }
+}
+@media (min-width: 1101px) {
+  .bento:not(:has(.b-sortie)) .b-video { grid-column: span 9; }
+  .bento:not(:has(.b-video)) .b-sortie { grid-column: span 9; }
+  .bento:not(:has(.b-info, .b-meteo)) .b-video { grid-column: span 7; }
+  .bento:not(:has(.b-info, .b-meteo)) .b-sortie { grid-column: span 5; }
+  .bento:not(:has(.b-info, .b-meteo, .b-sortie)) .b-video, .bento:not(:has(.b-info, .b-meteo, .b-video)) .b-sortie { grid-column: 1 / -1; }
+  .bento:not(:has(.b-video, .b-sortie)) .b-info, .bento:not(:has(.b-video, .b-sortie)) .b-meteo { grid-column: span 6; }
+  .bento:not(:has(.b-video, .b-sortie, .b-meteo)) .b-info, .bento:not(:has(.b-video, .b-sortie, .b-info)) .b-meteo { grid-column: 1 / -1; }
+}
+
+/* ----- Responsive ----- */
+@media (max-width: 1100px) {
+  .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .b-video { grid-column: span 6; }
+  .b-sortie { grid-column: span 3; }
+  .b-info, .b-meteo { grid-column: span 3; }
+  .bento:not(:has(.b-info, .b-meteo)) .b-sortie { grid-column: 1 / -1; }
+  .bento:not(:has(.b-sortie)):not(:has(.b-meteo)) .b-info, .bento:not(:has(.b-sortie)):not(:has(.b-info)) .b-meteo { grid-column: 1 / -1; grid-row: auto; }
+}
+@media (max-width: 760px) {
+  /* Comme dans la maquette : « Toutes les vidéos » reste sur la ligne du titre */
+  .une > .sec-head > .sec-tools { width: auto; }
+  .bento { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; gap: 14px; }
+  .b-video, .b-sortie, .b-info, .b-meteo { grid-column: auto; grid-row: auto; aspect-ratio: 4 / 3.3; }
+  .b-meteo { aspect-ratio: auto; min-height: 170px; }
+}
+@media (hover: none) {
+  .tile:hover { transform: none; }
+  .tile:hover > img { transform: none; }
+}
