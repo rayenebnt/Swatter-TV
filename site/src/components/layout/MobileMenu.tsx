@@ -55,6 +55,10 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
     const focusTimer = window.setTimeout(() => (root.querySelector<HTMLElement>('.drawer__close') ?? focusables()[0])?.focus(), 30)
 
     const onKey = (e: KeyboardEvent) => {
+      const current = document.activeElement
+      const inside = current instanceof Node && root.contains(current)
+      // Un autre dialogue (recherche…) a le focus : il gère lui-même le clavier
+      if (!inside && current instanceof Element && current.closest('[role="dialog"]')) return
       if (e.key === 'Escape') {
         e.preventDefault()
         setOpen(false)
@@ -65,8 +69,6 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
       if (!list.length) return
       const first = list[0]
       const last = list[list.length - 1]
-      const current = document.activeElement
-      const inside = current instanceof Node && root.contains(current)
       if (e.shiftKey && (current === first || !inside)) {
         e.preventDefault()
         last.focus()

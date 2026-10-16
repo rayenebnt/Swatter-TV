@@ -86,6 +86,8 @@ export default buildConfig({
       },
     },
     dateFormat: 'dd/MM/yyyy HH:mm',
+    // avatar neutre : pas d'appel à Gravatar (aucune donnée envoyée à un tiers)
+    avatar: 'default',
   },
   i18n: { supportedLanguages: { fr }, fallbackLanguage: 'fr' },
   collections: [Videos, Replays, Articles, Events, Webcams, Ads, Pages, Programs, Schedule, Media, RssFeeds, Users],

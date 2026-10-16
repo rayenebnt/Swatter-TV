@@ -54,6 +54,16 @@ export function CookieBanner() {
     ref.current?.querySelector<HTMLElement>('input:not([disabled])')?.focus()
   }, [expanded, state])
 
+  // Sortie : démontage après l'animation de fermeture
+  useEffect(() => {
+    if (state !== 'leaving') return
+    const t = window.setTimeout(() => {
+      setState('closed')
+      setExpanded(false)
+    }, 320)
+    return () => window.clearTimeout(t)
+  }, [state])
+
   if (state === 'closed') return null
 
   const close = () => {
@@ -84,12 +94,6 @@ export function CookieBanner() {
       aria-labelledby={titleId}
       aria-describedby={descId}
       onKeyDown={onKeyDown}
-      onAnimationEnd={(e) => {
-        if (e.target === e.currentTarget && state === 'leaving') {
-          setState('closed')
-          setExpanded(false)
-        }
-      }}
     >
       <h2 className="cookie__title" id={titleId}>
         Vos choix cookies

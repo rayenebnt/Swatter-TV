@@ -5,24 +5,26 @@ out
 *.tsbuildinfo
 next-env.d.ts
 
-# Secrets et données locales
+# Secrets et données locales : jamais dans l'image
 .env
 .env.*
 !.env.example
 media
 
-# Tests et rapports
+# Tests, rapports et outils de développement
+tests
 test-results
 playwright-report
-tests
-
-# Outils et éditeurs
-.git
-.gitignore
+playwright.config.ts
+.claude
 .vscode
 .idea
 .DS_Store
 npm-debug.log*
+
+# Git et fichiers Docker
+.git
+.gitignore
 Dockerfile
 .dockerignore
 docker-compose.yml

@@ -6,7 +6,7 @@
    ===================================================================== */
 
 /* ----- Menu mobile ----- */
-.drawer { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; padding: calc(var(--header-h) + 20px) var(--gutter) calc(48px + env(safe-area-inset-bottom)); background: rgba(6, 15, 31, .985); overflow-y: auto; overscroll-behavior: contain; opacity: 0; visibility: hidden; transition: opacity .35s, visibility 0s .35s; }
+.drawer { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; padding: calc(var(--header-h) + 20px) var(--gutter) calc(48px + env(safe-area-inset-bottom)); background: radial-gradient(90% 45% at 100% 0%, rgba(217, 170, 69, .1), rgba(217, 170, 69, 0) 70%), #060f1f; overflow-y: auto; overscroll-behavior: contain; opacity: 0; visibility: hidden; transition: opacity .35s, visibility 0s .35s; }
 .drawer.is-open { opacity: 1; visibility: visible; transition: opacity .35s; }
 .drawer__top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; height: var(--header-h); padding-inline: var(--gutter); border-bottom: 1px solid var(--line); }
 .drawer nav a { display: flex; align-items: center; gap: 12px; padding: 16px 4px; border-bottom: 1px solid var(--line); font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: -.01em; opacity: 0; transform: translateX(-18px); transition: opacity .5s var(--ease-out), transform .5s var(--ease-out), color .25s; }
@@ -25,11 +25,15 @@
 /* ----- Bandeau cookies ----- */
 @keyframes cookieIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes cookieOut { to { opacity: 0; transform: translateY(16px); } }
-.cookie { position: fixed; z-index: 65; left: 20px; bottom: 20px; width: min(400px, calc(100% - 32px)); max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; padding: 18px; border-radius: 18px; background: rgba(12, 27, 53, .98); border: 1px solid var(--line-2); box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .75); font-size: 13.5px; color: var(--ink-2); animation: cookieIn .5s var(--ease-out) both; }
+.cookie { container: cookie / inline-size; position: fixed; z-index: 65; left: 20px; bottom: 20px; width: min(400px, calc(100% - 32px)); max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; padding: 18px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line-2); box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .75); font-size: 13.5px; color: var(--ink-2); animation: cookieIn .5s var(--ease-out) both; }
 .cookie.is-leaving { animation: cookieOut .3s var(--ease) both; pointer-events: none; }
 .cookie__title { margin-bottom: 4px; color: var(--ink); font-family: var(--font-display); font-weight: 700; font-size: 15.5px; }
-.cookie__btns { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-.cookie__btns .btn { height: 38px; padding: 0 14px; font-size: 13.5px; flex: 1 1 0; min-width: 0; border-color: rgba(217, 170, 69, .4); }
+.cookie__btns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.cookie__btns .btn { height: 38px; padding: 0 8px; font-size: 13.5px; border-color: rgba(217, 170, 69, .4); }
+/* Carte trop étroite pour trois boutons lisibles : empilés, toujours de même taille */
+@container cookie (max-width: 315px) {
+  .cookie__btns { grid-template-columns: 1fr; }
+}
 .cookie__btns .btn:hover { border-color: var(--gold); }
 .cookie__opts { display: grid; gap: 2px; margin-top: 14px; border-top: 1px solid var(--line); }
 .cookie__opt { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
