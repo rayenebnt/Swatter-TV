@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Swatter TV — Maquette de refonte</title>
+<meta name="description" content="Proposition de design pour la refonte du site Swatter TV : direct, info, météo, agenda, programme TV et replay.">
+<meta name="theme-color" content="#071224">
+<style>
+@font-face{font-family:"Outfit";src:url("assets/fonts/outfit.woff2") format("woff2");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Inter";src:url("assets/fonts/inter.woff2") format("woff2");font-weight:100 900;font-display:swap}
+
+/* ---------- Design tokens ---------- */
+:root{
+  /* Couleur principale : Bleu Nuit Alpin */
+  --bg:#071224; --bg-deep:#040A16; --surface:#0D1D38; --surface-2:#132A50; --surface-3:#1A3765;
+  /* Couleur secondaire : Or Swatter */
+  --gold:#D9AA45; --gold-light:#F3D58A; --gold-deep:#A87A22;
+  --gold-grad:linear-gradient(135deg,#F8E2A0 0%,#E4B64C 42%,#B5832A 100%);
+  --on-gold:#1B1305;
+  /* Texte */
+  --ink:#F5F1E6; --ink-2:#C8D1E2; --muted:#8E9CB6;
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.15);
+  /* Fonctionnel */
+  --live:#E8383D;
+  --r-lg:18px; --r:14px; --r-sm:10px;
+  --container:1320px; --gutter:clamp(16px,4vw,40px);
+  --font-display:"Outfit",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scroll-padding-top:90px}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+ul,ol{list-style:none}
+:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px;border-radius:8px}
+.container{max-width:var(--container);margin-inline:auto;padding-inline:var(--gutter)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ico{width:20px;height:20px;flex-shrink:0}
+main{overflow-x:clip}
+
+/* ---------- Header ---------- */
+.hdr{position:fixed;inset:0 0 auto;z-index:50;border-bottom:1px solid transparent;transition:background .3s,border-color .3s}
+.hdr::before{content:"";position:absolute;inset:0 0 -40px;background:linear-gradient(180deg,rgba(4,10,22,.88),rgba(4,10,22,0));pointer-events:none;transition:opacity .3s}
+.hdr.is-solid{background:rgba(7,18,36,.9);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border-color:var(--line)}
+.hdr.is-solid::before{opacity:0}
+.hdr__in{position:relative;display:flex;align-items:center;gap:22px;height:78px}
+.logo{display:flex;align-items:center;flex-shrink:0}
+.logo svg{width:52px;height:54px;filter:drop-shadow(0 6px 14px rgba(217,170,69,.35))}
+.nav{display:flex;gap:2px}
+.nav a{position:relative;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;font-family:var(--font-display);font-weight:600;font-size:15.5px;color:var(--ink-2);white-space:nowrap;transition:color .2s,background .2s}
+.nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]::after{content:"";position:absolute;left:12px;right:12px;bottom:3px;height:3px;border-radius:3px;background:var(--gold-grad)}
+.dot-live{width:8px;height:8px;border-radius:50%;background:var(--live);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(232,56,61,.6)}70%{box-shadow:0 0 0 8px rgba(232,56,61,0)}100%{box-shadow:0 0 0 0 rgba(232,56,61,0)}}
+.hdr__actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.07);border:1px solid var(--line);transition:background .2s,border-color .2s}
+.icon-btn:hover{background:rgba(255,255,255,.13);border-color:var(--line-2)}
+.burger{display:none}
+
+/* ---------- Buttons, badges, chips ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:48px;padding:0 24px;border-radius:999px;font-family:var(--font-display);font-weight:700;font-size:15.5px;white-space:nowrap;transition:transform .25s var(--ease),box-shadow .25s,background .2s}
+.btn--gold{background:var(--gold-grad);color:var(--on-gold);box-shadow:0 12px 30px -12px rgba(217,170,69,.7),inset 0 1px 0 rgba(255,255,255,.5)}
+.btn--gold:hover{transform:translateY(-2px);box-shadow:0 18px 36px -12px rgba(217,170,69,.85),inset 0 1px 0 rgba(255,255,255,.5)}
+.btn--ghost{background:rgba(255,255,255,.08);border:1px solid var(--line-2);color:var(--ink);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.btn--ghost:hover{background:rgba(255,255,255,.15)}
+.btn--sm{height:42px;padding:0 18px;font-size:14.5px}
+.badge{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:7px;font-family:var(--font-display);font-weight:700;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap}
+.badge--live{background:var(--live);color:#fff}
+.badge--live i{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+.badge--gold{background:var(--gold-grad);color:var(--on-gold)}
+.badge--glass{background:rgba(4,10,22,.55);color:var(--ink);border:1px solid var(--line-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.badge--new{background:#fff;color:#0B1830}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{height:40px;padding:0 17px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);font-weight:500;font-size:14px;color:var(--ink-2);white-space:nowrap;transition:background .2s,border-color .2s,color .2s}
+.chip:hover{border-color:rgba(217,170,69,.55);color:var(--ink)}
+.chip[aria-pressed="true"],.chip[aria-selected="true"]{background:var(--gold-grad);border-color:transparent;color:var(--on-gold);font-weight:600}
+
+/* ---------- Hero / Le Direct ---------- */
+.hero{position:relative;min-height:clamp(640px,94vh,900px);display:flex;align-items:flex-end;overflow:hidden;isolation:isolate}
+.hero__bg{position:absolute;inset:0;z-index:-2}
+.hero__bg svg{width:100%;height:100%}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(4,10,22,.94) 0%,rgba(4,10,22,.74) 30%,rgba(4,10,22,.12) 62%,rgba(4,10,22,0) 100%),linear-gradient(0deg,var(--bg) 0%,rgba(7,18,36,0) 34%)}
+.hero__in{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:48px;align-items:end;padding-top:130px;padding-bottom:64px}
+.badges{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px}
+.hero h1{font-family:var(--font-display);font-weight:800;font-size:clamp(40px,5.6vw,78px);line-height:.98;letter-spacing:-.03em;text-wrap:balance}
+.hero h1 em{font-style:normal;background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero__desc{max-width:52ch;color:var(--ink-2);font-size:17px;line-height:1.6;margin-top:18px}
+.hero__meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:16px;color:var(--ink-2);font-size:14px}
+.hero__meta .sep{width:4px;height:4px;border-radius:50%;background:var(--muted)}
+.progress{margin-top:26px;max-width:470px}
+.progress__bar{height:4px;border-radius:4px;background:rgba(255,255,255,.18);overflow:hidden}
+.progress__bar span{display:block;height:100%;background:var(--gold-grad);border-radius:inherit}
+.progress__lbl{display:flex;justify-content:space-between;margin-top:8px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hero__cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.rating{display:flex;align-items:center;gap:10px;margin-top:26px;font-size:13.5px;color:var(--muted)}
+.rating .stars{display:flex;gap:2px;color:var(--gold)}
+.rating .stars svg{width:15px;height:15px}
+.rating b{color:var(--ink);font-family:var(--font-display);font-weight:700;font-size:15px}
+.next{background:rgba(8,20,42,.62);-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:22px 22px 14px}
+.next__title{display:flex;align-items:center;justify-content:space-between;font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold-light);margin-bottom:6px}
+.next li{display:grid;grid-template-columns:56px 1fr;gap:14px;padding:13px 0;border-top:1px solid var(--line)}
+.next li:first-child{border-top:0}
+.next time{font-family:var(--font-display);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.next strong{display:block;font-weight:600;font-size:14.5px;line-height:1.35}
+.next small{color:var(--muted);font-size:12.5px}
+.next .link-more{margin-top:6px;padding:10px 0 4px;border-top:1px solid var(--line);width:100%}
+
+/* ---------- Flash info ---------- */
+.ticker{border-block:1px solid var(--line);background:linear-gradient(90deg,rgba(217,170,69,.12),rgba(217,170,69,0) 35%),var(--bg-deep)}
+.ticker__in{display:flex;align-items:center;gap:18px;height:50px}
+.ticker__track{flex:1;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.ticker__list{display:flex;gap:44px;width:max-content;animation:marquee 70s linear infinite}
+.ticker:hover .ticker__list{animation-play-state:paused}
+.ticker__list li{display:flex;align-items:center;gap:10px;white-space:nowrap;font-size:14px;color:var(--ink-2)}
+.ticker__list li::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--gold)}
+.ticker__list b{color:var(--gold-light);font-weight:600}
+@keyframes marquee{to{transform:translateX(-50%)}}
+
+/* ---------- Sections ---------- */
+.section{padding-top:clamp(52px,7vw,88px)}
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;margin-bottom:26px}
+.eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold)}
+.eyebrow::before{content:"";width:24px;height:2px;border-radius:2px;background:var(--gold-grad)}
+.sec-head h2{font-family:var(--font-display);font-weight:800;font-size:clamp(27px,3.1vw,38px);line-height:1.08;letter-spacing:-.02em}
+.sec-head p{margin-top:7px;color:var(--muted);font-size:15px}
+.sec-tools{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.link-more{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--gold-light);white-space:nowrap}
+.link-more svg{width:17px;height:17px;transition:transform .2s}
+.link-more:hover svg{transform:translateX(3px)}
+.arrows{display:flex;gap:8px}
+.arrows .icon-btn{width:42px;height:42px}
+.arrows .icon-btn:disabled{opacity:.35;cursor:default}
+
+/* ---------- Cards ---------- */
+.card{position:relative;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;transition:transform .35s var(--ease),border-color .3s,box-shadow .35s}
+.card:hover{transform:translateY(-4px);border-color:rgba(217,170,69,.45);box-shadow:0 26px 50px -26px rgba(0,0,0,.85),0 0 0 1px rgba(217,170,69,.12)}
+.media{position:relative;aspect-ratio:16/10;overflow:hidden;background:var(--surface-2)}
+.media>img,.media>svg{width:100%;height:100%;object-fit:cover;transition:transform .7s var(--ease)}
+.card:hover .media>img,.card:hover .media>svg{transform:scale(1.05)}
+.media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,10,22,0) 50%,rgba(4,10,22,.7));pointer-events:none}
+.media .badge{position:absolute;top:14px;left:14px;z-index:1}
+.media .tag-r{position:absolute;top:14px;right:14px;z-index:1}
+.play{position:absolute;z-index:1;right:14px;bottom:14px;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:background .25s,transform .25s,color .25s}
+.play svg{width:18px;height:18px;margin-left:2px}
+.card:hover .play{background:var(--gold-grad);color:var(--on-gold);border-color:transparent;transform:scale(1.08)}
+.dur{position:absolute;z-index:1;left:14px;bottom:14px;padding:3px 8px;border-radius:6px;background:rgba(4,10,22,.78);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.card__body{display:flex;flex-direction:column;flex:1;padding:18px 20px 20px}
+.kicker{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.card__title{margin-top:8px;font-family:var(--font-display);font-weight:700;font-size:20px;line-height:1.25;letter-spacing:-.01em;text-wrap:pretty}
+.card__meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;margin-top:auto;padding-top:14px;color:var(--muted);font-size:13px}
+.card__meta span{display:inline-flex;align-items:center;gap:6px}
+.card__meta svg{width:15px;height:15px}
+.stretched::after{content:"";position:absolute;inset:0;z-index:2}
+
+.une{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+
+/* Ad slot */
+.ad{position:relative;display:grid;place-items:center;min-height:140px;margin-top:clamp(44px,6vw,68px);border:1px dashed rgba(217,170,69,.3);border-radius:var(--r-lg);background:repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 14px,transparent 14px 28px);color:var(--muted);font-size:14px;text-align:center;padding:24px}
+.ad small{position:absolute;top:10px;left:14px;font-size:10.5px;letter-spacing:.15em;text-transform:uppercase}
+
+/* Rails */
+.rail{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 3*18px)/4);gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;padding:4px 0 10px}
+.rail::-webkit-scrollbar{display:none}
+.rail>*{scroll-snap-align:start}
+.rail .card__title{font-size:16.5px}
+.rail .card__body{padding:14px 16px 16px}
+.rail .media{aspect-ratio:16/9}
+.rail .card[hidden]{display:none}
+
+/* ---------- Info + Météo ---------- */
+.info-grid{display:grid;grid-template-columns:minmax(0,1fr) 384px;gap:28px;align-items:start}
+.info-grid>*{min-width:0}
+.info-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.rss{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:999px;background:rgba(242,140,40,.12);color:#F6A04D;font-weight:600;font-size:13.5px;border:1px solid rgba(242,140,40,.3)}
+.rss svg{width:16px;height:16px}
+.lead{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.lead .media{aspect-ratio:auto;min-height:290px}
+.lead .card__body{padding:26px}
+.lead .card__title{font-size:24px}
+.lead__excerpt{margin-top:12px;color:var(--ink-2);font-size:15px}
+.news-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.news{display:grid;grid-template-columns:118px minmax(0,1fr);gap:14px;padding:12px;border-radius:var(--r);flex-direction:row}
+.news .media{aspect-ratio:1/1;border-radius:10px}
+.news .media::after{display:none}
+.news .card__body{padding:2px 4px 2px 0}
+.news .card__title{font-size:15.5px;font-weight:600;line-height:1.32;margin-top:6px}
+.news .card__meta{padding-top:8px}
+.empty{display:none;align-items:center;gap:18px;padding:28px;border:1px dashed var(--line-2);border-radius:var(--r-lg);color:var(--ink-2)}
+.empty.is-on{display:flex}
+.empty svg{width:42px;height:42px;color:var(--gold);flex-shrink:0}
+.empty b{display:block;font-family:var(--font-display);font-size:17px;color:var(--ink)}
+
+.meteo{position:sticky;top:98px;padding:22px;border-radius:var(--r-lg);border:1px solid var(--line);background:radial-gradient(120% 70% at 100% 0%,rgba(217,170,69,.16),rgba(217,170,69,0) 55%),linear-gradient(165deg,#16305A 0%,#0D1D38 62%)}
+.meteo__top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+.meteo__top h2{font-family:var(--font-display);font-weight:800;font-size:24px}
+.meteo__top span{font-size:12.5px;color:var(--muted)}
+.days{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:4px;border-radius:12px;background:rgba(4,10,22,.45)}
+.day{display:flex;flex-direction:column;align-items:center;padding:7px 0;border-radius:9px;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.2;transition:background .2s,color .2s}
+.day b{font-family:var(--font-display);font-size:16px;color:var(--ink-2)}
+.day:hover{background:rgba(255,255,255,.06)}
+.day[aria-selected="true"]{background:var(--gold-grad);color:#4A3309}
+.day[aria-selected="true"] b{color:var(--on-gold)}
+.now{display:flex;align-items:center;gap:16px;margin-top:20px}
+.now svg{width:78px;height:78px}
+.now__t{font-family:var(--font-display);font-weight:800;font-size:58px;line-height:1;letter-spacing:-.04em}
+.now__city{font-family:var(--font-display);font-weight:700;font-size:17px}
+.now__lbl{color:var(--ink-2);font-size:13.5px;line-height:1.35}
+.now__mm{color:var(--muted);font-size:12.5px;margin-top:3px}
+.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.part{padding:10px 6px;border-radius:12px;background:rgba(4,10,22,.38);border:1px solid var(--line);text-align:center;font-size:12px;color:var(--muted)}
+.part svg{width:34px;height:34px;margin:6px auto}
+.part b{font-family:var(--font-display);font-size:18px;color:var(--ink)}
+.cities{margin-top:14px}
+.cities li{display:flex;align-items:center;gap:12px;padding:9px 2px;border-top:1px solid var(--line);font-size:14px}
+.cities li svg{width:26px;height:26px}
+.cities li span{flex:1;color:var(--ink-2)}
+.cities li b{font-family:var(--font-display);font-size:16px;font-variant-numeric:tabular-nums}
+.bulletin{margin-top:14px;padding:12px 14px;border-left:3px solid var(--gold);border-radius:0 10px 10px 0;background:rgba(217,170,69,.09);font-size:13.5px;color:var(--ink-2)}
+
+/* ---------- Programme TV ---------- */
+.prog .card{border-radius:var(--r)}
+.prog .card__body{gap:4px}
+.prog time{font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.prog .is-now{border-color:rgba(217,170,69,.7);box-shadow:0 0 0 1px rgba(217,170,69,.3),0 22px 44px -22px rgba(217,170,69,.45)}
+.prog .is-now time{color:var(--gold-light)}
+.prog .pbar{height:3px;border-radius:3px;background:rgba(255,255,255,.14);margin-top:12px;overflow:hidden}
+.prog .pbar span{display:block;height:100%;background:var(--gold-grad)}
+.prog .past{opacity:.55}
+
+/* ---------- Agenda ---------- */
+.agenda{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:22px}
+.feature{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr)}
+.feature .media{aspect-ratio:auto;min-height:100%}
+.feature .media::after{display:none}
+.feature .card__body{padding:28px}
+.feature .card__title{font-size:28px;margin-top:14px}
+.feature p{margin-top:12px;color:var(--ink-2);font-size:15px}
+.when{display:flex;align-items:center;gap:14px}
+.datechip{flex-shrink:0;width:66px;padding:8px 0 9px;border-radius:13px;background:var(--gold-grad);color:var(--on-gold);text-align:center;font-family:var(--font-display);line-height:1}
+.datechip small{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.datechip b{display:block;margin:4px 0 3px;font-size:27px;font-weight:800}
+.when__txt{font-size:14px;color:var(--ink-2)}
+.when__txt b{display:block;color:var(--ink);font-family:var(--font-display);font-size:16px}
+.sched{margin-top:18px;display:grid;gap:10px}
+.sched li{display:flex;gap:12px;align-items:baseline;font-size:14.5px;color:var(--ink-2)}
+.sched b{flex-shrink:0;min-width:96px;font-family:var(--font-display);color:var(--gold-light);font-weight:700}
+.feature .btn{margin-top:22px;align-self:flex-start}
+.events{display:grid;gap:14px;align-content:start}
+.event{flex-direction:row;align-items:center;gap:16px;padding:16px}
+.event .datechip{background:rgba(217,170,69,.12);color:var(--gold-light);border:1px solid rgba(217,170,69,.3)}
+.event h3{font-family:var(--font-display);font-weight:700;font-size:16.5px;line-height:1.3}
+.event p{margin-top:4px;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px}
+.event p svg{width:14px;height:14px}
+.event .kicker{font-size:11px}
+
+/* ---------- Webcams ---------- */
+.cams{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.cam .media{aspect-ratio:4/3}
+.cam .media::after{background:linear-gradient(180deg,rgba(4,10,22,.45) 0%,rgba(4,10,22,0) 28%,rgba(4,10,22,0) 55%,rgba(4,10,22,.85) 100%)}
+.cam__top{position:absolute;z-index:1;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center}
+.media .cam__top .badge{position:static}
+.cam__clock{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.cam__info{position:absolute;z-index:1;left:16px;right:16px;bottom:14px}
+.cam__info b{display:block;font-family:var(--font-display);font-weight:700;font-size:17px}
+.cam__info span{font-size:13px;color:var(--ink-2)}
+
+/* ---------- Social ---------- */
+.social{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:clamp(60px,8vw,100px);padding:clamp(26px,4vw,40px);border-radius:24px;border:1px solid rgba(217,170,69,.25);background:radial-gradient(60% 140% at 0% 0%,rgba(217,170,69,.2),rgba(217,170,69,0) 60%),linear-gradient(120deg,#132A50,#0B1A33)}
+.social h2{font-family:var(--font-display);font-weight:800;font-size:clamp(24px,2.6vw,32px);letter-spacing:-.02em}
+.social p{color:var(--ink-2);margin-top:6px}
+.socials{display:flex;gap:12px;flex-wrap:wrap}
+.soc{display:flex;align-items:center;gap:10px;height:54px;padding:0 20px 0 16px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid var(--line-2);font-weight:600;font-size:14.5px;transition:background .25s,color .25s,transform .25s,border-color .25s}
+.soc svg{width:22px;height:22px}
+.soc:hover{background:var(--gold-grad);color:var(--on-gold);border-color:transparent;transform:translateY(-3px)}
+
+/* ---------- Footer ---------- */
+.footer{margin-top:clamp(60px,8vw,100px);padding:60px 0 calc(28px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg-deep)}
+.footer__grid{display:grid;grid-template-columns:1.5fr repeat(3,minmax(0,1fr));gap:40px}
+.footer__brand .logo svg{width:66px;height:68px}
+.footer__brand p{margin-top:16px;max-width:36ch;color:var(--ink-2);font-size:14.5px}
+.contact{margin-top:18px;display:grid;gap:9px;font-size:14px;color:var(--ink-2)}
+.contact li{display:flex;gap:10px;align-items:flex-start}
+.contact svg{width:17px;height:17px;margin-top:2px;color:var(--gold)}
+.contact a{color:var(--gold-light)}
+.footer h3{margin-bottom:14px;font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.footer__grid ul a{display:inline-block;padding:5px 0;color:var(--ink-2);font-size:14.5px;transition:color .2s}
+.footer__grid ul a:hover{color:var(--gold-light)}
+.footer__bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px 24px;margin-top:46px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+.protect{display:flex;align-items:center;gap:8px}
+.protect svg{width:16px;height:16px;color:var(--gold)}
+.mock-tag{padding:4px 10px;border-radius:999px;border:1px solid rgba(217,170,69,.35);color:var(--gold-light);font-size:12px}
+
+/* ---------- Overlays ---------- */
+.search{position:fixed;inset:0;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:clamp(80px,14vh,160px) var(--gutter) 24px;background:rgba(4,10,22,.82);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.search.is-open{display:flex}
+.search__box{width:min(760px,100%)}
+.search__field{display:flex;align-items:center;gap:14px;height:66px;padding:0 22px;border-radius:18px;background:var(--surface);border:1px solid rgba(217,170,69,.45);box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+.search__field svg{width:24px;height:24px;color:var(--gold)}
+.search__field input{flex:1;min-width:0;height:100%;border:0;background:none;outline:none;color:var(--ink);font:500 19px var(--font-body)}
+.search__field input::placeholder{color:var(--muted)}
+.search__field kbd{font:600 12px var(--font-body);color:var(--muted);border:1px solid var(--line-2);border-radius:6px;padding:3px 7px}
+.search__sugg{margin-top:22px}
+.search__sugg p{margin-bottom:12px;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.drawer{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;padding:96px var(--gutter) 110px;background:rgba(7,18,36,.97);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);overflow-y:auto}
+.drawer.is-open{display:flex}
+.drawer nav a{display:flex;align-items:center;gap:12px;padding:15px 4px;border-bottom:1px solid var(--line);font-family:var(--font-display);font-weight:700;font-size:22px}
+.drawer nav a[aria-current="page"]{color:var(--gold-light)}
+.drawer .btn{margin-top:28px}
+.tabbar{display:none}
+.cookie{position:fixed;z-index:65;left:20px;bottom:20px;width:min(390px,calc(100% - 32px));padding:18px;border-radius:16px;background:rgba(13,29,56,.96);border:1px solid var(--line-2);box-shadow:0 30px 60px -20px rgba(0,0,0,.7);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font-size:13.5px;color:var(--ink-2);display:none}
+.cookie.is-on{display:block}
+.cookie b{display:block;margin-bottom:4px;color:var(--ink);font-family:var(--font-display);font-size:15.5px}
+.cookie__btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.cookie__btns .btn{height:38px;padding:0 16px;font-size:13.5px;flex:1}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1240px){
+  .nav a{padding:10px 9px;font-size:14.5px}
+  .hdr__in{gap:16px}
+}
+@media (max-width:1100px){
+  .nav,.hdr .login{display:none}
+  .burger{display:grid}
+  .hero__in{grid-template-columns:1fr;gap:28px}
+  .next ul{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 18px}
+  .next li{border-top:0;padding:8px 0}
+  .info-grid{grid-template-columns:minmax(0,1fr)}
+  .meteo{position:static}
+  .rail{grid-auto-columns:calc((100% - 2*18px)/3)}
+  .cams{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .agenda{grid-template-columns:1fr}
+  .footer__grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  body{font-size:14.5px;padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+  .hdr__in{height:66px}
+  .logo svg{width:44px;height:46px}
+  .hero{min-height:auto}
+  .hero::before{background:linear-gradient(0deg,var(--bg) 4%,rgba(4,10,22,.78) 48%,rgba(4,10,22,.25) 100%)}
+  .hero__in{padding-top:270px;padding-bottom:36px}
+  .next{display:none}
+  .hero__desc{font-size:15.5px}
+  .hero__cta .btn{flex:1}
+  .ticker__in{height:46px}
+  .une{grid-template-columns:1fr;gap:16px}
+  .rail{grid-auto-columns:78%;gap:14px;margin-inline:calc(var(--gutter)*-1);padding-inline:var(--gutter);scroll-padding-inline:var(--gutter)}
+  .arrows{display:none}
+  .lead{grid-template-columns:1fr}
+  .lead .media{min-height:0;aspect-ratio:16/10}
+  .lead .card__body{padding:20px}
+  .lead .card__title{font-size:20px}
+  .news-list{grid-template-columns:1fr}
+  .news{grid-template-columns:96px minmax(0,1fr)}
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(var(--gutter)*-1);padding-inline:var(--gutter)}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex-shrink:0}
+  .feature{grid-template-columns:1fr}
+  .feature .media{aspect-ratio:1/1}
+  .feature .card__body{padding:22px}
+  .feature .card__title{font-size:24px}
+  .cams{gap:12px}
+  .cam__info b{font-size:14.5px}
+  .cam__info span{font-size:12px}
+  .social{flex-direction:column;align-items:flex-start}
+  .soc{flex:1 1 calc(50% - 6px);justify-content:center}
+  .footer__grid{grid-template-columns:1fr 1fr;gap:32px 20px}
+  .footer__brand{grid-column:1/-1}
+  .tabbar{position:fixed;z-index:60;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom));background:rgba(7,18,36,.95);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+  .tabbar a,.tabbar button{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:10.5px;font-weight:600;color:var(--muted)}
+  .tabbar svg{width:23px;height:23px}
+  .tabbar [aria-current="page"]{color:var(--gold-light)}
+  .tabbar .dot-live{position:absolute;top:5px;left:calc(50% + 8px)}
+  .cookie{bottom:calc(80px + env(safe-area-inset-bottom));left:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<!-- Sprite : logo + icônes -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBE6A6"/><stop offset=".45" stop-color="#E4B64C"/><stop offset="1" stop-color="#AF7E24"/></linearGradient>
+  </defs>
+  <symbol id="logo" viewBox="0 0 100 104">
+    <path d="M10 6h80a6 6 0 0 1 5.3 8.8L55.3 97a6 6 0 0 1-10.6 0L4.7 14.8A6 6 0 0 1 10 6z" fill="url(#g-gold)"/>
+    <path d="M13.5 10.5h73a3 3 0 0 1 2.6 4.4L52.6 90.6a3 3 0 0 1-5.2 0L10.9 14.9a3 3 0 0 1 2.6-4.4z" fill="none" stroke="#5C3F0C" stroke-opacity=".35" stroke-width="1.2"/>
+    <text x="50" y="31" text-anchor="middle" font-family="Outfit,'Arial Black',sans-serif" font-weight="800" font-size="14.5" letter-spacing=".4" fill="#0E0B05">SWATTER</text>
+    <text x="50" y="66" text-anchor="middle" font-family="Outfit,'Arial Black',sans-serif" font-weight="900" font-size="34" letter-spacing="-1" fill="#0E0B05">TV</text>
+  </symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></g></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c1.6-3.6 4.6-5.3 8-5.3s6.4 1.7 8 5.3"/></g></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-rss" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2" fill="currentColor"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></g></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></g></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></g></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.4 3 8.3 7 10 4-1.7 7-5.6 7-10V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="6.5" width="18" height="13" rx="2.5"/><path d="m8 2.5 4 4 4-4"/></g></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h8M8 17h5"/></g></symbol>
+  <symbol id="i-replay" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 9.3v5.4l4.3-2.7z" fill="currentColor"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M9 3v4M15 3v4"/></g></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="currentColor"/></symbol>
+  <symbol id="i-fb" viewBox="0 0 24 24"><path d="M14 8h2.5V4.5H14a4 4 0 0 0-4 4V11H7.5v3.5H10V21h3.5v-6.5H16l.5-3.5h-3V9a1 1 0 0 1 1-1z" fill="currentColor"/></symbol>
+  <symbol id="i-ig" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/></g><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-yt" viewBox="0 0 24 24"><path d="M21.6 7.2a2.6 2.6 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4a2.6 2.6 0 0 0-1.8 1.8A27 27 0 0 0 2 12a27 27 0 0 0 .4 4.8 2.6 2.6 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.6 2.6 0 0 0 1.8-1.8A27 27 0 0 0 22 12a27 27 0 0 0-.4-4.8zM10 15V9l5.2 3z" fill="currentColor"/></symbol>
+  <symbol id="i-tt" viewBox="0 0 24 24"><path d="M16.5 3c.3 2.2 1.7 3.7 4 3.9v3.2a7.4 7.4 0 0 1-4-1.2v6.3a5.7 5.7 0 1 1-5.7-5.7l.9.1v3.3a2.5 2.5 0 1 0 1.6 2.3V3z" fill="currentColor"/></symbol>
+  <symbol id="w-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.6" fill="#F4C752"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4 7 7M17 17l1.6 1.6M5.4 18.6 7 17M17 7l1.6-1.6" stroke="#F4C752" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="w-cloud" viewBox="0 0 24 24"><path d="M7 19h10.5a4.5 4.5 0 0 0 .6-8.96A6.5 6.5 0 0 0 5.7 10.6 4.3 4.3 0 0 0 7 19z" fill="#C9D4E6"/></symbol>
+  <symbol id="w-partly" viewBox="0 0 24 24"><circle cx="9" cy="8.6" r="3.9" fill="#F4C752"/><path d="M9 1.8v1.7M2.2 8.6h1.7M4.2 3.8l1.2 1.2M13.8 3.8 12.6 5" stroke="#F4C752" stroke-width="1.6" stroke-linecap="round"/><path d="M9.2 20.5h9a4 4 0 0 0 .5-7.97A5.5 5.5 0 0 0 8.2 13a3.8 3.8 0 0 0 1 7.5z" fill="#E1E8F3"/></symbol>
+  <symbol id="w-rain" viewBox="0 0 24 24"><path d="M7 15.5h10.5a4.2 4.2 0 0 0 .6-8.36A6.2 6.2 0 0 0 5.8 7.7 4 4 0 0 0 7 15.5z" fill="#AFBDD4"/><path d="m8.5 18-1 2.5M12.5 18l-1 2.5M16.5 18l-1 2.5" stroke="#6FA8F2" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="w-fog" viewBox="0 0 24 24"><path d="M7 11.5h10.5a4 4 0 0 0 .5-7.96A6 6 0 0 0 6 4.1 3.7 3.7 0 0 0 7 11.5z" fill="#C3CEDF" opacity=".8"/><path d="M4 15h16M6 18.5h12M8 22h8" stroke="#AEBBD1" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="w-snow" viewBox="0 0 24 24"><path d="M7 15.5h10.5a4.2 4.2 0 0 0 .6-8.36A6.2 6.2 0 0 0 5.8 7.7 4 4 0 0 0 7 15.5z" fill="#C9D4E6"/><g fill="#fff"><circle cx="8.5" cy="19" r="1.2"/><circle cx="12.5" cy="20.5" r="1.2"/><circle cx="16.5" cy="19" r="1.2"/></g></symbol>
+</svg>
+
+<a class="sr-only" href="#contenu">Aller au contenu</a>
+
+<!-- ============ HEADER ============ -->
+<header class="hdr" id="hdr">
+  <div class="container hdr__in">
+    <a class="logo" href="#" aria-label="Swatter TV — Accueil"><svg viewBox="0 0 100 104"><use href="#logo"/></svg></a>
+    <nav class="nav" aria-label="Navigation principale">
+      <a href="#" aria-current="page">Accueil</a>
+      <a href="#direct"><span class="dot-live" aria-hidden="true"></span>Le Direct</a>
+      <a href="#info">L'Info</a>
+      <a href="#meteo">La Météo</a>
+      <a href="#agenda">Agenda</a>
+      <a href="#programme">Programme TV</a>
+      <a href="#replay">Le Replay</a>
+    </nav>
+    <div class="hdr__actions">
+      <button class="icon-btn" type="button" data-open-search aria-label="Rechercher"><svg class="ico"><use href="#i-search"/></svg></button>
+      <a class="btn btn--gold btn--sm login" href="#"><svg class="ico" style="width:18px;height:18px"><use href="#i-user"/></svg>Se connecter</a>
+      <button class="icon-btn burger" type="button" id="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="drawer"><svg class="ico"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="contenu">
+
+<!-- ============ HERO : LE DIRECT ============ -->
+<section class="hero" id="direct" aria-labelledby="hero-title">
+  <div class="hero__bg" data-scene="dusk" data-seed="7" data-w="1600" data-h="900" aria-hidden="true"></div>
+  <div class="container hero__in">
+    <div>
+      <div class="badges">
+        <span class="badge badge--live"><i></i>En direct</span>
+        <span class="badge badge--glass">Documentaire</span>
+        <span class="badge badge--glass">Haute-Savoie</span>
+      </div>
+      <h1 id="hero-title">Mont-Blanc,<br><em>le toit de l'Europe</em></h1>
+      <p class="hero__desc">Des glaciers de Chamonix aux refuges d'altitude : une immersion au cœur du massif, à vivre en ce moment sur Swatter TV.</p>
+      <div class="progress" aria-label="Progression du programme">
+        <div class="progress__bar"><span style="width:58%"></span></div>
+        <div class="progress__lbl"><span>20:30</span><span>Il reste 32 min</span><span>21:45</span></div>
+      </div>
+      <div class="hero__cta">
+        <a class="btn btn--gold" href="#"><svg class="ico"><use href="#i-play"/></svg>Regarder le direct</a>
+        <a class="btn btn--ghost" href="#programme"><svg class="ico"><use href="#i-cal"/></svg>Programme TV</a>
+      </div>
+      <div class="rating">
+        <span class="stars" aria-hidden="true"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg style="opacity:.45"><use href="#i-star"/></svg></span>
+        <b>4,5</b><span>· 995 349 vues</span>
+      </div>
+    </div>
+
+    <aside class="next" aria-labelledby="next-title">
+      <p class="next__title" id="next-title">À suivre sur Swatter TV <span class="badge badge--glass" style="height:22px;font-size:10.5px">Ce soir</span></p>
+      <ul>
+        <li><time>21:45</time><div><strong>Le journal des Alpes</strong><small>Info · 25 min</small></div></li>
+        <li><time>22:10</time><div><strong>Sortie du week-end : La Démontagnée</strong><small>Agenda · 20 min</small></div></li>
+        <li><time>22:30</time><div><strong>Marmottes, l'été en altitude</strong><small>Documentaire · 52 min</small></div></li>
+      </ul>
+      <a class="link-more" href="#programme">Tout le programme TV <svg><use href="#i-arrow"/></svg></a>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ FLASH INFO ============ -->
+<div class="ticker" aria-label="Flash info">
+  <div class="container ticker__in">
+    <span class="badge badge--gold">Flash info</span>
+    <div class="ticker__track">
+      <ul class="ticker__list" id="ticker">
+        <li><b>Annemasse</b> Nouvelle série de coups de feu dans l'agglomération, un homme interpellé</li>
+        <li><b>Ligue 2</b> Le FC Annecy reçoit l'AS Nancy Lorraine pour remonter dans le top 5</li>
+        <li><b>Lus-la-Croix-Haute</b> Un moratoire réclamé sur la fermeture des remontées mécaniques</li>
+        <li><b>Grenoble</b> Préavis de grève des agents de la MTAG</li>
+        <li><b>Coupe de France</b> Quatre équipes de Drôme et d'Ardèche qualifiées pour le sixième tour</li>
+        <li><b>La Talaudière</b> Une maison du répit a ouvert ses portes</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============ À LA UNE ============ -->
+<section class="section container" aria-labelledby="une-title">
+  <div class="sec-head">
+    <div>
+      <p class="eyebrow">Aujourd'hui</p>
+      <h2 id="une-title">À la une</h2>
+    </div>
+    <a class="link-more" href="#">Toutes les vidéos <svg><use href="#i-arrow"/></svg></a>
+  </div>
+  <div class="une">
+    <article class="card">
+      <div class="media">
+        <img src="assets/video-du-jour-renardeau.jpg" alt="Un jeune renardeau dans les herbes hautes" width="588" height="380">
+        <span class="badge badge--gold">Vidéo du jour</span>
+        <span class="dur">02:14</span>
+        <span class="play" aria-hidden="true"><svg><use href="#i-play"/></svg></span>
+      </div>
+      <div class="card__body">
+        <p class="kicker">Nature · Haute-Savoie</p>
+        <h3 class="card__title"><a class="stretched" href="#">Une rencontre inattendue avec ce petit renardeau</a></h3>
+        <div class="card__meta"><span><svg><use href="#i-clock"/></svg>Il y a 3 h</span><span class="badge badge--new" style="height:20px;font-size:10px">Nouveau</span></div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="media">
+        <img src="assets/sortie-demontagnee.jpg" alt="Affiche de La Démontagnée : vache, chèvre et brebis devant les sommets" width="608" height="574" style="object-position:50% 40%">
+        <span class="badge badge--gold">Sortie du week-end</span>
+      </div>
+      <div class="card__body">
+        <p class="kicker">Agenda · Bourg-Saint-Maurice</p>
+        <h3 class="card__title"><a class="stretched" href="#agenda">La Démontagnée : les troupeaux font leur grand retour dans la vallée</a></h3>
+        <div class="card__meta"><span><svg><use href="#i-cal"/></svg>Samedi 17 octobre · 10h30</span></div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="media">
+        <img src="assets/info-du-jour-stade.jpg" alt="Le stade du FC Annecy illuminé de nuit" width="538" height="324">
+        <span class="badge badge--gold">L'info du jour</span>
+      </div>
+      <div class="card__body">
+        <p class="kicker">Sport · Annecy</p>
+        <h3 class="card__title"><a class="stretched" href="#info">Ligue 2 : un retour à la maison pour remonter dans le top 5, le FC Annecy reçoit l'AS Nancy Lorraine</a></h3>
+        <div class="card__meta"><span><svg><use href="#i-clock"/></svg>Il y a 1 h</span></div>
+      </div>
+    </article>
+  </div>
+
+  <div class="ad" role="complementary" aria-label="Publicité"><small>Publicité</small>Espace partenaire · format 970 × 250 · responsive</div>
+</section>
+
+<!-- ============ VIDÉOS DU JOUR ============ -->
+<section class="section container" aria-labelledby="videos-title">
+  <div class="sec-head">
+    <div>
+      <p class="eyebrow">À voir maintenant</p>
+      <h2 id="videos-title">Vidéos du jour</h2>
+    </div>
+    <div class="sec-tools">
+      <div class="chips" role="group" aria-label="Filtrer les vidéos" id="video-filters">
+        <button class="chip" type="button" aria-pressed="true" data-cat="all">Tout</button>
+        <button class="chip" type="button" aria-pressed="false" data-cat="Divertissement">Divertissement</button>
+        <button class="chip" type="button" aria-pressed="false" data-cat="Séries-réalité">Séries-réalité</button>
+        <button class="chip" type="button" aria-pressed="false" data-cat="Séries">Séries</button>
+        <button class="chip" type="button" aria-pressed="false" data-cat="Cinéma">Cinéma</button>
+      </div>
+      <div class="arrows" data-rail="rail-videos"><button class="icon-btn" type="button" data-dir="-1" aria-label="Précédent"><svg class="ico"><use href="#i-left"/></svg></button><button class="icon-btn" type="button" data-dir="1" aria-label="Suivant"><svg class="ico"><use href="#i-right"/></svg></button></div>
+    </div>
+  </div>
+  <div class="rail" id="rail-videos"></div>
+</section>
+
+<!-- ============ L'INFO + MÉTÉO ============ -->
+<section class="section container" id="info" aria-labelledby="info-title">
+  <div class="sec-head">
+    <div>
+      <p class="eyebrow">7j/7 · 24h/24</p>
+      <h2 id="info-title">L'Info en Auvergne-Rhône-Alpes</h2>
+      <p>Le flux d'actualité de toute la région, département par département.</p>
+    </div>
+    <a class="rss" href="#"><svg><use href="#i-rss"/></svg>Flux RSS</a>
+  </div>
+
+  <div class="info-grid">
+    <div>
+      <div class="info-head">
+        <div class="chips" role="group" aria-label="Filtrer par département" id="dept-filters">
+          <button class="chip" type="button" aria-pressed="true" data-dept="all">Toute la région</button>
+          <button class="chip" type="button" aria-pressed="false" data-dept="haute-savoie">Haute-Savoie</button>
+          <button class="chip" type="button" aria-pressed="false" data-dept="savoie">Savoie</button>
+          <button class="chip" type="button" aria-pressed="false" data-dept="ain">Ain</button>
+          <button class="chip" type="button" aria-pressed="false" data-dept="isere">Isère</button>
+          <button class="chip" type="button" aria-pressed="false" data-dept="loire">Loire</button>
+          <button class="chip" type="button" aria-pressed="false" data-dept="drome-ardeche">Drôme-Ardèche</button>
+        </div>
+      </div>
+
+      <div id="news">
+        <article class="card lead" data-dept="haute-savoie">
+          <div class="media"><img src="assets/info-annemasse.jpg" alt="Moto de la police à Annemasse" width="382" height="270"><span class="badge badge--live"><i></i>Info</span></div>
+          <div class="card__body">
+            <p class="kicker">Annemasse · Faits divers</p>
+            <h3 class="card__title"><a class="stretched" href="#">Trafic de drogue : nouvelle série de coups de feu dans l'agglomération d'Annemasse, un homme interpellé</a></h3>
+            <p class="lead__excerpt">Le chapô de l'article s'affiche ici : deux ou trois lignes pour résumer l'essentiel et donner envie de lire la suite.</p>
+            <div class="card__meta"><span><svg><use href="#i-clock"/></svg>Il y a 1 h</span><span><svg><use href="#i-pin"/></svg>Haute-Savoie</span></div>
+          </div>
+        </article>
+        <div class="news-list">
+          <article class="card news" data-dept="drome-ardeche">
+            <div class="media"><img src="assets/info-foot-annonay.jpg" alt="Match de football amateur" width="386" height="270"></div>
+            <div class="card__body"><p class="kicker">Boulieu-lès-Annonay · Sport</p><h3 class="card__title"><a class="stretched" href="#">Coupe de France : quatre équipes de Drôme et d'Ardèche qualifiées pour le sixième tour</a></h3><div class="card__meta"><span>Il y a 2 h</span></div></div>
+          </article>
+          <article class="card news" data-dept="drome-ardeche">
+            <div class="media"><img src="assets/info-station.jpg" alt="Manifestants pour la station de ski" width="376" height="176"></div>
+            <div class="card__body"><p class="kicker">Lus-la-Croix-Haute · Montagne</p><h3 class="card__title"><a class="stretched" href="#">Un moratoire réclamé sur la fermeture des remontées mécaniques de la station</a></h3><div class="card__meta"><span>Il y a 4 h</span></div></div>
+          </article>
+          <article class="card news" data-dept="loire">
+            <div class="media"><img src="assets/info-foot-loire.jpg" alt="Supporters au bord d'un terrain de football" width="386" height="176"></div>
+            <div class="card__body"><p class="kicker">Haute-Loire · Sport</p><h3 class="card__title"><a class="stretched" href="#">Coupe de France de foot : les résultats des clubs de la Loire et de Haute-Loire</a></h3><div class="card__meta"><span>Il y a 5 h</span></div></div>
+          </article>
+          <article class="card news" data-dept="loire">
+            <div class="media"><img src="assets/info-repit.jpg" alt="Personne en fauteuil roulant" width="382" height="270"></div>
+            <div class="card__body"><p class="kicker">La Talaudière · Société</p><h3 class="card__title"><a class="stretched" href="#">Une maison du répit a ouvert ses portes à La Talaudière</a></h3><div class="card__meta"><span>Il y a 6 h</span></div></div>
+          </article>
+        </div>
+        <div class="empty" id="news-empty" role="status">
+          <svg><use href="#i-news"/></svg>
+          <div><b>Pas d'actualité pour aujourd'hui dans ce département</b>Revenez plus tard ou consultez l'actualité de toute la région.</div>
+        </div>
+      </div>
+      <div style="margin-top:22px"><a class="btn btn--ghost" href="#">Toute l'actualité <svg class="ico"><use href="#i-arrow"/></svg></a></div>
+    </div>
+
+    <!-- Météo -->
+    <aside class="meteo" id="meteo" aria-labelledby="meteo-title">
+      <div class="meteo__top"><h2 id="meteo-title">La Météo</h2><span>Auvergne-Rhône-Alpes</span></div>
+      <div class="days" role="tablist" aria-label="Jour" id="meteo-days"></div>
+      <div id="meteo-panel" role="tabpanel"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ PROGRAMME TV ============ -->
+<section class="section container" id="programme" aria-labelledby="prog-title">
+  <div class="sec-head">
+    <div>
+      <p class="eyebrow">Ce soir et cette semaine</p>
+      <h2 id="prog-title">Programme TV</h2>
+    </div>
+    <div class="sec-tools">
+      <div class="chips" role="tablist" aria-label="Jour du programme" id="prog-days"></div>
+      <div class="arrows" data-rail="rail-prog"><button class="icon-btn" type="button" data-dir="-1" aria-label="Précédent"><svg class="ico"><use href="#i-left"/></svg></button><button class="icon-btn" type="button" data-dir="1" aria-label="Suivant"><svg class="ico"><use href="#i-right"/></svg></button></div>
+    </div>
+  </div>
+  <div class="rail prog" id="rail-prog" role="tabpanel"></div>
+</section>
+
+<!-- ============ AGENDA ============ -->
+<section class="section container" id="agenda" aria-labelledby="agenda-title">
+  <div class="sec-head">
+    <div>
+      <p class="eyebrow">Sortir en Haute-Savoie</p>
+      <h2 id="agenda-title">Agenda</h2>
+      <p>Toute l'offre culturelle, touristique et sportive en Haute-Savoie.</p>
+    </div>
+    <a class="link-more" href="#">Tout l'agenda <svg><use href="#i-arrow"/></svg></a>
+  </div>
+  <div class="agenda">
+    <article class="card feature">
+      <div class="media"><img src="assets/sortie-demontagnee.jpg" alt="Affiche de La Démontagnée à Bourg-Saint-Maurice" width="608" height="574"></div>
+      <div class="card__body">
+        <div class="when">
+          <div class="datechip"><small>Sam.</small><b>17</b><small>Oct.</small></div>
+          <div class="when__txt"><b>Programme de la journée</b>Bourg-Saint-Maurice · Les Arcs</div>
+        </div>
+        <h3 class="card__title">La Démontagnée</h3>
+        <p>Les troupeaux quittent les alpages et font leur grand retour à Bourg-Saint-Maurice. Cloches, produits locaux, traditions et bonne humeur : après un été passé en altitude, il est temps de retrouver la vallée.</p>
+        <ul class="sched">
+          <li><b>10h30</b>Grand défilé des troupeaux, chars et chevaux dans la ville</li>
+          <li><b>Toute la journée</b>Animations musicales et stands de produits locaux</li>
+        </ul>
+        <a class="btn btn--gold btn--sm stretched" href="#">Voir le détail <svg class="ico" style="width:17px;height:17px"><use href="#i-arrow"/></svg></a>
+      </div>
+    </article>
+    <div class="events" id="events"></div>
+  </div>
+</section>
+
+<!-- ============ WEBCAMS ============ -->
+<section class="section container" id="webcams" aria-labelledby="cams-title">
+  <div class="sec-head">
+    <div>
+      <p class="eyebrow">En temps réel</p>
+      <h2 id="cams-title">Webcams en direct</h2>
+    </div>
+    <a class="link-more" href="#">Toutes les webcams <svg><use href="#i-arrow"/></svg></a>
+  </div>
+  <div class="cams" id="cams"></div>
+</section>
+
+<!-- ============ REPLAY ============ -->
+<section class="section container" id="replay" aria-labelledby="replay-title">
+  <div class="sec-head">
+    <div>
+      <p class="eyebrow">Voir ou revoir</p>
+      <h2 id="replay-title">Le Replay</h2>
+    </div>
+    <div class="sec-tools">
+      <a class="link-more" href="#">Tous les replays <svg><use href="#i-arrow"/></svg></a>
+      <div class="arrows" data-rail="rail-replay"><button class="icon-btn" type="button" data-dir="-1" aria-label="Précédent"><svg class="ico"><use href="#i-left"/></svg></button><button class="icon-btn" type="button" data-dir="1" aria-label="Suivant"><svg class="ico"><use href="#i-right"/></svg></button></div>
+    </div>
+  </div>
+  <div class="rail" id="rail-replay"></div>
+
+  <!-- Réseaux sociaux -->
+  <div class="social">
+    <div>
+      <h2>Suivez Swatter TV</h2>
+      <p>Coulisses, extraits et infos en avant-première sur nos réseaux.</p>
+    </div>
+    <div class="socials">
+      <a class="soc" href="#"><svg><use href="#i-fb"/></svg>Facebook</a>
+      <a class="soc" href="#"><svg><use href="#i-ig"/></svg>Instagram</a>
+      <a class="soc" href="#"><svg><use href="#i-yt"/></svg>YouTube</a>
+      <a class="soc" href="#"><svg><use href="#i-tt"/></svg>TikTok</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a class="logo" href="#" aria-label="Swatter TV — Accueil"><svg viewBox="0 0 100 104"><use href="#logo"/></svg></a>
+        <p>Swatter TV &amp; Info, votre chaîne locale : le direct, l'info, la météo et les sorties en Haute-Savoie et en Auvergne-Rhône-Alpes.</p>
+        <ul class="contact">
+          <li><svg><use href="#i-pin"/></svg><span>36 rue de la Chaumière, 74300 Thyez<br>Haute-Savoie · Auvergne-Rhône-Alpes</span></li>
+          <li><svg><use href="#i-mail"/></svg><a href="mailto:contact@swatter-tv.fr">contact@swatter-tv.fr</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>La chaîne</h3>
+        <ul><li><a href="#direct">Le Direct</a></li><li><a href="#programme">Programme TV</a></li><li><a href="#replay">Le Replay</a></li><li><a href="#">Canaux de réception</a></li></ul>
+      </div>
+      <div>
+        <h3>Info &amp; services</h3>
+        <ul><li><a href="#info">L'Info</a></li><li><a href="#meteo">La Météo</a></li><li><a href="#agenda">Agenda</a></li><li><a href="#webcams">Webcams</a></li></ul>
+      </div>
+      <div>
+        <h3>Swatter TV</h3>
+        <ul><li><a href="#">Le groupe</a></li><li><a href="#">Crédits</a></li><li><a href="#">Vie privée</a></li><li><a href="#">Gestion des cookies</a></li></ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2025–2026 Swatter TV · Tous droits réservés</span>
+      <span class="protect"><svg><use href="#i-shield"/></svg>Contenus protégés : captures et téléchargements détectés automatiquement</span>
+      <span class="mock-tag">Maquette v1 · contenus d'exemple</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ MOBILE ============ -->
+<nav class="tabbar" aria-label="Navigation mobile">
+  <a href="#" aria-current="page"><svg><use href="#i-home"/></svg>Accueil</a>
+  <a href="#direct"><span class="dot-live" aria-hidden="true"></span><svg><use href="#i-tv"/></svg>Direct</a>
+  <a href="#info"><svg><use href="#i-news"/></svg>Info</a>
+  <a href="#replay"><svg><use href="#i-replay"/></svg>Replay</a>
+  <button type="button" data-open-drawer><svg><use href="#i-menu"/></svg>Menu</button>
+</nav>
+
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <nav>
+    <a href="#" aria-current="page">Accueil</a>
+    <a href="#direct"><span class="dot-live" aria-hidden="true"></span>Le Direct</a>
+    <a href="#info">L'Info</a>
+    <a href="#meteo">La Météo</a>
+    <a href="#agenda">Agenda</a>
+    <a href="#programme">Programme TV</a>
+    <a href="#replay">Le Replay</a>
+  </nav>
+  <a class="btn btn--gold" href="#"><svg class="ico"><use href="#i-user"/></svg>Se connecter</a>
+</div>
+
+<div class="search" id="search" role="dialog" aria-modal="true" aria-label="Recherche">
+  <div class="search__box">
+    <label class="search__field">
+      <svg><use href="#i-search"/></svg>
+      <span class="sr-only">Rechercher</span>
+      <input type="search" placeholder="Programme, vidéo, film, acteur…" id="search-input">
+      <kbd>Échap</kbd>
+    </label>
+    <div class="search__sugg">
+      <p>Recherches populaires</p>
+      <div class="chips">
+        <button class="chip" type="button">Le journal des Alpes</button>
+        <button class="chip" type="button">Météo des neiges</button>
+        <button class="chip" type="button">La Démontagnée</button>
+        <button class="chip" type="button">FC Annecy</button>
+        <button class="chip" type="button">Webcams</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cookie" id="cookie" role="dialog" aria-label="Cookies">
+  <b>Vos choix cookies</b>
+  Nous utilisons des cookies pour mesurer l'audience et améliorer votre expérience. Vous pouvez changer d'avis à tout moment.
+  <div class="cookie__btns">
+    <button class="btn btn--ghost" type="button" data-cookie>Refuser</button>
+    <button class="btn btn--ghost" type="button" data-cookie>Personnaliser</button>
+    <button class="btn btn--gold" type="button" data-cookie>Accepter</button>
+  </div>
+</div>
+
+<script>
+/* ===== Illustrations procédurales (remplacées par les vraies images en production) ===== */
+function prng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const PRESETS={
+  dusk:{sky:['#040B19','#0C1D3C','#22365F','#9C7243','#E9B866'],glow:{x:.6,y:.66,r:.6,c:'#F2C066',o:.55},stars:80,
+    layers:[{y:.5,a:.2,c:'#34497A',snow:'#E8CF9C',peak:.58,steps:7},{y:.58,a:.13,c:'#1F3460',steps:7},{y:.645,a:.07,c:'#12244A',steps:7}],
+    lake:{y:.68,top:'#B98A4E',bot:'#06101F',x:.6,shim:'#F5CF7E'},trees:{c:'#030A16',n:60,y:1.0,s:.2,edges:1}},
+  night:{sky:['#01050D','#06122A','#112449'],stars:140,moon:{x:.74,y:.24,r:.055},
+    layers:[{y:.6,a:.22,c:'#1B2B4C',snow:'#8597BC',peak:.3},{y:.72,a:.12,c:'#0E1A33'},{y:.85,a:.06,c:'#050C1B'}]},
+  morning:{sky:['#3567A8','#86B4E2','#E1EDF8'],sun:{x:.8,y:.2,r:.045,c:'#FFF7DF'},glow:{x:.8,y:.2,r:.35,c:'#FFFFFF',o:.45},birds:5,
+    layers:[{y:.52,a:.22,c:'#7A92B8',snow:'#F6F8FC',peak:.4},{y:.64,a:.13,c:'#4D6992'},{y:.76,a:.08,c:'#2C4669'},{y:.88,a:.05,c:'#182B47'}]},
+  ski:{sky:['#2B62A8','#79AEE2','#DCEBF8'],sun:{x:.18,y:.18,r:.04,c:'#FFFBEA'},glow:{x:.18,y:.18,r:.4,c:'#FFFFFF',o:.5},
+    layers:[{y:.48,a:.22,c:'#A3B7D3',snow:'#FFFFFF',peak:.6},{y:.62,a:.15,c:'#C9D6E9',snow:'#FFFFFF'},{y:.8,a:.06,c:'#EEF3FA'}],
+    trees:{c:'#173233',n:34,y:.93,s:.16}},
+  pasture:{sky:['#336DB3','#93C0E9','#E6F1FA'],sun:{x:.75,y:.16,r:.04,c:'#FFFBEA'},
+    layers:[{y:.48,a:.22,c:'#8DA2C2',snow:'#F7F9FC',peak:.35},{y:.62,a:.12,c:'#4D7A57'},{y:.74,a:.08,c:'#3B6A43'},{y:.86,a:.05,c:'#2C5633'}]},
+  sunset:{sky:['#17122F','#4E2A4D','#B85A3E','#F2B05A'],glow:{x:.3,y:.72,r:.6,c:'#F7A94D',o:.6},sun:{x:.3,y:.66,r:.065,c:'#FFD892'},birds:4,
+    layers:[{y:.62,a:.18,c:'#3A2346',peak:.7},{y:.72,a:.1,c:'#241533'},{y:.84,a:.06,c:'#130A1F'}]},
+  forest:{sky:['#1E3D5C','#58879A','#CDDBCB'],mist:1,
+    layers:[{y:.55,a:.16,c:'#4B6A73',peak:.5},{y:.68,a:.1,c:'#2E4C4F'}],trees:{c:'#122624',n:80,y:.98,s:.3}},
+  village:{sky:['#020713','#081632','#16295A'],stars:90,
+    layers:[{y:.5,a:.22,c:'#1D2E52',snow:'#8698BD',peak:.55},{y:.66,a:.1,c:'#111F3B'},{y:.8,a:.05,c:'#0A1529'}],lights:{n:46,y0:.8,y1:.97,c:'#F7C96A'}},
+  lakeday:{sky:['#3567A8','#86B4E2','#E1EDF8'],sun:{x:.75,y:.18,r:.04,c:'#FFF7DF'},
+    layers:[{y:.5,a:.2,c:'#7B93B9',snow:'#F6F8FC',peak:.3},{y:.58,a:.1,c:'#3E5E86'}],
+    lake:{y:.62,top:'#A9CBEA',bot:'#1C426B',x:.75,shim:'#FFFFFF'}},
+  lakedusk:{sky:['#0A1630','#2B3F6E','#C98D4D','#F2C36F'],glow:{x:.4,y:.62,r:.5,c:'#F5C46A',o:.5},
+    layers:[{y:.52,a:.18,c:'#3B4C77',snow:'#E8CF9C',peak:.45},{y:.6,a:.09,c:'#1E3058'}],
+    lake:{y:.64,top:'#C99456',bot:'#0A1830',x:.4,shim:'#F7D38A'}},
+  news:{sky:['#0A1A36','#12305E','#0A1A36'],glow:{x:.72,y:.45,r:.55,c:'#E4B64C',o:.22},rings:1,
+    layers:[{y:.88,a:.14,c:'#0C1F40',snow:'#2A4677',peak:.25},{y:.96,a:.05,c:'#071530'}]}
+};
+let sceneId=0;
+function ridge(r,w,base,amp,rough,steps,peak){
+  const n=Math.pow(2,steps)+1,h=new Array(n);
+  h[0]=base-r()*amp;h[n-1]=base-r()*amp;
+  let step=n-1,a=amp;
+  while(step>1){const half=step/2;for(let i=half;i<n;i+=step){h[i]=(h[i-half]+h[i+half])/2+(r()-.5)*2*a}a*=rough;step=half}
+  return h.map((y,i)=>{const x=i*w/(n-1);if(peak!=null)y-=amp*.7*Math.exp(-Math.pow((x-peak*w)/(w*.1),2));return[x,Math.max(base-amp*2.4,Math.min(base+amp*.5,y))]});
+}
+const f=v=>Math.round(v*10)/10;
+function scene(name,seed,w,h){
+  const P=PRESETS[name]||PRESETS.dusk,r=prng(seed*9973+17),id='sc'+(sceneId++),k=w/640;
+  let defs='',out='',layers='';
+  defs+=`<linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1">${P.sky.map((c,i)=>`<stop offset="${i/(P.sky.length-1)}" stop-color="${c}"/>`).join('')}</linearGradient>`;
+  out+=`<rect width="${w}" height="${h}" fill="url(#${id}s)"/>`;
+  if(P.glow){const g=P.glow;defs+=`<radialGradient id="${id}g" cx="${g.x}" cy="${g.y}" r="${g.r}"><stop offset="0" stop-color="${g.c}" stop-opacity="${g.o}"/><stop offset="1" stop-color="${g.c}" stop-opacity="0"/></radialGradient>`;out+=`<rect width="${w}" height="${h}" fill="url(#${id}g)"/>`}
+  if(P.stars)for(let i=0;i<P.stars;i++)out+=`<circle cx="${f(r()*w)}" cy="${f(r()*h*.5)}" r="${f((r()*1.1+.3)*k)}" fill="#fff" opacity="${f(r()*.6+.15)}"/>`;
+  if(P.sun){const s=P.sun;out+=`<circle cx="${f(s.x*w)}" cy="${f(s.y*h)}" r="${f(s.r*w)}" fill="${s.c}"/>`}
+  if(P.moon){const m=P.moon,cx=f(m.x*w),cy=f(m.y*h),rr=m.r*w;out+=`<circle cx="${cx}" cy="${cy}" r="${f(rr*3.2)}" fill="#F4EEDC" opacity=".06"/><circle cx="${cx}" cy="${cy}" r="${f(rr*1.8)}" fill="#F4EEDC" opacity=".08"/><circle cx="${cx}" cy="${cy}" r="${f(rr)}" fill="#F4EEDC"/>`}
+  if(P.rings){const cx=f(w*.72),cy=f(h*.45);for(let i=1;i<=7;i++)out+=`<circle cx="${cx}" cy="${cy}" r="${f(i*h*.11)}" fill="none" stroke="#E4B64C" stroke-opacity="${f(.5-i*.06)}" stroke-width="${f(1.3*h/360)}"/>`;out+=`<circle cx="${cx}" cy="${cy}" r="${f(h*.05)}" fill="#E4B64C"/>`}
+  P.layers.forEach((L,i)=>{
+    const pts=ridge(r,w,L.y*h,L.a*h,L.rough||.55,L.steps||6,L.peak);
+    const d='M0 '+h+' L'+pts.map(p=>f(p[0])+' '+f(p[1])).join(' L')+' L'+w+' '+h+'Z';
+    layers+=`<path d="${d}" fill="${L.c}"/>`;
+    if(L.snow){/* calottes neigeuses qui suivent le relief */
+      const minY=Math.min(...pts.map(p=>p[1])),line=minY+L.a*h*.6;
+      const bot=pts.map(p=>[p[0],p[1]+Math.max(0,line-p[1])*(.35+r()*.4)]).reverse();
+      layers+=`<path d="M${pts.map(p=>f(p[0])+' '+f(p[1])).join(' L')} L${bot.map(p=>f(p[0])+' '+f(p[1])).join(' L')}Z" fill="${L.snow}"/>`;
+    }
+  });
+  out+=layers;
+  if(P.mist){defs+=`<linearGradient id="${id}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>`;out+=`<rect y="${f(h*.5)}" width="${w}" height="${f(h*.35)}" fill="url(#${id}m)"/>`}
+  if(P.lake){const L=P.lake,ly=L.y*h;
+    defs+=`<linearGradient id="${id}l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${L.top}"/><stop offset="1" stop-color="${L.bot}"/></linearGradient><clipPath id="${id}c"><rect y="${f(ly)}" width="${w}" height="${f(h-ly)}"/></clipPath>`;
+    out+=`<rect y="${f(ly)}" width="${w}" height="${f(h-ly)}" fill="url(#${id}l)"/><g clip-path="url(#${id}c)"><g transform="matrix(1 0 0 -1 0 ${f(2*ly)})" opacity=".3">${layers}</g></g>`;
+    for(let i=0;i<18;i++){const t=i/18,y=ly+(h-ly)*(.04+t*.9),x=L.x*w+(r()-.5)*w*(.08+t*.36),ww=w*(.02+r()*.07)*(1-t*.3);out+=`<rect x="${f(x-ww/2)}" y="${f(y)}" width="${f(ww)}" height="${f(1.3*h/360)}" rx="1" fill="${L.shim}" opacity="${f(.55-t*.4)}"/>`}
+  }
+  if(P.lights){const L=P.lights;for(let i=0;i<L.n;i++){const x=f(r()*w),y=f((L.y0+r()*(L.y1-L.y0))*h),rr=(r()*1.2+.6)*k;out+=`<circle cx="${x}" cy="${y}" r="${f(rr*3.2)}" fill="${L.c}" opacity=".13"/><circle cx="${x}" cy="${y}" r="${f(rr)}" fill="${L.c}"/>`}}
+  if(P.trees){const T=P.trees,base=T.y*h;let d='';for(let i=0;i<T.n;i++){const x=T.edges?(r()<.5?r()*w*.26:w-r()*w*.26):r()*w,ht=T.s*h*(.55+r()*.6),wd=ht*.36,y=base+r()*h*.03;d+=`M${f(x-wd/2)} ${f(y)}L${f(x)} ${f(y-ht)}L${f(x+wd/2)} ${f(y)}Z`}out+=`<path d="${d}" fill="${T.c}"/><rect y="${f(base)}" width="${w}" height="${f(h-base+1)}" fill="${T.c}"/>`}
+  if(P.birds)for(let i=0;i<P.birds;i++){const x=w*(.2+r()*.5),y=h*(.14+r()*.2),s=k*(4+r()*4);out+=`<path d="M${f(x-s)} ${f(y-s*.4)}Q${f(x-s*.4)} ${f(y-s*.5)} ${f(x)} ${f(y)}Q${f(x+s*.4)} ${f(y-s*.5)} ${f(x+s)} ${f(y-s*.4)}" fill="none" stroke="#1A2B44" stroke-width="${f(1.3*k)}" stroke-linecap="round"/>`}
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>${defs}</defs>${out}</svg>`;
+}
+function paintScenes(root=document){root.querySelectorAll('[data-scene]').forEach(el=>{if(el.dataset.painted)return;el.insertAdjacentHTML('afterbegin',scene(el.dataset.scene,+el.dataset.seed||1,+el.dataset.w||640,+el.dataset.h||360));el.dataset.painted=1})}
+
+/* ===== Données d'exemple ===== */
+const VIDEOS=[
+  ['Divertissement','Le grand quiz des Savoyards','26:40','village',4],
+  ['Séries-réalité','Saisonniers, une vie en station','42:10','ski',8],
+  ['Séries','Les Gardiens du lac — Épisode 4','48:05','lakeday',11],
+  ['Cinéma','La Vallée blanche','1:34:00','morning',15],
+  ['Divertissement','Fondue party : le défi des chefs','31:20','sunset',19],
+  ['Séries-réalité','Refuge 2 500 m','39:45','pasture',23],
+  ['Séries','Haute Tension — Épisode 2','51:30','night',27],
+  ['Cinéma','Le Dernier Berger','1:41:00','forest',31]
+];
+const PROG=[
+  ['18:00','Le journal des Alpes','Info','20 min','news',2],
+  ['18:20','Météo des neiges','Météo','10 min','ski',5],
+  ['18:30','La nuit du loup','Documentaire','52 min','night',9],
+  ['19:25',"L'agenda du week-end",'Magazine','20 min','village',12],
+  ['19:45','Le journal des Alpes — Soir','Info','45 min','news',6],
+  ['20:30',"Mont-Blanc, le toit de l'Europe",'Documentaire','75 min','dusk',3],
+  ['21:45','Le journal des Alpes','Info','25 min','news',14],
+  ['22:10','Sortie du week-end : La Démontagnée','Agenda','20 min','pasture',17],
+  ['22:30',"Marmottes, l'été en altitude",'Documentaire','52 min','morning',21],
+  ['23:25','Sur les ailes du gypaète','Documentaire','50 min','sunset',25]
+];
+const DOCS=[['Le loup, retour dans les Bauges','forest'],['Chamois, les funambules','ski'],["Le lac d'Annecy vu du ciel",'lakeday'],['Glaciers : la course contre le temps','morning'],['Les secrets du reblochon','pasture'],['Sur les traces du bouquetin','sunset'],['Nuit étoilée sur les Aravis','night']];
+const PROG_DAYS=["Aujourd'hui",'Sam. 17','Dim. 18','Lun. 19','Mar. 20'];
+const REPLAY=[
+  ['Le journal des Alpes — 15 oct.','Info','24 min','news',31,'Hier'],
+  ['La nuit du loup','Documentaire','52 min','night',33,'Il y a 2 j'],
+  ["Marmottes, l'été en altitude",'Documentaire','52 min','morning',35,'Il y a 3 j'],
+  ["L'agenda du week-end",'Magazine','20 min','village',37,'Il y a 3 j'],
+  ['Sur les ailes du gypaète','Documentaire','50 min','sunset',39,'Il y a 4 j'],
+  ['Saisonniers, une vie en station','Séries-réalité','42 min','ski',41,'Il y a 5 j'],
+  ['Les secrets du reblochon','Documentaire','48 min','pasture',43,'Il y a 6 j'],
+  ["Mont-Blanc, le toit de l'Europe",'Documentaire','75 min','dusk',45,'Il y a 1 sem.']
+];
+const CAMS=[
+  ['Lac du Bourget',"Port d'Aix-les-Bains",'lakeday',51,'13°'],
+  ['Lac Léman','Eaux-Vives · Genève','lakedusk',53,'12°'],
+  ["Lac d'Annecy",'Talloires','lakeday',58,'14°'],
+  ['Chamonix','Aiguille du Midi','ski',61,'-2°']
+];
+const EVENTS=[
+  ['Dim.','18','Oct.','Terroir','Marché des producteurs de pays','Thônes'],
+  ['Sam.','24','Oct.','Musique',"Concert d'automne de l'harmonie",'Cluses'],
+  ['Dim.','25','Oct.','Sport','Trail nocturne du Salève','Monnetier-Mornex'],
+  ['Sam.','31','Oct.','Famille','Fête de la pomme et du cidre','Thyez']
+];
+const METEO=[
+  {d:'Ven.',n:16,main:['Annecy','partly',14,'Éclaircies après dissipation des brouillards',7,17],parts:[['Matin','fog',8],['Après-midi','partly',17],['Soirée','cloud',12]],cities:[['Chamonix','partly',6],['Chambéry','sun',16],['Lyon','partly',18],['Grenoble','sun',17],['Thonon-les-Bains','cloud',13]],txt:"Aujourd'hui à Lyon, attention aux visibilités réduites en début de journée. Les températures évolueront entre 12 et 24 °C, soit 4 °C au-dessus de la normale."},
+  {d:'Sam.',n:17,main:['Annecy','sun',16,'Grand soleil sur les massifs',6,19],parts:[['Matin','sun',7],['Après-midi','sun',19],['Soirée','partly',13]],cities:[['Chamonix','sun',8],['Chambéry','sun',18],['Lyon','sun',20],['Grenoble','sun',19],['Thonon-les-Bains','partly',15]],txt:"Journée idéale pour la Démontagnée : soleil généralisé et températures douces, jusqu'à 20 °C en plaine."},
+  {d:'Dim.',n:18,main:['Annecy','cloud',13,'Nuageux, quelques averses en soirée',8,15],parts:[['Matin','cloud',9],['Après-midi','cloud',15],['Soirée','rain',11]],cities:[['Chamonix','cloud',5],['Chambéry','cloud',14],['Lyon','partly',16],['Grenoble','cloud',15],['Thonon-les-Bains','rain',12]],txt:"Les nuages gagnent du terrain par l'ouest. Quelques averses possibles en fin de journée sur le Chablais."},
+  {d:'Lun.',n:19,main:['Annecy','rain',11,'Pluie modérée, neige au-dessus de 2 200 m',7,12],parts:[['Matin','rain',8],['Après-midi','rain',12],['Soirée','cloud',9]],cities:[['Chamonix','snow',2],['Chambéry','rain',12],['Lyon','rain',14],['Grenoble','rain',13],['Thonon-les-Bains','rain',10]],txt:"Passage pluvieux sur l'ensemble de la région, premiers flocons attendus sur les sommets."},
+  {d:'Mar.',n:20,main:['Annecy','partly',12,'Retour des éclaircies',4,14],parts:[['Matin','fog',5],['Après-midi','partly',14],['Soirée','partly',9]],cities:[['Chamonix','partly',3],['Chambéry','partly',13],['Lyon','sun',15],['Grenoble','partly',14],['Thonon-les-Bains','partly',11]],txt:"Matinée fraîche avec des bancs de brouillard, puis éclaircies l'après-midi."}
+];
+
+/* ===== Rendu ===== */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const ico=(id,cls='')=>`<svg class="${cls}"><use href="#${id}"/></svg>`;
+function vcard([cat,t,d,sc,seed],extra=''){return `<article class="card" data-cat="${cat}"><div class="media" data-scene="${sc}" data-seed="${seed}"><span class="dur">${d}</span><span class="play" aria-hidden="true">${ico('i-play')}</span>${extra}</div><div class="card__body"><p class="kicker">${cat}</p><h3 class="card__title"><a class="stretched" href="#">${t}</a></h3></div></article>`}
+$('#rail-videos').innerHTML=VIDEOS.map((v,i)=>vcard(v,i===0||i===3?'<span class="badge badge--new">Nouveau</span>':'')).join('');
+$('#rail-replay').innerHTML=REPLAY.map(([t,g,d,sc,seed,ago])=>`<article class="card"><div class="media" data-scene="${sc}" data-seed="${seed}"><span class="dur">${d}</span><span class="play" aria-hidden="true">${ico('i-play')}</span></div><div class="card__body"><p class="kicker">${g}</p><h3 class="card__title"><a class="stretched" href="#">${t}</a></h3><div class="card__meta"><span>${ico('i-clock')}${ago}</span></div></div></article>`).join('');
+$('#cams').innerHTML=CAMS.map(([n,p,sc,seed,t])=>`<article class="card cam"><div class="media" data-scene="${sc}" data-seed="${seed}"><div class="cam__top"><span class="badge badge--live"><i></i>Live</span><span class="cam__clock"><span data-clock>--:--</span> · ${t}</span></div><div class="cam__info"><b>${n}</b><span>${p}</span></div></div><a class="stretched" href="#" aria-label="Webcam ${n} — ${p}"></a></article>`).join('');
+$('#events').innerHTML=EVENTS.map(([d,n,m,cat,t,place])=>`<article class="card event"><div class="datechip"><small>${d}</small><b>${n}</b><small>${m}</small></div><div><p class="kicker">${cat}</p><h3><a class="stretched" href="#">${t}</a></h3><p>${ico('i-pin')}${place}</p></div></article>`).join('');
+
+/* Programme TV */
+function progFor(day){return PROG.map((p,i)=>{if(day===0||p[2]!=='Documentaire')return p;const dc=DOCS[(i+day*2)%DOCS.length];return[p[0],dc[0],p[2],p[3],dc[1],p[5]+day*7]})}
+function renderProg(day){
+  const NOW=5;
+  /* Aujourd'hui : on démarre au programme précédent, le programme en cours est visible d'emblée */
+  const list=progFor(day).map((p,i)=>[p,i]).filter(([,i])=>day!==0||i>=NOW-1);
+  $('#rail-prog').innerHTML=list.map(([p,i])=>{
+    const now=day===0&&i===NOW,past=day===0&&i<NOW;
+    return `<article class="card${now?' is-now':''}${past?' past':''}"><div class="media" data-scene="${p[4]}" data-seed="${p[5]}">${now?'<span class="badge badge--live"><i></i>En cours</span>':''}</div><div class="card__body"><time>${p[0]}</time><h3 class="card__title"><a class="stretched" href="#">${p[1]}</a></h3><div class="card__meta"><span>${p[2]}</span><span>${ico('i-clock')}${p[3]}</span></div>${now?'<div class="pbar"><span style="width:58%"></span></div>':''}</div></article>`}).join('');
+  paintScenes($('#rail-prog'));
+  const rail=$('#rail-prog');rail.scrollLeft=0;updateArrows(rail);
+}
+$('#prog-days').innerHTML=PROG_DAYS.map((d,i)=>`<button class="chip" type="button" role="tab" aria-selected="${i===0}" data-day="${i}">${d}</button>`).join('');
+
+/* Météo */
+function renderMeteo(i){
+  const m=METEO[i],[city,ic,t,lbl,min,max]=m.main;
+  $('#meteo-panel').innerHTML=`<div class="now">${ico('w-'+ic)}<div><div class="now__t">${t}°</div></div><div><div class="now__city">${city}</div><div class="now__lbl">${lbl}</div><div class="now__mm">Min ${min}° · Max ${max}°</div></div></div>
+  <div class="parts">${m.parts.map(([p,pi,pt])=>`<div class="part">${p}${ico('w-'+pi)}<b>${pt}°</b></div>`).join('')}</div>
+  <ul class="cities">${m.cities.map(([c,ci,ct])=>`<li>${ico('w-'+ci)}<span>${c}</span><b>${ct}°</b></li>`).join('')}</ul>
+  <p class="bulletin">${m.txt}</p>`;
+}
+$('#meteo-days').innerHTML=METEO.map((m,i)=>`<button class="day" type="button" role="tab" aria-selected="${i===0}" data-i="${i}">${m.d}<b>${m.n}</b></button>`).join('');
+
+/* ===== Interactions ===== */
+function selectIn(group,btn,attr){group.querySelectorAll('button').forEach(b=>b.setAttribute(attr,b===btn?'true':'false'))}
+$('#meteo-days').addEventListener('click',e=>{const b=e.target.closest('.day');if(!b)return;selectIn($('#meteo-days'),b,'aria-selected');renderMeteo(+b.dataset.i)});
+$('#prog-days').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;selectIn($('#prog-days'),b,'aria-selected');renderProg(+b.dataset.day)});
+$('#video-filters').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;selectIn($('#video-filters'),b,'aria-pressed');const c=b.dataset.cat;$$('#rail-videos .card').forEach(card=>card.hidden=c!=='all'&&card.dataset.cat!==c);const rail=$('#rail-videos');rail.scrollLeft=0;updateArrows(rail)});
+$('#dept-filters').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;selectIn($('#dept-filters'),b,'aria-pressed');const d=b.dataset.dept;let shown=0;
+  $$('#news [data-dept]').forEach(a=>{const on=d==='all'||a.dataset.dept===d;a.hidden=!on;a.style.display=on?'':'none';if(on)shown++});
+  const list=$('.news-list');list.style.display=[...list.children].some(c=>c.style.display!=='none')?'':'none';
+  $('#news-empty').classList.toggle('is-on',shown===0)});
+
+/* Rails */
+function updateArrows(rail){const g=document.querySelector(`[data-rail="${rail.id}"]`);if(!g)return;const[p,n]=g.querySelectorAll('button');p.disabled=rail.scrollLeft<=4;n.disabled=rail.scrollLeft+rail.clientWidth>=rail.scrollWidth-4}
+$$('[data-rail]').forEach(g=>{const rail=document.getElementById(g.dataset.rail);g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rail.scrollBy({left:+b.dataset.dir*rail.clientWidth*.9})});rail.addEventListener('scroll',()=>updateArrows(rail),{passive:true})});
+
+/* Header */
+const hdr=$('#hdr');const onScroll=()=>hdr.classList.toggle('is-solid',window.scrollY>40);window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+/* Recherche */
+const search=$('#search');
+function openSearch(){search.classList.add('is-open');setTimeout(()=>$('#search-input').focus(),30)}
+function closeSearch(){search.classList.remove('is-open')}
+$$('[data-open-search]').forEach(b=>b.addEventListener('click',openSearch));
+search.addEventListener('click',e=>{if(e.target===search)closeSearch()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSearch();closeDrawer()}if(e.key==='/'&&!/input|textarea/i.test(document.activeElement.tagName)){e.preventDefault();openSearch()}});
+
+/* Menu mobile */
+const drawer=$('#drawer'),burger=$('#burger');
+function openDrawer(){drawer.classList.add('is-open');burger.setAttribute('aria-expanded','true');burger.innerHTML=ico('i-x','ico')}
+function closeDrawer(){drawer.classList.remove('is-open');burger.setAttribute('aria-expanded','false');burger.innerHTML=ico('i-menu','ico')}
+burger.addEventListener('click',()=>drawer.classList.contains('is-open')?closeDrawer():openDrawer());
+$$('[data-open-drawer]').forEach(b=>b.addEventListener('click',openDrawer));
+drawer.addEventListener('click',e=>{if(e.target.closest('a'))closeDrawer()});
+
+/* Flash info : boucle continue */
+const tk=$('#ticker');tk.innerHTML+=tk.innerHTML.replace(/<li>/g,'<li aria-hidden="true">');
+
+/* Horloge webcams */
+function tick(){const t=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});$$('[data-clock]').forEach(el=>el.textContent=t)}
+tick();setInterval(tick,15000);
+
+/* Cookies */
+const ck=$('#cookie');let seen=false;try{seen=localStorage.getItem('swatter-cookie')==='1'}catch(e){}
+if(!seen&&!/nocookie/.test(location.hash))setTimeout(()=>ck.classList.add('is-on'),900);
+$$('[data-cookie]').forEach(b=>b.addEventListener('click',()=>{ck.classList.remove('is-on');try{localStorage.setItem('swatter-cookie','1')}catch(e){}}));
+
+/* Init */
+paintScenes();
+renderMeteo(0);
+renderProg(0);
+$$('.rail').forEach(updateArrows);
+</script>
+</body>
+</html>

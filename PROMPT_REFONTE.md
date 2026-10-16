@@ -1,46 +1,51 @@
 # Prompt — Refonte du site Swatter TV
 
-> **Mode d'emploi :** complète la section « Périmètre fonctionnel » (cases à cocher et champs `____`), ajoute le logo et les couleurs de la marque dans `/brand`, puis donne ce fichier à Claude Code : « Lis `PROMPT_REFONTE.md` et commence l'étape 1. »
+> **Mode d'emploi :** une fois la maquette (`maquette/index.html`) validée par le client, donne ce fichier à Claude Code : « Lis `PROMPT_REFONTE.md` et commence l'étape 1. »
 
 ---
 
 ## 1. Rôle et contexte
 
-Tu es un développeur full-stack senior et un designer UI spécialisé dans les plateformes de streaming. Tu travailles dans ce dépôt.
+Tu es un développeur full-stack senior et un designer UI spécialisé dans les sites de chaînes TV et de médias d'information. Tu travailles dans ce dépôt.
 
-**Client :** Swatter TV (https://www.swatter-tv.fr/), une plateforme SVOD 100 % montagne (« Swatter TV & Info Plus ») : abonnement sans engagement, des centaines de programmes (documentaires, films, séries, sports outdoor…), disponibles sur tous les écrans.
+**Client :** Swatter TV & Info (https://www.swatter-tv.fr/), web TV locale basée à Thyez (Haute-Savoie), qui couvre la Haute-Savoie et l'Auvergne-Rhône-Alpes : direct, info régionale, météo, agenda des sorties, programme TV, replay et webcams.
 
-**Mission :** **refonte complète du design** sur une base technique moderne. **Aucune nouvelle fonctionnalité** : tu reproduis le périmètre fonctionnel actuel, avec une interface du niveau de **TF1+** et **M6+**, des performances excellentes et un référencement solide. Le site doit pouvoir être hébergé simplement, sans dépendre d'un seul fournisseur.
+**Mission :** **refonte complète du design** sur une base technique moderne. **Aucune nouvelle fonctionnalité** : tu reproduis le périmètre actuel avec une interface du niveau de **TF1+ / TF1 Info** et **M6+**, des performances excellentes et un référencement solide. Le site doit s'héberger simplement, sans dépendre d'un seul fournisseur.
+
+**Référence visuelle obligatoire :** la maquette validée `maquette/index.html`. Reprends fidèlement ses tokens (couleurs, typographies, rayons), ses composants et sa mise en page.
 
 ---
 
-## 2. Périmètre fonctionnel (à reproduire à l'identique)
+## 2. Périmètre fonctionnel (identique au site actuel)
 
-> À valider avant de commencer. Ne construis **que** ce qui est coché. En cas de doute, pose-moi la question au lieu de deviner.
+Pages et rubriques existantes, à reproduire :
 
-- [ ] Page d'accueil éditorialisée
-- [ ] Catalogue et pages catégories (filtres existants : ____)
-- [ ] Fiche programme (synopsis, bande-annonce, saisons / épisodes)
-- [ ] Lecteur vidéo
-- [ ] Recherche
-- [ ] Inscription / connexion / mot de passe oublié
-- [ ] Abonnement et paiement en ligne (prestataire actuel : ____)
-- [ ] Période d'essai gratuite (durée : ____)
-- [ ] Espace « Mon compte » (abonnement, factures, résiliation)
-- [ ] « Continuer à regarder » / reprise de lecture
-- [ ] Ma liste / favoris
-- [ ] Direct (live)
-- [ ] Rubrique Info Plus (actualités / articles)
-- [ ] FAQ, contact, pages légales (mentions, CGU/CGV, confidentialité)
+| Rubrique | Contenu actuel |
+|---|---|
+| **Accueil** | Vidéo du jour, Sortie du week-end, L'info du jour, « Vidéos du jour » par catégories (Divertissement, Séries-réalité, Séries, Cinéma), bloc Webcams, derniers replays, réseaux sociaux, contact |
+| **Le Direct** | Lecteur du flux en direct |
+| **L'Info** | Flux d'actualité 7j/7, 24h/24 par commune et département d'Auvergne-Rhône-Alpes (flux RSS), pagination « Suivant », état « Pas d'actualité pour aujourd'hui » |
+| **La Météo** | Région Auvergne-Rhône-Alpes, onglets par jour, matin / après-midi / soirée, bulletin texte |
+| **Agenda** | Offre culturelle, touristique et sportive en Haute-Savoie, « Programme de la journée » |
+| **Programme TV** | Grille par jour (onglets jour par jour), vignettes des programmes |
+| **Le Replay** | Liste paginée des replays |
+| **Webcams** | Flux en direct (ex. Lac du Bourget – Port d'Aix-les-Bains, Lac Léman – Eaux-Vives Genève) |
+| **Compte** | « Se connecter » |
+| **Recherche** | « Programme, vidéo, film, acteur… » |
+| **Publicité** | Emplacements bannières (partenaires) |
+| **Pied de page** | Contact (36 rue de la Chaumière, 74300 Thyez, contact@swatter-tv.fr, téléphone uniquement par mail), Vie privée, Canaux de réception, Le groupe, Crédits, réseaux sociaux (Facebook, Instagram, YouTube, TikTok), mention « captures et téléchargements détectés automatiquement » |
+| **Divers** | Note 4,5 ★ et compteur (995 349) affichés près du logo, bandeau cookies |
 
-Informations sur l'existant :
+À confirmer avec le client avant l'étape 4 :
 
-- Plateforme / CMS actuel : ____
-- Hébergeur vidéo actuel : ____
-- Nombre de programmes / d'heures de vidéo : ____
-- Nombre d'abonnés actifs : ____
-- Couleurs de la marque : ____ (logo dans `/brand`)
-- Langues : français ____ (autres : ____)
+- Source du flux direct et hébergeur des vidéos actuels : ____
+- Source des flux RSS de l'info et des données météo : ____
+- Fonctionnement actuel de « Se connecter » (qui se connecte, pour quoi faire) : ____
+- Fournisseur des webcams (ex. Windy, Skaping, ViewSurf) : ____
+- Régie publicitaire / format des bannières : ____
+- Signification exacte du compteur « 995 349 » : ____
+
+Ne construis rien hors de ce périmètre. En cas de doute, pose-moi la question au lieu de deviner.
 
 ---
 
@@ -49,38 +54,29 @@ Informations sur l'existant :
 | Besoin | Choix |
 |---|---|
 | Framework | **Next.js** (dernière version stable, App Router), **TypeScript strict**, React Server Components |
-| UI | **Tailwind CSS** et composants maison (shadcn/ui comme base). Animations limitées à l'essentiel (CSS d'abord, Motion si nécessaire) |
+| UI | **Tailwind CSS** avec les tokens de la maquette, composants maison. Animations limitées à l'essentiel |
 | Base de données | **PostgreSQL** |
-| Back-office / CMS | **Payload CMS 3**, intégré à l'application Next.js : le client gère programmes, catégories, rangées de l'accueil et pages sans toucher au code |
-| Authentification | Payload Auth, avec une collection `users` (abonnés) séparée de la collection `admins` |
-| Vidéo | **Jamais stockée ni servie par le serveur web.** Bunny Stream (ou Mux) : streaming HLS adaptatif, vignettes générées automatiquement, **URLs signées à durée limitée** pour les contenus payants |
-| Lecteur | Vidstack Player (HLS, sous-titres, reprise, plein écran, AirPlay et Chromecast natifs du navigateur) |
-| Paiement | **Stripe Billing** (Checkout, portail client, webhooks), uniquement si le paiement existe déjà ; sinon on garde le prestataire actuel |
+| Back-office / CMS | **Payload CMS 3**, intégré à l'application Next.js : la rédaction gère vidéos, articles, programme TV, agenda, mises en avant de l'accueil et pubs sans toucher au code |
+| Vidéo et direct | **Jamais stockée ni servie par le serveur web.** Bunny Stream (ou Mux) pour le replay (HLS adaptatif, vignettes auto) ; flux direct HLS depuis le fournisseur actuel ou Bunny / Mux Live |
+| Lecteur | Vidstack Player (HLS, direct et replay, plein écran, AirPlay / Chromecast natifs du navigateur) |
+| Imports automatiques | Tâches planifiées (cron) : import des flux RSS de l'info, de la météo et de l'agenda vers la base, avec cache |
 | Médias (images) | Stockage compatible S3 (Bunny Storage, Cloudflare R2 ou Scaleway) via l'adaptateur S3 de Payload |
 | Validation | Zod |
-| Tests | Playwright sur les parcours critiques (accueil → fiche → lecture ; inscription → paiement) |
+| Tests | Playwright sur les parcours critiques (accueil → direct ; accueil → article ; programme TV → replay) |
 | Déploiement | `Dockerfile` multi-stage et `docker-compose.yml` (app + Postgres) pour n'importe quel VPS (OVH, Scaleway, Hetzner) via Coolify, **et** compatible Vercel + Neon. Hébergement des données dans l'UE (RGPD) |
 
 ---
 
-## 4. Direction artistique (références : TF1+ et M6+)
+## 4. Direction artistique (déjà validée dans la maquette)
 
-**Principes :** les visuels des programmes passent avant tout. L'interface s'efface, le contenu prend toute la place. Moderne, cinématographique, avec une identité « montagne » apportée par la photo et une touche de couleur, pas par la décoration.
-
-- **Thème sombre par défaut** (fond presque noir légèrement bleuté) et texte blanc cassé. La couleur d'accent est celle de la marque Swatter. Si elle ne fonctionne pas sur fond sombre, propose une variante accessible.
-- **Header** fixe, transparent sur le hero puis opaque au scroll : logo, navigation (Accueil, Programmes, Catégories, Info Plus et Direct si cochés), recherche, compte. **Sur mobile, barre de navigation en bas.**
-- **Hero plein écran** : carrousel de 3 à 6 programmes mis en avant depuis le back-office. Visuel ou bande-annonce muette en lecture automatique, désactivée si `prefers-reduced-motion` ou si la connexion est lente. Titre (logo-titre si disponible), accroche, boutons « Regarder » et « Plus d'infos ».
-- **Rangées horizontales (rails)** défilables au doigt, à la souris et au clavier, avec des flèches au survol sur desktop : « Nouveautés », « Top 10 » (gros chiffres, façon TF1+), une rangée par catégorie, rangées éditoriales créées dans le back-office.
-- **Cartes programme** aux formats 16:9 et affiche 2:3. Au survol sur desktop : léger zoom, durée, catégorie et badges (« Nouveau », « Exclusif »). Barre de progression seulement si la reprise de lecture existe.
-- **Fiche programme** : grand visuel en fond avec un dégradé, métadonnées (année, durée, catégorie, classification, massif / lieu), synopsis, CTA, onglets Saisons / Épisodes, rangée « Vous aimerez aussi » (même catégorie).
-- **Pages catégorie** : en-tête visuel, filtres existants, grille responsive.
-- **Paywall élégant** : la fiche et la bande-annonce restent visibles pour tous. Pour un non-abonné, le bouton lecture ouvre l'offre d'abonnement dans une modale ou une page dédiée.
-- **Typographie** : une sans-serif moderne auto-hébergée via `next/font` (par ex. Manrope, Plus Jakarta Sans ou Inter), avec des titres gras et serrés.
-- **Chargements** : squelettes (skeletons), aucun saut de mise en page, micro-interactions sobres.
-- **Responsive** : mobile-first, impeccable de 360 px jusqu'aux écrans TV (≥ 1920 px, navigation possible à la télécommande / au clavier).
-- **Accessibilité** WCAG 2.2 AA / RGAA : contrastes, focus visibles, navigation au clavier dans les rails, `alt` sur toutes les images, sous-titres lorsqu'ils sont disponibles.
-
-**Avant de coder les pages**, crée le design system (tokens de couleurs, typographie, espacements, rayons, ombres) et les composants `Button`, `Badge`, `ProgramCard`, `Rail`, `Hero`, `Modal`, `Header`, `Footer`. Montre-moi ensuite une **page d'accueil statique avec des données fictives** pour validation.
+- **Couleur principale : Bleu Nuit Alpin** (fond `#071224`, surfaces `#0D1D38` / `#132A50`).
+- **Couleur secondaire : Or Swatter** (`#D9AA45`, dégradé `#F8E2A0 → #E4B64C → #B5832A`), réservée aux actions, aux accents et aux éléments mis en avant.
+- **Rouge `#E8383D`** uniquement pour le direct (« En direct », « Live »).
+- **Typographies :** Outfit (titres, navigation) et Inter (texte), auto-hébergées.
+- **Composants de la maquette à reprendre :** header fixe transparent puis opaque au scroll, hero « Le Direct » plein écran avec progression du programme et panneau « À suivre », bandeau « Flash info » défilant, cartes à la une, rails horizontaux avec filtres, flux Info avec filtres par département, widget météo à onglets, programme TV avec programme « En cours », agenda avec pastilles de date, webcams en direct, replay, bloc réseaux sociaux, footer, barre de navigation basse sur mobile, recherche plein écran, bandeau cookies conforme CNIL.
+- **Responsive :** mobile-first, impeccable de 360 px jusqu'aux écrans TV (≥ 1920 px).
+- **Accessibilité** WCAG 2.2 AA / RGAA : contrastes, focus visibles, navigation au clavier dans les rails et les onglets, `alt` sur toutes les images, `prefers-reduced-motion` respecté.
+- Le logo de la maquette est une reconstitution : remplace-le par le fichier vectoriel officiel fourni par le client (`/brand`).
 
 ---
 
@@ -88,51 +84,51 @@ Informations sur l'existant :
 
 - **Core Web Vitals sur mobile** : LCP < 2,0 s, INP < 200 ms, CLS < 0,05.
 - **Lighthouse ≥ 95** en Performance, Accessibilité, Bonnes pratiques et SEO.
-- Pages publiques en **rendu statique / ISR** avec revalidation à la demande : un hook Payload `afterChange` appelle `revalidateTag` / `revalidatePath`, pour que les mises à jour soient visibles immédiatement sans reconstruire le site.
-- Server Components par défaut. `"use client"` réservé au lecteur, aux carrousels, aux menus et aux formulaires.
+- Pages en **rendu statique / ISR** avec revalidation à la demande : un hook Payload `afterChange` appelle `revalidateTag`, et les imports RSS / météo revalident leurs pages.
+- Server Components par défaut. `"use client"` réservé au lecteur, aux rails, aux onglets, aux menus et à la recherche.
 - **Budget JS** : moins de 150 ko gzip sur la page d'accueil (hors lecteur).
-- Lecteur vidéo et scripts tiers chargés à la demande (`dynamic import`).
-- `next/image` : AVIF/WebP, tailles responsives, image du hero en `priority`, le reste en lazy-load, placeholder flou.
-- Polices auto-hébergées, sous-ensemble latin, `display: swap`.
-- CDN (Cloudflare ou Bunny CDN) devant le site, en-têtes `Cache-Control` adaptés à chaque type de ressource.
-- Index PostgreSQL sur les champs filtrés et triés (`slug`, catégorie, date de publication, mise en avant). Pas de requêtes N+1 (utilise `depth` et `select` de Payload).
+- Lecteur vidéo, webcams et scripts publicitaires chargés à la demande (`dynamic import`, `IntersectionObserver`).
+- `next/image` : AVIF/WebP, tailles responsives, image du hero en `priority`, le reste en lazy-load. Emplacements pub à taille réservée (zéro CLS).
+- CDN (Cloudflare ou Bunny CDN) devant le site, en-têtes `Cache-Control` adaptés.
+- Index PostgreSQL sur les champs filtrés et triés (`slug`, département, date de publication, jour de diffusion).
 
 ---
 
 ## 6. SEO
 
-- **URLs propres et stables** : `/programmes/[slug]`, `/programmes/[slug]/saison-[n]/[episode]`, `/categories/[slug]`, `/info-plus/[slug]`.
-- **Redirections 301** de toutes les anciennes URLs vers les nouvelles (plugin Payload Redirects, gérable depuis le back-office). Fournis un script qui crawle l'ancien site (et/ou lit un export de la Google Search Console) pour générer la table de correspondance. **Aucune URL indexée ne doit tomber en 404 après la mise en ligne.**
-- Metadata API de Next.js : `title`, `description`, `canonical`, Open Graph et Twitter Card, éditables pour chaque contenu dans le back-office (plugin Payload SEO), avec des valeurs par défaut générées automatiquement.
-- **Données structurées JSON-LD** : `Organization`, `WebSite` + `SearchAction`, `BreadcrumbList`, `Movie` / `TVSeries` / `TVSeason` / `TVEpisode` et `VideoObject` (`thumbnailUrl`, `uploadDate`, `duration`, `description`). Pour les contenus réservés aux abonnés, ajoute `isAccessibleForFree: false` avec `hasPart` afin d'éviter tout soupçon de cloaking.
-- `sitemap.xml` dynamique (pages, programmes, épisodes, articles) avec **sitemap vidéo**, `robots.txt`, page 404 utile (recherche et suggestions).
-- **Fiches programmes publiques et riches en texte** (synopsis long, intervenants, lieux, massif, discipline) pour se positionner sur la longue traîne (ex. « documentaire alpinisme Mont-Blanc », « film ski freeride »).
-- HTML sémantique, un seul `h1` par page, fil d'Ariane visible, liens internes entre programmes, catégories et articles.
-- Balises `hreflang` si le site est multilingue.
+- **URLs propres et stables** : `/direct`, `/info/[departement]/[slug]`, `/meteo`, `/agenda/[slug]`, `/programme-tv/[date]`, `/replay/[slug]`, `/webcams/[slug]`.
+- **Redirections 301** de toutes les anciennes URLs (`/Accueil`, `/Le-Direct`, `/L-info`, `/La-Meteo`, `/Agenda`, `/Programme-TV`, `/Le-Replay`…) vers les nouvelles, gérables depuis le back-office (plugin Payload Redirects). Script de crawl de l'ancien site et/ou import d'un export Google Search Console. **Aucune URL indexée ne doit tomber en 404.**
+- Metadata API de Next.js : `title`, `description`, `canonical`, Open Graph et Twitter Card, éditables pour chaque contenu (plugin Payload SEO).
+- **Données structurées JSON-LD** : `Organization` / `TelevisionStation` (adresse de Thyez), `WebSite` + `SearchAction`, `BreadcrumbList`, `NewsArticle` pour l'info, `VideoObject` pour les vidéos et replays, `VideoObject` + `BroadcastEvent` (`isLiveBroadcast`) pour le direct, `Event` pour l'agenda, `TVEpisode` / `TVSeries` si pertinent.
+- `sitemap.xml` dynamique avec **sitemap vidéo** et **sitemap Google News** pour les articles de moins de 48 h, `robots.txt`, page 404 utile.
+- Pages département (`/info/haute-savoie`…) et pages commune riches en contenu pour le référencement local.
+- HTML sémantique, un seul `h1` par page, fil d'Ariane visible, maillage interne entre info, replay, agenda et programme.
 
 ---
 
 ## 7. Modèle de données (collections Payload)
 
-- `programs` : titre, slug, type (film / série / documentaire), synopsis court et long, visuels (16:9, affiche 2:3, logo-titre), bande-annonce, catégories, tags, année, durée, classification, lieux / massif, intervenants, mise en avant, date de publication, statut (brouillon / publié), champs SEO.
-- `seasons` et `episodes` : relation au programme, numéro, titre, synopsis, durée, identifiant vidéo (Bunny / Mux), gratuit ou réservé aux abonnés.
-- `categories` : nom, slug, visuel, ordre.
-- `rails` : rangées éditoriales de l'accueil (titre, type automatique ou sélection manuelle, ordre), réorganisables par glisser-déposer.
-- `news` (Info Plus, si cochée), `pages` (pages libres et légales), `media`, `users` (abonnés), `admins`, `redirects`.
-- Global `settings` : logo, liens des réseaux sociaux, footer, programmes du hero, textes de l'offre d'abonnement.
-- **Seed** : données de démonstration réalistes sur le thème de la montagne pour développer et tester.
-- **Script de migration** des contenus existants (import CSV / JSON → Payload), idempotent et relançable.
+- `videos` : titre, slug, catégorie (Divertissement, Séries-réalité, Séries, Cinéma…), description, vignette, identifiant vidéo, durée, date, « vidéo du jour », champs SEO.
+- `replays` : programme, épisode, date de diffusion, identifiant vidéo, durée, vignette.
+- `programs` et `schedule` : programmes et grille de diffusion (date, heure de début, durée, programme lié).
+- `articles` : info (titre, slug, chapô, contenu, image, commune, département, source RSS, date), « info du jour ».
+- `events` : agenda (titre, dates, lieu, commune, catégorie, affiche, programme de la journée), « sortie du week-end ».
+- `weather` : prévisions par jour et par ville (matin / après-midi / soirée, bulletin).
+- `webcams` : nom, lieu, URL du flux, vignette, ordre.
+- `ads` : emplacements publicitaires (format, image, lien, dates de diffusion).
+- `pages` (pages libres et légales), `media`, `users`, `admins`, `redirects`.
+- Global `settings` : logo, réseaux sociaux, footer, contenus du hero, bandeau Flash info, note et compteur.
+- **Seed** de démonstration réaliste et **scripts de migration** des contenus existants (idempotents, relançables).
 
 ---
 
 ## 8. Sécurité et RGPD
 
 - Toutes les variables d'environnement documentées dans `.env.example`. Aucun secret commité.
-- Bandeau cookies conforme CNIL (refuser aussi simple qu'accepter). Analytics sans cookie par défaut (Plausible ou Matomo).
-- Rate limiting sur la connexion, l'inscription et la réinitialisation du mot de passe. Validation Zod de toutes les entrées.
+- Bandeau cookies conforme CNIL (refuser aussi simple qu'accepter). Analytics sans cookie par défaut (Plausible ou Matomo). Scripts publicitaires chargés seulement après consentement.
+- Rate limiting sur la connexion et la recherche. Validation Zod de toutes les entrées.
 - En-têtes de sécurité : CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`.
-- Vidéos payantes uniquement via des URLs signées à durée limitée. Webhooks Stripe vérifiés par signature.
-- Reprise des textes légaux actuels (mentions légales, CGU/CGV, confidentialité).
+- Reprise des textes légaux actuels (vie privée, crédits, mentions).
 
 ---
 
@@ -141,8 +137,8 @@ Informations sur l'existant :
 1. Le code dans ce dépôt, avec des commits atomiques et des messages clairs.
 2. `README.md` : installation locale, variables d'environnement, déploiement sur VPS (Docker / Coolify) et sur Vercel, sauvegardes automatiques de PostgreSQL.
 3. Les scripts de migration (contenus, vidéos, redirections).
-4. `GUIDE_CLIENT.md` : guide court et illustré du back-office (ajouter un programme, gérer la page d'accueil, publier un article).
-5. Un rapport Lighthouse final (mobile et desktop) sur l'accueil, une fiche programme et une catégorie.
+4. `GUIDE_CLIENT.md` : guide court du back-office (publier une vidéo, un article, un événement, mettre à jour le programme TV, gérer la page d'accueil et les pubs).
+5. Un rapport Lighthouse final (mobile et desktop) sur l'accueil, un article, le direct et le programme TV.
 
 ---
 
@@ -150,10 +146,10 @@ Informations sur l'existant :
 
 Procède par étapes. **Arrête-toi à la fin de chaque étape** pour que je valide avant de continuer :
 
-1. **Initialisation et design** : projet Next.js + Payload, design system, page d'accueil statique avec données fictives → validation du design.
+1. **Initialisation** : projet Next.js + Payload, design system repris de la maquette, header / footer / navigation.
 2. **Données** : collections Payload, back-office, seed.
-3. **Pages publiques** : accueil, catalogue, catégories, fiche programme, recherche, lecteur.
-4. **Comptes et abonnement** (selon le périmètre coché) : auth, paiement, « Mon compte », protection des vidéos.
+3. **Pages** : accueil, direct, info (liste, département, article), météo, agenda, programme TV, replay, webcams, recherche.
+4. **Intégrations** : flux direct, vidéos, imports RSS / météo / agenda, connexion, publicités.
 5. **Qualité** : SEO, redirections, performance, accessibilité, tests Playwright.
 6. **Mise en production** : Docker, déploiement, migration des contenus, documentation.
 
