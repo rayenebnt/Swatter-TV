@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
 import { TabBar } from '@/components/layout/TabBar'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
+import { SiteJsonLd } from '@/components/seo/SiteJsonLd'
 import { Effects } from '@/components/ui/Effects'
 import { IconSprite } from '@/components/ui/Icon'
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site'
@@ -43,6 +44,7 @@ export default function FrontendLayout({ children }: { children: ReactNode }) {
         <SearchOverlay />
         <CookieBanner />
         <Effects />
+        <SiteJsonLd />
       </body>
     </html>
   )

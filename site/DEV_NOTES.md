@@ -63,6 +63,34 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `agenda/AgendaSection`, `webcams/WebcamsSection({limit})` | agenda, webcams |
 | `lib/import/rss.ts → importRss(payload)`, `lib/import/meteo.ts → importMeteo(payload)` | imports (appelés par `GET /api/cron/import`) |
 | `lib/search.ts → search(payload, q, limit)` | recherche (appelée par `GET /api/search?q=`) |
+| `seo/SiteJsonLd` | données structurées du site (monté dans le layout) |
+
+## Briques partagées (prêtes à l'emploi)
+
+| Fichier | Contenu |
+|---|---|
+| `lib/urls.ts` | `articleUrl`, `videoUrl`, `replayUrl`, `eventUrl`, `webcamUrl`, `programUrl`, `pageUrl`, `departmentUrl` : **toujours** les utiliser pour les liens |
+| `lib/meteo-types.ts` | `Forecast`, `ForecastDay`, `ForecastCity`, `WeatherKind`, `isForecast` : format du champ `forecast` du global météo |
+| `components/ui/RichText` | rendu du contenu riche Lexical (classe `.prose`) |
+| `public/visuels/*.webp` | visuels de la maquette, servis en `/visuels/<nom>.webp` : images de repli quand un contenu n'a pas d'image |
+| `seed/assets/*.jpg` | vignettes réelles du site actuel, pour le jeu de données de démonstration |
+
+## Adresses du site
+
+| Adresse | Page |
+|---|---|
+| `/` | accueil |
+| `/direct` | le direct |
+| `/info`, `/info/[departement]`, `/info/[departement]/[slug]` | l'info, par département, article |
+| `/meteo` | la météo |
+| `/agenda`, `/agenda/[slug]` | agenda, événement |
+| `/programme-tv` | programme TV |
+| `/replay`, `/replay/[slug]` | replay, émission rediffusée |
+| `/videos`, `/videos/[slug]` | vidéos, vidéo |
+| `/webcams` | webcams |
+| `/recherche?q=` | résultats de recherche |
+| `/[...slug]` | pages éditoriales (canaux de réception, le groupe, crédits, vie privée, mentions légales) et redirections des anciennes adresses |
+| `/admin`, `/api` | administration et API Payload |
 
 ## Commandes
 
