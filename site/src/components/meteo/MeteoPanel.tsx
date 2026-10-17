@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 import { Seg } from '@/components/ui/Seg'
 import { parisDay } from '@/lib/format'
 import { addDays, formatTemp } from '@/lib/meteo'
@@ -156,6 +156,14 @@ export function MeteoPanel({
   const root = useRef<HTMLElement>(null)
   const tabs = useRef<HTMLDivElement>(null)
   usePauseOffscreen(root)
+  // hauteur de la colonne de l'accueil (--meteo-h), pour la garder lisible en entier quand elle reste collée
+  useEffect(() => {
+    const el = root.current
+    if (!el || variant !== 'aside') return
+    const ro = new ResizeObserver(() => el.style.setProperty('--meteo-h', `${Math.ceil(el.getBoundingClientRect().height)}px`))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [variant])
   // date du jour : celle du rendu serveur à l'hydratation, puis celle du navigateur (page mise en cache la veille)
   const today = useSyncExternalStore(noSubscribe, () => parisDay(), () => renderedToday)
   const upcoming = days.filter((d) => d.date >= today)
@@ -189,7 +197,7 @@ export function MeteoPanel({
             ),
           }))}
         />
-        <div id={panelId} role="tabpanel" aria-label={dayNames(day, today, tomorrow).panel}>
+        <div id={panelId} role="tabpanel" tabIndex={0} aria-label={dayNames(day, today, tomorrow).panel}>
           {view}
         </div>
         {foot}
@@ -201,7 +209,7 @@ export function MeteoPanel({
   // onglets au clavier : flèches, Début, Fin (focus déplacé sur le jour choisi)
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const keys: Record<string, number> = { ArrowRight: index + 1, ArrowLeft: index - 1 + list.length, Home: 0, End: list.length - 1 }
-    if (!(e.key in keys)) return
+    if (!Object.hasOwn(keys, e.key)) return
     e.preventDefault()
     const next = keys[e.key] % list.length
     setSelected(list[next].date)
@@ -211,7 +219,14 @@ export function MeteoPanel({
   return (
     <section ref={root} className="meteo meteo--full" aria-labelledby="meteo-forecast-title" data-reveal>
       {head}
-      <div ref={tabs} className="meteo-days" role="tablist" aria-label="Jour" onKeyDown={onKeyDown}>
+      <div
+        ref={tabs}
+        className="meteo-days"
+        role="tablist"
+        aria-label="Jour"
+        onKeyDown={onKeyDown}
+        style={{ '--n': Math.max(list.length, 4) } as CSSProperties}
+      >
         {list.map((d, i) => {
           const on = d === day
           return (
@@ -244,7 +259,7 @@ export function MeteoPanel({
           )
         })}
       </div>
-      <div id={panelId} role="tabpanel" aria-labelledby={`${id}-tab-${index}`} className="meteo-full">
+      <div id={panelId} role="tabpanel" tabIndex={0} aria-labelledby={`${id}-tab-${index}`} className="meteo-full">
         {view}
       </div>
       {foot}

@@ -56,7 +56,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `layout/Header`, `Footer`, `TabBar`, `CookieBanner`, `AdSlot({placement})`, `SocialBand` | coque du site |
 | `search/SearchOverlay` | recherche plein écran ; s'ouvre au clic sur tout élément `[data-open-search]` ou touche `/` |
 | `home/Hero`, `Ticker`, `Une` | haut de l'accueil |
-| `meteo/MiniMeteo`, `MeteoWidget({variant})` | météo |
+| `meteo/MiniMeteo`, `MeteoWidget({variant: 'aside' \| 'full'})` | météo (en `aside`, ne rend rien sans prévision ; `MiniMeteo` non plus) |
 | `video/VideoPlayer({video, poster, title, autoPlay, live})`, `Top10Section`, `VideosSection`, `ReplaySection` | vidéos |
 | `info/InfoSection` | info de l'accueil (contient `MeteoWidget variant="aside"`) |
 | `programme/TvGridSection({variant})` | grille TV |
@@ -121,3 +121,9 @@ npm run seed           # données de démonstration
   cartes `.card` de globals.css (ou importer `@/styles/une.css` explicitement).
 - **Consentement** (contenus externes YouTube / Bunny / iframes) : `useConsent()`, `openCookieSettings()`, `onConsentChange()`
   de `@/components/layout/consent` (composants client uniquement).
+- **JSX serveur passé en prop à un composant client** et rendu à côté d'autres enfants : lui donner une `key`
+  (sinon avertissement React en développement).
+- **`.sr-only` dans un rail à défilement horizontal** : mettre `position: relative` sur la carte, sinon l'élément masqué
+  échappe au rognage et élargit la page.
+- **Import météo** : `importMeteo()` renvoie `{ ok: false, skipped: true }` quand la mise à jour automatique est désactivée
+  (ce n'est pas une erreur). En production, lancer `npm run import` une fois puis brancher la tâche planifiée `GET /api/cron/import`.

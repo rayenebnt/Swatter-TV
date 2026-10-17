@@ -58,7 +58,12 @@ export function useNow(): number | null {
 /* ----- Ancre de l'adresse (#slug d'une émission, voir programUrl) : chaîne vide au premier rendu ----- */
 function subscribeHash(listener: () => void) {
   window.addEventListener('hashchange', listener)
-  return () => window.removeEventListener('hashchange', listener)
+  // Navigation côté client : l'adresse est mise à jour après le premier rendu de la page, sans « hashchange »
+  const raf = requestAnimationFrame(listener)
+  return () => {
+    cancelAnimationFrame(raf)
+    window.removeEventListener('hashchange', listener)
+  }
 }
 
 function hashSnapshot() {
@@ -122,6 +127,8 @@ export function useGridGestures(
     }
     const onMove = (e: PointerEvent) => {
       if (!down) return
+      // Bouton relâché hors de la fenêtre : glissement terminé
+      if (!(e.buttons & 1)) return onUp()
       const dx = e.clientX - x0
       if (!moved && Math.abs(dx) > 6) {
         moved = true

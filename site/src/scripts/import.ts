@@ -24,6 +24,8 @@ try {
 try {
   const meteo = await importMeteo(payload)
   if (meteo.ok) payload.logger.info('Météo : prévisions mises à jour.')
+  // Mise à jour automatique désactivée dans l'administration : ce n'est pas une erreur
+  else if (meteo.skipped) payload.logger.info(`Météo : ${meteo.error ?? 'mise à jour ignorée'}`)
   else {
     failed = true
     payload.logger.warn(`Météo : ${meteo.error ?? 'mise à jour non effectuée'}`)

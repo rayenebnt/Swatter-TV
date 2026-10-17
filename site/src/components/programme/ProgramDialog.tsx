@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useEffect, useId, useRef, type CSSProperties } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { formatTime } from '@/lib/format'
-import { dayLong, formatDuration, minutesBetween, programImage, type GridProgram, type GridSlot } from './model'
+import { capitalize, dayLong, formatDuration, minutesBetween, programImage, type GridProgram, type GridSlot } from './model'
 
 /**
  * Panneau de détail d'une émission (dialogue modal natif) : focus piégé, Échap, retour du focus au bloc d'origine,
@@ -39,10 +39,11 @@ export function ProgramDialog({
     const prev = { overflow: html.style.overflow, paddingRight: body.style.paddingRight }
     html.style.overflow = 'hidden'
     if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`
+    // Pas de close() ici : son événement « close », différé, refermerait le panneau remonté par le mode strict ;
+    // retiré du document, le dialogue quitte de lui-même la couche supérieure.
     return () => {
       html.style.overflow = prev.overflow
       body.style.paddingRight = prev.paddingRight
-      if (dialog.open) dialog.close()
     }
   }, [])
 
@@ -88,7 +89,7 @@ export function ProgramDialog({
           <ul className="tvd__when">
             <li>
               <Icon name="cal" />
-              <span className="tvd__day">{dayLong(day)}</span>
+              <span>{capitalize(dayLong(day))}</span>
             </li>
             <li>
               <Icon name="clock" />

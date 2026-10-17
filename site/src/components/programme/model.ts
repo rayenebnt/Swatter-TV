@@ -43,9 +43,6 @@ export function shiftDay(day: string, n: number): string {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
 }
 
-/** Vrai pour une date AAAA-MM-JJ qui existe (« 2026-02-30 » est refusé). */
-export const isDayKey = (s: unknown): s is string => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && shiftDay(s, 0) === s
-
 /** Les jours proposés à partir d'aujourd'hui (jour civil de Paris). */
 export const programmeDays = (today: string) => Array.from({ length: PROGRAMME_DAYS }, (_, i) => shiftDay(today, i))
 
@@ -63,6 +60,8 @@ export function dayLabel(day: string, today: string): string {
 
 /** « samedi 18 octobre » */
 export const dayLong = (day: string) => formatDayLong(noon(day))
+
+export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** Adresse de la page Programme TV pour un jour (aujourd'hui : adresse canonique sans paramètre). */
 export const programmeDayUrl = (day: string, today: string) => (day === today ? '/programme-tv' : `/programme-tv?jour=${day}`)
