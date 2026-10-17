@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { firstDoc, settle, watchErrors } from './helpers'
+import { settle, watchErrors } from './helpers'
 
 test.describe('recherche', () => {
   test('s’ouvre avec la touche « / » et se ferme avec Échap', async ({ page, isMobile }) => {
@@ -12,7 +12,8 @@ test.describe('recherche', () => {
       if (!(await dialog.isVisible())) await page.keyboard.press('/')
       await expect(dialog).toBeVisible({ timeout: 1_000 })
     }).toPass({ timeout: 20_000 })
-    const input = dialog.getByRole('searchbox')
+    // champ de recherche à suggestions : rôle ARIA « combobox » (ou « searchbox » sans suggestions)
+    const input = dialog.getByRole('combobox', { name: /rechercher/i }).or(dialog.getByRole('searchbox'))
     await expect(input).toBeFocused()
     await input.fill('annecy')
     await expect(dialog.getByRole('link').or(dialog.getByRole('option')).first()).toBeVisible({ timeout: 15_000 })
@@ -53,17 +54,16 @@ test('le menu mobile s’ouvre et se ferme', async ({ page, isMobile }) => {
   await expect(drawer).toBeHidden()
 })
 
-test('le lecteur s’affiche sur une page vidéo', async ({ page, request }) => {
-  const video = await firstDoc(request, 'videos')
-  test.skip(!video?.slug, 'aucune vidéo (lancez npm run seed)')
+test('la navigation au clavier commence par le lien d’évitement', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'clavier : bureau uniquement')
   const errors = watchErrors(page)
-  await page.goto(`/videos/${video!.slug}`)
+  await page.goto('/')
   await settle(page)
-  const player = page.locator('video, iframe[src*="youtube"], iframe[src*="mediadelivery"]')
-  if ((await player.count()) === 0) {
-    // lecteur « clic pour lire » : affiche une affiche et un bouton de lecture
-    await page.getByRole('button', { name: /lire|lecture|regarder|play/i }).first().click()
-  }
-  await expect(player.first()).toBeVisible({ timeout: 15_000 })
+  // premier arrêt de tabulation : le lien « Aller au contenu », visible quand il a le focus
+  await page.keyboard.press('Tab')
+  const skip = page.locator(':focus')
+  await expect(skip).toHaveAttribute('href', '#contenu')
+  await expect(skip).toBeVisible()
+  await expect(page.locator('main#contenu')).toHaveCount(1)
   expect(errors, errors.join('\n')).toEqual([])
 })

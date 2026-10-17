@@ -27,7 +27,7 @@ import { daySlots, primeOf, PROGRAMS } from './seed/programs'
 import { REPLAYS, VIDEOS } from './seed/videos'
 
 if (process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== '1') {
-  console.error('✖ Le jeu de démonstration efface tous les contenus : refusé en production (forcer avec SEED_FORCE=1).')
+  console.error('✖ Le jeu de démonstration efface tous les contenus : refusé en production (forcer avec SEED_FORCE=1).')
   process.exit(1)
 }
 
@@ -100,7 +100,7 @@ await inBatches(MEDIA, 4, async (m) => {
 })
 const mediaId = (key: string): number => {
   const id = media.get(key)
-  if (id === undefined) throw new Error(`Média inconnu : ${key}`)
+  if (id === undefined) throw new Error(`Média inconnu : ${key}`)
   return id
 }
 const upload = (clip: string) => ({ provider: 'upload' as const, file: mediaId(clip) })
@@ -121,7 +121,7 @@ for (const p of PROGRAMS) {
 }
 const programId = (key: string): number => {
   const id = programs.get(key)
-  if (id === undefined) throw new Error(`Émission inconnue : ${key}`)
+  if (id === undefined) throw new Error(`Émission inconnue : ${key}`)
   return id
 }
 
@@ -352,7 +352,7 @@ await payload.updateGlobal({
         ],
         titleLine1: 'La Démontagnée,',
         titleLine2: 'le grand retour',
-        description: 'Cloches, chars et produits locaux : les troupeaux quittent les alpages et défilent dans les rues de Bourg-Saint-Maurice dès 10 h 30.',
+        description: 'Cloches, chars et produits locaux : les troupeaux quittent les alpages et défilent dans les rues de Bourg-Saint-Maurice dès 10 h 30.',
         image: mediaId('hero-matin'),
         navLabel: 'Ce week-end',
         primaryLabel: 'Voir le programme',
@@ -373,7 +373,7 @@ await payload.updateGlobal({
     ],
     rating: 4.5,
     viewsCount: 995349,
-    tagline: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie et en Auvergne-Rhône-Alpes.',
+    tagline: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie et en Auvergne-Rhône-Alpes.',
     contact: {
       email: 'contact@swatter-tv.fr',
       phone: '',
@@ -381,7 +381,7 @@ await payload.updateGlobal({
     },
     // Réseaux sociaux : à renseigner par le client (aucune adresse inventée).
     socials: { facebook: '', instagram: '', youtube: '', tiktok: '' },
-    protectNotice: 'Contenus protégés : captures et téléchargements détectés automatiquement',
+    protectNotice: 'Contenus protégés : captures et téléchargements détectés automatiquement',
   },
   overrideAccess: true,
   context,
@@ -410,8 +410,8 @@ for (const collection of [...WIPE].reverse()) {
   recap[collection] = (await payload.count({ collection, overrideAccess: true })).totalDocs
 }
 const users = (await payload.count({ collection: 'users', overrideAccess: true })).totalDocs
-console.log('\n✔ Jeu de démonstration créé :')
+console.log('\n✔ Jeu de démonstration créé :')
 console.table(recap)
-console.log(`  Utilisateurs conservés : ${users}${users === 0 ? ' (créez un administrateur : npm run payload run src/scripts/init-db.ts)' : ''}`)
-console.log(`  Grille : ${firstDay} 00:00 → ${addDays(firstDay, 8)} 00:00 (heure de Paris) · Sortie du week-end : ${formatDayLong(weekendPickDate)}`)
+console.log(`  Utilisateurs conservés : ${users}${users === 0 ? ' (créez un administrateur : npm run payload run src/scripts/init-db.ts)' : ''}`)
+console.log(`  Grille : ${firstDay} 00:00 → ${addDays(firstDay, 8)} 00:00 (heure de Paris) · Sortie du week-end : ${formatDayLong(weekendPickDate)}`)
 process.exit(0)

@@ -2,7 +2,7 @@
 import type { Event } from '@/payload-types'
 import { EVENT_CATEGORIES, labelOf } from '@/lib/categories'
 import { dateChip, formatDate, formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
-import { parisDayStart, type EventCategory, type EventPeriod } from '@/lib/queries/events'
+import type { EventCategory, EventPeriod } from '@/lib/queries/events'
 
 type Dates = Pick<Event, 'startDate' | 'endDate'>
 export type EventStatus = 'upcoming' | 'ongoing' | 'past'
@@ -48,7 +48,7 @@ export function eventStatus(e: Dates, now: Date): EventStatus {
     if (Date.parse(e.endDate) < t) return 'past'
     return Date.parse(e.startDate) <= t ? 'ongoing' : 'upcoming'
   }
-  return Date.parse(e.startDate) < parisDayStart(now).getTime() ? 'past' : 'upcoming'
+  return Date.parse(e.startDate) < parisDateTime(parisDay(now)).getTime() ? 'past' : 'upcoming'
 }
 
 /** Pastille de date (début) et sa version lisible. */

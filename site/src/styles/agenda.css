@@ -88,6 +88,7 @@
 .ev__pin svg { width: 22px; height: 22px; }
 .ev__notice { display: flex; gap: 12px; align-items: center; margin-top: 22px; padding: 14px 18px; border-radius: var(--r); border: 1px dashed var(--line-2); color: var(--ink-2); font-size: 14.5px; }
 .ev__notice svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--gold); }
+.ev__notice a { color: var(--gold-light); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .ev__desc { margin-top: 28px; max-width: 64ch; color: var(--ink-2); font-size: 16.5px; line-height: 1.7; }
 .ev__desc p + p { margin-top: 14px; }
 .ev__prog { margin-top: 32px; }

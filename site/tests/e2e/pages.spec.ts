@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { expectNoHorizontalOverflow, firstDoc, settle, watchErrors } from './helpers'
+import { expectNoHorizontalOverflow, expectSeo, firstDoc, settle, watchErrors } from './helpers'
 
 // Adresses principales du site (voir DEV_NOTES.md).
 const ROUTES = [
@@ -26,6 +26,7 @@ for (const route of ROUTES) {
     await settle(page)
     await expect(page.locator('h1')).toHaveCount(1)
     await expectNoHorizontalOverflow(page)
+    await expectSeo(page)
     expect(errors, errors.join('\n')).toEqual([])
   })
 }
@@ -48,14 +49,18 @@ for (const { label, collection, path } of DETAILS) {
     await settle(page)
     await expect(page.locator('h1')).toHaveCount(1)
     await expectNoHorizontalOverflow(page)
+    await expectSeo(page)
     expect(errors, errors.join('\n')).toEqual([])
   })
 }
 
-test('une adresse inconnue renvoie 404', async ({ page }) => {
+test('une adresse inconnue renvoie 404 avec des liens utiles', async ({ page }) => {
   const response = await page.goto('/cette-page-n-existe-pas-42')
   expect(response?.status()).toBe(404)
   await expect(page.locator('h1')).toHaveCount(1)
+  await expect(page.locator('h1')).toContainText(/introuvable/i)
+  await expect(page.locator('main a[href="/"]').first()).toBeVisible()
+  await expectNoHorizontalOverflow(page)
 })
 
 test('un article inconnu renvoie 404', async ({ page }) => {
@@ -65,6 +70,9 @@ test('un article inconnu renvoie 404', async ({ page }) => {
 
 test('l’administration et l’API répondent', async ({ request }) => {
   expect((await request.get('/admin')).status()).toBe(200)
+  expect((await request.get('/admin/login')).status()).toBe(200)
+  // tâche planifiée : refusée sans le secret CRON_SECRET
+  expect((await request.get('/api/cron/import')).status()).toBe(401)
   const videos = await request.get('/api/videos?limit=1&depth=0')
   expect(videos.status()).toBe(200)
   const settings = await request.get('/api/globals/settings?depth=0')

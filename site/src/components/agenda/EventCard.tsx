@@ -21,12 +21,15 @@ export function EventCard({
   variant = 'row',
   index = 0,
   sizes = POSTER_CARD_SIZES,
+  priority = false,
 }: {
   event: EventListItem
   now: Date
   variant?: 'row' | 'poster'
   index?: number
   sizes?: string
+  /** Première image visible de la page (préchargée) */
+  priority?: boolean
 }) {
   const title = frenchSpaces(event.title)
   const city = event.city?.trim()
@@ -61,7 +64,7 @@ export function EventCard({
   return (
     <article className="card ecard" data-reveal style={style}>
       <div className="media">
-        <MediaImage media={event.poster} size="card" fill sizes={sizes} alt="" fallbackSrc={eventVisual(event.id)} />
+        <MediaImage media={event.poster} size="card" fill priority={priority} sizes={sizes} alt="" fallbackSrc={eventVisual(event.id)} />
         <DateChip event={event} className="ecard__chip" />
         {status !== 'upcoming' && <span className="badge badge--glass badge--sm ecard__status">{status === 'ongoing' ? 'En cours' : 'Terminé'}</span>}
       </div>

@@ -16,7 +16,7 @@ export const PROGRAMS: SeedProgram[] = [
     title: 'Le journal des Alpes',
     genre: 'info',
     image: 't-crepuscule-c',
-    synopsis: 'L’essentiel de l’actualité de la Haute-Savoie et de l’Auvergne-Rhône-Alpes : faits du jour, reportages, invités et sport, en quelques minutes.',
+    synopsis: 'L’essentiel de l’actualité de la Haute-Savoie et de l’Auvergne-Rhône-Alpes : faits du jour, reportages, invités et sport, en quelques minutes.',
   },
   {
     key: 'meteo',
@@ -30,21 +30,21 @@ export const PROGRAMS: SeedProgram[] = [
     title: 'L’agenda du week-end',
     genre: 'agenda',
     image: 't-crepuscule-a',
-    synopsis: 'Marchés, concerts, fêtes de village et compétitions : notre sélection de sorties pour le week-end en Haute-Savoie et en Savoie.',
+    synopsis: 'Marchés, concerts, fêtes de village et compétitions : notre sélection de sorties pour le week-end en Haute-Savoie et en Savoie.',
   },
   {
     key: 'sport',
     title: 'Swatter Sport',
     genre: 'sport',
     image: 't-orage-a',
-    synopsis: 'Football, hockey, ski et trail : les résultats, les résumés et les portraits des clubs et des athlètes de la région.',
+    synopsis: 'Football, hockey, ski et trail : les résultats, les résumés et les portraits des clubs et des athlètes de la région.',
   },
   {
     key: 'montblanc',
     title: 'Mont-Blanc, le toit de l’Europe',
     genre: 'documentaire',
     image: 'hero-crepuscule',
-    synopsis: 'Des glaciers de Chamonix aux refuges d’altitude : une immersion au cœur du massif du Mont-Blanc, au fil des saisons.',
+    synopsis: 'Des glaciers de Chamonix aux refuges d’altitude : une immersion au cœur du massif du Mont-Blanc, au fil des saisons.',
   },
   {
     key: 'loup',
@@ -70,7 +70,7 @@ export const PROGRAMS: SeedProgram[] = [
   },
   {
     key: 'glaciers',
-    title: 'Glaciers : la course contre le temps',
+    title: 'Glaciers : la course contre le temps',
     genre: 'documentaire',
     image: 't-alpenglow-b',
     synopsis: 'Glaciologues, guides et gardiens de refuge témoignent du recul spectaculaire des glaciers alpins et des solutions imaginées pour s’adapter.',
@@ -94,7 +94,7 @@ export const PROGRAMS: SeedProgram[] = [
     title: 'Saisonniers, une vie en station',
     genre: 'divertissement',
     image: 't-hiver-a',
-    synopsis: 'Moniteurs, pisteurs, cuisiniers et perchmans : un hiver aux côtés de celles et ceux qui font vivre les stations.',
+    synopsis: 'Moniteurs, pisteurs, cuisiniers et perchmans : un hiver aux côtés de celles et ceux qui font vivre les stations.',
   },
   {
     key: 'quiz',

@@ -31,7 +31,7 @@ export const EVENTS: SeedEvent[] = [
     start: sat(0, '10:30'),
     end: sat(0, '18:00'),
     description:
-      'Les troupeaux quittent les alpages et font leur grand retour à Bourg-Saint-Maurice. Cloches, produits locaux, traditions et bonne humeur : après un été passé en altitude, il est temps de retrouver la vallée.',
+      'Les troupeaux quittent les alpages et font leur grand retour à Bourg-Saint-Maurice. Cloches, produits locaux, traditions et bonne humeur : après un été passé en altitude, il est temps de retrouver la vallée.',
     program: [
       { time: '10h30', label: 'Grand défilé des troupeaux, chars et chevaux dans la ville' },
       { time: '12h00', label: 'Repas montagnard sous le chapiteau' },
@@ -46,7 +46,7 @@ export const EVENTS: SeedEvent[] = [
     poster: 't-ete-b',
     start: sat(1, '08:00'),
     end: sat(1, '13:00'),
-    description: 'Reblochon fermier, charcuterie, miel, légumes de saison et pain cuit au feu de bois : une matinée pour rencontrer les producteurs des Aravis.',
+    description: 'Reblochon fermier, charcuterie, miel, légumes de saison et pain cuit au feu de bois : une matinée pour rencontrer les producteurs des Aravis.',
   },
   {
     title: 'Soirée d’observation des étoiles',
@@ -56,20 +56,20 @@ export const EVENTS: SeedEvent[] = [
     poster: 't-nuit-b',
     start: today(1, '20:30'),
     end: today(1, '23:30'),
-    description: 'Télescopes, carte du ciel et contes sous les étoiles : une soirée d’initiation à l’astronomie encadrée par des passionnés. Prévoir des vêtements chauds.',
+    description: 'Télescopes, carte du ciel et contes sous les étoiles : une soirée d’initiation à l’astronomie encadrée par des passionnés. Prévoir des vêtements chauds.',
   },
   {
-    title: 'Exposition « Glaciers, mémoire des Alpes »',
+    title: 'Exposition « Glaciers, mémoire des Alpes »',
     city: 'Chamonix-Mont-Blanc',
     place: 'Musée alpin',
     category: 'culture',
     poster: 't-hiver-b',
     start: today(3, '10:00'),
     end: today(31, '18:00'),
-    description: 'Photographies anciennes et récentes, cartes et témoignages : une exposition pour comprendre l’évolution des glaciers du massif du Mont-Blanc.',
+    description: 'Photographies anciennes et récentes, cartes et témoignages : une exposition pour comprendre l’évolution des glaciers du massif du Mont-Blanc.',
   },
   {
-    title: 'Concert symphonique : Les Quatre Saisons',
+    title: 'Concert symphonique : Les Quatre Saisons',
     city: 'Chambéry',
     place: 'Espace Malraux',
     category: 'musique',
@@ -85,7 +85,7 @@ export const EVENTS: SeedEvent[] = [
     poster: 't-crepuscule-c',
     start: sat(6, '10:00'),
     end: sat(8, '19:00'),
-    description: 'Trois jours pour découvrir les producteurs, les artisans et les chefs de Savoie et de Haute-Savoie : dégustations, démonstrations culinaires et ateliers pour les enfants.',
+    description: 'Trois jours pour découvrir les producteurs, les artisans et les chefs de Savoie et de Haute-Savoie : dégustations, démonstrations culinaires et ateliers pour les enfants.',
     program: [
       { time: '10h00', label: 'Ouverture du salon' },
       { time: '15h00', label: 'Démonstration culinaire autour de la fondue' },
@@ -99,7 +99,7 @@ export const EVENTS: SeedEvent[] = [
     category: 'musique',
     poster: 't-crepuscule-b',
     start: sat(7, '20:30'),
-    description: 'L’harmonie municipale présente son concert d’automne : musiques de films, grands classiques et créations, pour toute la famille.',
+    description: 'L’harmonie municipale présente son concert d’automne : musiques de films, grands classiques et créations, pour toute la famille.',
   },
   {
     title: 'Fête de la châtaigne',
@@ -154,6 +154,6 @@ export const EVENTS: SeedEvent[] = [
     poster: 't-hiver-a',
     start: sat(21, '09:00'),
     end: sat(21, '17:00'),
-    description: 'Dépôt et vente de matériel de ski d’occasion : skis, chaussures, casques et vêtements, pour s’équiper à petit prix avant la saison.',
+    description: 'Dépôt et vente de matériel de ski d’occasion : skis, chaussures, casques et vêtements, pour s’équiper à petit prix avant la saison.',
   },
 ]

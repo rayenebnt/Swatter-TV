@@ -1,17 +1,24 @@
-# Swatter TV : site + base PostgreSQL (VPS, Coolify, Portainer…).
+# Swatter TV : site + base PostgreSQL + tâche planifiée (VPS, Coolify, Portainer…).
 #
 # 1. Copier .env.example en .env et renseigner au minimum :
-#      POSTGRES_PASSWORD   mot de passe de la base (long et aléatoire)
-#      PAYLOAD_SECRET      openssl rand -hex 32
-#      CRON_SECRET         openssl rand -hex 16
+#      POSTGRES_PASSWORD     mot de passe de la base (long et aléatoire)
+#      PAYLOAD_SECRET        openssl rand -hex 32
+#      CRON_SECRET           openssl rand -hex 16
 #      NEXT_PUBLIC_SITE_URL  adresse publique, ex. https://www.swatter-tv.fr
 #    (facultatif : POSTGRES_DB, POSTGRES_USER, APP_PORT, NEXT_PUBLIC_BUNNY_LIBRARY_ID, S3_*)
+#    DATABASE_URI est inutile ici : il est construit à partir des variables POSTGRES_*.
 # 2. docker compose up -d --build
-#    → la base démarre, les migrations s'appliquent (service « migrate »), puis le site démarre.
-# 3. Premier administrateur : ouvrir https://…/admin et créer le compte.
+#    → la base démarre, les migrations s'appliquent (service « migrate »), puis le site et la tâche planifiée démarrent.
+# 3. Premier administrateur : ouvrir https://…/admin et créer le compte en choisissant le rôle « Administrateur »
+#    (ou : docker compose run --rm -e ADMIN_EMAIL=… -e ADMIN_PASSWORD=… tools npm run payload run src/scripts/init-db.ts).
+#
+# Commandes ponctuelles (service « tools », jamais démarré par « up ») :
+#    docker compose run --rm tools npm run payload migrate:status
+#    docker compose run --rm tools npm run import
+#    docker compose run --rm -e SEED_FORCE=1 tools npm run seed      (jeu de démonstration : efface les contenus !)
 #
 # Données persistantes : volumes « pgdata » (base) et « media » (images et vidéos envoyées).
-# Sauvegardes : voir README.md.
+# Sauvegardes et mises à jour : voir README.md.
 
 name: swatter-tv
 
@@ -19,7 +26,7 @@ x-app-env: &app-env
   DATABASE_URI: postgres://${POSTGRES_USER:-swatter}:${POSTGRES_PASSWORD:?Renseignez POSTGRES_PASSWORD dans .env}@db:5432/${POSTGRES_DB:-swatter}
   PAYLOAD_SECRET: ${PAYLOAD_SECRET:?Renseignez PAYLOAD_SECRET dans .env}
   NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
-  CRON_SECRET: ${CRON_SECRET:-}
+  CRON_SECRET: ${CRON_SECRET:?Renseignez CRON_SECRET dans .env}
   NEXT_PUBLIC_BUNNY_LIBRARY_ID: ${NEXT_PUBLIC_BUNNY_LIBRARY_ID:-}
   # Stockage des médias sur S3 / R2 / Scaleway (facultatif ; sinon volume « media »)
   S3_BUCKET: ${S3_BUCKET:-}
@@ -28,9 +35,23 @@ x-app-env: &app-env
   S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
   S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
 
+# Les variables NEXT_PUBLIC_* sont figées dans le code au moment du build de l'image.
 x-build-args: &build-args
   NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
   NEXT_PUBLIC_BUNNY_LIBRARY_ID: ${NEXT_PUBLIC_BUNNY_LIBRARY_ID:-}
+
+# Image « tools » du Dockerfile : sources complètes + CLI Payload (migrations, jeu de démonstration, imports).
+x-tools: &tools
+  build:
+    context: .
+    target: tools
+    args: *build-args
+  environment: *app-env
+  volumes:
+    - media:/app/media
+  depends_on:
+    db:
+      condition: service_healthy
 
 services:
   db:
@@ -48,20 +69,17 @@ services:
       timeout: 5s
       retries: 20
 
-  # Applique les migrations Payload (src/migrations) puis s'arrête.
-  # Aussi utilisé pour les commandes ponctuelles : docker compose run --rm migrate npm run payload migrate:status
+  # Applique les migrations Payload (src/migrations) puis s'arrête ; le site attend qu'elles aient réussi.
   migrate:
-    build:
-      context: .
-      target: tools
-      args: *build-args
-    environment: *app-env
-    volumes:
-      - media:/app/media
-    depends_on:
-      db:
-        condition: service_healthy
+    <<: *tools
     restart: 'no'
+
+  # Commandes ponctuelles : docker compose run --rm tools <commande>
+  tools:
+    <<: *tools
+    profiles: ['tools']
+    restart: 'no'
+    command: ['npm', 'run', 'payload', 'migrate:status']
 
   app:
     build:
@@ -72,8 +90,8 @@ services:
     restart: unless-stopped
     environment: *app-env
     ports:
-      # À placer derrière un reverse proxy HTTPS (Caddy, Traefik, Nginx ou le proxy de Coolify).
-      - '${APP_PORT:-3000}:3000'
+      # Écoute locale uniquement : à publier derrière un reverse proxy HTTPS (Caddy, Nginx, Traefik ou le proxy de Coolify).
+      - '127.0.0.1:${APP_PORT:-3000}:3000'
     volumes:
       - media:/app/media
     depends_on:
@@ -81,6 +99,27 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+
+  # Tâche planifiée horaire : imports RSS et météo (GET /api/cron/import, secret transmis dans l'en-tête Authorization).
+  # Premier passage dès que le site est prêt, puis toutes les heures ; les échecs sont visibles dans « docker compose logs cron ».
+  cron:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    init: true
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?Renseignez CRON_SECRET dans .env}
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        while true; do
+          echo "$$(date -u '+%F %T') import RSS + météo"
+          curl -fsS --max-time 300 -H "Authorization: Bearer $$CRON_SECRET" http://app:3000/api/cron/import || echo "échec de l'import"
+          echo
+          sleep 3600
+        done
+    depends_on:
+      app:
+        condition: service_healthy
 
 volumes:
   pgdata:

@@ -3,7 +3,7 @@
 // YouTube (façade puis lecteur youtube-nocookie) ou lecteur à intégrer (iframe), avec la même règle de consentement
 // que le lecteur vidéo pour les services externes.
 import Image, { getImageProps } from 'next/image'
-import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent } from 'react'
 import type Hls from 'hls.js'
 import { openCookieSettings, useConsent } from '@/components/layout/consent'
 import { Icon } from '@/components/ui/Icon'
@@ -182,7 +182,8 @@ function HlsFeed({ cam, sizes, priority }: FeedProps) {
     if (failed || !el || !src || typeof IntersectionObserver === 'undefined') return
     // Pas de lecture automatique si l'internaute limite les animations
     const auto = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let visible = false
+    // Part visible du lecteur : lecture automatique à partir d'un quart, lecture demandée dès qu'il est à l'écran
+    let ratio = 0
     let cancelled = false
     let hls: Hls | null = null
     let loading = false
@@ -217,7 +218,10 @@ function HlsFeed({ cam, sizes, priority }: FeedProps) {
         if (!cancelled) setFailed(true)
       }))
 
-    const shouldPlay = () => (wanted.current ?? auto) && visible && !document.hidden
+    const shouldPlay = () => {
+      if (document.hidden || wanted.current === false) return false
+      return wanted.current === true ? ratio > 0 : auto && ratio >= 0.25
+    }
     const update = () => {
       if (!shouldPlay()) {
         if (!el.paused) el.pause()
@@ -254,10 +258,10 @@ function HlsFeed({ cam, sizes, priority }: FeedProps) {
     el.addEventListener('error', onError)
     const io = new IntersectionObserver(
       ([entry]) => {
-        visible = entry.isIntersecting
+        ratio = entry.isIntersecting ? entry.intersectionRatio : 0
         update()
       },
-      { threshold: 0.25 },
+      { threshold: [0, 0.25] },
     )
     io.observe(el)
     document.addEventListener('visibilitychange', update)
@@ -296,6 +300,17 @@ function HlsFeed({ cam, sizes, priority }: FeedProps) {
 }
 
 /* ----- YouTube et lecteur à intégrer (services externes) ----- */
+
+type FsDocument = Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => void }
+
+/** Rouvre le panneau des cookies, après être sorti du plein écran (le bandeau resterait invisible derrière). */
+function manageCookies(e: MouseEvent<HTMLButtonElement>) {
+  const button = e.currentTarget
+  const doc = document as FsDocument
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
+  else if (doc.webkitFullscreenElement) doc.webkitExitFullscreen?.()
+  openCookieSettings(button)
+}
 
 function EmbedFeed({ cam, sizes, priority }: FeedProps) {
   const consent = useConsent()
@@ -362,7 +377,7 @@ function EmbedFeed({ cam, sizes, priority }: FeedProps) {
         {showNotice && (
           <p className="wcp__notice">
             <span id={noticeId}>Ce flux est fourni par un service externe qui peut déposer des cookies.</span>{' '}
-            <button type="button" className="wcp__cookies" aria-haspopup="dialog" onClick={(e) => openCookieSettings(e.currentTarget)}>
+            <button type="button" className="wcp__cookies" aria-haspopup="dialog" onClick={manageCookies}>
               Gérer les cookies
             </button>
           </p>

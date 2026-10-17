@@ -39,13 +39,55 @@ export async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow, `Débordement horizontal : ${JSON.stringify(overflow)}`).toBeNull()
 }
 
+/** Référencement de base : langue, titre, URL canonique et données structurées JSON-LD lisibles. */
+export async function expectSeo(page: Page) {
+  const seo = await page.evaluate(() => ({
+    lang: document.documentElement.lang,
+    title: document.title,
+    canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? null,
+    jsonLd: [...document.querySelectorAll('script[type="application/ld+json"]')].map((script) => {
+      try {
+        JSON.parse(script.textContent ?? '')
+        return 'ok'
+      } catch {
+        return (script.textContent ?? '').slice(0, 80)
+      }
+    }),
+  }))
+  expect(seo.lang, 'langue du document').toMatch(/^fr/)
+  expect(seo.title, 'balise <title>').toMatch(/\S/)
+  expect(seo.canonical, 'URL canonique').toMatch(/^https?:\/\//)
+  expect(seo.jsonLd.filter((r) => r !== 'ok'), 'données structurées JSON-LD invalides').toEqual([])
+}
+
 /** Laisse le temps aux révélations au défilement et aux images différées. */
 export async function settle(page: Page) {
   await page.waitForLoadState('load')
   await page.waitForTimeout(800)
 }
 
-type Doc = { slug?: string | null; department?: string | null }
+/** Liens distincts du contenu principal dont le chemin correspond au motif (ex. fiches d'articles). */
+export async function linksMatching(page: Page, pattern: RegExp): Promise<string[]> {
+  const hrefs = await page.locator('main a[href]').evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''))
+  return [...new Set(hrefs.filter((href) => pattern.test(href)))]
+}
+
+/**
+ * Vérifie la PRÉSENCE du lecteur vidéo, pas la lecture : façade « clic pour lire », lecteur natif, iframe
+ * (YouTube, Bunny) ou message « Vidéo indisponible » (le Chromium de Playwright ne décode pas le H.264 des MP4
+ * de démonstration).
+ */
+export async function expectPlayer(page: Page) {
+  const player = page.getByRole('region', { name: /lecteur vidéo/i }).first()
+  await expect(player).toBeVisible()
+  const content = player
+    .locator('video, iframe')
+    .or(player.getByRole('button', { name: /lire/i }))
+    .or(player.getByText(/vidéo indisponible/i))
+  await expect(content.first()).toBeVisible()
+}
+
+type Doc = { slug?: string | null; department?: string | null; name?: string | null; title?: string | null }
 
 /** Premier document publié d'une collection (via l'API REST de Payload). */
 export async function firstDoc(request: APIRequestContext, collection: string, query = ''): Promise<Doc | null> {

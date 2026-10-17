@@ -39,7 +39,7 @@ const DAYS: DayTemplate[] = [
     parts: [['sun', 7], ['sun', 19], ['partly', 13]],
     cities: [['sun', 0, 8], ['sun', 7, 18], ['sun', 9, 20], ['sun', 8, 19], ['partly', 9, 15]],
     bulletin:
-      'Grand soleil sur l’ensemble des massifs : une journée idéale pour les sorties en montagne. Après une matinée fraîche, le thermomètre grimpe jusqu’à 19 °C à Annecy et 20 °C à Lyon. Excellente visibilité en altitude.',
+      'Grand soleil sur l’ensemble des massifs : une journée idéale pour les sorties en montagne. Après une matinée fraîche, le thermomètre grimpe jusqu’à 19 °C à Annecy et 20 °C à Lyon. Excellente visibilité en altitude.',
   },
   {
     main: { kind: 'cloud', label: 'Nuageux, quelques averses en soirée', now: 13, min: 8, max: 15 },
@@ -55,7 +55,7 @@ const DAYS: DayTemplate[] = [
     parts: [['rain', 8], ['rain', 12], ['cloud', 9]],
     cities: [['snow', -2, 2], ['rain', 8, 12], ['rain', 10, 14], ['rain', 9, 13], ['rain', 7, 10]],
     bulletin:
-      'Passage pluvieux sur l’ensemble de la région, avec des cumuls parfois importants sur les Aravis et le massif du Mont-Blanc. Les premiers flocons sont attendus au-dessus de 2 200 mètres : prudence en altitude.',
+      'Passage pluvieux sur l’ensemble de la région, avec des cumuls parfois importants sur les Aravis et le massif du Mont-Blanc. Les premiers flocons sont attendus au-dessus de 2 200 mètres : prudence en altitude.',
   },
   {
     main: { kind: 'partly', label: 'Retour des éclaircies', now: 12, min: 4, max: 14 },

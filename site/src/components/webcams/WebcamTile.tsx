@@ -71,6 +71,9 @@ export function WebcamTile({ cam, index }: { cam: WebcamView; index: number }) {
     const previous = root.style.overflow
     if (mode === 'overlay') root.style.overflow = 'hidden'
     const onKey = (e: KeyboardEvent) => {
+      // Focus dans une autre boîte de dialogue (panneau des cookies ouvert depuis le lecteur…) : on la laisse gérer
+      const current = document.activeElement
+      if (current instanceof Element && !screen.current?.contains(current) && current.closest('[role="dialog"]')) return
       if (e.key === 'Escape') {
         e.preventDefault()
         if (mode === 'overlay') setMode('off')

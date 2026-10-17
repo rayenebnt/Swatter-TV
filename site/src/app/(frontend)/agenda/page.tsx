@@ -11,6 +11,7 @@ import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
+import { EVENT_CATEGORIES } from '@/lib/categories'
 import { parisDay } from '@/lib/format'
 import {
   EVENT_PERIODS,
@@ -59,12 +60,13 @@ function texts(category: EventCategory | null, period: EventPeriod | null, page:
   const cat = category ? categoryFilterLabel(category) : null
   const when = period ? periodLabel(period).toLowerCase() : null
   const suffix = page > 1 ? ` (page ${page})` : ''
-  const parts = [cat && `«\u00a0${cat}\u00a0»`, when].filter(Boolean).join(', ')
+  const quoted = cat && `«\u00a0${cat}\u00a0»`
+  const parts = [quoted, when].filter(Boolean)
   return {
     cat,
-    title: `${parts ? `Agenda ${parts}` : 'Agenda des sorties en Haute-Savoie'}${suffix}`,
-    description: parts
-      ? `Les sorties ${parts} en Haute-Savoie et dans les Alpes\u00a0: dates, lieux et programmes, avec Swatter TV.`
+    title: `${parts.length ? `Agenda ${parts.join(', ')}` : 'Agenda des sorties en Haute-Savoie'}${suffix}`,
+    description: parts.length
+      ? `Les sorties ${parts.join(' ')} en Haute-Savoie et dans les Alpes\u00a0: dates, lieux et programmes, avec Swatter TV.`
       : `${INTRO} Dates, lieux et programmes avec Swatter TV.`,
   }
 }
@@ -103,7 +105,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
   const [list, categories, highlights] = await Promise.all([
     getAgendaPage({ category, period, page, limit: PER_PAGE, now }),
     getUpcomingCategories(now),
-    withFeature ? getAgendaHighlights(4) : Promise.resolve(null),
+    withFeature ? getAgendaHighlights(0) : Promise.resolve(null),
   ])
   if (page > 1 && page > list.totalPages) notFound()
 
@@ -112,6 +114,8 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
   const crumbs: Crumb[] = [{ label: 'Agenda', href: '/agenda' }, ...(cat ? [{ label: cat }] : [])]
   const groups = byMonth(list.docs, now)
   const count = list.totalDocs
+  // La catégorie demandée reste proposée (active) même sans événement à venir
+  const shownCategories = EVENT_CATEGORIES.map((c) => c.value).filter((c) => categories.includes(c) || c === category)
 
   return (
     <>
@@ -143,7 +147,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
             label="Filtrer par catégorie"
             links={[
               { href: agendaUrl({ period }), label: 'Toutes les catégories', current: !category },
-              ...categories.map((c) => ({ href: agendaUrl({ category: c, period }), label: categoryFilterLabel(c), current: c === category })),
+              ...shownCategories.map((c) => ({ href: agendaUrl({ category: c, period }), label: categoryFilterLabel(c), current: c === category })),
             ]}
           />
         </div>
@@ -154,7 +158,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
         )}
 
         {groups.length ? (
-          groups.map((g) => (
+          groups.map((g, gi) => (
             <section key={g.key} className="agenda-month" aria-labelledby={`mois-${g.key}`}>
               <h2 className="agenda-month__title" id={`mois-${g.key}`}>
                 {monthLabel(g.key)}
@@ -164,7 +168,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
               </h2>
               <div className="agenda-grid">
                 {g.events.map((e, i) => (
-                  <EventCard key={e.id} event={e} now={now} variant="poster" index={i % 4} />
+                  <EventCard key={e.id} event={e} now={now} variant="poster" index={i % 4} priority={!feature && gi === 0 && i === 0} />
                 ))}
               </div>
             </section>

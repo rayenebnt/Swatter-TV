@@ -35,11 +35,11 @@ export const MEDIA: SeedMedia[] = [
   photo('info-foot-loire', 'Supporters au bord du terrain pendant un match de Coupe de France'),
   photo('info-repit', 'Personne en fauteuil roulant accompagnée par une aidante'),
   photo('info-station', 'Rassemblement de skieurs brandissant des skis pour défendre leur station'),
-  photo('sortie-demontagnee', 'Affiche de La Démontagnée : vache, chèvre et brebis devant les sommets'),
+  photo('sortie-demontagnee', 'Affiche de La Démontagnée : vache, chèvre et brebis devant les sommets'),
   photo('video-du-jour-renardeau', 'Un jeune renardeau dans les herbes hautes'),
 
-  clip('direct-mont-blanc', 'Vidéo de démonstration : lent zoom sur les sommets au crépuscule'),
-  clip('nuit-aravis', 'Vidéo de démonstration : massif montagneux au clair de lune'),
-  clip('matin-alpages', 'Vidéo de démonstration : lac alpin au petit matin'),
-  clip('hiver-glaciers', 'Vidéo de démonstration : sommets enneigés en hiver'),
+  clip('direct-mont-blanc', 'Vidéo de démonstration : lent zoom sur les sommets au crépuscule'),
+  clip('nuit-aravis', 'Vidéo de démonstration : massif montagneux au clair de lune'),
+  clip('matin-alpages', 'Vidéo de démonstration : lac alpin au petit matin'),
+  clip('hiver-glaciers', 'Vidéo de démonstration : sommets enneigés en hiver'),
 ]
