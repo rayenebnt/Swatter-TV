@@ -141,3 +141,6 @@ npm run seed           # données de démonstration
   la casse ou les accents passent par `[...slug]` (la correspondance de `next.config.ts` est insensible à la casse et bouclerait).
 - **Recherche** : `ILIKE` sans index, suffisant à cette échelle ; pour de gros volumes, ajouter un index trigramme (pg_trgm).
   `SearchHit.image` peut être une URL distante (articles RSS) : l'afficher avec `unoptimized`.
+- **Pages qui lisent `searchParams`** (filtres, pagination) : pas de `generateStaticParams` sur la même route. En production,
+  une page prégénérée qui lit `searchParams` lève `DYNAMIC_SERVER_USAGE` (erreur 500), alors que tout fonctionne en développement.
+  Toujours vérifier les pages avec `npm run build && npm start`.

@@ -3,13 +3,9 @@ import { notFound } from 'next/navigation'
 import { InfoListing, listingMetadata, loadListing, parsePage, type SearchParams } from '@/components/info/InfoListing'
 import { isDepartment } from '@/lib/departments'
 
+// Page rendue à chaque requête, comme /info : elle lit la pagination (?page=), incompatible avec une page statique
+// (generateStaticParams + searchParams provoque une erreur 500 DYNAMIC_SERVER_USAGE en production).
 export const revalidate = 60
-export const dynamicParams = true
-
-/** Pages générées à la première visite puis mises en cache. */
-export function generateStaticParams() {
-  return []
-}
 
 type Params = Promise<{ departement: string }>
 
