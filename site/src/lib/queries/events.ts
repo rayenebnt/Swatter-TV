@@ -130,13 +130,15 @@ export async function getUpcomingEvents(limit = 6, excludeId?: number, now = new
 }
 
 /** Section de l'accueil : la prochaine « sortie du week-end » (sinon le prochain événement) et les suivants. */
+export type AgendaHighlights = { feature: EventFeatureItem | null; others: EventFeatureItem[] }
+
 export const getAgendaHighlights = cache(
-  async (count = 4): Promise<{ feature: EventFeatureItem | null; others: EventFeatureItem[] }> =>
-    safe(
+  async (count = 4): Promise<AgendaHighlights> =>
+    safe<AgendaHighlights>(
       async () => {
         const upcoming = upcomingWhere()
         const [picked, next] = await Promise.all([findEvents({ and: [upcoming, { isWeekendPick: { equals: true } }] }, 1), findEvents(upcoming, count + 1)])
-        const feature = picked[0] ?? next[0] ?? null
+        const feature: EventFeatureItem | null = picked.at(0) ?? next.at(0) ?? null
         return { feature, others: next.filter((e) => e.id !== feature?.id).slice(0, count) }
       },
       { feature: null, others: [] },
