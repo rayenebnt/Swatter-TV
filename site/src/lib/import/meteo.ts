@@ -183,7 +183,7 @@ function skySentence([m, a, s]: WeatherKind[], when: string, seed: number): stri
   } else if (m === 'fog' && a !== 'fog' && !isWet(a)) {
     const after = { sun: ['un beau soleil', 'le soleil prend le dessus'], partly: ['de belles éclaircies', 'les éclaircies gagnent du terrain'], cloud: ['un ciel nuageux', 'les nuages prennent le relais'] }[a as 'sun' | 'partly' | 'cloud']
     template = pick(
-      [`{when}, les brouillards matinaux se dissipent pour laisser place à ${after[0]}.`, `Après un début de journée dans le brouillard, ${after[1]} {when} l’après-midi.`],
+      [`{when}, les brouillards matinaux se dissipent pour laisser place à ${after[0]}.`, `Après un début de journée dans le brouillard, ${after[1]} {when} après-midi.`],
       seed,
     )
   } else if (isWet(s) && !isWet(m) && !isWet(a)) {
@@ -197,7 +197,7 @@ function skySentence([m, a, s]: WeatherKind[], when: string, seed: number): stri
     template = pick([`{when}, ${morning[0]} en matinée, puis ${better} l’après-midi.`, `Le temps s’améliore {when} au fil des heures, après ${morning[1]} matinale.`], seed)
   } else if (isWet(a)) {
     const clause = { rain: 'des averses se développent', snow: 'la neige fait son apparition', storm: 'des orages éclatent' }[a as 'rain' | 'snow' | 'storm']
-    template = pick([`{when}, ${clause} au fil de l’après-midi.`, `Le ciel se dégrade {when} l’après-midi, avec ${NOUN[a]}.`], seed)
+    template = pick([`{when}, ${clause} au fil de l’après-midi.`, `Le ciel se dégrade {when} après-midi, avec ${NOUN[a]}.`], seed)
   } else if (a === s) {
     template = `{when}, ${NOUN[m]} le matin, puis ${NOUN[a]} jusqu’au soir.`
   } else {
