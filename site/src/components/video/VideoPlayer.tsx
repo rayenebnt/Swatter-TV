@@ -74,7 +74,8 @@ function Player({ video, poster, title, autoPlay = false, live = false }: VideoP
 /** Affiche plein cadre (next/image : AVIF/WebP, tailles adaptées), chargée en priorité : le lecteur est l'élément principal de sa page. */
 function Poster({ src }: { src: string }) {
   const img = imageSource(src)
-  return <Image src={img.src} unoptimized={img.unoptimized} alt="" fill sizes={SIZES} loading="eager" fetchPriority="high" className="vp__poster" />
+  // preload : lien de préchargement dans le <head> (Next 16 : ne pas le combiner avec loading ni fetchPriority)
+  return <Image src={img.src} unoptimized={img.unoptimized} alt="" fill sizes={SIZES} preload className="vp__poster" />
 }
 
 /** YouTube / Bunny Stream : façade (affiche + bouton) ; l'iframe n'est chargée qu'au clic. */

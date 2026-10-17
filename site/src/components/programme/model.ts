@@ -32,6 +32,8 @@ export type GridSlot = {
   /** commence avant 6 h / finit après 2 h : bord découpé */
   cutL?: true
   cutR?: true
+  /** autour de l'heure du rendu serveur : vignette chargée tout de suite (visible dès le défilement initial vers « maintenant ») */
+  eager?: true
 }
 
 export type GridDay = { key: string; start: string; slots: GridSlot[] }
@@ -72,8 +74,12 @@ export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 /** Adresse de la page Programme TV pour un jour (aujourd'hui : adresse canonique sans paramètre). */
 export const programmeDayUrl = (day: string, today: string) => (day === today ? '/programme-tv' : `/programme-tv?jour=${day}`)
 
+/** Fenêtre autour de « maintenant » dont les vignettes sont chargées d'emblée (le reste est chargé au défilement). */
+const EAGER_BEFORE = 60 * 60_000
+const EAGER_AFTER = 3 * 60 * 60_000
+
 /** Répartit les créneaux sur les frises des jours proposés (créneaux à cheval découpés aux bords). */
-export function buildGridData(slots: Slot[], today: string): GridData {
+export function buildGridData(slots: Slot[], today: string, now: number = Date.now()): GridData {
   const programs: GridProgram[] = []
   const index = new Map<string, number>()
   const progOf = (s: Slot) => {
@@ -103,6 +109,7 @@ export function buildGridData(slots: Slot[], today: string): GridData {
         to: Math.min(GRID_MINUTES, (b - start) / 60_000),
         ...(a < start ? { cutL: true as const } : {}),
         ...(b > end ? { cutR: true as const } : {}),
+        ...(b > now - EAGER_BEFORE && a < now + EAGER_AFTER ? { eager: true as const } : {}),
       })
     }
     return { key, start: new Date(start).toISOString(), slots: daySlots }

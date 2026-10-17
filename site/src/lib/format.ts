@@ -1,6 +1,16 @@
 import { TIMEZONE } from './site'
 
-const fmt = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('fr-FR', { timeZone: TIMEZONE, ...opts })
+// Les formateurs Intl sont coûteux à créer (la grille TV formate des centaines de dates) : un par jeu d'options, réutilisé
+const formatters = new Map<string, Intl.DateTimeFormat>()
+const fmt = (opts: Intl.DateTimeFormatOptions) => {
+  const key = JSON.stringify(opts)
+  let f = formatters.get(key)
+  if (!f) {
+    f = new Intl.DateTimeFormat('fr-FR', { timeZone: TIMEZONE, ...opts })
+    formatters.set(key, f)
+  }
+  return f
+}
 const toDate = (d: Date | string | number) => (d instanceof Date ? d : new Date(d))
 
 /** « 20:30 » */
@@ -51,4 +61,5 @@ export function timeAgo(d: Date | string, now = new Date()): string {
   return formatDate(d)
 }
 /** Format numérique français : 995 349 */
-export const formatNumber = (n: number) => new Intl.NumberFormat('fr-FR').format(n).replace(/ | /g, ' ')
+const numberFormat = new Intl.NumberFormat('fr-FR')
+export const formatNumber = (n: number) => numberFormat.format(n).replace(/ | /g, ' ')

@@ -183,3 +183,8 @@ main { overflow-x: clip; min-height: 60vh; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
   [data-reveal] { opacity: 1; transform: none; }
 }
+
+/* ----- Rendu différé des sections hors écran (moins de travail au chargement, surtout sur mobile) ----- */
+/* La taille réelle est mémorisée après le premier affichage (auto) : pas de saut lors du défilement. */
+main > .section ~ .section { content-visibility: auto; contain-intrinsic-size: auto 560px; }
+@media (max-width: 760px) { main > .section ~ .section { contain-intrinsic-size: auto 620px; } }

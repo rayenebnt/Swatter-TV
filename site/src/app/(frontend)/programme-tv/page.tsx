@@ -10,6 +10,8 @@ import { ogImage } from '@/lib/og'
 export const revalidate = 60
 
 const INTRO = 'La grille de Swatter TV heure par heure : journaux, météo, magazines, documentaires et divertissements, aujourd’hui et toute la semaine.'
+/** Texte d'en-tête : la description, complétée d'une aide à la lecture de la grille */
+const LEAD = `${INTRO} Choisissez un jour, puis touchez une émission pour lire son résumé et ses horaires.`
 const SHARE_IMAGE = '/visuels/hero-crepuscule.webp'
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
@@ -40,7 +42,7 @@ export default async function ProgrammeTvPage({ searchParams }: { searchParams: 
   const { today, day } = await resolveDay(searchParams)
   return (
     <>
-      <PageHeader eyebrow="Ce soir et cette semaine" title="Programme TV" description={INTRO} crumbs={[{ label: 'Programme TV' }]} />
+      <PageHeader eyebrow="Ce soir et cette semaine" title="Programme TV" description={LEAD} crumbs={[{ label: 'Programme TV' }]} />
       <TvGridSection variant="full" day={day} />
       <div className="container">
         <AdSlot placement="inner-leaderboard" />

@@ -206,7 +206,7 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
                       onClick={() => setOpened({ day: day.key, id: s.id })}
                       onFocus={() => setFocusId(s.id)}
                     >
-                      <Image src={programImage(p)} alt="" width={iw} height={Math.round((iw * 9) / 16)} />
+                      <Image src={programImage(p)} alt="" width={iw} height={Math.round((iw * 9) / 16)} loading={s.eager ? 'eager' : 'lazy'} />
                       {live && (
                         <span className="badge badge--live" aria-hidden="true">
                           <i />
