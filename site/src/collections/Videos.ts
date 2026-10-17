@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, publishedOrAuthenticated } from '@/access'
 import { slugField } from '@/fields/slug'
 import { videoSourceField } from '@/fields/videoSource'
 import { revalidateHooks } from '@/hooks/revalidate'
@@ -14,7 +14,7 @@ export const Videos: CollectionConfig = {
     defaultColumns: ['title', 'category', 'publishedAt', 'isVideoOfDay'],
     description: 'Vidéos du jour, Top 10 et vidéos à la demande.',
   },
-  access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  access: { read: publishedOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
   defaultSort: '-publishedAt',
   hooks: revalidateHooks,
   fields: [

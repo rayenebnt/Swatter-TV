@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, publishedOrAuthenticated } from '@/access'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
 import { DEPARTMENTS } from '@/lib/departments'
@@ -13,7 +13,7 @@ export const Articles: CollectionConfig = {
     defaultColumns: ['title', 'department', 'publishedAt', 'source'],
     description: 'Articles saisis par l’équipe ou importés automatiquement depuis les flux RSS.',
   },
-  access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  access: { read: publishedOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
   defaultSort: '-publishedAt',
   hooks: revalidateHooks,
   fields: [

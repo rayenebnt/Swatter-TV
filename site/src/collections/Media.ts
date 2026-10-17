@@ -12,7 +12,8 @@ export const Media: CollectionConfig = {
   ],
   upload: {
     staticDir: 'media',
-    mimeTypes: ['image/*', 'video/mp4', 'video/webm'],
+    // Images matricielles et vidéos uniquement (pas de SVG, qui peut contenir du script)
+    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'video/mp4', 'video/webm'],
     focalPoint: true,
     formatOptions: { format: 'webp', options: { quality: 82 } },
     imageSizes: [
