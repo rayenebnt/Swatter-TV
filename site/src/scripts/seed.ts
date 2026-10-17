@@ -47,8 +47,13 @@ const addDays = (day: string, n: number) => {
   return d.toISOString().slice(0, 10)
 }
 const weekday = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay()
-/** Samedi qui vient (aujourd'hui si l'on est samedi). */
-const saturday = addDays(today, (6 - weekday(today) + 7) % 7)
+/** Samedi qui vient (aujourd'hui si l'on est samedi)… */
+const nextSaturday = addDays(today, (6 - weekday(today) + 7) % 7)
+/** …ou le suivant si la sortie du week-end est déjà terminée (jeu lancé un samedi soir). */
+const weekendPick = EVENTS.find((e) => e.isWeekendPick)
+const pickEnd = weekendPick ? (weekendPick.end ?? weekendPick.start) : null
+const saturday =
+  pickEnd?.from === 'saturday' && parisDateTime(addDays(nextSaturday, pickEnd.days), pickEnd.time) <= now ? addDays(nextSaturday, 7) : nextSaturday
 const relDay = (r: RelDay) => addDays(r.from === 'saturday' ? saturday : today, r.days)
 const shortDate = (d: Date) => new Intl.DateTimeFormat('fr-FR', { timeZone: TIMEZONE, day: 'numeric', month: 'short' }).format(d)
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)

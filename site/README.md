@@ -214,7 +214,8 @@ Autres commandes ponctuelles : `docker compose run --rm tools npm run payload mi
 
 ## Tâche planifiée horaire
 
-`GET /api/cron/import`, protégée par `CRON_SECRET` (en-tête `Authorization: Bearer <secret>`, ou `?secret=<secret>`) :
+`GET /api/cron/import`, protégée par `CRON_SECRET` (de préférence dans l’en-tête `Authorization: Bearer <secret>`, à défaut
+`?secret=<secret>`, qui risque de finir dans les journaux d’accès) :
 
 1. importe dans « L’Info » les articles des flux RSS actifs (collection « Flux RSS », sans doublon) ;
 2. met à jour les prévisions météo depuis Open-Meteo, si « Mise à jour automatique » est cochée dans le global « Météo »
@@ -243,8 +244,9 @@ docker run --rm -v swatter-tv_media:/media:ro -v "$PWD":/sauvegarde alpine \
   tar czf /sauvegarde/media-$(date +%F).tar.gz -C /media .
 ```
 
-Restauration : `docker compose exec -T db pg_restore -U swatter -d swatter --clean --if-exists < swatter-AAAA-MM-JJ.dump`
-puis extraction de l’archive dans le volume `media`. Sans Docker : `pg_dump "$DATABASE_URI" -Fc -f swatter.dump` et une
+Restauration (site arrêté : `docker compose stop app cron`, puis `docker compose start app cron`) :
+`docker compose exec -T db pg_restore -U swatter -d swatter --clean --if-exists < swatter-AAAA-MM-JJ.dump`, puis extraction
+de l’archive dans le volume `media`. Adaptez `swatter` si `POSTGRES_USER` ou `POSTGRES_DB` ont été changés. Sans Docker : `pg_dump "$DATABASE_URI" -Fc -f swatter.dump` et une
 archive du dossier `media/`. Avec S3 / R2, activez le versionnage du bucket ou synchronisez-le ailleurs (`rclone sync`).
 
 ## Mises à jour
