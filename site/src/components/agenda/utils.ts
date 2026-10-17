@@ -16,7 +16,7 @@ export const eventVisual = (id: number) => `/visuels/${VISUALS[Math.abs(id) % VI
 export const AGENDA_VISUAL = '/visuels/t-crepuscule-a.webp'
 
 /** Espaces insécables de la typographie française (avant : ; ! ? » et après «) dans les textes saisis. */
-export const frenchSpaces = (s: string) => s.replace(/ (?=[:;!?»])/g, ' ').replace(/« /g, '« ')
+export const frenchSpaces = (s: string) => s.replace(/ (?=[:;!?»])/g, '\u00a0').replace(/« /g, '«\u00a0')
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 /** « dimanche 1 novembre » → « dimanche 1er novembre » */

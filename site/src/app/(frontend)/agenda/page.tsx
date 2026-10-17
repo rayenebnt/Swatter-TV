@@ -32,7 +32,7 @@ import '@/styles/agenda.css'
 export const revalidate = 60
 
 const PER_PAGE = 24
-const INTRO = 'Toute l’offre culturelle, touristique et sportive en Haute-Savoie et dans les Alpes : fêtes, marchés, concerts, expositions et sorties en famille.'
+const INTRO = 'Toute l’offre culturelle, touristique et sportive en Haute-Savoie et dans les Alpes\u00a0: fêtes, marchés, concerts, expositions et sorties en famille.'
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
@@ -59,12 +59,12 @@ function texts(category: EventCategory | null, period: EventPeriod | null, page:
   const cat = category ? categoryFilterLabel(category) : null
   const when = period ? periodLabel(period).toLowerCase() : null
   const suffix = page > 1 ? ` (page ${page})` : ''
-  const parts = [cat && `« ${cat} »`, when].filter(Boolean).join(', ')
+  const parts = [cat && `«\u00a0${cat}\u00a0»`, when].filter(Boolean).join(', ')
   return {
     cat,
     title: `${parts ? `Agenda ${parts}` : 'Agenda des sorties en Haute-Savoie'}${suffix}`,
     description: parts
-      ? `Les sorties ${parts} en Haute-Savoie et dans les Alpes : dates, lieux et programmes, avec Swatter TV.`
+      ? `Les sorties ${parts} en Haute-Savoie et dans les Alpes\u00a0: dates, lieux et programmes, avec Swatter TV.`
       : `${INTRO} Dates, lieux et programmes avec Swatter TV.`,
   }
 }
@@ -115,13 +115,13 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
 
   return (
     <>
-      <PageHeader eyebrow="Sortir en Haute-Savoie" title={cat ? `Agenda « ${cat} »` : 'Agenda'} description={INTRO} crumbs={crumbs} />
+      <PageHeader eyebrow="Sortir en Haute-Savoie" title={cat ? `Agenda «\u00a0${cat}\u00a0»` : 'Agenda'} description={INTRO} crumbs={crumbs} />
 
       {feature && (
         <>
           <section className="section section--tight container" aria-labelledby="agenda-pick-title">
             <SectionHead eyebrow={feature.isWeekendPick ? 'Sortie du week-end' : 'Prochainement'} title="À ne pas manquer" titleId="agenda-pick-title" />
-            <EventFeature event={feature} />
+            <EventFeature event={feature} wide priority />
           </section>
           <div className="container">
             <AdSlot placement="inner-leaderboard" />
@@ -198,7 +198,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
           data={{
             '@context': 'https://schema.org',
             '@type': 'ItemList',
-            name: cat ? `Agenda « ${cat} » — ${SITE_NAME}` : `Agenda des sorties — ${SITE_NAME}`,
+            name: cat ? `Agenda «\u00a0${cat}\u00a0» — ${SITE_NAME}` : `Agenda des sorties — ${SITE_NAME}`,
             itemListElement: list.docs.map((e, i) => ({ '@type': 'ListItem', position: (page - 1) * PER_PAGE + i + 1, url: absoluteUrl(eventUrl(e)), name: e.title })),
           }}
         />

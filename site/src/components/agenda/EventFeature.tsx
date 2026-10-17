@@ -9,11 +9,24 @@ import { eventVisual, frenchSpaces, isMultiDay, shortWhen, timeLabel } from './u
 import '@/styles/agenda.css'
 
 const SIZES = '(max-width: 760px) 92vw, (max-width: 1100px) 46vw, 420px'
+const WIDE_SIZES = '(max-width: 760px) 92vw, (max-width: 1100px) 46vw, 640px'
 /** Moments du programme affichés sur la carte (la fiche les montre tous). */
 const MAX_SCHED = 3
 
 /** Événement mis en avant (carte « feature » de la maquette) : affiche, date, lieu, présentation et programme. */
-export function EventFeature({ event, headingLevel: Heading = 'h3' }: { event: EventFeatureItem; headingLevel?: 'h2' | 'h3' }) {
+export function EventFeature({
+  event,
+  headingLevel: Heading = 'h3',
+  wide = false,
+  priority = false,
+}: {
+  event: EventFeatureItem
+  headingLevel?: 'h2' | 'h3'
+  /** Pleine largeur (page Agenda) : affiche moins recadrée */
+  wide?: boolean
+  /** Image principale de la page (préchargée) */
+  priority?: boolean
+}) {
   const title = frenchSpaces(event.title)
   const program = (event.program ?? []).filter((p) => p.time?.trim() && p.label?.trim())
   const where = [event.city?.trim(), event.place?.trim()].filter(Boolean).join(' · ')
@@ -23,9 +36,9 @@ export function EventFeature({ event, headingLevel: Heading = 'h3' }: { event: E
   const description = event.description?.trim()
 
   return (
-    <article className="card feature" data-reveal>
+    <article className={wide ? 'card feature feature--wide' : 'card feature'} data-reveal>
       <div className="media">
-        <MediaImage media={event.poster} fill sizes={SIZES} alt={mediaAlt(event.poster, `Affiche : ${event.title}`)} fallbackSrc={eventVisual(event.id)} />
+        <MediaImage media={event.poster} fill priority={priority} sizes={wide ? WIDE_SIZES : SIZES} alt={mediaAlt(event.poster, `Affiche\u00a0: ${event.title}`)} fallbackSrc={eventVisual(event.id)} />
       </div>
       <div className="card__body">
         <div className="when">

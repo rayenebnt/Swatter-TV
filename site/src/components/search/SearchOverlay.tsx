@@ -9,6 +9,7 @@ import { Icon, type IconName } from '@/components/ui/Icon'
 import type { SearchHit } from '@/lib/search'
 import { searchPageUrl, SUGGESTIONS } from './rubriques'
 import { cleanQuery, highlightParts, queryWords } from './text'
+import { fallbackVisual, isRemote } from './visuals'
 import '@/styles/search.css'
 
 const LIST_ID = 'search-list'
@@ -17,10 +18,6 @@ const optionId = (i: number) => `search-opt-${i}`
 const FOCUSABLE = 'input, button:not([disabled]), a[href], [tabindex]'
 /** Nombre de requêtes gardées en mémoire (retour arrière instantané). */
 const MAX_CACHE = 30
-
-/** Visuel de repli (choix stable d'après l'adresse) pour un résultat sans image. */
-const VISUALS = ['t-crepuscule-a', 't-matin-a', 't-nuit-b', 't-ete-a', 't-hiver-a', 't-alpenglow-a', 't-nuages-a', 't-orage-b']
-const fallbackVisual = (key: string) => `/visuels/${VISUALS[[...key].reduce((s, ch) => s + ch.charCodeAt(0), 0) % VISUALS.length]}.webp`
 
 type Item = { key: string; href: string; title: string; subtitle: string; label: string; image?: string; icon?: IconName; all?: boolean }
 
@@ -89,7 +86,7 @@ export function SearchOverlay() {
     searching && !noResult && !error
       ? [
           ...visible.map((h) => ({ key: `${h.type}:${h.href}`, href: h.href, title: h.title, subtitle: h.subtitle, label: h.typeLabel, image: h.image || fallbackVisual(h.href) })),
-          ...(cached && hits.length ? [{ key: 'all', href: searchPageUrl(term), title: `Voir tous les résultats pour « ${term} »`, subtitle: '', label: '', all: true }] : []),
+          ...(cached && hits.length ? [{ key: 'all', href: searchPageUrl(term), title: `Voir tous les résultats pour «\u00a0${term}\u00a0»`, subtitle: '', label: '', all: true }] : []),
         ]
       : SUGGESTIONS.map((r) => ({ key: r.href, href: r.href, title: r.label, subtitle: r.hint, label: 'Rubrique', icon: r.icon }))
 
@@ -106,7 +103,10 @@ export function SearchOverlay() {
       returnTo.current = origin instanceof HTMLElement && origin !== document.body ? origin : null
       restoreFocus.current = true
       // Rendu immédiat puis focus dans le même geste (sinon iOS n'affiche pas le clavier)
-      flushSync(() => setOpen(true))
+      flushSync(() => {
+        setOpen(true)
+        setFailed(null)
+      })
       inputRef.current?.focus()
       inputRef.current?.select()
     }
@@ -122,10 +122,11 @@ export function SearchOverlay() {
       e.preventDefault()
       openFrom(document.activeElement)
     }
-    document.addEventListener('click', onClick)
+    // Phase de capture : passe avant le gestionnaire d'un lien Next (<Link data-open-search>), qui n'est alors pas suivi
+    document.addEventListener('click', onClick, true)
     document.addEventListener('keydown', onKey)
     return () => {
-      document.removeEventListener('click', onClick)
+      document.removeEventListener('click', onClick, true)
       document.removeEventListener('keydown', onKey)
     }
   }, [])
@@ -331,7 +332,7 @@ export function SearchOverlay() {
                     ) : (
                       <>
                         {it.image ? (
-                          <Image src={it.image} alt="" width={92} height={52} unoptimized={/^https?:\/\//.test(it.image)} />
+                          <Image src={it.image} alt="" width={92} height={52} unoptimized={isRemote(it.image)} />
                         ) : (
                           <span className="results__ico">{it.icon && <Icon name={it.icon} />}</span>
                         )}

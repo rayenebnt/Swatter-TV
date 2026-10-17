@@ -17,8 +17,11 @@ export type SearchHit = {
   image: string | null
 }
 
-/** Résultat avant tri : `tier` (0 = titre qui commence par la requête … 4 = autres champs), puis `key` (récence, décroissante). */
-type Ranked = { hit: SearchHit; tier: number; key: number }
+/**
+ * Résultat avant tri : `tier` (0 = titre qui commence par la requête … 4 = autres champs), puis `key` (récence, décroissante) ;
+ * `strict` : chaque mot de la requête commence un mot du texte (« lac » dans « Lac d’Annecy », pas dans « place »).
+ */
+type Ranked = { hit: SearchHit; tier: number; key: number; strict: boolean }
 
 /** Mot de la requête : motif SQL exact (accents saisis conservés) et motif élargi aux formes accentuées. */
 type Term = { exact: string; fuzzy: string }
@@ -33,6 +36,8 @@ type Ctx = {
   fuzzy: boolean
   take: number
   now: number
+  /** Documents dont tous les mots de la requête commencent un mot (voir collect) */
+  strict: WeakSet<object>
 }
 
 /** Échappe les caractères spéciaux de LIKE (% _ \) ; l'apostrophe (droite ou courbe) devient « _ » (un caractère quelconque). */
@@ -91,9 +96,17 @@ async function collect<T extends { id: number }>(
     if (seen.has(doc.id)) continue
     seen.add(doc.id)
     const hay = foldText(texts(doc).filter(Boolean).join('\n'))
-    if (c.words.every((w) => hay.includes(w))) out.push(doc)
+    if (!c.words.every((w) => hay.includes(w))) continue
+    if (c.words.every((w) => atWordStart(hay, w))) c.strict.add(doc)
+    out.push(doc)
   }
   return out
+}
+
+/** Le mot commence-t-il un mot du texte (début, ou après un caractère qui n'est ni lettre ni chiffre) ? */
+function atWordStart(hay: string, word: string): boolean {
+  for (let i = hay.indexOf(word); i !== -1; i = hay.indexOf(word, i + 1)) if (i === 0 || !/[\p{L}\p{N}]/u.test(hay[i - 1])) return true
+  return false
 }
 
 /** 0 : le titre commence par la requête ; 1 : un mot du titre commence par elle ; 2 : le titre la contient ; 3 : tous les mots sont dans le titre ; 4 : autres champs. */
@@ -136,6 +149,7 @@ async function searchVideos(c: Ctx): Promise<Ranked[]> {
   )
   return docs.map((v) => ({
     tier: tierOf(v.title, c),
+    strict: c.strict.has(v),
     key: time(v.publishedAt),
     hit: {
       type: 'video',
@@ -170,6 +184,7 @@ async function searchReplays(c: Ctx): Promise<Ranked[]> {
   )
   return docs.map((r) => ({
     tier: tierOf(r.title, c),
+    strict: c.strict.has(r),
     key: time(r.broadcastAt),
     hit: {
       type: 'replay',
@@ -203,6 +218,7 @@ async function searchArticles(c: Ctx): Promise<Ranked[]> {
   )
   return docs.map((a) => ({
     tier: tierOf(a.title, c),
+    strict: c.strict.has(a),
     key: time(a.publishedAt),
     hit: {
       type: 'article',
@@ -256,6 +272,7 @@ async function searchEvents(c: Ctx): Promise<Ranked[]> {
     else when = startDay === today ? 'Aujourd’hui' : capitalize(formatDayLong(e.startDate))
     return {
       tier: tierOf(e.title, c),
+      strict: c.strict.has(e),
       key: isUpcoming ? upcomingKey(c.now, start) : start,
       hit: { type: 'event', typeLabel: 'Agenda', title: e.title, subtitle: line(when, e.city), href: eventUrl(e), image: mediaUrl(e.poster, 'thumb') },
     }
@@ -283,6 +300,7 @@ async function searchPrograms(c: Ctx): Promise<Ranked[]> {
   )
   return docs.map((p) => ({
     tier: tierOf(p.title, c),
+    strict: c.strict.has(p),
     // Émission (sans date) : au niveau des contenus du jour
     key: c.now,
     hit: {
@@ -317,6 +335,7 @@ async function searchWebcams(c: Ctx): Promise<Ranked[]> {
   )
   return docs.map((w) => ({
     tier: tierOf(w.name, c),
+    strict: c.strict.has(w),
     key: c.now,
     hit: { type: 'webcam', typeLabel: 'Webcam', title: w.name, subtitle: w.place || 'Webcam en images', href: webcamUrl(w), image: mediaUrl(w.image, 'thumb') },
   }))
@@ -337,12 +356,14 @@ export async function search(payload: Payload, q: string, limit = 8): Promise<Se
     phrase: words.join(' '),
     // Requête élargie inutile si le motif ne change pas ou si l'internaute a lui-même saisi des accents
     fuzzy: terms.some((t) => t.fuzzy !== t.exact) && !terms.some((t) => /[^ -~]/.test(t.exact)),
-    take: Math.min(Math.max(max * 2, 12), 100),
+    take: Math.min(Math.max(max * 3, 24), 150),
     now: Date.now(),
+    strict: new WeakSet(),
   }
   const groups = await Promise.all([searchVideos(c), searchReplays(c), searchArticles(c), searchEvents(c), searchPrograms(c), searchWebcams(c)])
-  return groups
-    .flat()
+  const all = groups.flat()
+  // Correspondances en début de mot seulement s'il y en a ; sinon, repli sur les correspondances partielles (« nnecy »)
+  return (all.some((r) => r.strict) ? all.filter((r) => r.strict) : all)
     .sort((a, b) => a.tier - b.tier || b.key - a.key)
     .slice(0, max)
     .map((r) => r.hit)

@@ -142,7 +142,7 @@ function ImageFeed({ cam, sizes, priority }: FeedProps) {
   return (
     <div ref={root} className="wcp">
       {live ? (
-        <Image className="wcp__img" src={live} alt={`Vue en direct : ${cam.name}`} fill sizes={sizes} unoptimized />
+        <Image className="wcp__img" src={live} alt={`Vue en direct\u00a0: ${cam.name}`} fill sizes={sizes} unoptimized loading={priority ? 'eager' : undefined} />
       ) : (
         <Poster poster={cam.poster} sizes={sizes} priority={priority} />
       )}
@@ -287,7 +287,7 @@ function HlsFeed({ cam, sizes, priority }: FeedProps) {
 
   return (
     <div className="wcp">
-      <video ref={ref} className="wcp__video" muted playsInline preload="none" poster={poster} aria-label={`Webcam en direct : ${cam.name}`} />
+      <video ref={ref} className="wcp__video" muted playsInline preload="none" poster={poster} aria-label={`Webcam en direct\u00a0: ${cam.name}`} />
       <button type="button" className="wcp__toggle" onClick={toggle} aria-label={playing ? 'Mettre le direct en pause' : 'Lire le direct'}>
         {playing ? <PauseIcon /> : <Icon name="play" />}
       </button>
@@ -342,7 +342,7 @@ function EmbedFeed({ cam, sizes, priority }: FeedProps) {
           ref={frame}
           className="wcp__frame"
           src={src}
-          title={`Webcam en direct : ${cam.name}${cam.place ? ` — ${cam.place}` : ''}`}
+          title={`Webcam en direct\u00a0: ${cam.name}${cam.place ? ` — ${cam.place}` : ''}`}
           loading="lazy"
           allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
           allowFullScreen
@@ -356,7 +356,7 @@ function EmbedFeed({ cam, sizes, priority }: FeedProps) {
     <div ref={root} className="wcp">
       <Poster poster={cam.poster} sizes={sizes} priority={priority} />
       <div className="wcp__overlay">
-        <button type="button" className="wcp__play" onClick={() => setClicked(true)} aria-label={`Afficher la webcam en direct : ${cam.name}`} aria-describedby={showNotice ? noticeId : undefined}>
+        <button type="button" className="wcp__play" onClick={() => setClicked(true)} aria-label={`Afficher la webcam en direct\u00a0: ${cam.name}`} aria-describedby={showNotice ? noticeId : undefined}>
           <Icon name="play" />
         </button>
         {showNotice && (

@@ -14,6 +14,8 @@
 .feature p { margin-top: 12px; color: var(--ink-2); font-size: 15px; }
 .feature__desc { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
 .feature .btn { margin-top: 24px; align-self: flex-start; }
+.feature--wide { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 400px; }
+.feature--wide .card__body { justify-content: center; padding: 36px 40px; }
 /* Le bouton n'est qu'un repère : il réagit au survol de toute la carte */
 .feature:hover .btn--gold { transform: translateY(-2px); box-shadow: 0 20px 40px -14px rgba(217, 170, 69, .9), inset 0 1px 0 rgba(255, 255, 255, .5); }
 .feature:hover .btn::after { transform: translateX(110%); }
@@ -39,6 +41,8 @@
 
 /* ----- Page Agenda : filtres ----- */
 .agenda-filters { display: flex; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 34px; }
+/* La barre ne dépasse jamais son conteneur : elle défile (sinon les derniers filtres seraient rognés) */
+.agenda-filters > nav { min-width: 0; max-width: 100%; }
 .agenda-filters .seg a[aria-current='page'] { background: var(--gold-grad); box-shadow: 0 8px 22px -10px rgba(217, 170, 69, .8); }
 .agenda-period { margin: -10px 0 26px; color: var(--muted); font-size: 14.5px; }
 .agenda-period b { color: var(--ink); font-weight: 600; }
@@ -103,7 +107,9 @@
   .feature .media { aspect-ratio: 1 / 1; }
   .feature .card__body { padding: 22px; }
   .feature .card__title { font-size: 25px; }
-  .agenda-filters { flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .feature--wide { min-height: 0; }
+  .feature--wide .card__body { padding: 22px; }
+  .agenda-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 28px; }
   .agenda-period { margin-top: -6px; font-size: 13.5px; }
   /* Carte avec affiche : liste compacte (vignette à gauche) */
   .agenda-grid { grid-template-columns: 1fr; gap: 12px; }

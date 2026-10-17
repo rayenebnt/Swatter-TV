@@ -17,6 +17,26 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.amazonaws.com' },
     ],
   },
+  // Anciennes adresses du site, redirigées de façon permanente (308). La correspondance ignore la casse
+  // (experimental.caseSensitiveRoutes vaut false) : « /L-info » couvre aussi /L-Info et /l-info ; la barre oblique finale
+  // est retirée par Next avant ces règles. Les adresses qui ne diffèrent de la nouvelle que par la casse (/Agenda,
+  // /Programme-TV, /Webcams…) boucleraient ici : src/app/(frontend)/[...slug] les redirige, ainsi que les variantes accentuées.
+  async redirects() {
+    const legacy: [string, string][] = [
+      ['/Accueil', '/'],
+      ['/Le-Direct', '/direct'],
+      ['/LeDirect', '/direct'],
+      ['/L-info', '/info'],
+      ['/Linfo', '/info'],
+      ['/La-Meteo', '/meteo'],
+      ['/LaMeteo', '/meteo'],
+      ['/ProgrammeTV', '/programme-tv'],
+      ['/Le-Replay', '/replay'],
+      ['/LeReplay', '/replay'],
+      ['/Webcam', '/webcams'],
+    ]
+    return legacy.map(([source, destination]) => ({ source, destination, permanent: true }))
+  },
   async headers() {
     return [
       {

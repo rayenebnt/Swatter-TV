@@ -12,7 +12,7 @@ import '@/styles/webcams.css'
 export const revalidate = 60
 
 const TITLE = 'Webcams en direct'
-const DESCRIPTION = 'Les lacs, les stations et les sommets de Haute-Savoie et des Alpes en temps réel : toutes les webcams de Swatter TV, en direct.'
+const DESCRIPTION = 'Les lacs, les stations et les sommets de Haute-Savoie et des Alpes en temps réel\u00a0: toutes les webcams de Swatter TV, en direct.'
 
 export const metadata: Metadata = {
   title: TITLE,

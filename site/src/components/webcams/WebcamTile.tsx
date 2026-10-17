@@ -17,6 +17,12 @@ const FOCUSABLE = 'a[href], button:not([disabled]), iframe, video[controls], [ta
 
 const fullscreenElement = () => document.fullscreenElement ?? (document as FsDocument).webkitFullscreenElement ?? null
 
+/** Quitte le plein écran natif (avec ou sans préfixe). */
+function leaveFullscreen() {
+  if (document.exitFullscreen) document.exitFullscreen().catch(() => {})
+  else (document as FsDocument).webkitExitFullscreen?.()
+}
+
 /** Garde le focus dans le calque plein écran de repli. */
 function trapFocus(e: KeyboardEvent, root: HTMLElement | null) {
   if (!root) return
@@ -58,21 +64,22 @@ export function WebcamTile({ cam, index }: { cam: WebcamView; index: number }) {
     }
   }, [])
 
-  // Calque de repli : défilement de la page bloqué, Échap pour quitter, focus retenu
+  // Plein écran : Échap pour quitter, focus retenu ; calque de repli : défilement de la page bloqué en plus
   useEffect(() => {
-    if (mode !== 'overlay') return
+    if (mode === 'off') return
     const root = document.documentElement
     const previous = root.style.overflow
-    root.style.overflow = 'hidden'
+    if (mode === 'overlay') root.style.overflow = 'hidden'
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
-        setMode('off')
+        if (mode === 'overlay') setMode('off')
+        else leaveFullscreen()
       } else if (e.key === 'Tab') trapFocus(e, screen.current)
     }
     document.addEventListener('keydown', onKey)
     return () => {
-      root.style.overflow = previous
+      if (mode === 'overlay') root.style.overflow = previous
       document.removeEventListener('keydown', onKey)
     }
   }, [mode])
@@ -88,7 +95,7 @@ export function WebcamTile({ cam, index }: { cam: WebcamView; index: number }) {
   useEffect(() => {
     const el = screen.current
     return () => {
-      if (el && fullscreenElement() === el) document.exitFullscreen?.().catch(() => {})
+      if (el && fullscreenElement() === el) leaveFullscreen()
     }
   }, [])
 
@@ -110,17 +117,21 @@ export function WebcamTile({ cam, index }: { cam: WebcamView; index: number }) {
     setMode('overlay')
   }
 
-  const exit = () => {
-    if (mode !== 'native') return setMode('off')
-    if (document.exitFullscreen) document.exitFullscreen().catch(() => {})
-    else (document as FsDocument).webkitExitFullscreen?.()
-  }
+  const exit = () => (mode === 'native' ? leaveFullscreen() : setMode('off'))
 
   const dialog = mode === 'overlay' ? { role: 'dialog', 'aria-modal': true, 'aria-label': `Webcam ${cam.name} en plein écran` } : {}
 
   return (
-    <article id={cam.slug} className={`card camp${mode === 'overlay' ? ' is-expanded' : ''}`} aria-labelledby={titleId} data-reveal style={{ '--d': index % 3 } as CSSProperties}>
-      <div ref={screen} className="camp__screen" {...dialog}>
+    // État du calque en attribut : modifier className effacerait la classe « is-in » posée par la révélation au défilement
+    <article
+      id={cam.slug}
+      className="card camp"
+      aria-labelledby={titleId}
+      data-reveal
+      data-expanded={mode === 'overlay' ? '' : undefined}
+      style={{ '--d': index % 3 } as CSSProperties}
+    >
+      <div ref={screen} className={mode === 'off' ? 'camp__screen' : 'camp__screen is-full'} {...dialog}>
         <WebcamPlayer cam={cam} sizes={SIZES} priority={index < 3} />
         <div className="cam__top" aria-hidden="true">
           <span className="badge badge--live">

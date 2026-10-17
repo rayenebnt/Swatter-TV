@@ -45,7 +45,7 @@ const shareMedia = (e: Event): MediaRef => (e.meta?.image && typeof e.meta.image
 function describe(e: Event): string {
   const text = e.meta?.description?.trim() || e.description?.trim()
   if (text) return text.length > 200 ? `${text.slice(0, 197).trimEnd()}…` : text
-  return `${dateLabel(e, true)} à ${e.city}${e.place ? ` (${e.place})` : ''} : toutes les informations sur « ${e.title} » dans l’agenda de Swatter TV.`
+  return `${dateLabel(e, true)} à ${e.city}${e.place ? ` (${e.place})` : ''}\u00a0: toutes les informations sur «\u00a0${e.title}\u00a0» dans l’agenda de Swatter TV.`
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -138,7 +138,7 @@ export default async function EventPage({ params }: { params: Params }) {
             </header>
 
             <div className="ev__poster">
-              <MediaImage media={event.poster} priority sizes={POSTER_SIZES} alt={mediaAlt(event.poster, `Affiche : ${event.title}`)} fallbackSrc={eventVisual(event.id)} />
+              <MediaImage media={event.poster} priority sizes={POSTER_SIZES} alt={mediaAlt(event.poster, `Affiche\u00a0: ${event.title}`)} fallbackSrc={eventVisual(event.id)} />
             </div>
 
             <div className="ev__main">

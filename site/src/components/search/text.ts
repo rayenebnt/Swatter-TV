@@ -1,12 +1,12 @@
 // Recherche : normalisation du texte (sans casse ni accents), partagée par le serveur (lib/search.ts) et le client.
 
 /** Équivalences typographiques : apostrophes courbes et espaces insécables. */
-const SPECIAL: Record<string, string> = { '’': "'", '‘': "'", 'ʼ': "'", ' ': ' ', ' ': ' ' }
+const SPECIAL: Record<string, string> = { '’': "'", '‘': "'", 'ʼ': "'", '\u00a0': ' ', '\u202f': ' ' }
 
 function foldChar(ch: string): string {
   const special = SPECIAL[ch]
   if (special) return special
-  const base = ch.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  const base = ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
   // Un caractère donne toujours un caractère : les positions restent alignées sur le texte d'origine (surlignage)
   return base.length === 1 ? base : ch
 }

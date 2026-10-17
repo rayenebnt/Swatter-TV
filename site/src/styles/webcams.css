@@ -44,7 +44,6 @@
 .camp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .camp:hover { transform: none; }
 .camp:target { border-color: rgba(217, 170, 69, .6); box-shadow: 0 0 0 1px rgba(217, 170, 69, .3), 0 30px 60px -30px rgba(0, 0, 0, .9); }
-.camp.is-expanded { transform: none; transition: none; }
 .camp__screen { position: relative; z-index: 4; aspect-ratio: 16 / 9; overflow: hidden; background: var(--surface-2); }
 .camp__screen .cam__top { transition: opacity .3s; }
 /* Lecteur externe chargé : il a ses propres commandes */
@@ -60,21 +59,22 @@
 .camp__caption, .camp__close { display: none; }
 /* La température figure sous l'image ; dans le cadre seulement en plein écran */
 .camp__screen .cam__temp { display: none; }
-.camp__screen:fullscreen .cam__temp, .camp.is-expanded .cam__temp { display: inline; }
 
-/* Plein écran (API Fullscreen) et calque de repli */
-.camp__screen:fullscreen { aspect-ratio: auto; width: 100%; height: 100%; background: #000; }
-.camp__screen:-webkit-full-screen { aspect-ratio: auto; width: 100%; height: 100%; background: #000; }
-.camp.is-expanded .camp__screen { position: fixed; inset: 0; z-index: 62; aspect-ratio: auto; background: #000; }
-.camp__screen:fullscreen .wcp, .camp.is-expanded .wcp { background: #000; }
-.camp__screen:fullscreen .wcp__img, .camp__screen:fullscreen .wcp__video, .camp.is-expanded .wcp__img, .camp.is-expanded .wcp__video { object-fit: contain; }
-.camp__screen:fullscreen .cam__top, .camp.is-expanded .cam__top { top: 20px; left: 20px; right: 76px; }
-.camp__screen:fullscreen .camp__close, .camp.is-expanded .camp__close { display: grid; position: absolute; z-index: 5; top: 14px; right: 14px; background: rgba(4, 10, 22, .62); border-color: var(--line-2); }
-.camp__screen:fullscreen .camp__caption, .camp.is-expanded .camp__caption { display: block; position: absolute; z-index: 3; left: 20px; bottom: 18px; max-width: calc(100% - 40px); pointer-events: none; text-shadow: 0 1px 8px rgba(0, 0, 0, .6); }
+/* Plein écran : API Fullscreen (natif) ou calque fixe de repli ; .is-full est posée sur l'écran dans les deux cas */
+.camp__screen:fullscreen { aspect-ratio: auto; }
+.camp__screen:-webkit-full-screen { aspect-ratio: auto; width: 100%; height: 100%; }
+.camp[data-expanded] { opacity: 1; transform: none; transition: none; }
+.camp[data-expanded] .camp__screen { position: fixed; inset: 0; z-index: 62; aspect-ratio: auto; }
+.camp__screen.is-full, .is-full .wcp { background: #000; }
+.is-full .wcp__img, .is-full .wcp__video { object-fit: contain; }
+.is-full .cam__top { top: calc(20px + env(safe-area-inset-top)); left: 20px; right: 76px; }
+.is-full .cam__temp { display: inline; }
+.is-full .camp__close { display: grid; position: absolute; z-index: 5; top: calc(14px + env(safe-area-inset-top)); right: 14px; background: rgba(4, 10, 22, .62); border-color: var(--line-2); }
+.is-full .camp__caption { display: block; position: absolute; z-index: 3; left: 20px; bottom: calc(18px + env(safe-area-inset-bottom)); max-width: calc(100% - 40px); pointer-events: none; text-shadow: 0 1px 8px rgba(0, 0, 0, .6); }
 .camp__caption b { display: block; font-family: var(--font-display); font-weight: 700; font-size: 20px; }
 .camp__caption span { font-size: 14px; color: var(--ink-2); }
-.camp__screen:fullscreen:has(.wcp__frame) .camp__caption, .camp.is-expanded:has(.wcp__frame) .camp__caption { display: none; }
-.camp.is-expanded .wcp__toggle, .camp__screen:fullscreen .wcp__toggle { bottom: 64px; }
+.is-full .wcp__toggle { bottom: calc(64px + env(safe-area-inset-bottom)); }
+.is-full:has(.wcp__frame) .camp__caption { display: none; }
 
 /* ----- Responsive ----- */
 @media (max-width: 1100px) {
