@@ -61,7 +61,7 @@ cp .env.example .env
 | `CRON_SECRET` | oui en production | secret de la tâche planifiée `GET /api/cron/import` (`openssl rand -hex 16`) |
 | `NEXT_PUBLIC_BUNNY_LIBRARY_ID` | non | bibliothèque Bunny Stream (vidéos de type « Bunny Stream ») |
 | `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | non | médias sur S3 / R2 / Scaleway au lieu du dossier `media/` (activé dès que `S3_BUCKET` est renseigné) |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | non | premier administrateur créé par `src/scripts/init-db.ts` |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | oui en production | premier administrateur créé par `src/scripts/init-db.ts` (mot de passe de 12 caractères au moins) |
 | `SEED_FORCE` | non | `1` pour autoriser le jeu de démonstration quand `NODE_ENV=production` |
 
 Les variables `NEXT_PUBLIC_*` sont figées dans le code au moment du build : les changer impose de reconstruire le site.
@@ -76,9 +76,9 @@ npm run dev
 ```
 
 - `init-db.ts` crée les tables (schéma « poussé » en développement) puis un administrateur s’il n’en existe aucun.
-  Sans `ADMIN_EMAIL` / `ADMIN_PASSWORD`, il utilise `admin@swatter-tv.fr` / `swatter-admin-2026` : **à réserver au poste de
-  développement**. On peut aussi créer le premier compte depuis `http://localhost:3000/admin` : choisir alors le rôle
-  **« Administrateur »** (le formulaire propose « Éditeur » par défaut, qui ne peut pas gérer les utilisateurs).
+  Sans `ADMIN_EMAIL` / `ADMIN_PASSWORD`, il utilise `admin@swatter-tv.fr` / `swatter-admin-2026` : **uniquement sur le poste
+  de développement** (en production, le script refuse de s'exécuter sans ces deux variables). On peut aussi créer le premier
+  compte depuis `http://localhost:3000/admin` : sur une base vide, ce premier compte devient automatiquement administrateur.
 - `npm run seed` remplit la base avec le jeu de démonstration : **il efface d’abord tous les contenus** (jamais les
   utilisateurs), puis recrée médias, émissions, une grille de 8 jours à partir d’hier, vidéos, replays, articles, agenda,
   webcams, pages, réglages et prévisions météo. Il est idempotent (relançable à volonté) et refuse de tourner en production

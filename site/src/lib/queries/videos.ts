@@ -27,9 +27,14 @@ const LIST_SELECT = {
 
 export const isVideoCategory = (value: unknown): value is VideoCategory => VIDEO_CATEGORIES.some((c) => c.value === value)
 
+/** Vidéos publiées (date de publication passée), avec un filtre facultatif : une vidéo programmée n'apparaît qu'à sa date. */
+const published = (where?: Where): Where => ({
+  and: [{ publishedAt: { less_than_equal: new Date().toISOString() } }, ...(where ? [where] : [])],
+})
+
 async function findVideos(where: Where | undefined, sort: string, limit: number): Promise<VideoListItem[]> {
   const payload = await getPayloadClient()
-  const res = await payload.find({ collection: 'videos', where, sort, limit, depth: 1, pagination: false, select: LIST_SELECT })
+  const res = await payload.find({ collection: 'videos', where: published(where), sort, limit, depth: 1, pagination: false, select: LIST_SELECT })
   return res.docs
 }
 
@@ -60,7 +65,7 @@ export async function getVideosPage({ category, page = 1, limit = 24 }: { catego
       const payload = await getPayloadClient()
       const res = await payload.find({
         collection: 'videos',
-        where: category ? { category: { equals: category } } : undefined,
+        where: published(category ? { category: { equals: category } } : undefined),
         sort: '-publishedAt',
         limit,
         page,
@@ -79,7 +84,7 @@ export const getVideoCategories = cache(async (): Promise<VideoCategory[]> =>
   safe(
     async () => {
       const payload = await getPayloadClient()
-      const res = await payload.findDistinct({ collection: 'videos', field: 'category' })
+      const res = await payload.findDistinct({ collection: 'videos', field: 'category', where: published() })
       const present = new Set<unknown>(res.values.map((v) => v.category))
       return VIDEO_CATEGORIES.map((c) => c.value).filter((c) => present.has(c))
     },
@@ -93,7 +98,7 @@ export const getVideoBySlug = cache(async (slug: string): Promise<Video | null> 
   safe(
     async () => {
       const payload = await getPayloadClient()
-      const res = await payload.find({ collection: 'videos', where: { slug: { equals: slug } }, depth: 1, limit: 1, pagination: false })
+      const res = await payload.find({ collection: 'videos', where: published({ slug: { equals: slug } }), depth: 1, limit: 1, pagination: false })
       return res.docs[0] ?? null
     },
     null,

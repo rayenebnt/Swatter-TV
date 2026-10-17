@@ -6,6 +6,16 @@ export const Users: CollectionConfig = {
   labels: { singular: 'Utilisateur', plural: 'Utilisateurs' },
   admin: { useAsTitle: 'email', group: 'Réglages', defaultColumns: ['name', 'email', 'role'] },
   auth: { maxLoginAttempts: 5, lockTime: 10 * 60 * 1000 },
+  hooks: {
+    beforeChange: [
+      // Le tout premier compte (créé depuis /admin sur une base vide) est administrateur, sinon personne ne pourrait gérer les comptes
+      async ({ data, operation, req }) => {
+        if (operation !== 'create') return data
+        const { totalDocs } = await req.payload.count({ collection: 'users', req })
+        return totalDocs === 0 ? { ...data, role: 'admin' } : data
+      },
+    ],
+  },
   access: {
     read: authenticated,
     create: isAdmin,

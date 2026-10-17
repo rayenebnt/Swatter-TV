@@ -107,7 +107,8 @@ export default buildConfig({
   db: postgresAdapter({
     pool: { connectionString: process.env.DATABASE_URI || '' },
     // en développement le schéma suit le code ; en production : migrations (voir README)
-    push: process.env.NODE_ENV !== 'production' || process.env.PAYLOAD_DB_PUSH === 'true',
+    // Développement : le schéma suit le code. Production : migrations (npm run payload migrate)
+    push: process.env.NODE_ENV !== 'production',
   }),
   sharp,
   plugins,
