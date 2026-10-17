@@ -20,6 +20,9 @@ export const Media: CollectionConfig = {
       { name: 'card', width: 960, height: 540, position: 'centre', formatOptions: { format: 'webp', options: { quality: 80 } } },
       { name: 'poster', width: 600, height: 900, position: 'centre', formatOptions: { format: 'webp', options: { quality: 80 } } },
       { name: 'hero', width: 2400, height: undefined, formatOptions: { format: 'webp', options: { quality: 80 } } },
+      // Aperçu des liens partagés (Facebook, WhatsApp, LinkedIn…) : JPEG, lu partout, contrairement au WebP ;
+      // toujours généré, même à partir d'une petite image (agrandie), pour que chaque page ait son aperçu
+      { name: 'og', width: 1200, height: 630, position: 'centre', withoutEnlargement: false, formatOptions: { format: 'jpeg', options: { quality: 80, mozjpeg: true } } },
     ],
     adminThumbnail: 'thumb',
   },

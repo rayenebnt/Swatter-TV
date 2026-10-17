@@ -7,6 +7,7 @@ import { JsonLd } from '@/components/ui/JsonLd'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { METEO_CITIES } from '@/lib/meteo'
 import { absoluteUrl, SITE_NAME, SITE_URL } from '@/lib/site'
+import { ogImage } from '@/lib/og'
 
 // Page régénérée au plus toutes les 60 s (et après chaque import des prévisions).
 export const revalidate = 60
@@ -29,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: '/meteo',
       title: `${TITLE} — ${SITE_NAME}`,
       description: DESCRIPTION,
-      images: [{ url: absoluteUrl(SHARE_IMAGE), width: 960, height: 540, alt: 'Ciel nuageux au-dessus des montagnes' }],
+      images: [ogImage(null, SHARE_IMAGE, 'Ciel nuageux au-dessus des montagnes')],
     },
   }
 }

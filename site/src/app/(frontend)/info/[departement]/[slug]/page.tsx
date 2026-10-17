@@ -6,7 +6,7 @@ import { ArticleCard } from '@/components/info/ArticleCard'
 import { LiveItem } from '@/components/info/LiveItem'
 import { inPlace, ofPlace } from '@/components/info/places'
 import { RelativeTime } from '@/components/info/RelativeTime'
-import { articleImage, externalImage, frenchSpaces, fullDateTime, hasOwnContent, httpUrl, plainText, toTeaser, truncate } from '@/components/info/utils'
+import { articleImage, articleShareImage, externalImage, frenchSpaces, fullDateTime, hasOwnContent, httpUrl, plainText, toTeaser, truncate } from '@/components/info/utils'
 import { AdSlot } from '@/components/layout/AdSlot'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
@@ -47,7 +47,8 @@ function describe(a: Article): string {
 }
 
 /** Image de partage (adresse absolue) : image SEO, sinon image de l'article (média ou externe), sinon visuel de repli. */
-function shareImage(a: Article): { url: string; width: number; height: number; alt: string } {
+/** Grande image pour les données structurées (Google accepte le WebP et préfère les grandes images). */
+function structuredImage(a: Article): { url: string; width: number; height: number; alt: string } {
   const seo = asMedia(a.meta?.image ?? null)
   if (seo && mediaUrl(seo, 'hero')) return { url: absoluteUrl(mediaUrl(seo, 'hero') ?? ''), ...mediaSize(seo, 'hero'), alt: mediaAlt(seo, a.title) }
   const img = articleImage(a, 'hero')
@@ -62,7 +63,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const url = articleUrl(article)
   const description = describe(article)
   const title = article.meta?.title?.trim()
-  const image = shareImage(article)
+  const image = articleShareImage(article)
   return {
     // Le titre SEO saisi (ou généré) contient déjà « — Swatter TV »
     title: title ? { absolute: title } : article.title,
@@ -268,7 +269,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
             description: describe(article),
             datePublished: published,
             dateModified: modified,
-            image: [shareImage(article).url],
+            image: [structuredImage(article).url],
             inLanguage: 'fr-FR',
             articleSection: kicker,
             author: swatter,

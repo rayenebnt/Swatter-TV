@@ -6,13 +6,14 @@ import { LiveOff } from '@/components/video/LiveOff'
 import { OnAirPanel } from '@/components/video/OnAirPanel'
 import { ReplaySection } from '@/components/video/ReplaySection'
 import { VideoPlayer } from '@/components/video/VideoPlayer'
-import { renderNow, toAbsolute, videoObject } from '@/components/video/utils'
+import { renderNow, videoObject } from '@/components/video/utils'
 import { mediaUrl } from '@/lib/media'
 import { getOnAir } from '@/lib/queries/schedule'
 import { getSettings } from '@/lib/queries/settings'
 import { SITE_NAME } from '@/lib/site'
 import { resolveVideo } from '@/lib/video'
 import '@/styles/video.css'
+import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
@@ -21,7 +22,6 @@ const FALLBACK_POSTER = '/visuels/hero-crepuscule.webp'
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings()
-  const poster = mediaUrl(settings?.livePoster, 'hero')
   return {
     title: 'Le direct',
     description: DESCRIPTION,
@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: '/direct',
       title: 'Swatter TV en direct',
       description: DESCRIPTION,
-      images: [{ url: toAbsolute(poster ?? FALLBACK_POSTER) }],
+      images: [ogImage(settings?.livePoster, FALLBACK_POSTER, 'Swatter TV en direct')],
     },
   }
 }

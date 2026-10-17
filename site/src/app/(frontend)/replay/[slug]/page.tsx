@@ -8,15 +8,16 @@ import { Crumbs } from '@/components/video/Crumbs'
 import { RelatedRail } from '@/components/video/RelatedRail'
 import { ReplayCard } from '@/components/video/ReplayCard'
 import { VideoPlayer } from '@/components/video/VideoPlayer'
-import { fallbackVisual, renderNow, replayListUrl, spokenDuration, toAbsolute, videoLocation, videoObject } from '@/components/video/utils'
+import { fallbackVisual, renderNow, replayListUrl, spokenDuration, videoLocation, videoObject } from '@/components/video/utils'
 import { labelOf, PROGRAM_GENRES } from '@/lib/categories'
 import { formatDate, formatTime } from '@/lib/format'
-import { mediaAlt, mediaSize, mediaUrl } from '@/lib/media'
+import { mediaAlt, mediaUrl } from '@/lib/media'
 import { getOtherEpisodes, getOtherReplays, getReplayBySlug, programOf } from '@/lib/queries/replays'
 import { SITE_NAME } from '@/lib/site'
 import { replayUrl } from '@/lib/urls'
 import { resolveVideo } from '@/lib/video'
 import '@/styles/video.css'
+import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 export const dynamicParams = true
@@ -42,8 +43,6 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     `Revoir «\u00a0${replay.title}\u00a0», diffusé le ${formatDate(replay.broadcastAt)} sur Swatter TV.`
   ).slice(0, 200)
   const imageMedia = replay.meta?.image && typeof replay.meta.image === 'object' ? replay.meta.image : replay.thumbnail
-  const image = mediaUrl(imageMedia, 'hero')
-  const { width, height } = mediaSize(imageMedia, 'hero')
   const { contentUrl } = videoLocation(resolveVideo(replay.source))
   const ogTitle = replay.meta?.title || `${replay.title} en replay`
 
@@ -59,7 +58,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       url,
       title: ogTitle,
       description,
-      images: [{ url: toAbsolute(image ?? fallbackVisual(replay.id)), width, height, alt: mediaAlt(imageMedia, replay.title) }],
+      images: [ogImage(imageMedia, fallbackVisual(replay.id), mediaAlt(imageMedia, replay.title))],
       ...(contentUrl && /\.mp4(\?|$)/i.test(contentUrl) ? { videos: [{ url: contentUrl, type: 'video/mp4' }] } : {}),
     },
   }

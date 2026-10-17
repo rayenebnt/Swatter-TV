@@ -1,7 +1,7 @@
 import type { Media } from '@/payload-types'
 
 export type MediaRef = Media | number | string | null | undefined
-export type MediaSize = 'thumb' | 'card' | 'poster' | 'hero'
+export type MediaSize = 'thumb' | 'card' | 'poster' | 'hero' | 'og'
 
 const isMedia = (m: MediaRef): m is Media => typeof m === 'object' && m !== null
 

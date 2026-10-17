@@ -10,13 +10,13 @@ import { FilterLinks } from '@/components/video/FilterLinks'
 import { Pager } from '@/components/video/Pager'
 import { ReplayCard } from '@/components/video/ReplayCard'
 import { GRID_SIZES } from '@/components/video/VideoCard'
-import { renderNow, replayListUrl, SHARE_VISUAL, toAbsolute } from '@/components/video/utils'
-import { mediaUrl } from '@/lib/media'
+import { renderNow, replayListUrl, SHARE_VISUAL } from '@/components/video/utils'
 import { getReplayPrograms, getReplaysPage } from '@/lib/queries/replays'
 import { absoluteUrl, SITE_NAME } from '@/lib/site'
 import { replayUrl } from '@/lib/urls'
 import type { Program } from '@/payload-types'
 import '@/styles/video.css'
+import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
@@ -40,13 +40,13 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
   const suffix = page > 1 ? ` (page ${page})` : ''
   const title = `${program ? `${program.title} en replay` : 'Le Replay'}${suffix}`
   const description = (program ? program.meta?.description || program.synopsis || `Tous les épisodes de «\u00a0${program.title}\u00a0» à revoir sur Swatter TV.` : INTRO).slice(0, 200)
-  const image = program ? mediaUrl(program.meta?.image && typeof program.meta.image === 'object' ? program.meta.image : program.image, 'hero') : null
+  const imageMedia = program ? (program.meta?.image && typeof program.meta.image === 'object' ? program.meta.image : program.image) : null
   const url = replayListUrl(program?.slug, page)
   return {
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description, images: [{ url: toAbsolute(image ?? SHARE_VISUAL) }] },
+    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description, images: [ogImage(imageMedia, SHARE_VISUAL)] },
   }
 }
 

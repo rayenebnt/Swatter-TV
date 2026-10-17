@@ -6,8 +6,9 @@ import { Icon } from '@/components/ui/Icon'
 import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { DEPARTMENTS, departmentLabel, type DepartmentSlug } from '@/lib/departments'
+import { ogImage } from '@/lib/og'
 import { getArticlesPage, getDepartmentCounts, getFeaturedArticle, type ArticleListItem, type ArticlesPage } from '@/lib/queries/articles'
-import { absoluteUrl, SITE_NAME } from '@/lib/site'
+import { SITE_NAME } from '@/lib/site'
 import { departmentUrl } from '@/lib/urls'
 import { ArticleCard } from './ArticleCard'
 import { DeptLinks } from './DeptLinks'
@@ -15,7 +16,7 @@ import { InfoPager } from './InfoPager'
 import { LeadCard } from './LeadCard'
 import { inPlace, ofPlace } from './places'
 import { RelativeTime } from './RelativeTime'
-import { articleImage, toTeaser } from './utils'
+import { articleShareImage, toTeaser } from './utils'
 import '@/styles/info.css'
 
 /** Articles par page de liste (hors article à la une) */
@@ -73,7 +74,6 @@ export async function listingMetadata(dept: DepartmentSlug | null, page: number)
   const fullTitle = page > 1 ? `${title} (page ${page})` : title
   const url = listHref(dept, page)
   const featured = await getFeaturedArticle(dept)
-  const image = featured ? articleImage(featured, 'card') : null
   return {
     title: fullTitle,
     description,
@@ -85,7 +85,7 @@ export async function listingMetadata(dept: DepartmentSlug | null, page: number)
       url,
       title: fullTitle,
       description,
-      ...(image && featured ? { images: [{ url: absoluteUrl(image.src), width: image.width, height: image.height, alt: image.alt || featured.title }] } : {}),
+      images: [featured ? articleShareImage(featured) : ogImage(null, '/visuels/t-matin-a.webp')],
     },
   }
 }

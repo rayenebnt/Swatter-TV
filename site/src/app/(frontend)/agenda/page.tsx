@@ -29,6 +29,7 @@ import {
 import { absoluteUrl, SITE_NAME } from '@/lib/site'
 import { eventUrl } from '@/lib/urls'
 import '@/styles/agenda.css'
+import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
@@ -80,7 +81,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
     title,
     description,
     alternates: { canonical },
-    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url: canonical, title, description, images: [{ url: absoluteUrl(AGENDA_VISUAL) }] },
+    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url: canonical, title, description, images: [ogImage(null, AGENDA_VISUAL)] },
   }
 }
 

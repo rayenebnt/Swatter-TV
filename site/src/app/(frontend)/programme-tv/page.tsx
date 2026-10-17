@@ -4,7 +4,8 @@ import { programmeDays, programmeDayUrl, dayLong, tvDay } from '@/components/pro
 import { ProgramList } from '@/components/programme/ProgramList'
 import { TvGridSection } from '@/components/programme/TvGridSection'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { absoluteUrl, SITE_NAME } from '@/lib/site'
+import { SITE_NAME } from '@/lib/site'
+import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
@@ -31,7 +32,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description, images: [{ url: absoluteUrl(SHARE_IMAGE) }] },
+    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description, images: [ogImage(null, SHARE_IMAGE)] },
   }
 }
 

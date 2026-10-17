@@ -19,12 +19,13 @@ import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { SectionHead } from '@/components/ui/SectionHead'
-import { mediaAlt, mediaSize, mediaUrl, type MediaRef } from '@/lib/media'
+import { mediaAlt, mediaUrl, type MediaRef } from '@/lib/media'
 import { getEventBySlug, getUpcomingEvents } from '@/lib/queries/events'
 import { absoluteUrl, SITE_NAME } from '@/lib/site'
 import { eventUrl } from '@/lib/urls'
 import type { Event } from '@/payload-types'
 import '@/styles/agenda.css'
+import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 export const dynamicParams = true
@@ -54,8 +55,6 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!event) return { title: 'Événement introuvable', robots: { index: false, follow: true } }
   const url = eventUrl(event)
   const media = shareMedia(event)
-  const image = mediaUrl(media)
-  const { width, height } = mediaSize(media)
   const title = event.meta?.title?.trim()
   return {
     // Le titre SEO saisi (ou généré) contient déjà « — Swatter TV »
@@ -69,7 +68,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       url,
       title: title || event.title,
       description: describe(event),
-      images: [image ? { url: absoluteUrl(image), width, height, alt: mediaAlt(media, event.title) } : { url: absoluteUrl(eventVisual(event.id)), width: 960, height: 540 }],
+      images: [ogImage(media, eventVisual(event.id), mediaAlt(media, event.title))],
     },
   }
 }

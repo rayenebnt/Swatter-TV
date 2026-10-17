@@ -8,15 +8,16 @@ import { Crumbs } from '@/components/video/Crumbs'
 import { RelatedRail } from '@/components/video/RelatedRail'
 import { VideoCard } from '@/components/video/VideoCard'
 import { VideoPlayer } from '@/components/video/VideoPlayer'
-import { fallbackVisual, renderNow, spokenDuration, toAbsolute, videoListUrl, videoLocation, videoObject } from '@/components/video/utils'
+import { fallbackVisual, renderNow, spokenDuration, videoListUrl, videoLocation, videoObject } from '@/components/video/utils'
 import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
 import { formatDate, formatNumber } from '@/lib/format'
-import { mediaAlt, mediaSize, mediaUrl } from '@/lib/media'
+import { mediaAlt, mediaUrl } from '@/lib/media'
 import { getOtherVideos, getRelatedVideos, getVideoBySlug } from '@/lib/queries/videos'
 import { SITE_NAME } from '@/lib/site'
 import { videoUrl } from '@/lib/urls'
 import { resolveVideo } from '@/lib/video'
 import '@/styles/video.css'
+import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 export const dynamicParams = true
@@ -36,8 +37,6 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const url = videoUrl(video)
   const description = (video.meta?.description || video.description || `Regardez «\u00a0${video.title}\u00a0» sur Swatter TV, la chaîne locale de la Haute-Savoie.`).slice(0, 200)
   const imageMedia = video.meta?.image && typeof video.meta.image === 'object' ? video.meta.image : video.thumbnail
-  const image = mediaUrl(imageMedia, 'hero')
-  const { width, height } = mediaSize(imageMedia, 'hero')
   const { contentUrl } = videoLocation(resolveVideo(video.source))
   const ogTitle = video.meta?.title || video.title
 
@@ -53,7 +52,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       url,
       title: ogTitle,
       description,
-      images: [{ url: toAbsolute(image ?? fallbackVisual(video.id)), width, height, alt: mediaAlt(imageMedia, video.title) }],
+      images: [ogImage(imageMedia, fallbackVisual(video.id), mediaAlt(imageMedia, video.title))],
       ...(contentUrl && /\.mp4(\?|$)/i.test(contentUrl) ? { videos: [{ url: contentUrl, type: 'video/mp4' }] } : {}),
     },
   }

@@ -6,8 +6,9 @@ import { CamsGrid } from '@/components/webcams/CamsGrid'
 import { toWebcamView } from '@/components/webcams/utils'
 import { WebcamTile } from '@/components/webcams/WebcamTile'
 import { getActiveWebcams } from '@/lib/queries/webcams'
-import { absoluteUrl, SITE_NAME } from '@/lib/site'
+import { SITE_NAME } from '@/lib/site'
 import '@/styles/webcams.css'
+import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/webcams' },
-  openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url: '/webcams', title: TITLE, description: DESCRIPTION, images: [{ url: absoluteUrl('/visuels/t-hiver-b.webp') }] },
+  openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url: '/webcams', title: TITLE, description: DESCRIPTION, images: [ogImage(null, '/visuels/t-hiver-b.webp')] },
 }
 
 export default async function WebcamsPage() {

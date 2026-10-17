@@ -4,6 +4,7 @@ import { dateChip, formatDate, formatTime } from '@/lib/format'
 import { mediaAlt, mediaFocal, mediaSize, mediaUrl, type MediaRef, type MediaSize } from '@/lib/media'
 import type { ArticleListItem } from '@/lib/queries/articles'
 import type { Article } from '@/payload-types'
+import { ogImage, type OgImage } from '@/lib/og'
 import { SITE_URL } from '@/lib/site'
 import { articleUrl } from '@/lib/urls'
 
@@ -146,4 +147,14 @@ export function truncate(text: string, max: number): string {
   const cut = text.slice(0, max - 1)
   const space = cut.lastIndexOf(' ')
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s\u00a0,;:.!?\-–—(«"'’]+$/u, '')}…`
+}
+
+/** Image de partage d'un article (JPEG 1200 × 630) : image SEO, puis image de l'article, image externe (RSS) ou visuel de repli. */
+export function articleShareImage(a: { id: number; title: string; image?: MediaRef; imageUrl?: string | null; meta?: { image?: MediaRef } | null }): OgImage {
+  const seo = a.meta?.image
+  const media = typeof seo === 'object' && seo ? seo : typeof a.image === 'object' && a.image ? a.image : null
+  if (media) return ogImage(media, fallbackVisual(a.id), mediaAlt(media, a.title))
+  const external = externalImage(a.imageUrl)
+  if (external) return { url: external, width: 1600, height: 900, alt: a.title }
+  return ogImage(null, fallbackVisual(a.id), a.title)
 }

@@ -10,12 +10,13 @@ import { FilterLinks } from '@/components/video/FilterLinks'
 import { Pager } from '@/components/video/Pager'
 import { Top10Section } from '@/components/video/Top10Section'
 import { GRID_SIZES, VideoCard } from '@/components/video/VideoCard'
-import { renderNow, SHARE_VISUAL, toAbsolute, videoListUrl } from '@/components/video/utils'
+import { renderNow, SHARE_VISUAL, videoListUrl } from '@/components/video/utils'
 import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
 import { getVideoCategories, getVideosPage, isVideoCategory, type VideoCategory } from '@/lib/queries/videos'
 import { absoluteUrl, SITE_NAME } from '@/lib/site'
 import { videoUrl } from '@/lib/urls'
 import '@/styles/video.css'
+import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
@@ -52,7 +53,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description, images: [{ url: toAbsolute(SHARE_VISUAL) }] },
+    openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url, title, description, images: [ogImage(null, SHARE_VISUAL)] },
   }
 }
 
