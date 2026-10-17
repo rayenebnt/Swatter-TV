@@ -7,7 +7,7 @@ import { Fragment, useId, useLayoutEffect, useRef, useState, type CSSProperties,
 import { Icon } from '@/components/ui/Icon'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { Seg } from '@/components/ui/Seg'
-import { formatTime, parisDay } from '@/lib/format'
+import { formatTime } from '@/lib/format'
 import { useGridGestures, useHash, useNow } from './hooks'
 import {
   dayLabel,
@@ -20,6 +20,7 @@ import {
   programImage,
   programmeDayUrl,
   slotMeta,
+  tvDay,
   type GridData,
 } from './model'
 import { ProgramDialog } from './ProgramDialog'
@@ -68,7 +69,7 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
 
   const has = (key: string) => data.days.some((d) => d.key === key)
   // Jour civil réel, après montage (page mise en cache la veille, onglet resté ouvert après minuit)
-  const today = now === null ? data.today : parisDay(new Date(now))
+  const today = now === null ? data.today : tvDay(new Date(now))
   // Émission demandée par l'adresse (/programme-tv#slug, voir programUrl) : sa prochaine diffusion
   const linked = hash && hash !== dismissedHash && now !== null ? findAiring(data, hash, now) : null
   const dayKey = picked ?? linked?.day ?? (initialDay === data.today && has(today) ? today : initialDay)
@@ -98,7 +99,7 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
   }
 
   const goNow = () => {
-    const key = parisDay(new Date())
+    const key = tvDay(new Date())
     const target = has(key) ? key : data.days[0].key
     if (target !== day.key) selectDay(target)
     else if (scrollerRef.current && gridRef.current) placeGrid(scrollerRef.current, gridRef.current, day.start, null, true)

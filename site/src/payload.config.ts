@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { redirectsPlugin } from '@payloadcms/plugin-redirects'
 import { seoPlugin } from '@payloadcms/plugin-seo'
@@ -64,6 +65,14 @@ if (process.env.S3_BUCKET) {
   )
 }
 
+/** Comparaison du secret de la tâche planifiée en temps constant (refus si aucun secret n'est configuré). */
+function sameSecret(given: string, expected: string | undefined): boolean {
+  if (!expected) return false
+  const a = createHash('sha256').update(given).digest()
+  const b = createHash('sha256').update(expected).digest()
+  return timingSafeEqual(a, b)
+}
+
 export default buildConfig({
   serverURL: SITE_URL,
   admin: {
@@ -104,12 +113,13 @@ export default buildConfig({
   plugins,
   endpoints: [
     {
-      // Tâche planifiée : GET /api/cron/import?secret=CRON_SECRET (toutes les 15 minutes conseillées)
+      // Tâche planifiée : GET /api/cron/import avec l'en-tête « Authorization: Bearer CRON_SECRET »
+      // (ou ?secret=CRON_SECRET), toutes les heures (jusqu'à toutes les 15 minutes)
       path: '/cron/import',
       method: 'get',
       handler: async (req) => {
-        const secret = req.searchParams.get('secret') || req.headers.get('authorization')?.replace(/^Bearer /, '')
-        if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+        const secret = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || req.searchParams.get('secret') || ''
+        if (!sameSecret(secret, process.env.CRON_SECRET)) {
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
         const [rss, meteo] = await Promise.all([

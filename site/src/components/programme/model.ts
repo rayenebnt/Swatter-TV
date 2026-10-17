@@ -1,5 +1,5 @@
 // Programme TV : constantes, types et calculs partagés par le serveur et le client (aucune dépendance serveur).
-import { dateChip, formatDayLong, formatTime, parisDateTime } from '@/lib/format'
+import { dateChip, formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
 import type { Slot } from '@/lib/queries/schedule'
 
 /** Frise horaire : de 6 h à 2 h du lendemain (heure de Paris). Aucun changement d'heure ne tombe dans cet intervalle. */
@@ -43,7 +43,13 @@ export function shiftDay(day: string, n: number): string {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
 }
 
-/** Les jours proposés à partir d'aujourd'hui (jour civil de Paris). */
+/**
+ * Journée TV en cours (AAAA-MM-JJ, heure de Paris) : elle commence à 6 h, mais la nuit jusqu'à 2 h appartient
+ * encore à la veille (fin de la frise) ; entre 0 h et 2 h, « Aujourd'hui » reste donc la grille de la veille.
+ */
+export const tvDay = (d: Date = new Date()) => parisDay(new Date(d.getTime() - 2 * 60 * 60 * 1000))
+
+/** Les jours proposés à partir d'aujourd'hui (journée TV en cours). */
 export const programmeDays = (today: string) => Array.from({ length: PROGRAMME_DAYS }, (_, i) => shiftDay(today, i))
 
 /** Midi du jour : instant sûr pour formater la date (loin des changements d'heure). */

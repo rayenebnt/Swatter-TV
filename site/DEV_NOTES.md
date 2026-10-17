@@ -75,6 +75,12 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `components/ui/RichText` | rendu du contenu riche Lexical (classe `.prose`) |
 | `public/visuels/*.webp` | visuels de la maquette, servis en `/visuels/<nom>.webp` : images de repli quand un contenu n'a pas d'image |
 | `seed/assets/*.jpg` | vignettes réelles du site actuel, pour le jeu de données de démonstration |
+| `agenda/EventCard({event, now, variant: 'row' \| 'poster'})` | carte d'événement réutilisable |
+| `webcams/LiveClock`, `webcams/WebcamPlayer({cam})` | horloge de Paris partagée (un seul minuteur), lecteur de webcam selon la source |
+| `lib/queries/events.ts` | `upcomingWhere`, `getUpcomingEvents`, `getAgendaHighlights`, `getEventBySlug` |
+| `lib/queries/webcams.ts` | `getActiveWebcams` |
+| `search/rubriques.ts` | `RUBRIQUES` (liste des rubriques et icônes), `searchPageUrl(q)` |
+| `programme/model.ts` | `tvDay()` (journée TV : la nuit jusqu'à 2 h appartient à la veille), `programmeDayUrl(day, today)` |
 
 ## Adresses du site
 
@@ -127,3 +133,11 @@ npm run seed           # données de démonstration
   échappe au rognage et élargit la page.
 - **Import météo** : `importMeteo()` renvoie `{ ok: false, skipped: true }` quand la mise à jour automatique est désactivée
   (ce n'est pas une erreur). En production, lancer `npm run import` une fois puis brancher la tâche planifiée `GET /api/cron/import`.
+- **Ne jamais faire varier le `className` d'un élément `[data-reveal]`** dans un composant client : React réécrit `class`
+  et efface `is-in`, l'élément redevient invisible. Utiliser un attribut `data-*` ou un élément enfant.
+- **Open Graph** : une page qui définit `openGraph` sans `images` perd l'image par défaut (`opengraph-image` du groupe
+  `(frontend)`, dont l'adresse est suffixée) : reprendre `images: (await parent).openGraph?.images ?? []` ou fournir une image.
+- **Redirections** : les anciennes adresses sont dans `next.config.ts` (`redirects()`) ; les variantes qui ne diffèrent que par
+  la casse ou les accents passent par `[...slug]` (la correspondance de `next.config.ts` est insensible à la casse et bouclerait).
+- **Recherche** : `ILIKE` sans index, suffisant à cette échelle ; pour de gros volumes, ajouter un index trigramme (pg_trgm).
+  `SearchHit.image` peut être une URL distante (articles RSS) : l'afficher avec `unoptimized`.

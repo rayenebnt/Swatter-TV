@@ -4,8 +4,10 @@
 #   docker build -t swatter-tv --build-arg NEXT_PUBLIC_SITE_URL=https://www.swatter-tv.fr .
 #   docker run -p 3000:3000 --env-file .env -v swatter-media:/app/media swatter-tv
 #
-# Cibles : « runner » (par défaut, le site) et « tools » (CLI Payload : migrations, jeu de démonstration).
+# Cibles : « runner » (par défaut, le site) et « tools » (CLI Payload : migrations, jeu de démonstration, imports).
+# Avec Docker Compose (docker-compose.yml) : services « app » (runner), « migrate » et « tools » (tools), « cron ».
 # node:22-bookworm-slim (glibc) : binaires précompilés de sharp pris en charge.
+# Le build demande environ 4 Go de mémoire (voir « build » dans package.json).
 
 ARG NODE_IMAGE=node:22-bookworm-slim
 
@@ -35,9 +37,11 @@ RUN DATABASE_URI=postgres://build:build@127.0.0.1:1/build \
     PAYLOAD_SECRET=build-only-not-used-at-runtime \
     npm run build
 
-# ---------- Outils (migrations, jeu de démonstration) ----------
-# docker compose run --rm migrate                         → npm run payload migrate
-# docker compose run --rm -e SEED_FORCE=1 migrate npm run seed
+# ---------- Outils (migrations, jeu de démonstration, imports) ----------
+# Sources complètes + node_modules : la CLI Payload lit src/payload.config.ts et src/migrations.
+#   docker compose run --rm migrate                               → npm run payload migrate (commande par défaut)
+#   docker compose run --rm tools npm run payload migrate:status
+#   docker compose run --rm -e SEED_FORCE=1 tools npm run seed
 FROM builder AS tools
 ENV NODE_ENV=production \
     HOME=/tmp
@@ -71,7 +75,8 @@ USER nextjs
 EXPOSE 3000
 VOLUME ["/app/media"]
 
+# Santé : le site répond et lit la base (réglages publics, sans cache).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:3000/api/globals/settings?depth=0').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/globals/settings?depth=0').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "server.js"]

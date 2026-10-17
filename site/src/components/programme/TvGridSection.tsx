@@ -1,6 +1,5 @@
-import { parisDay } from '@/lib/format'
 import { getProgrammeWeek } from './data'
-import { buildGridData } from './model'
+import { buildGridData, tvDay } from './model'
 import { TvGrid } from './TvGrid'
 import '@/styles/programme.css'
 
@@ -10,7 +9,7 @@ import '@/styles/programme.css'
  * - variant « full » : page /programme-tv, `day` = jour affiché d'abord (?jour=, aujourd'hui sinon).
  */
 export async function TvGridSection({ variant = 'home', day }: { variant?: 'home' | 'full'; day?: string }) {
-  const today = parisDay()
+  const today = tvDay()
   const data = buildGridData(await getProgrammeWeek(today), today)
   if (variant === 'home' && !data.days.some((d) => d.slots.length)) return null
   const initialDay = day && data.days.some((d) => d.key === day) ? day : today

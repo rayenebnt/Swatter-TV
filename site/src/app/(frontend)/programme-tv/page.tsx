@@ -1,10 +1,9 @@
 import type { Metadata } from 'next'
 import { AdSlot } from '@/components/layout/AdSlot'
-import { programmeDays, programmeDayUrl, dayLong } from '@/components/programme/model'
+import { programmeDays, programmeDayUrl, dayLong, tvDay } from '@/components/programme/model'
 import { ProgramList } from '@/components/programme/ProgramList'
 import { TvGridSection } from '@/components/programme/TvGridSection'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { parisDay } from '@/lib/format'
 import { absoluteUrl, SITE_NAME } from '@/lib/site'
 
 export const revalidate = 60
@@ -18,7 +17,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>
 async function resolveDay(searchParams: SearchParams): Promise<{ today: string; day: string }> {
   const raw = (await searchParams).jour
   const jour = Array.isArray(raw) ? raw[0] : raw
-  const today = parisDay()
+  const today = tvDay()
   return { today, day: jour && programmeDays(today).includes(jour) ? jour : today }
 }
 
