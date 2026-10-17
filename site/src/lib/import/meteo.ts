@@ -82,7 +82,7 @@ function readPoint(raw: unknown, name: string): Point {
 // ----- Synthèse : temps dominant, libellé du jour -----
 
 /** Poids de chaque type de temps : quelques heures de pluie l'emportent sur une majorité d'heures sèches. */
-const WEIGHT: Record<WeatherKind, number> = { sun: 1, partly: 1, cloud: 1.1, fog: 1.2, rain: 1.8, snow: 2, storm: 2.6 }
+const WEIGHT: Record<WeatherKind, number> = { sun: 1, partly: 1, cloud: 1.1, fog: 1.2, rain: 1.8, snow: 2, storm: 3 }
 const isWet = (k: WeatherKind) => k === 'rain' || k === 'snow' || k === 'storm'
 
 function dominant(codes: number[]): WeatherKind {
@@ -100,6 +100,28 @@ function dominant(codes: number[]): WeatherKind {
     }
   }
   return best
+}
+
+/**
+ * Temps représentatif d'une période à partir des codes horaires : les précipitations l'emportent dès `wetHours` heures,
+ * sinon le temps dominant. (Le code quotidien d'Open-Meteo, le plus « sévère » de la journée, est trop pessimiste.)
+ */
+function summarize(codes: number[], wetHours: number): { kind: WeatherKind; label: string } {
+  const wet = codes.filter((c) => isWet(wmoKind(c)))
+  const pool = wet.length >= wetHours ? wet : codes
+  const kind = dominant(pool)
+  // libellé : le code le plus fréquent de ce type (à égalité, le plus intense)
+  const counts = new Map<number, number>()
+  for (const c of pool) if (wmoKind(c) === kind) counts.set(c, (counts.get(c) ?? 0) + 1)
+  let code = -1
+  let n = 0
+  for (const [c, k] of counts) {
+    if (k > n || (k === n && c > code)) {
+      code = c
+      n = k
+    }
+  }
+  return { kind, label: wmoLabel(code) }
 }
 
 const AFTER_FOG: Record<WeatherKind, string> = {
@@ -198,6 +220,10 @@ function skySentence([m, a, s]: WeatherKind[], when: string, seed: number): stri
   } else if (isWet(a)) {
     const clause = { rain: 'des averses se développent', snow: 'la neige fait son apparition', storm: 'des orages éclatent' }[a as 'rain' | 'snow' | 'storm']
     template = pick([`{when}, ${clause} au fil de l’après-midi.`, `Le ciel se dégrade {when} après-midi, avec ${NOUN[a]}.`], seed)
+  } else if (m === a && !isWet(s)) {
+    const daytime = { sun: 'grand soleil', partly: 'alternance de nuages et d’éclaircies', cloud: 'ciel gris', fog: 'brouillard tenace' }[m as 'sun' | 'partly' | 'cloud' | 'fog']
+    const evening = { sun: 'un ciel dégagé', partly: 'quelques nuages', cloud: 'les nuages gagnent du terrain', fog: 'le brouillard se reforme' }[s as 'sun' | 'partly' | 'cloud' | 'fog']
+    template = `{when}, ${daytime} en journée, puis ${evening} en soirée.`
   } else if (a === s) {
     template = `{when}, ${NOUN[m]} le matin, puis ${NOUN[a]} jusqu’au soir.`
   } else {
@@ -290,7 +316,10 @@ export function buildForecast(responses: readonly unknown[], now: Date): Forecas
   for (const date of dates) {
     const cities: ForecastCity[] = METEO_CITIES.flatMap((city, i) => {
       const d = points[i].daily.get(date)
-      return d ? [{ name: city.name, kind: wmoKind(d.code), label: wmoLabel(d.code), min: Math.round(d.min), max: Math.round(d.max) }] : []
+      if (!d) return []
+      const codes = range(6, 21).flatMap((h) => points[i].hourly.get(hourKey(date, h))?.code ?? [])
+      const sky = codes.length >= 8 ? summarize(codes, 3) : { kind: wmoKind(d.code), label: wmoLabel(d.code) }
+      return [{ name: city.name, ...sky, min: Math.round(d.min), max: Math.round(d.max) }]
     })
     const first = cities[0]
     if (!first || first.name !== METEO_CITIES[0].name) continue
@@ -304,7 +333,7 @@ export function buildForecast(responses: readonly unknown[], now: Date): Forecas
       if (!readings.length) return []
       const temps = readings.map((r) => r.temp)
       const temp = p.temp === 'min' ? Math.min(...temps) : p.temp === 'max' ? Math.max(...temps) : temps.reduce((a, b) => a + b, 0) / temps.length
-      return [{ label: p.label, kind: dominant(readings.map((r) => r.code)), temp: Math.round(temp) }]
+      return [{ label: p.label, kind: summarize(readings.map((r) => r.code), 2).kind, temp: Math.round(temp) }]
     })
 
     // Aujourd'hui : température actuelle (min / max élargis si besoin, pour rester cohérents) ; ensuite : la maximale.
@@ -349,6 +378,7 @@ export async function importMeteo(payload: Payload): Promise<{ ok: boolean; erro
       const reason = obj(json)?.reason
       return { ok: false, error: `Open-Meteo a répondu ${res.status}${typeof reason === 'string' ? ` (${reason})` : ''}` }
     }
+    if (json === null) return { ok: false, error: 'réponse d’Open-Meteo illisible (JSON attendu)' }
     const forecast = buildForecast(Array.isArray(json) ? json : [json], new Date())
     await payload.updateGlobal({ slug: 'meteo', data: { forecast, updatedAt: forecast.updatedAt }, context: { disableRevalidate: true } })
     return { ok: true }
