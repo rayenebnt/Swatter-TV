@@ -1,0 +1,54 @@
+import type { Metadata } from 'next'
+import { AdSlot } from '@/components/layout/AdSlot'
+import { Icon } from '@/components/ui/Icon'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { CamsGrid } from '@/components/webcams/CamsGrid'
+import { toWebcamView } from '@/components/webcams/utils'
+import { WebcamTile } from '@/components/webcams/WebcamTile'
+import { getActiveWebcams } from '@/lib/queries/webcams'
+import { absoluteUrl, SITE_NAME } from '@/lib/site'
+import '@/styles/webcams.css'
+
+export const revalidate = 60
+
+const TITLE = 'Webcams en direct'
+const DESCRIPTION = 'Les lacs, les stations et les sommets de Haute-Savoie et des Alpes en temps réel : toutes les webcams de Swatter TV, en direct.'
+
+export const metadata: Metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: '/webcams' },
+  openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url: '/webcams', title: TITLE, description: DESCRIPTION, images: [{ url: absoluteUrl('/visuels/t-hiver-b.webp') }] },
+}
+
+export default async function WebcamsPage() {
+  const webcams = (await getActiveWebcams()).map(toWebcamView)
+
+  return (
+    <>
+      <PageHeader eyebrow="En temps réel" title={TITLE} description={DESCRIPTION} crumbs={[{ label: 'Webcams' }]} />
+
+      <section className="section section--tight container" aria-label="Toutes les webcams">
+        {webcams.length ? (
+          <CamsGrid className="camp-grid">
+            {webcams.map((cam, i) => (
+              <WebcamTile key={cam.id} cam={cam} index={i} />
+            ))}
+          </CamsGrid>
+        ) : (
+          <div className="empty">
+            <Icon name="now" />
+            <p>
+              <b>Aucune webcam disponible pour le moment</b>
+              Les webcams de la chaîne seront bientôt de retour.
+            </p>
+          </div>
+        )}
+      </section>
+
+      <div className="container">
+        <AdSlot placement="inner-leaderboard" />
+      </div>
+    </>
+  )
+}
