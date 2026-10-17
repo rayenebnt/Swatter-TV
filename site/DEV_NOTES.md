@@ -59,7 +59,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `meteo/MiniMeteo`, `MeteoWidget({variant: 'aside' \| 'full'})` | météo (en `aside`, ne rend rien sans prévision ; `MiniMeteo` non plus) |
 | `video/VideoPlayer({video, poster, title, autoPlay, live})`, `Top10Section`, `VideosSection`, `ReplaySection` | vidéos |
 | `info/InfoSection` | info de l'accueil (contient `MeteoWidget variant="aside"`) |
-| `programme/TvGridSection({variant})` | grille TV |
+| `programme/TvGridSection({variant: 'home' \| 'full', day?})` | grille TV (`day` = AAAA-MM-JJ, page /programme-tv) |
 | `agenda/AgendaSection`, `webcams/WebcamsSection({limit})` | agenda, webcams |
 | `lib/import/rss.ts → importRss(payload)`, `lib/import/meteo.ts → importMeteo(payload)` | imports (appelés par `GET /api/cron/import`) |
 | `lib/search.ts → search(payload, q, limit)` | recherche (appelée par `GET /api/search?q=`) |
