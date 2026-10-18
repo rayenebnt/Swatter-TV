@@ -292,6 +292,29 @@ test.describe('administration', () => {
     }
   })
 
+  test('aperçu en direct : il montre l’endroit modifié (onglet, webcam)', async ({ page, request }) => {
+    const errors = watchErrors(page)
+    await login(page, ADMIN)
+    const preview = () => page.frames().find((f) => f !== page.mainFrame() && f.url().includes('://') && !f.url().includes('/admin'))
+    const shown = async () => (await preview()?.evaluate(() => document.documentElement.dataset.previewFocus)) ?? null
+    await page.goto('/admin/globals/settings')
+    await expect(page.locator('.live-preview-window iframe')).toBeVisible({ timeout: 30_000 })
+    await expect.poll(shown, { timeout: 20_000 }).toBe('hero')
+    await page.getByRole('button', { name: 'Le direct', exact: true }).click()
+    await expect.poll(async () => `${new URL(preview()?.url() ?? 'http://x/').pathname} ${await shown()}`, { timeout: 20_000 }).toBe('/direct live')
+    await page.getByRole('button', { name: 'Flash info', exact: true }).click()
+    await expect.poll(shown, { timeout: 20_000 }).toBe('flash')
+
+    const headers = await adminHeaders(request)
+    const cams = ((await (await request.get('/api/webcams?limit=1&depth=0&sort=order', { headers })).json()) as { docs: { id: number; slug: string }[] }).docs
+    test.skip(!cams.length, 'aucune webcam (lancez npm run seed)')
+    await page.goto(`/admin/collections/webcams/${cams[0].id}`)
+    await expect.poll(shown, { timeout: 30_000 }).toBe(`webcam-${cams[0].slug}`)
+    // l'administration elle-même ne défile pas
+    expect(await page.evaluate(() => window.scrollY)).toBe(0)
+    expect(errors).toEqual([])
+  })
+
   test('aperçu en direct : la modification s’affiche à côté du formulaire, le site change à la publication', async ({ page, request }) => {
     const errors = watchErrors(page)
     const headers = await adminHeaders(request)

@@ -155,8 +155,9 @@ npm run seed           # données de démonstration
   vers la même émission la rouvre).
 - **Contenus programmés** : articles, vidéos (date de publication) et replays (date de diffusion) dans le futur restent
   invisibles sur le site et dans l'API publique ; l'équipe connectée les voit dans l'administration.
-- **Brouillons** (`versions: draftVersions`, `src/fields/drafts.ts`) : vidéos, articles, événements, replays, pages et le
-  global `settings`. Enregistrement automatique en brouillon (table des versions seulement), mise en ligne par
+- **Brouillons** (`versions: draftVersions`, `src/fields/drafts.ts`) : toutes les collections du site (vidéos, articles,
+  événements, replays, pages, grille, émissions, webcams, publicités) et les globals `settings` et `meteo`. Écritures par
+  code (seed, recopie de semaine, imports) : `_status: 'published'`. Enregistrement automatique en brouillon (table des versions seulement), mise en ligne par
   « Publier les modifications » (ligne principale). Toute lecture du site passe par `getPayloadClient()`, qui enveloppe
   Payload dans `publicationAware()` (`src/lib/publication.ts`) : hors aperçu, `find` / `count` / `findDistinct` sur ces
   collections ajoutent `_status = published` ; en aperçu, `find` et `findGlobal` passent `draft: true` (dernière version).
@@ -192,7 +193,12 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
 - **Aperçu en direct** (`admin.livePreview`, config) : ouvert d'office sur les fiches à brouillons et sur « Accueil et
   direct » (aperçu de l'accueil) ; adresse calculée par `previewPath()` puis `previewUrl()` (`src/lib/preview.ts`, URL
   absolue d'après l'hôte de la requête, exigée par `postMessage`). Le bouton de l'aperçu est restylé avec un libellé
-  (`#live-preview-toggler`, `custom.scss`). `settings` a `forceSelect: { _status: true }` : sans cela, Payload affiche
+  (`#live-preview-toggler`, `custom.scss`).
+  **Endroit modifié** : `PreviewFocus.tsx` (admin, avant les boutons de chaque fiche à brouillons) suit l'onglet ouvert et
+  le champ touché, calcule page + cible avec `previewFocus()` (`src/lib/preview.ts`) et l'envoie à l'iframe
+  (`postMessage` « swatter:preview-focus ») ; `PreviewClient` change de page si besoin et centre l'élément
+  `[data-preview~=cible]` (sans `scrollIntoView`, qui ferait défiler l'administration). Cibles : `hero`, `flash`, `live`,
+  `footer`, `ad`, `forecast`, `bulletin`, `webcam-<slug>`, `slot-<id>`. `settings` a `forceSelect: { _status: true }` : sans cela, Payload affiche
   « Brouillon » au lieu de « Modifications non publiées » sur un global qui a un brouillon.
 - **Page « Aide »** (`/admin/aide`, `HelpView.tsx`) : rend `GUIDE_CLIENT.md` (mini-rendu `markdown.tsx`, identifiants
   d'intertitres à la GitHub pour le sommaire). Le fichier est lu à l'exécution et embarqué dans le build autonome par

@@ -128,6 +128,7 @@ export function WebcamTile({ cam, index }: { cam: WebcamView; index: number }) {
     // État du calque en attribut : modifier className effacerait la classe « is-in » posée par la révélation au défilement
     <article
       id={cam.slug}
+      data-preview={`webcam-${cam.slug}`}
       className="card camp"
       aria-labelledby={titleId}
       data-reveal

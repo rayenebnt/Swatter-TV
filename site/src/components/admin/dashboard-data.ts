@@ -67,6 +67,7 @@ async function emptyDays(payload: Payload): Promise<string[]> {
     collection: 'schedule',
     where: {
       and: [
+        LIVE,
         { startsAt: { greater_than_equal: parisDateTime(today, '02:00').toISOString() } },
         { startsAt: { less_than: parisDateTime(shiftDay(today, 7), '02:00').toISOString() } },
       ],
@@ -114,7 +115,7 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     attempt(() => featured(payload, 'articles', 'isInfoOfDay'), null),
     attempt(() => weekendPick(payload), null),
     attempt(() => emptyDays(payload), [] as string[]),
-    attempt(async () => (await payload.count({ collection: 'ads', where: runningAdsWhere() })).totalDocs, 0),
+    attempt(async () => (await payload.count({ collection: 'ads', where: { and: [LIVE, runningAdsWhere()] } })).totalDocs, 0),
     attempt(
       async () =>
         (await payload.find({ collection: 'rss-feeds', where: { active: { equals: true } }, depth: 0, pagination: false, select: { lastError: true } })).docs,

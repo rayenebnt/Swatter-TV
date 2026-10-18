@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, publishedStatusOrAuthenticated } from '@/access'
 import { dateTimePicker } from '@/fields/date'
+import { draftVersions } from '@/fields/drafts'
 import { revalidateHooks } from '@/hooks/revalidate'
 import { copyWeekEndpoint } from '@/lib/schedule-copy'
 
@@ -16,7 +17,9 @@ export const Schedule: CollectionConfig = {
     pagination: { defaultLimit: 300, limits: [50, 100, 300, 500] },
     components: { beforeListTable: ['/components/admin/ScheduleTools#ScheduleTools'] },
   },
-  access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  access: { read: publishedStatusOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
+  // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
+  versions: draftVersions,
   defaultSort: 'startsAt',
   endpoints: [copyWeekEndpoint],
   hooks: {

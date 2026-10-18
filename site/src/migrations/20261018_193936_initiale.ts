@@ -22,9 +22,20 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_replays_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__replays_v_version_source_provider" AS ENUM('youtube', 'bunny', 'url', 'upload');
   CREATE TYPE "public"."enum__replays_v_version_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum_schedule_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum__schedule_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_programs_genre" AS ENUM('info', 'meteo', 'documentaire', 'magazine', 'agenda', 'divertissement', 'sport', 'serie', 'cinema');
+  CREATE TYPE "public"."enum_programs_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum__programs_v_version_genre" AS ENUM('info', 'meteo', 'documentaire', 'magazine', 'agenda', 'divertissement', 'sport', 'serie', 'cinema');
+  CREATE TYPE "public"."enum__programs_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_webcams_provider" AS ENUM('iframe', 'hls', 'youtube', 'image');
+  CREATE TYPE "public"."enum_webcams_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum__webcams_v_version_provider" AS ENUM('iframe', 'hls', 'youtube', 'image');
+  CREATE TYPE "public"."enum__webcams_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_ads_placement" AS ENUM('home-leaderboard', 'inner-leaderboard');
+  CREATE TYPE "public"."enum_ads_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum__ads_v_version_placement" AS ENUM('home-leaderboard', 'inner-leaderboard');
+  CREATE TYPE "public"."enum__ads_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_pages_footer_group" AS ENUM('chaine', 'swatter');
   CREATE TYPE "public"."enum_pages_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__pages_v_version_footer_group" AS ENUM('chaine', 'swatter');
@@ -40,6 +51,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum__settings_v_version_hero_slides_kind" AS ENUM('live', 'custom');
   CREATE TYPE "public"."enum__settings_v_version_live_provider" AS ENUM('youtube', 'twitch', 'bunny', 'url', 'upload');
   CREATE TYPE "public"."enum__settings_v_version_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum_meteo_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum__meteo_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_youtube_publish_mode" AS ENUM('published', 'draft');
   CREATE TYPE "public"."enum_youtube_category" AS ENUM('divertissement', 'series-realite', 'series', 'cinema', 'documentaire', 'nature', 'sport', 'info', 'magazine');
   CREATE TABLE "videos" (
@@ -267,19 +280,37 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   
   CREATE TABLE "schedule" (
   	"id" serial PRIMARY KEY NOT NULL,
-  	"starts_at" timestamp(3) with time zone NOT NULL,
-  	"duration_minutes" numeric DEFAULT 30 NOT NULL,
-  	"program_id" integer NOT NULL,
+  	"starts_at" timestamp(3) with time zone,
+  	"duration_minutes" numeric DEFAULT 30,
+  	"program_id" integer,
   	"title_override" varchar,
   	"label" varchar,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
-  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"_status" "enum_schedule_status" DEFAULT 'draft'
+  );
+  
+  CREATE TABLE "_schedule_v" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"parent_id" integer,
+  	"version_starts_at" timestamp(3) with time zone,
+  	"version_duration_minutes" numeric DEFAULT 30,
+  	"version_program_id" integer,
+  	"version_title_override" varchar,
+  	"version_label" varchar,
+  	"version_updated_at" timestamp(3) with time zone,
+  	"version_created_at" timestamp(3) with time zone,
+  	"version__status" "enum__schedule_v_version_status" DEFAULT 'draft',
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"latest" boolean,
+  	"autosave" boolean
   );
   
   CREATE TABLE "programs" (
   	"id" serial PRIMARY KEY NOT NULL,
-  	"title" varchar NOT NULL,
-  	"genre" "enum_programs_genre" DEFAULT 'magazine' NOT NULL,
+  	"title" varchar,
+  	"genre" "enum_programs_genre" DEFAULT 'magazine',
   	"image_id" integer,
   	"synopsis" varchar,
   	"is_premiere" boolean DEFAULT false,
@@ -288,36 +319,101 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"meta_description" varchar,
   	"meta_image_id" integer,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
-  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"_status" "enum_programs_status" DEFAULT 'draft'
+  );
+  
+  CREATE TABLE "_programs_v" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"parent_id" integer,
+  	"version_title" varchar,
+  	"version_genre" "enum__programs_v_version_genre" DEFAULT 'magazine',
+  	"version_image_id" integer,
+  	"version_synopsis" varchar,
+  	"version_is_premiere" boolean DEFAULT false,
+  	"version_slug" varchar,
+  	"version_meta_title" varchar,
+  	"version_meta_description" varchar,
+  	"version_meta_image_id" integer,
+  	"version_updated_at" timestamp(3) with time zone,
+  	"version_created_at" timestamp(3) with time zone,
+  	"version__status" "enum__programs_v_version_status" DEFAULT 'draft',
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"latest" boolean,
+  	"autosave" boolean
   );
   
   CREATE TABLE "webcams" (
   	"id" serial PRIMARY KEY NOT NULL,
-  	"name" varchar NOT NULL,
+  	"name" varchar,
   	"place" varchar,
-  	"provider" "enum_webcams_provider" DEFAULT 'iframe' NOT NULL,
-  	"embed_url" varchar NOT NULL,
-  	"image_id" integer NOT NULL,
+  	"provider" "enum_webcams_provider" DEFAULT 'iframe',
+  	"embed_url" varchar,
+  	"image_id" integer,
   	"temperature" varchar,
   	"order" numeric DEFAULT 0,
   	"active" boolean DEFAULT true,
   	"slug" varchar,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
-  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"_status" "enum_webcams_status" DEFAULT 'draft'
+  );
+  
+  CREATE TABLE "_webcams_v" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"parent_id" integer,
+  	"version_name" varchar,
+  	"version_place" varchar,
+  	"version_provider" "enum__webcams_v_version_provider" DEFAULT 'iframe',
+  	"version_embed_url" varchar,
+  	"version_image_id" integer,
+  	"version_temperature" varchar,
+  	"version_order" numeric DEFAULT 0,
+  	"version_active" boolean DEFAULT true,
+  	"version_slug" varchar,
+  	"version_updated_at" timestamp(3) with time zone,
+  	"version_created_at" timestamp(3) with time zone,
+  	"version__status" "enum__webcams_v_version_status" DEFAULT 'draft',
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"latest" boolean,
+  	"autosave" boolean
   );
   
   CREATE TABLE "ads" (
   	"id" serial PRIMARY KEY NOT NULL,
-  	"name" varchar NOT NULL,
-  	"placement" "enum_ads_placement" DEFAULT 'home-leaderboard' NOT NULL,
-  	"image_id" integer NOT NULL,
+  	"name" varchar,
+  	"placement" "enum_ads_placement" DEFAULT 'home-leaderboard',
+  	"image_id" integer,
   	"image_mobile_id" integer,
   	"link" varchar,
   	"starts_at" timestamp(3) with time zone,
   	"ends_at" timestamp(3) with time zone,
   	"active" boolean DEFAULT true,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
-  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"_status" "enum_ads_status" DEFAULT 'draft'
+  );
+  
+  CREATE TABLE "_ads_v" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"parent_id" integer,
+  	"version_name" varchar,
+  	"version_placement" "enum__ads_v_version_placement" DEFAULT 'home-leaderboard',
+  	"version_image_id" integer,
+  	"version_image_mobile_id" integer,
+  	"version_link" varchar,
+  	"version_starts_at" timestamp(3) with time zone,
+  	"version_ends_at" timestamp(3) with time zone,
+  	"version_active" boolean DEFAULT true,
+  	"version_updated_at" timestamp(3) with time zone,
+  	"version_created_at" timestamp(3) with time zone,
+  	"version__status" "enum__ads_v_version_status" DEFAULT 'draft',
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"latest" boolean,
+  	"autosave" boolean
   );
   
   CREATE TABLE "pages" (
@@ -654,7 +750,23 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"bulletin_day" varchar,
   	"forecast" jsonb,
   	"updated_at" timestamp(3) with time zone,
+  	"_status" "enum_meteo_status" DEFAULT 'draft',
   	"created_at" timestamp(3) with time zone
+  );
+  
+  CREATE TABLE "_meteo_v" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"version_auto_update" boolean DEFAULT true,
+  	"version_bulletin" varchar,
+  	"version_bulletin_day" varchar,
+  	"version_forecast" jsonb,
+  	"version_updated_at" timestamp(3) with time zone,
+  	"version__status" "enum__meteo_v_version_status" DEFAULT 'draft',
+  	"version_created_at" timestamp(3) with time zone,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"latest" boolean,
+  	"autosave" boolean
   );
   
   CREATE TABLE "youtube" (
@@ -703,11 +815,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_replays_v" ADD CONSTRAINT "_replays_v_version_thumbnail_id_media_id_fk" FOREIGN KEY ("version_thumbnail_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_replays_v" ADD CONSTRAINT "_replays_v_version_meta_image_id_media_id_fk" FOREIGN KEY ("version_meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "schedule" ADD CONSTRAINT "schedule_program_id_programs_id_fk" FOREIGN KEY ("program_id") REFERENCES "public"."programs"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_schedule_v" ADD CONSTRAINT "_schedule_v_parent_id_schedule_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."schedule"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_schedule_v" ADD CONSTRAINT "_schedule_v_version_program_id_programs_id_fk" FOREIGN KEY ("version_program_id") REFERENCES "public"."programs"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "programs" ADD CONSTRAINT "programs_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "programs" ADD CONSTRAINT "programs_meta_image_id_media_id_fk" FOREIGN KEY ("meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_programs_v" ADD CONSTRAINT "_programs_v_parent_id_programs_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."programs"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_programs_v" ADD CONSTRAINT "_programs_v_version_image_id_media_id_fk" FOREIGN KEY ("version_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_programs_v" ADD CONSTRAINT "_programs_v_version_meta_image_id_media_id_fk" FOREIGN KEY ("version_meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "webcams" ADD CONSTRAINT "webcams_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_webcams_v" ADD CONSTRAINT "_webcams_v_parent_id_webcams_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."webcams"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_webcams_v" ADD CONSTRAINT "_webcams_v_version_image_id_media_id_fk" FOREIGN KEY ("version_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "ads" ADD CONSTRAINT "ads_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "ads" ADD CONSTRAINT "ads_image_mobile_id_media_id_fk" FOREIGN KEY ("image_mobile_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_ads_v" ADD CONSTRAINT "_ads_v_parent_id_ads_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."ads"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_ads_v" ADD CONSTRAINT "_ads_v_version_image_id_media_id_fk" FOREIGN KEY ("version_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_ads_v" ADD CONSTRAINT "_ads_v_version_image_mobile_id_media_id_fk" FOREIGN KEY ("version_image_mobile_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "pages" ADD CONSTRAINT "pages_meta_image_id_media_id_fk" FOREIGN KEY ("meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_pages_v" ADD CONSTRAINT "_pages_v_parent_id_pages_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_pages_v" ADD CONSTRAINT "_pages_v_version_meta_image_id_media_id_fk" FOREIGN KEY ("version_meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
@@ -840,19 +962,64 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "schedule_program_idx" ON "schedule" USING btree ("program_id");
   CREATE INDEX "schedule_updated_at_idx" ON "schedule" USING btree ("updated_at");
   CREATE INDEX "schedule_created_at_idx" ON "schedule" USING btree ("created_at");
+  CREATE INDEX "schedule__status_idx" ON "schedule" USING btree ("_status");
+  CREATE INDEX "_schedule_v_parent_idx" ON "_schedule_v" USING btree ("parent_id");
+  CREATE INDEX "_schedule_v_version_version_starts_at_idx" ON "_schedule_v" USING btree ("version_starts_at");
+  CREATE INDEX "_schedule_v_version_version_program_idx" ON "_schedule_v" USING btree ("version_program_id");
+  CREATE INDEX "_schedule_v_version_version_updated_at_idx" ON "_schedule_v" USING btree ("version_updated_at");
+  CREATE INDEX "_schedule_v_version_version_created_at_idx" ON "_schedule_v" USING btree ("version_created_at");
+  CREATE INDEX "_schedule_v_version_version__status_idx" ON "_schedule_v" USING btree ("version__status");
+  CREATE INDEX "_schedule_v_created_at_idx" ON "_schedule_v" USING btree ("created_at");
+  CREATE INDEX "_schedule_v_updated_at_idx" ON "_schedule_v" USING btree ("updated_at");
+  CREATE INDEX "_schedule_v_latest_idx" ON "_schedule_v" USING btree ("latest");
+  CREATE INDEX "_schedule_v_autosave_idx" ON "_schedule_v" USING btree ("autosave");
   CREATE INDEX "programs_image_idx" ON "programs" USING btree ("image_id");
   CREATE UNIQUE INDEX "programs_slug_idx" ON "programs" USING btree ("slug");
   CREATE INDEX "programs_meta_meta_image_idx" ON "programs" USING btree ("meta_image_id");
   CREATE INDEX "programs_updated_at_idx" ON "programs" USING btree ("updated_at");
   CREATE INDEX "programs_created_at_idx" ON "programs" USING btree ("created_at");
+  CREATE INDEX "programs__status_idx" ON "programs" USING btree ("_status");
+  CREATE INDEX "_programs_v_parent_idx" ON "_programs_v" USING btree ("parent_id");
+  CREATE INDEX "_programs_v_version_version_image_idx" ON "_programs_v" USING btree ("version_image_id");
+  CREATE INDEX "_programs_v_version_version_slug_idx" ON "_programs_v" USING btree ("version_slug");
+  CREATE INDEX "_programs_v_version_meta_version_meta_image_idx" ON "_programs_v" USING btree ("version_meta_image_id");
+  CREATE INDEX "_programs_v_version_version_updated_at_idx" ON "_programs_v" USING btree ("version_updated_at");
+  CREATE INDEX "_programs_v_version_version_created_at_idx" ON "_programs_v" USING btree ("version_created_at");
+  CREATE INDEX "_programs_v_version_version__status_idx" ON "_programs_v" USING btree ("version__status");
+  CREATE INDEX "_programs_v_created_at_idx" ON "_programs_v" USING btree ("created_at");
+  CREATE INDEX "_programs_v_updated_at_idx" ON "_programs_v" USING btree ("updated_at");
+  CREATE INDEX "_programs_v_latest_idx" ON "_programs_v" USING btree ("latest");
+  CREATE INDEX "_programs_v_autosave_idx" ON "_programs_v" USING btree ("autosave");
   CREATE INDEX "webcams_image_idx" ON "webcams" USING btree ("image_id");
   CREATE UNIQUE INDEX "webcams_slug_idx" ON "webcams" USING btree ("slug");
   CREATE INDEX "webcams_updated_at_idx" ON "webcams" USING btree ("updated_at");
   CREATE INDEX "webcams_created_at_idx" ON "webcams" USING btree ("created_at");
+  CREATE INDEX "webcams__status_idx" ON "webcams" USING btree ("_status");
+  CREATE INDEX "_webcams_v_parent_idx" ON "_webcams_v" USING btree ("parent_id");
+  CREATE INDEX "_webcams_v_version_version_image_idx" ON "_webcams_v" USING btree ("version_image_id");
+  CREATE INDEX "_webcams_v_version_version_slug_idx" ON "_webcams_v" USING btree ("version_slug");
+  CREATE INDEX "_webcams_v_version_version_updated_at_idx" ON "_webcams_v" USING btree ("version_updated_at");
+  CREATE INDEX "_webcams_v_version_version_created_at_idx" ON "_webcams_v" USING btree ("version_created_at");
+  CREATE INDEX "_webcams_v_version_version__status_idx" ON "_webcams_v" USING btree ("version__status");
+  CREATE INDEX "_webcams_v_created_at_idx" ON "_webcams_v" USING btree ("created_at");
+  CREATE INDEX "_webcams_v_updated_at_idx" ON "_webcams_v" USING btree ("updated_at");
+  CREATE INDEX "_webcams_v_latest_idx" ON "_webcams_v" USING btree ("latest");
+  CREATE INDEX "_webcams_v_autosave_idx" ON "_webcams_v" USING btree ("autosave");
   CREATE INDEX "ads_image_idx" ON "ads" USING btree ("image_id");
   CREATE INDEX "ads_image_mobile_idx" ON "ads" USING btree ("image_mobile_id");
   CREATE INDEX "ads_updated_at_idx" ON "ads" USING btree ("updated_at");
   CREATE INDEX "ads_created_at_idx" ON "ads" USING btree ("created_at");
+  CREATE INDEX "ads__status_idx" ON "ads" USING btree ("_status");
+  CREATE INDEX "_ads_v_parent_idx" ON "_ads_v" USING btree ("parent_id");
+  CREATE INDEX "_ads_v_version_version_image_idx" ON "_ads_v" USING btree ("version_image_id");
+  CREATE INDEX "_ads_v_version_version_image_mobile_idx" ON "_ads_v" USING btree ("version_image_mobile_id");
+  CREATE INDEX "_ads_v_version_version_updated_at_idx" ON "_ads_v" USING btree ("version_updated_at");
+  CREATE INDEX "_ads_v_version_version_created_at_idx" ON "_ads_v" USING btree ("version_created_at");
+  CREATE INDEX "_ads_v_version_version__status_idx" ON "_ads_v" USING btree ("version__status");
+  CREATE INDEX "_ads_v_created_at_idx" ON "_ads_v" USING btree ("created_at");
+  CREATE INDEX "_ads_v_updated_at_idx" ON "_ads_v" USING btree ("updated_at");
+  CREATE INDEX "_ads_v_latest_idx" ON "_ads_v" USING btree ("latest");
+  CREATE INDEX "_ads_v_autosave_idx" ON "_ads_v" USING btree ("autosave");
   CREATE UNIQUE INDEX "pages_slug_idx" ON "pages" USING btree ("slug");
   CREATE INDEX "pages_meta_meta_image_idx" ON "pages" USING btree ("meta_image_id");
   CREATE INDEX "pages_updated_at_idx" ON "pages" USING btree ("updated_at");
@@ -946,7 +1113,13 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_settings_v_created_at_idx" ON "_settings_v" USING btree ("created_at");
   CREATE INDEX "_settings_v_updated_at_idx" ON "_settings_v" USING btree ("updated_at");
   CREATE INDEX "_settings_v_latest_idx" ON "_settings_v" USING btree ("latest");
-  CREATE INDEX "_settings_v_autosave_idx" ON "_settings_v" USING btree ("autosave");`)
+  CREATE INDEX "_settings_v_autosave_idx" ON "_settings_v" USING btree ("autosave");
+  CREATE INDEX "meteo__status_idx" ON "meteo" USING btree ("_status");
+  CREATE INDEX "_meteo_v_version_version__status_idx" ON "_meteo_v" USING btree ("version__status");
+  CREATE INDEX "_meteo_v_created_at_idx" ON "_meteo_v" USING btree ("created_at");
+  CREATE INDEX "_meteo_v_updated_at_idx" ON "_meteo_v" USING btree ("updated_at");
+  CREATE INDEX "_meteo_v_latest_idx" ON "_meteo_v" USING btree ("latest");
+  CREATE INDEX "_meteo_v_autosave_idx" ON "_meteo_v" USING btree ("autosave");`)
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
@@ -962,9 +1135,13 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "replays" CASCADE;
   DROP TABLE "_replays_v" CASCADE;
   DROP TABLE "schedule" CASCADE;
+  DROP TABLE "_schedule_v" CASCADE;
   DROP TABLE "programs" CASCADE;
+  DROP TABLE "_programs_v" CASCADE;
   DROP TABLE "webcams" CASCADE;
+  DROP TABLE "_webcams_v" CASCADE;
   DROP TABLE "ads" CASCADE;
+  DROP TABLE "_ads_v" CASCADE;
   DROP TABLE "pages" CASCADE;
   DROP TABLE "_pages_v" CASCADE;
   DROP TABLE "media" CASCADE;
@@ -988,6 +1165,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "_settings_v_version_flash_items" CASCADE;
   DROP TABLE "_settings_v" CASCADE;
   DROP TABLE "meteo" CASCADE;
+  DROP TABLE "_meteo_v" CASCADE;
   DROP TABLE "youtube" CASCADE;
   DROP TYPE "public"."enum_videos_source_provider";
   DROP TYPE "public"."enum_videos_category";
@@ -1009,9 +1187,20 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_replays_status";
   DROP TYPE "public"."enum__replays_v_version_source_provider";
   DROP TYPE "public"."enum__replays_v_version_status";
+  DROP TYPE "public"."enum_schedule_status";
+  DROP TYPE "public"."enum__schedule_v_version_status";
   DROP TYPE "public"."enum_programs_genre";
+  DROP TYPE "public"."enum_programs_status";
+  DROP TYPE "public"."enum__programs_v_version_genre";
+  DROP TYPE "public"."enum__programs_v_version_status";
   DROP TYPE "public"."enum_webcams_provider";
+  DROP TYPE "public"."enum_webcams_status";
+  DROP TYPE "public"."enum__webcams_v_version_provider";
+  DROP TYPE "public"."enum__webcams_v_version_status";
   DROP TYPE "public"."enum_ads_placement";
+  DROP TYPE "public"."enum_ads_status";
+  DROP TYPE "public"."enum__ads_v_version_placement";
+  DROP TYPE "public"."enum__ads_v_version_status";
   DROP TYPE "public"."enum_pages_footer_group";
   DROP TYPE "public"."enum_pages_status";
   DROP TYPE "public"."enum__pages_v_version_footer_group";
@@ -1027,6 +1216,8 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum__settings_v_version_hero_slides_kind";
   DROP TYPE "public"."enum__settings_v_version_live_provider";
   DROP TYPE "public"."enum__settings_v_version_status";
+  DROP TYPE "public"."enum_meteo_status";
+  DROP TYPE "public"."enum__meteo_v_version_status";
   DROP TYPE "public"."enum_youtube_publish_mode";
   DROP TYPE "public"."enum_youtube_category";`)
 }

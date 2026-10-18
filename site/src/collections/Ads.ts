@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, runningAdsOrAuthenticated } from '@/access'
 import { dayPicker } from '@/fields/date'
+import { draftVersions } from '@/fields/drafts'
 import { revalidateHooks } from '@/hooks/revalidate'
 
 export const Ads: CollectionConfig = {
@@ -12,6 +13,8 @@ export const Ads: CollectionConfig = {
     description: 'Les bannières des annonceurs. Une publicité s’affiche du jour de début au jour de fin inclus, si elle est cochée « Active ».',
   },
   access: { read: runningAdsOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
+  // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
+  versions: draftVersions,
   hooks: revalidateHooks,
   fields: [
     { name: 'name', label: 'Annonceur / campagne', type: 'text', required: true },

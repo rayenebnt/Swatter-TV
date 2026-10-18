@@ -4,6 +4,7 @@ import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea
 import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { UntitledTitle as UntitledTitle_08a01f040b4ad4be05a83aaffb60602b } from '../../../components/admin/UntitledTitle'
+import { PreviewFocus as PreviewFocus_6ea1e6ca71ef13b3913e94b8e771675d } from '../../../components/admin/PreviewFocus'
 import { ViewOnSiteButton as ViewOnSiteButton_3def3d841b33f06d930ea3e8df5f6cbf } from '../../../components/admin/ViewOnSiteButton'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -53,6 +54,7 @@ export const importMap = {
   "@payloadcms/plugin-seo/client#MetaImageComponent": MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "/components/admin/UntitledTitle#UntitledTitle": UntitledTitle_08a01f040b4ad4be05a83aaffb60602b,
+  "/components/admin/PreviewFocus#PreviewFocus": PreviewFocus_6ea1e6ca71ef13b3913e94b8e771675d,
   "/components/admin/ViewOnSiteButton#ViewOnSiteButton": ViewOnSiteButton_3def3d841b33f06d930ea3e8df5f6cbf,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,

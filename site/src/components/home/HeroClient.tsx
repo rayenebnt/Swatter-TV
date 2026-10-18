@@ -176,6 +176,7 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
 
   return (
     <section
+      data-preview="hero"
       ref={heroRef}
       className={paused ? 'hero is-paused' : 'hero'}
       aria-roledescription="carrousel"

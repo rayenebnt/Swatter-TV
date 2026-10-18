@@ -2,7 +2,7 @@
 import type { Payload, Where } from 'payload'
 
 /** Collections à brouillons : le site n'en montre que les versions publiées, sauf en mode aperçu. */
-export const DRAFT_COLLECTIONS = ['videos', 'articles', 'events', 'replays', 'pages'] as const
+export const DRAFT_COLLECTIONS = ['videos', 'articles', 'events', 'replays', 'pages', 'schedule', 'programs', 'webcams', 'ads'] as const
 
 const drafted = new Set<string>(DRAFT_COLLECTIONS)
 

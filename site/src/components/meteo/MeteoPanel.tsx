@@ -94,7 +94,7 @@ function DayView({
   }
 
   return (
-    <div className="meteo-panel meteo-panel--full">
+    <div className="meteo-panel meteo-panel--full" data-preview="forecast">
       <div className="meteo-full__now">
         {now}
         {parts}
@@ -127,7 +127,7 @@ function DayView({
         </div>
       )}
       {bulletin && (
-        <div className="meteo-full__bulletin">
+        <div className="meteo-full__bulletin" data-preview="bulletin">
           <h3 className="meteo-h3">Le bulletin</h3>
           {bulletin}
         </div>

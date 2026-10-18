@@ -5,12 +5,13 @@ publier une info, annoncer une sortie, mettre à jour la grille des programmes�
 nécessaire. Chaque partie correspond à une tâche : allez directement à celle dont vous avez besoin. Ce guide est
 toujours disponible dans l’administration : lien **Aide**, en haut du tableau de bord et en bas du menu.
 
-> Bon à savoir : pour les **vidéos**, l’**info**, l’**agenda**, les **replays**, les **pages** et **l’accueil, le direct et
-> le flash info**, vos modifications restent en **brouillon** tant que vous n’avez pas cliqué sur **Publier les
-> modifications** ; l’**aperçu**, à côté du formulaire, montre le résultat sur le site avant de publier (voir
-> [Brouillon, aperçu et publication](#brouillon-aperçu-et-publication)). Ailleurs (grille des programmes, émissions,
-> webcams, publicités, météo, médiathèque), **Enregistrer** met en ligne aussitôt. Le site se met à jour en moins
-> d’une minute ; si une page semble ne pas avoir changé, rechargez-la.
+> Bon à savoir : dans **toutes les rubriques du site** (accueil et direct, vidéos, info, météo, programme TV et
+> émissions, agenda, webcams, replays, publicités, pages), vos modifications restent en **brouillon** tant que vous
+> n’avez pas cliqué sur **Publier les modifications** ; l’**aperçu**, à côté du formulaire, montre le résultat à
+> l’endroit exact du site où il apparaîtra, avant de publier (voir
+> [Brouillon, aperçu et publication](#brouillon-aperçu-et-publication)). Seule la **Médiathèque** (et la partie
+> réservée aux administrateurs) enregistre directement. Le site se met à jour en moins d’une minute ; si une page
+> semble ne pas avoir changé, rechargez-la.
 
 ## Sommaire
 
@@ -93,8 +94,8 @@ Dans une **liste** : le bouton **Ajouter**, à côté du titre, crée un nouveau
 
 Dans une **fiche** :
 
-- **Publier les modifications** (vidéos, info, agenda, replays, pages, accueil et direct) met en ligne ce que montre le
-  formulaire ; ailleurs, **Enregistrer** enregistre et met en ligne aussitôt ;
+- **Publier les modifications** met en ligne ce que montre le formulaire (dans la médiathèque et la partie
+  administrateurs, le bouton s’appelle **Enregistrer** et met en ligne aussitôt) ;
 - **Voir sur le site** ouvre la page publique du contenu dans un nouvel onglet (une fois sa date de publication passée) ;
 - le menu « ⋮ » permet de **Dupliquer** ou de **Supprimer** (et de **Retirer du site**, voir ci-dessous) ;
 - les champs marqués d’une étoile sont obligatoires, et le petit texte gris sous un champ explique à quoi il sert ;
@@ -103,15 +104,23 @@ Dans une **fiche** :
 
 ### Brouillon, aperçu et publication
 
-Pour les **vidéos**, l’**info**, l’**agenda**, les **replays**, les **pages** et **Accueil et direct**, rien n’arrive sur
-le site sans votre accord :
+Dans toutes les rubriques du site, rien n’arrive en ligne sans votre accord :
 
 1. **Modifiez** la fiche : vos changements sont enregistrés automatiquement, en brouillon, au fil de la saisie. Vous
    pouvez fermer la page et reprendre plus tard. **Ajouter** ouvre directement une fiche enregistrée en brouillon,
    intitulée « Nouvelle fiche » jusqu’à ce que vous lui donniez un titre ; une fiche quittée sans titre est supprimée
    automatiquement au bout d’une journée.
 2. **Regardez l’aperçu** : il s’ouvre à droite du formulaire et montre la page du site telle qu’elle sera, mise à jour
-   quelques secondes après chaque changement (pour **Accueil et direct**, c’est la page d’accueil). Le bouton **Fermer
+   quelques secondes après chaque changement. Il va tout seul **à l’endroit que vous modifiez**, encadré en doré un
+   instant :
+   - **Accueil et direct** : l’onglet ouvert ou le champ touché décide (le carrousel, le bandeau du flash info, la page
+     du direct, ou le pied de page pour **Chaîne et contact**) ;
+   - un **créneau** du programme : son jour dans la grille, le créneau au centre ;
+   - une **webcam** : sa vignette sur la page Webcams ; une **publicité** : sa bannière, sur l’accueil ou dans l’info ;
+   - la **météo** : les prévisions, ou le bulletin dès que vous l’écrivez ; une **émission** : sa fiche dans le programme ;
+   - une vidéo, un article, un événement, un replay, une page : sa propre page.
+
+   Le bouton **Fermer
    l’aperçu** (ou **Aperçu en direct** pour le rouvrir) libère de la place ; au-dessus de l’aperçu, la liste
    **Responsive** affiche la page comme sur un **Téléphone**, une **Tablette** ou un **Ordinateur**.
 3. **Publiez** : **Publier les modifications** met la nouvelle version en ligne pour tous les visiteurs.
@@ -234,8 +243,8 @@ l’événement à mettre en avant dans « À la une » et sur l’accueil ; c�
 
 **Émissions** (sous **Programme TV** dans le menu) : la fiche de chaque émission, créée une fois pour toutes : **Titre**, **Genre** (Info,
 Météo, Documentaire, Magazine, Agenda, Divertissement, Sport, Série, Cinéma), **Image**, **Résumé** et, à droite,
-**Inédit** (étiquette affichée dans la grille). Une émission créée ici se choisit ensuite dans la grille et dans les
-replays.
+**Inédit** (étiquette affichée dans la grille), puis **Publier les modifications**. Une émission créée ici se choisit
+ensuite dans la grille et dans les replays.
 
 **Programme TV** (dans le menu ou sur le tableau de bord) : la grille des programmes, une ligne, appelée **créneau**, par
 diffusion.
@@ -245,13 +254,13 @@ diffusion.
   (**Lun. 12**, **Mar. 13**…) n’affichent qu’une journée ; **Toute la grille** affiche tout.
 - Pour ajouter un créneau : **Ajouter**, puis **Jour et heure de début** (heure de Paris), **Durée (minutes)**,
   **Émission** (choisissez-la dans la liste) et, si besoin, **Titre spécifique (facultatif)** (par exemple « Le journal
-  des Alpes — Soir » ; sinon, le titre de l’émission est utilisé). **Enregistrer**.
+  des Alpes — Soir » ; sinon, le titre de l’émission est utilisé). **Publier les modifications**.
 - Comme sur le site, la nuit jusqu’à 2 h appartient à la journée de la veille : un créneau du mardi à 1 h du matin
   apparaît dans la journée du lundi.
 
 **Gagnez du temps : recopiez une semaine entière.** Remplissez une semaine type, puis cliquez sur **Recopier sur la
-semaine suivante** : tous les créneaux sont recopiés aux mêmes jours et aux mêmes heures la semaine d’après (les
-changements d’heure sont pris en compte). Il ne vous reste qu’à ajuster ce qui change.
+semaine suivante** : tous les créneaux sont recopiés, directement en ligne, aux mêmes jours et aux mêmes heures la
+semaine d’après (les changements d’heure sont pris en compte). Il ne vous reste qu’à ajuster ce qui change.
 
 - Si la semaine suivante contient déjà des créneaux, la copie est refusée et rien n’est effacé ; cochez **Remplacer ce
   qui est déjà saisi** pour les remplacer.
@@ -284,6 +293,7 @@ peut être filtrée par émission. Le même titre peut servir tous les jours («
 3. **Image d’aperçu** : affichée avant le chargement de la webcam.
 4. **Température affichée (facultatif)** (« 13° ») et **Ordre d’affichage** (les plus petits nombres en premier).
 5. **Active** (à droite) : décochez pour masquer une webcam en panne sans la supprimer.
+6. Vérifiez l’aperçu, puis **Publier les modifications**.
 
 ## 11. Les publicités
 
@@ -297,6 +307,7 @@ peut être filtrée par émission. Le même titre peut servir tous les jours («
 5. **Premier jour** et **Dernier jour** : la bannière s’affiche du premier jour au dernier jour inclus (laissez vide pour
    « dès maintenant » ou « sans date de fin »).
 6. **Active** (à droite) : décochez pour suspendre la campagne sans la supprimer.
+7. Vérifiez l’aperçu (la bannière, à son emplacement), puis **Publier les modifications**.
 
 Une seule bannière par emplacement : la plus récente des campagnes actives et en cours. Sans campagne, un encart
 « Espace partenaire » invite les annonceurs à vous écrire. Le tableau de bord indique le nombre de campagnes en cours.
@@ -362,7 +373,8 @@ cochée. **Dernière mise à jour automatique** indique l’heure du dernier pas
 les prévisions n’ont pas été mises à jour depuis plus de 3 heures.
 
 Pour écrire vous-même le texte du jour, remplissez **Bulletin du jour (facultatif)** : il remplace le texte généré
-automatiquement, **aujourd’hui seulement**. Dès le lendemain, le site reprend tout seul le texte automatique : inutile de
+automatiquement, **aujourd’hui seulement**, une fois publié avec **Publier les modifications** (l’aperçu le montre
+avant). Dès le lendemain, le site reprend tout seul le texte automatique : inutile de
 vider le champ.
 
 ## 17. Les images et la médiathèque

@@ -41,6 +41,8 @@ async function copyRange(payload: Payload, req: PayloadRequest, first: string, d
       await payload.create({
         collection: 'schedule',
         data: {
+          // en ligne aussitôt, comme la semaine recopiée
+          _status: 'published',
           startsAt: nextWeekSameTime(slot.startsAt).toISOString(),
           durationMinutes: slot.durationMinutes,
           program: typeof slot.program === 'object' ? slot.program.id : slot.program,

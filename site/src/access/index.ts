@@ -40,7 +40,7 @@ export function runningAdsWhere(now = new Date()): Where {
 }
 
 /** Publicités : l'équipe connectée voit tout ; l'API publique, seulement les campagnes en cours (ni inactives ni à venir). */
-export const runningAdsOrAuthenticated: Access = ({ req }) => (req.user ? true : runningAdsWhere())
+export const runningAdsOrAuthenticated: Access = ({ req }) => (req.user ? true : { and: [{ _status: { equals: 'published' } }, runningAdsWhere()] })
 
 /** Lecture publique des replays déjà diffusés ; l'équipe connectée voit aussi ceux programmés plus tard. */
 export const airedOrAuthenticated: Access = ({ req }) => {

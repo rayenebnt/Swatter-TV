@@ -197,7 +197,7 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
                 const cls = ['blk', live && 'is-now', past && 'is-past', s.cutL && 'is-cut-l', s.cutR && 'is-cut-r'].filter(Boolean).join(' ')
                 const label = [s.title, `${formatTime(s.start)} – ${formatTime(s.end)}`, p?.genreLabel, p?.isPremiere && 'inédit', live && 'en cours'].filter(Boolean).join(', ')
                 return (
-                  <li key={s.id} className="tvgrid__item" style={{ '--s': s.from, '--w': w } as CSSProperties}>
+                  <li key={s.id} className="tvgrid__item" data-preview={`slot-${s.id}`} style={{ '--s': s.from, '--w': w } as CSSProperties}>
                     <button
                       type="button"
                       className={cls}

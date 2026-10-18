@@ -86,7 +86,8 @@ plugins.push(seoSection)
 /**
  * Fiches simplifiées partout : onglet « API » masqué (réservé aux développeurs, il déroute plus qu'il n'aide) et,
  * pour les contenus qui ont une page publique (admin.preview), bouton « Voir sur le site » au lieu d'une icône seule ;
- * fiches à brouillons : « Nouvelle fiche : Vidéo » plutôt que le numéro de la fiche tant qu'elle n'a pas de titre.
+ * fiches à brouillons : « Nouvelle fiche : Vidéo » plutôt que le numéro de la fiche tant qu'elle n'a pas de titre, et
+ * aperçu en direct centré sur l'endroit modifié (PreviewFocus).
  * Menu : groupes automatiques de Payload masqués (group: false), remplacés par le menu dans l'ordre du site
  * (src/components/admin/NavLinks.tsx).
  */
@@ -104,13 +105,38 @@ const simpleDocuments: Plugin = (config) => ({
           ...c.admin?.components?.edit,
           ...(c.admin?.preview ? { PreviewButton: '/components/admin/ViewOnSiteButton#ViewOnSiteButton' } : {}),
           ...(c.versions && typeof c.versions === 'object' && c.versions.drafts
-            ? { beforeDocumentControls: [...(c.admin?.components?.edit?.beforeDocumentControls ?? []), '/components/admin/UntitledTitle#UntitledTitle'] }
+            ? {
+                beforeDocumentControls: [
+                  ...(c.admin?.components?.edit?.beforeDocumentControls ?? []),
+                  '/components/admin/UntitledTitle#UntitledTitle',
+                  '/components/admin/PreviewFocus#PreviewFocus',
+                ],
+              }
             : {}),
         },
       },
     },
   })),
-  globals: config.globals?.map((g) => ({ ...g, admin: { ...g.admin, group: false, hideAPIURL: true } })),
+  globals: config.globals?.map((g) => ({
+    ...g,
+    admin: {
+      ...g.admin,
+      group: false,
+      hideAPIURL: true,
+      // aperçu en direct : montre l'endroit du site correspondant à l'onglet ou au champ modifié
+      ...(g.versions && typeof g.versions === 'object' && g.versions.drafts
+        ? {
+            components: {
+              ...g.admin?.components,
+              elements: {
+                ...g.admin?.components?.elements,
+                beforeDocumentControls: [...(g.admin?.components?.elements?.beforeDocumentControls ?? []), '/components/admin/PreviewFocus#PreviewFocus'],
+              },
+            },
+          }
+        : {}),
+    },
+  })),
 })
 plugins.push(simpleDocuments)
 
@@ -175,7 +201,7 @@ export default buildConfig({
       openByDefault: true,
       url: ({ data, collectionConfig, globalConfig, req }) => previewUrl(req, previewPath(collectionConfig?.slug, globalConfig?.slug, data)),
       collections: [...DRAFT_COLLECTIONS],
-      globals: ['settings'],
+      globals: ['settings', 'meteo'],
       breakpoints: [
         { name: 'mobile', label: 'Téléphone', width: 390, height: 844 },
         { name: 'tablet', label: 'Tablette', width: 820, height: 1180 },

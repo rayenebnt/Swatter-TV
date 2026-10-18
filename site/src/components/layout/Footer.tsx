@@ -54,7 +54,7 @@ export async function Footer() {
   const years = year > 2025 ? `2025–${year}` : '2025'
 
   return (
-    <footer className="footer">
+    <footer className="footer" data-preview="footer">
       <div className="container">
         <div className="footer__grid">
           <div className="footer__brand">

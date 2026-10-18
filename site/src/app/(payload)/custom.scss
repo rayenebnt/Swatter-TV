@@ -258,8 +258,9 @@ html[data-theme='dark'] {
   display: none;
 }
 
-/* « Accueil et direct » : « Retirer du site » est retiré (NoUnpublish.tsx), le menu « ⋮ » resterait vide */
-.global-edit--settings .doc-controls__popup {
+/* « Accueil et direct » et « Météo » : « Retirer du site » est retiré (NoUnpublish.tsx), le menu « ⋮ » resterait vide */
+.global-edit--settings .doc-controls__popup,
+.global-edit--meteo .doc-controls__popup {
   display: none;
 }
 

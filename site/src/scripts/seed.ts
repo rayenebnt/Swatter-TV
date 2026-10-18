@@ -115,7 +115,7 @@ const programs = new Map<string, number>()
 for (const p of PROGRAMS) {
   const doc = await payload.create({
     collection: 'programs',
-    data: { title: p.title, genre: p.genre, image: mediaId(p.image), synopsis: p.synopsis, isPremiere: Boolean(p.isPremiere) },
+    data: { _status: 'published', title: p.title, genre: p.genre, image: mediaId(p.image), synopsis: p.synopsis, isPremiere: Boolean(p.isPremiere) },
     overrideAccess: true,
     context,
   })
@@ -138,7 +138,7 @@ const schedule = slots.map((s, i) => {
   const end = i + 1 < slots.length ? slots[i + 1].start : gridEnd
   const durationMinutes = Math.round((end.getTime() - s.start.getTime()) / 60_000)
   if (durationMinutes <= 0 || durationMinutes > 600) throw new Error(`Créneau invalide à ${s.start.toISOString()} (${durationMinutes} min)`)
-  return { startsAt: s.start.toISOString(), durationMinutes, program: programId(s.program), titleOverride: s.title }
+  return { _status: 'published' as const, startsAt: s.start.toISOString(), durationMinutes, program: programId(s.program), titleOverride: s.title }
 })
 await inBatches(schedule, 8, (data) => payload.create({ collection: 'schedule', data, overrideAccess: true, context }))
 log(`${schedule.length} créneaux de grille créés (${firstDay} → ${addDays(firstDay, 7)}).`)
@@ -218,7 +218,7 @@ log(`${EVENTS.length} événements créés.`)
 for (const [i, w] of WEBCAMS.entries()) {
   await payload.create({
     collection: 'webcams',
-    data: { name: w.name, place: w.place, provider: w.provider, embedUrl: `/visuels/${w.image}.webp`, image: mediaId(w.image), temperature: w.temperature, order: i + 1, active: true },
+    data: { _status: 'published', name: w.name, place: w.place, provider: w.provider, embedUrl: `/visuels/${w.image}.webp`, image: mediaId(w.image), temperature: w.temperature, order: i + 1, active: true },
     overrideAccess: true,
     context,
   })
@@ -227,7 +227,7 @@ for (const [i, w] of WEBCAMS.entries()) {
 // Aucune publicité active : l'emplacement affiche « Espace partenaire ». Un exemple inactif sert de modèle.
 await payload.create({
   collection: 'ads',
-  data: { name: 'Exemple de campagne (inactive)', placement: 'home-leaderboard', image: mediaId('t-matin-a'), link: '/agenda', active: false },
+  data: { _status: 'published', name: 'Exemple de campagne (inactive)', placement: 'home-leaderboard', image: mediaId('t-matin-a'), link: '/agenda', active: false },
   overrideAccess: true,
   context,
 })
@@ -359,6 +359,7 @@ await payload.updateGlobal({
 await payload.updateGlobal({
   slug: 'meteo',
   data: {
+    _status: 'published',
     autoUpdate: true,
     bulletin: null,
     forecast: demoForecast(Array.from({ length: 5 }, (_, i) => addDays(today, i)), now),

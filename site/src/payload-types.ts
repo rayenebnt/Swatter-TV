@@ -495,6 +495,7 @@ export interface Program {
   };
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Une ligne par émission diffusée : le jour et l’heure, l’émission, la durée.
@@ -514,6 +515,7 @@ export interface Schedule {
   label?: string | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Les vues en direct de la page « Webcams ». Décochez « Active » pour masquer une webcam sans la supprimer.
@@ -546,6 +548,7 @@ export interface Webcam {
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Les bannières des annonceurs. Une publicité s’affiche du jour de début au jour de fin inclus, si elle est cochée « Active ».
@@ -574,6 +577,7 @@ export interface Ad {
   active?: boolean | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Les pages fixes : mentions légales, vie privée, le groupe, canaux de réception…
@@ -983,6 +987,7 @@ export interface ScheduleSelect<T extends boolean = true> {
   label?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1004,6 +1009,7 @@ export interface ProgramsSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1021,6 +1027,7 @@ export interface WebcamsSelect<T extends boolean = true> {
   slug?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1037,6 +1044,7 @@ export interface AdsSelect<T extends boolean = true> {
   active?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1342,6 +1350,7 @@ export interface Meteo {
     | boolean
     | null;
   updatedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
   createdAt?: string | null;
 }
 /**
@@ -1460,6 +1469,7 @@ export interface MeteoSelect<T extends boolean = true> {
   bulletinDay?: T;
   forecast?: T;
   updatedAt?: T;
+  _status?: T;
   createdAt?: T;
   globalType?: T;
 }

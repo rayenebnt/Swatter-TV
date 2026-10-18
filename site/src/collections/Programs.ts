@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, publishedStatusOrAuthenticated } from '@/access'
+import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
 import { PROGRAM_GENRES } from '@/lib/categories'
@@ -12,7 +13,9 @@ export const Programs: CollectionConfig = {
     defaultColumns: ['title', 'genre', 'isPremiere'],
     description: 'Les émissions de la chaîne. Une émission créée ici se choisit ensuite dans la grille et dans les replays.',
   },
-  access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  access: { read: publishedStatusOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
+  // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
+  versions: draftVersions,
   hooks: revalidateHooks,
   fields: [
     { name: 'title', label: 'Titre', type: 'text', required: true },

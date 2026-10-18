@@ -65,7 +65,7 @@ export async function Ticker() {
 
   return (
     <TickerFrame duration={repeat * items.length * SECONDS_PER_ITEM}>
-      <div className="container ticker__in">
+      <div className="container ticker__in" data-preview="flash">
         <span className="badge badge--gold">Flash info</span>
         <TickerClock />
         <div className="ticker__track" role="marquee" aria-label="Messages du flash info" tabIndex={0}>

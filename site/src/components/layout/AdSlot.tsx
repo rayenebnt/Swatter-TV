@@ -60,7 +60,7 @@ export async function AdSlot({ placement }: { placement: Placement }) {
     const settings = await getSettings()
     const email = settings?.contact?.email?.trim()
     return (
-      <aside className="ad" aria-label="Publicité">
+      <aside className="ad" aria-label="Publicité" data-preview="ad">
         <small>Publicité</small>
         <p className="ad__empty">
           <b>Espace partenaire</b>
@@ -91,7 +91,7 @@ export async function AdSlot({ placement }: { placement: Placement }) {
   const href = safeHref(ad.link)
 
   return (
-    <aside className="ad ad--campaign" aria-label="Publicité" style={style}>
+    <aside className="ad ad--campaign" aria-label="Publicité" style={style} data-preview="ad">
       <small>Publicité</small>
       {href ? (
         <a className="ad__media" href={href} target="_blank" rel="sponsored noopener">

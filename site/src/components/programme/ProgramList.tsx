@@ -37,7 +37,7 @@ export async function ProgramList({ day, today }: { day: string; today: string }
               <h3>{part.label}</h3>
               <ol role="list">
                 {part.slots.map((s) => (
-                  <li key={s.id} className="tvl__row">
+                  <li key={s.id} className="tvl__row" data-preview={`slot-${s.id}`}>
                     <p className="tvl__time">
                       <time dateTime={s.start}>{formatTime(s.start)}</time>
                       <span>

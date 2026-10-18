@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, publishedStatusOrAuthenticated } from '@/access'
+import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
 
@@ -11,7 +12,9 @@ export const Webcams: CollectionConfig = {
     defaultColumns: ['name', 'place', 'active', 'order'],
     description: 'Les vues en direct de la page « Webcams ». Décochez « Active » pour masquer une webcam sans la supprimer.',
   },
-  access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  access: { read: publishedStatusOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
+  // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
+  versions: draftVersions,
   defaultSort: 'order',
   hooks: revalidateHooks,
   fields: [

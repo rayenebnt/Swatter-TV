@@ -1,6 +1,7 @@
 import type { GlobalConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, publishedStatusOrAuthenticated } from '@/access'
 import { dateTimePicker } from '@/fields/date'
+import { globalDraftVersions } from '@/fields/drafts'
 import { revalidateGlobal } from '@/hooks/revalidate'
 import { parisDay } from '@/lib/format'
 
@@ -13,11 +14,24 @@ export const Meteo: GlobalConfig = {
   label: 'Météo',
   admin: {
     description: 'Les prévisions se mettent à jour toutes seules, toutes les heures. Vous pouvez simplement remplacer le texte du jour par votre propre bulletin.',
+    // « Retirer du site » n'a pas de sens pour la météo
+    components: { elements: { UnpublishButton: '/components/admin/NoUnpublish#NoUnpublish' } },
   },
-  access: { read: anyone, update: authenticated },
+  // API publique : jamais le brouillon
+  access: { read: publishedStatusOrAuthenticated, update: authenticated },
+  // bulletin enregistré en brouillon, publié au clic sur « Publier les modifications » (l'import publie les prévisions)
+  versions: globalDraftVersions,
+  forceSelect: { _status: true },
   hooks: {
-    // Jour du bulletin saisi à la main : il ne remplace le texte automatique que ce jour-là (heure de Paris)
     beforeChange: [
+      // Enregistrement depuis l'administration : les prévisions viennent toujours de la version en ligne (celles du
+      // formulaire datent de son ouverture et effaceraient un import fait entre-temps)
+      async ({ data, req }) => {
+        if (!req.user) return data
+        const live = (await req.payload.db.findGlobal({ slug: 'meteo', req })) as { forecast?: unknown } | null
+        return live?.forecast ? { ...data, forecast: live.forecast } : data
+      },
+      // Jour du bulletin saisi à la main : il ne remplace le texte automatique que ce jour-là (heure de Paris)
       ({ data, originalDoc }) => {
         const prev = String(originalDoc?.bulletin ?? '').trim()
         const next = String((data.bulletin === undefined ? originalDoc?.bulletin : data.bulletin) ?? '').trim()

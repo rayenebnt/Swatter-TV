@@ -9,7 +9,7 @@ import { getPayload, type CollectionSlug } from 'payload'
 
 const payload = await getPayload({ config })
 const context = { disableRevalidate: true, top10Reorder: true }
-const collections: CollectionSlug[] = ['videos', 'articles', 'events', 'replays', 'pages']
+const collections: CollectionSlug[] = ['videos', 'articles', 'events', 'replays', 'pages', 'schedule', 'programs', 'webcams', 'ads']
 
 for (const collection of collections) {
   const { docs } = await payload.find({ collection, where: { _status: { not_equals: 'published' } }, pagination: false, depth: 0, select: {} })
@@ -23,10 +23,12 @@ for (const collection of collections) {
   payload.logger.info(`${collection} : ${published} contenu(s) publié(s)`)
 }
 
-const settings = await payload.findGlobal({ slug: 'settings', depth: 0 })
-const { totalDocs: settingsVersions } = await payload.countGlobalVersions({ global: 'settings' })
-if (settings._status !== 'published' && settingsVersions === 0) {
-  await payload.updateGlobal({ slug: 'settings', data: { _status: 'published' }, context })
-  payload.logger.info('Réglages (accueil, direct, flash info) publiés')
+for (const slug of ['settings', 'meteo'] as const) {
+  const doc = await payload.findGlobal({ slug, depth: 0 })
+  const { totalDocs } = await payload.countGlobalVersions({ global: slug })
+  if (doc._status !== 'published' && totalDocs === 0) {
+    await payload.updateGlobal({ slug, data: { _status: 'published' }, context })
+    payload.logger.info(slug === 'settings' ? 'Réglages (accueil, direct, flash info) publiés' : 'Météo publiée')
+  }
 }
 process.exit(0)

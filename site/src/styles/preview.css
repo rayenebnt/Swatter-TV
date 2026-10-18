@@ -50,3 +50,11 @@ html[data-preview] .cookie {
     border-radius: 16px;
   }
 }
+
+/* Aperçu en direct : élément que l'on est en train de modifier, surligné un instant */
+.preview-focus {
+  outline: 3px solid var(--gold, #d9aa45);
+  outline-offset: 4px;
+  border-radius: 12px;
+  transition: outline-color 0.6s ease;
+}

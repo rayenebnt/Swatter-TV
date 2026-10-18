@@ -50,7 +50,7 @@ export default async function DirectPage() {
       <PageHeader eyebrow="Swatter TV · 24 h/24" title="Le direct" description={DESCRIPTION} crumbs={[{ label: 'Le direct' }]} />
 
       <section className="container direct" aria-label="Le direct de Swatter TV">
-        <div className="direct__grid">
+        <div className="direct__grid" data-preview="live">
           {live ? (
             <VideoPlayer video={live} poster={poster} title={current ? `Swatter TV en direct\u00a0: ${current.title}` : 'Swatter TV en direct'} live />
           ) : (

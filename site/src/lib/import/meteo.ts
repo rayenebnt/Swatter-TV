@@ -380,7 +380,7 @@ export async function importMeteo(payload: Payload): Promise<{ ok: boolean; erro
     }
     if (json === null) return { ok: false, error: 'réponse d’Open-Meteo illisible (JSON attendu)' }
     const forecast = buildForecast(Array.isArray(json) ? json : [json], new Date())
-    await payload.updateGlobal({ slug: 'meteo', data: { forecast, updatedAt: forecast.updatedAt }, context: { disableRevalidate: true } })
+    await payload.updateGlobal({ slug: 'meteo', data: { forecast, updatedAt: forecast.updatedAt, _status: 'published' }, context: { disableRevalidate: true } })
     return { ok: true }
   } catch (error) {
     if (error instanceof Error && error.name === 'TimeoutError') return { ok: false, error: 'Open-Meteo ne répond pas (délai de 10 s dépassé)' }
