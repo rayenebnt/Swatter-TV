@@ -83,8 +83,9 @@ npm run dev
   de développement** (en production, le script refuse de s'exécuter sans ces deux variables). On peut aussi créer le premier
   compte depuis `http://localhost:3000/admin` : sur une base vide, ce premier compte devient automatiquement administrateur.
 - `npm run seed` remplit la base avec le jeu de démonstration : **il efface d’abord tous les contenus** (jamais les
-  utilisateurs), puis recrée médias, émissions, une grille de 8 jours à partir d’hier, vidéos, replays, articles, agenda,
-  webcams, pages, réglages et prévisions météo. Il est idempotent (relançable à volonté) et refuse de tourner en production
+  utilisateurs), puis recrée médias, émissions, une grille de 8 jours à partir d’hier, replays, articles, agenda,
+  webcams, pages, réglages et prévisions météo (aucune vidéo : la rubrique « Vidéos » se remplit avec la chaîne YouTube
+  du client, fiche « Chaîne YouTube » de l’administration). Il est idempotent (relançable à volonté) et refuse de tourner en production
   sans `SEED_FORCE=1`. Les dates sont calculées à partir du jour du lancement : relancez-le pour « rajeunir » la grille,
   l’agenda et la météo.
 - Site : <http://localhost:3000> · administration : <http://localhost:3000/admin>.

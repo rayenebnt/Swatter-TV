@@ -15,7 +15,7 @@ import { labelOf, PROGRAM_GENRES } from '@/lib/categories'
 import { formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
 import { TIMEZONE } from '@/lib/site'
 import { slugify } from '@/lib/slugify'
-import { articleUrl, eventUrl, videoUrl } from '@/lib/urls'
+import { articleUrl, eventUrl } from '@/lib/urls'
 
 import { ARTICLES } from './seed/articles'
 import { EVENTS, type RelDay } from './seed/events'
@@ -24,7 +24,7 @@ import { MEDIA } from './seed/media'
 import { demoForecast } from './seed/meteo'
 import { PAGES, WEBCAMS } from './seed/pages'
 import { daySlots, primeOf, PROGRAMS } from './seed/programs'
-import { REPLAYS, VIDEOS } from './seed/videos'
+import { REPLAYS } from './seed/videos'
 
 if (process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== '1') {
   console.error('✖ Le jeu de démonstration efface tous les contenus : refusé en production (forcer avec SEED_FORCE=1).')
@@ -149,29 +149,7 @@ log(`${schedule.length} créneaux de grille créés (${firstDay} → ${addDays(f
 // ---------------------------------------------------------------------------------------------
 // 4. Vidéos et replays
 // ---------------------------------------------------------------------------------------------
-const videoSlugs = new Map<string, string>()
-for (const v of VIDEOS) {
-  const doc = await payload.create({
-    collection: 'videos',
-    data: {
-      _status: 'published',
-      title: v.title,
-      category: v.category,
-      duration: v.duration,
-      thumbnail: mediaId(v.thumbnail),
-      source: upload(v.clip),
-      description: v.description,
-      publishedAt: new Date(now.getTime() - v.ageHours * 3_600_000).toISOString(),
-      isVideoOfDay: Boolean(v.isVideoOfDay),
-      top10Rank: v.top10Rank ?? null,
-      views: v.views,
-    },
-    overrideAccess: true,
-    context,
-  })
-  videoSlugs.set(v.title, doc.slug ?? '')
-}
-
+// « Vidéos » : aucune démonstration, les vidéos viennent de la chaîne YouTube (import automatique)
 const DATED = new Set(['journal', 'sport', 'agenda'])
 for (const r of REPLAYS) {
   const broadcastAt = parisDateTime(addDays(today, r.day), r.time)
@@ -191,7 +169,7 @@ for (const r of REPLAYS) {
     context,
   })
 }
-log(`${VIDEOS.length} vidéos et ${REPLAYS.length} replays créés.`)
+log(`${REPLAYS.length} replays créés (vidéos : import de la chaîne YouTube).`)
 
 // ---------------------------------------------------------------------------------------------
 // 5. Articles
@@ -312,7 +290,6 @@ await payload.create({
 // ---------------------------------------------------------------------------------------------
 const prime = PROGRAMS.find((p) => p.key === primeOf(1))
 const primeAt = parisDateTime(today, '20:45')
-const primeTrailer = VIDEOS.find((v) => v.title.startsWith(`${prime?.title ?? ''} — bande-annonce`))
 // Titre sur deux lignes (la seconde en doré) : « La Vallée » / « blanche »
 const primeWords = (prime?.title ?? 'Ce soir').split(' ')
 const primeLine1 = primeWords.slice(0, Math.ceil(primeWords.length / 2)).join(' ')
@@ -350,10 +327,10 @@ await payload.updateGlobal({
         description: prime?.synopsis ?? null,
         image: mediaId('hero-nuit'),
         navLabel: 'Ce soir',
-        primaryLabel: primeTrailer ? 'Voir la bande-annonce' : 'Programme TV',
-        primaryHref: primeTrailer ? videoUrl({ slug: videoSlugs.get(primeTrailer.title) }) : '/programme-tv',
-        secondaryLabel: `Ce soir à ${formatTime(primeAt)}`,
-        secondaryHref: '/programme-tv',
+        primaryLabel: `Ce soir à ${formatTime(primeAt)}`,
+        primaryHref: '/programme-tv',
+        secondaryLabel: 'Le replay',
+        secondaryHref: '/replay',
       },
       {
         kind: 'custom',

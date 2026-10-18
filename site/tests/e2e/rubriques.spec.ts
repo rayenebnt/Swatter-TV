@@ -4,15 +4,18 @@ import { expectPlayer, firstDoc, linksMatching, settle, watchErrors } from './he
 
 // Un test par rubrique : le contenu attendu est bien là (jeu de démonstration : npm run seed).
 
-test('accueil : toutes les rubriques sont présentes', async ({ page }) => {
+test('accueil : toutes les rubriques sont présentes', async ({ page, request }) => {
   const errors = watchErrors(page)
+  // sans vidéo (chaîne YouTube pas encore importée), le Top 10 et « Vidéos du jour » sont masqués
+  const { totalDocs: videos } = (await (await request.get('/api/videos?limit=1&depth=0')).json()) as { totalDocs: number }
   await page.goto('/')
   await settle(page)
   await expect(page.locator('h1')).toHaveCount(1)
   const main = page.locator('main')
-  for (const name of [/à la une/i, /top 10/i, /vidéos du jour/i, /info/i, /météo/i, /programme tv/i, /agenda/i, /webcams/i, /replay/i]) {
+  for (const name of [/à la une/i, ...(videos ? [/top 10/i, /vidéos du jour/i] : []), /info/i, /météo/i, /programme tv/i, /agenda/i, /webcams/i, /replay/i]) {
     await expect(main.getByRole('heading', { level: 2, name }).first(), `section ${name}`).toBeAttached()
   }
+  if (!videos) await expect(main.getByRole('heading', { level: 2, name: /top 10/i })).toHaveCount(0)
   for (const path of ['/direct', '/info', '/meteo', '/programme-tv', '/agenda', '/webcams', '/replay', '/videos']) {
     await expect(page.locator(`a[href="${path}"]`).first(), `lien vers ${path}`).toBeAttached()
   }
@@ -107,7 +110,12 @@ test('vidéos : liste et page vidéo avec son lecteur', async ({ page }) => {
   const errors = watchErrors(page)
   await page.goto('/videos')
   const videos = await linksMatching(page, /^\/videos\/[a-z0-9-]+$/)
-  expect(videos.length, 'vidéos listées').toBeGreaterThanOrEqual(3)
+  // pas de vidéo de démonstration : la rubrique attend celles de la chaîne YouTube (import automatique)
+  if (!videos.length) {
+    await expect(page.locator('main')).toContainText('Aucune vidéo pour le moment')
+    expect(errors, errors.join('\n')).toEqual([])
+    return
+  }
   await page.goto(videos[0])
   await settle(page)
   await expectPlayer(page)
