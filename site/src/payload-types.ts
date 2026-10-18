@@ -1345,7 +1345,7 @@ export interface Meteo {
   createdAt?: string | null;
 }
 /**
- * Les vidéos publiées sur la chaîne YouTube arrivent toutes seules dans « Vidéos », toutes les heures. Une vidéo supprimée du site ne revient pas.
+ * Les dernières vidéos de la chaîne YouTube sont mises sur le site toutes les heures, dans « Vidéos » et « Replays ». Pour cacher une vidéo, utilisez « Retirer du site » dans sa fiche (supprimée, elle reviendrait au prochain import).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "youtube".
@@ -1357,6 +1357,8 @@ export interface Youtube {
    */
   channel?: string | null;
   autoImport?: boolean | null;
+  inVideos?: boolean | null;
+  inReplays?: boolean | null;
   publishMode: 'published' | 'draft';
   category:
     | 'divertissement'
@@ -1373,15 +1375,6 @@ export interface Youtube {
   lastError?: string | null;
   channelId?: string | null;
   channelFrom?: string | null;
-  importedIds?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1477,6 +1470,8 @@ export interface MeteoSelect<T extends boolean = true> {
 export interface YoutubeSelect<T extends boolean = true> {
   channel?: T;
   autoImport?: T;
+  inVideos?: T;
+  inReplays?: T;
   publishMode?: T;
   category?: T;
   lastImportAt?: T;
@@ -1484,7 +1479,6 @@ export interface YoutubeSelect<T extends boolean = true> {
   lastError?: T;
   channelId?: T;
   channelFrom?: T;
-  importedIds?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

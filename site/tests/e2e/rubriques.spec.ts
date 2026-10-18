@@ -6,13 +6,14 @@ import { expectPlayer, firstDoc, linksMatching, settle, watchErrors } from './he
 
 test('accueil : toutes les rubriques sont présentes', async ({ page, request }) => {
   const errors = watchErrors(page)
-  // sans vidéo (chaîne YouTube pas encore importée), le Top 10 et « Vidéos du jour » sont masqués
+  // sans vidéo (chaîne YouTube pas encore importée), le Top 10, « Vidéos du jour » et « Le Replay » sont masqués
   const { totalDocs: videos } = (await (await request.get('/api/videos?limit=1&depth=0')).json()) as { totalDocs: number }
+  const { totalDocs: replays } = (await (await request.get('/api/replays?limit=1&depth=0')).json()) as { totalDocs: number }
   await page.goto('/')
   await settle(page)
   await expect(page.locator('h1')).toHaveCount(1)
   const main = page.locator('main')
-  for (const name of [/à la une/i, ...(videos ? [/top 10/i, /vidéos du jour/i] : []), /info/i, /météo/i, /programme tv/i, /agenda/i, /webcams/i, /replay/i]) {
+  for (const name of [/à la une/i, ...(videos ? [/top 10/i, /vidéos du jour/i] : []), /info/i, /météo/i, /programme tv/i, /agenda/i, /webcams/i, ...(replays ? [/replay/i] : [])]) {
     await expect(main.getByRole('heading', { level: 2, name }).first(), `section ${name}`).toBeAttached()
   }
   if (!videos) await expect(main.getByRole('heading', { level: 2, name: /top 10/i })).toHaveCount(0)
@@ -126,7 +127,11 @@ test('replay : liste et page replay avec son lecteur', async ({ page }) => {
   const errors = watchErrors(page)
   await page.goto('/replay')
   const replays = await linksMatching(page, /^\/replay\/[a-z0-9-]+$/)
-  expect(replays.length, 'replays listés').toBeGreaterThanOrEqual(1)
+  // pas de replay de démonstration : la rubrique attend les vidéos de la chaîne YouTube (import automatique)
+  if (!replays.length) {
+    expect(errors, errors.join('\n')).toEqual([])
+    return
+  }
   await page.goto(replays[0])
   await settle(page)
   await expectPlayer(page)

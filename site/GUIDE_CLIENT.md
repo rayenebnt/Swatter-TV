@@ -144,14 +144,17 @@ redirection, voir partie 19).
 collez une fois pour toutes l’**Adresse de la chaîne YouTube** (ouvrez la chaîne sur YouTube et copiez l’adresse du
 navigateur, par exemple `https://www.youtube.com/@votre-chaine`), puis cliquez sur **Publier les modifications**.
 
-- Toutes les heures, les nouvelles vidéos de la chaîne sont ajoutées à **Vidéos**, avec leur titre, leur description,
-  leur date et leur image. **Importer maintenant** lance l’import sans attendre ; **Dernier import** indique quand il a
-  eu lieu et ce qu’il a donné (ou l’erreur, par exemple une adresse mal recopiée).
+- Les **15 dernières vidéos de la chaîne** sont mises sur le site, avec leur titre, leur description, leur date et leur
+  image : chacune qui n’y est pas encore est ajoutée, qu’elle soit nouvelle ou non. Cela se fait toutes les heures, et
+  aussitôt avec **Importer maintenant** ; **Dernier import** indique quand il a eu lieu et ce qu’il a donné (ou l’erreur,
+  par exemple une adresse mal recopiée).
+- **Afficher dans « Vidéos »** et **Afficher dans « Replays »** : les deux rubriques où les vidéos sont ajoutées.
 - **Les vidéos importées sont…** : **En ligne aussitôt**, ou **En brouillon (à publier soi-même)** pour les relire avant.
-- **Catégorie donnée aux vidéos importées** : modifiable ensuite vidéo par vidéo.
-- Une vidéo importée se modifie comme les autres (titre, catégorie, **Vidéo du jour**, **Top 10**…). Supprimée du site,
-  elle ne revient pas au prochain import.
-- Décochez **Importer automatiquement les nouvelles vidéos** pour suspendre l’import.
+- **Catégorie donnée aux vidéos importées** (rubrique « Vidéos ») : modifiable ensuite vidéo par vidéo.
+- Une vidéo importée se modifie comme les autres (titre, catégorie, **Vidéo du jour**, **Top 10**, émission d’un replay…).
+  **Pour cacher une vidéo, utilisez « Retirer du site »** (menu « ⋮ » de sa fiche) : supprimée, elle reviendrait au
+  prochain import tant qu’elle fait partie des 15 dernières de la chaîne.
+- Décochez **Importer automatiquement les vidéos de la chaîne** pour suspendre l’import.
 
 Pour ajouter une vidéo à la main (une vidéo d’une autre chaîne, par exemple) :
 
@@ -264,7 +267,8 @@ l’accueil (« en ce moment », « ce soir ») se mettent à jour d’après ce
 **Tableau de bord › Mettre un replay en ligne** (ou **Le Replay › Ajouter**) : **Titre**, **Émission** (pour
 regrouper les numéros d’une même émission), **Vidéo** (mêmes sources que pour les vidéos, partie 4), **Image de la
 vidéo** (facultative pour YouTube), **Diffusé le** (le replay apparaît sur le site à partir de cette date), **Durée
-(facultatif)** (`52 min`) et **Description**, puis **Publier les modifications**. Les replays s’affichent du plus récent au plus ancien, et la page Replay
+(facultatif)** (`52 min`) et **Description**, puis **Publier les modifications**. Les vidéos de la chaîne YouTube y
+arrivent aussi toutes seules (partie 4) ; choisissez leur **Émission** dans leur fiche pour les regrouper. Les replays s’affichent du plus récent au plus ancien, et la page Replay
 peut être filtrée par émission. Le même titre peut servir tous les jours (« Le journal des Alpes »).
 
 ## 10. Les webcams

@@ -5,7 +5,7 @@ import { VIDEO_CATEGORIES } from '@/lib/categories'
 import { parseChannel } from '@/lib/import/youtube'
 
 /**
- * Chaîne YouTube de Swatter TV : ses vidéos arrivent toutes seules dans « Vidéos » (voir src/lib/import/youtube.ts).
+ * Chaîne YouTube de Swatter TV : ses vidéos arrivent toutes seules dans « Vidéos » et « Replays » (voir src/lib/import/youtube.ts).
  * Les champs masqués sont tenus à jour par l'import.
  */
 export const Youtube: GlobalConfig = {
@@ -13,7 +13,7 @@ export const Youtube: GlobalConfig = {
   label: 'Chaîne YouTube',
   admin: {
     description:
-      'Les vidéos publiées sur la chaîne YouTube arrivent toutes seules dans « Vidéos », toutes les heures. Une vidéo supprimée du site ne revient pas.',
+      'Les dernières vidéos de la chaîne YouTube sont mises sur le site toutes les heures, dans « Vidéos » et « Replays ». Pour cacher une vidéo, utilisez « Retirer du site » dans sa fiche (supprimée, elle reviendrait au prochain import).',
   },
   access: { read: authenticated, update: authenticated },
   fields: [
@@ -28,7 +28,14 @@ export const Youtube: GlobalConfig = {
         description: 'Sur YouTube, ouvrez la page de la chaîne et copiez l’adresse affichée dans la barre du navigateur.',
       },
     },
-    { name: 'autoImport', label: 'Importer automatiquement les nouvelles vidéos (toutes les heures)', type: 'checkbox', defaultValue: true },
+    { name: 'autoImport', label: 'Importer automatiquement les vidéos de la chaîne (toutes les heures)', type: 'checkbox', defaultValue: true },
+    {
+      type: 'row',
+      fields: [
+        { name: 'inVideos', label: 'Afficher dans « Vidéos »', type: 'checkbox', defaultValue: true },
+        { name: 'inReplays', label: 'Afficher dans « Replays »', type: 'checkbox', defaultValue: true },
+      ],
+    },
     {
       type: 'row',
       fields: [
@@ -53,7 +60,5 @@ export const Youtube: GlobalConfig = {
     // identifiant UC… de la chaîne, et l'adresse dont il a été déduit (recalculé si l'adresse change)
     { name: 'channelId', type: 'text', admin: { readOnly: true, hidden: true } },
     { name: 'channelFrom', type: 'text', admin: { readOnly: true, hidden: true } },
-    // vidéos déjà importées une fois (identifiants YouTube) : jamais réimportées, même supprimées du site
-    { name: 'importedIds', type: 'json', admin: { readOnly: true, hidden: true } },
   ],
 }

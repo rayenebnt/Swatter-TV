@@ -1,12 +1,25 @@
 // Import des vidéos de la chaîne YouTube de Swatter TV dans la collection « videos » (global « youtube »).
 // Sans clé : flux RSS public de la chaîne (ses 15 dernières vidéos). Avec YOUTUBE_API_KEY : toute la chaîne (API YouTube).
 // Appelé par GET /api/cron/import (toutes les heures), POST /api/youtube/import (bouton « Importer maintenant ») et
-// src/scripts/import.ts. Une vidéo déjà importée une fois ne l'est plus jamais (même supprimée du site ensuite).
+// src/scripts/import.ts. Synchronisation : chaque vidéo lue sur la chaîne qui manque dans « Vidéos » ou « Replays » y est
+// (re)créée ; une vidéo « retirée du site » (brouillon) reste en place et n'est donc pas recréée.
 import { XMLParser } from 'fast-xml-parser'
 import type { Payload } from 'payload'
 import { VIDEO_CATEGORIES } from '@/lib/categories'
 
-export type YoutubeImportResult = { ok: boolean; created: number; skipped: number; total: number; error?: string }
+export type YoutubeImportResult = {
+  ok: boolean
+  /** fiches créées (vidéos + replays) */
+  created: number
+  videos: number
+  replays: number
+  /** vidéos de la chaîne déjà présentes partout où elles doivent l'être */
+  skipped: number
+  /** vidéos lues sur la chaîne, et leurs identifiants YouTube */
+  total: number
+  ids: string[]
+  error?: string
+}
 
 export type ChannelVideo = { id: string; title: string; description: string; publishedAt: string | null; duration: string | null }
 
@@ -172,18 +185,35 @@ const youtubeIdOf = (url: unknown): string | null => (typeof url === 'string' ? 
 const clip = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s)
 const CATEGORIES = new Set<string>(VIDEO_CATEGORIES.map((c) => c.value))
 
+type Target = 'videos' | 'replays'
+
+/** Identifiants YouTube des fiches d'une collection (brouillons et contenus retirés du site compris). */
+async function onSite(payload: Payload, collection: Target): Promise<Set<string>> {
+  const { docs } = await payload.find({ collection, draft: true, where: { 'source.provider': { equals: 'youtube' } }, pagination: false, depth: 0, select: { source: true } })
+  return new Set(docs.map((d) => youtubeIdOf(d.source?.youtubeUrl)).filter((id): id is string => Boolean(id)))
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`
+
+/** « 3 vidéos et 3 replays ajoutés », « aucune nouvelle fiche (15 vidéos de la chaîne déjà sur le site) » */
+export function importSummary(r: Pick<YoutubeImportResult, 'videos' | 'replays' | 'total'>): string {
+  if (!r.videos && !r.replays) return `rien à ajouter : ${plural(r.total, 'vidéo')} de la chaîne, toutes déjà sur le site`
+  const parts = [r.videos ? `${plural(r.videos, 'vidéo')} dans « Vidéos »` : '', r.replays ? `${plural(r.replays, 'vidéo')} dans « Replays »` : ''].filter(Boolean)
+  return `${parts.join(' et ')} (sur ${plural(r.total, 'vidéo')} lues sur la chaîne)`
+}
+
 /**
- * Crée dans « Vidéos » les vidéos de la chaîne qui n'ont jamais été importées. `force` : même si l'import automatique
- * est désactivé (bouton « Importer maintenant »). Ne lève jamais d'exception ; le résultat est noté dans le global.
+ * Met sur le site les vidéos lues sur la chaîne (sans clé : les 15 dernières) : chacune qui manque dans « Vidéos » ou
+ * « Replays » (selon les cases cochées) y est créée. `force` : même si l'import automatique est désactivé (bouton
+ * « Importer maintenant »). Ne lève jamais d'exception ; le résultat est noté dans le global.
  */
 export async function importYoutube(payload: Payload, { force = false } = {}): Promise<YoutubeImportResult> {
-  const result: YoutubeImportResult = { ok: false, created: 0, skipped: 0, total: 0 }
+  const result: YoutubeImportResult = { ok: false, created: 0, videos: 0, replays: 0, skipped: 0, total: 0, ids: [] }
   const settings = await payload.findGlobal({ slug: 'youtube', depth: 0 })
   if (!settings.channel?.trim()) return { ...result, error: 'aucune chaîne YouTube renseignée (Vidéos › Chaîne YouTube)' }
   if (settings.autoImport === false && !force) return { ...result, error: 'import automatique désactivé' }
 
   const context = { disableRevalidate: true }
-  const known = new Set<string>(Array.isArray(settings.importedIds) ? settings.importedIds.filter((v): v is string => typeof v === 'string') : [])
   try {
     const ref = parseChannel(settings.channel)
     if (!ref) throw new Error('adresse de chaîne YouTube non reconnue')
@@ -191,63 +221,53 @@ export async function importYoutube(payload: Payload, { force = false } = {}): P
     const channelId = settings.channelId && settings.channelFrom === settings.channel ? settings.channelId : await resolveChannelId(ref, process.env.YOUTUBE_API_KEY)
     const videos = await channelVideos(channelId)
     result.total = videos.length
+    result.ids = videos.map((v) => v.id)
 
-    // vidéos déjà sur le site (ajoutées à la main avec leur lien YouTube, brouillons compris)
-    const { docs } = await payload.find({
-      collection: 'videos',
-      draft: true,
-      where: { 'source.provider': { equals: 'youtube' } },
-      pagination: false,
-      depth: 0,
-      select: { source: true },
-    })
-    const onSite = new Set(docs.map((d) => youtubeIdOf(d.source?.youtubeUrl)).filter(Boolean))
-
+    const targets: Target[] = [...(settings.inVideos !== false ? (['videos'] as const) : []), ...(settings.inReplays !== false ? (['replays'] as const) : [])]
+    if (!targets.length) throw new Error('cochez au moins « Vidéos » ou « Replays »')
+    const present = Object.fromEntries(await Promise.all(targets.map(async (t) => [t, await onSite(payload, t)] as const))) as Record<Target, Set<string>>
     const category = settings.category && CATEGORIES.has(settings.category) ? settings.category : 'divertissement'
     const draft = settings.publishMode === 'draft'
+
     // les plus anciennes d'abord : à date égale, l'ordre de création suit celui de la chaîne
     for (const video of [...videos].reverse()) {
-      if (known.has(video.id) || onSite.has(video.id)) {
-        known.add(video.id)
-        result.skipped++
-        continue
+      const missing = targets.filter((t) => !present[t].has(video.id))
+      if (!missing.length) result.skipped++
+      const common = {
+        title: clip(video.title, TITLE_MAX),
+        source: { provider: 'youtube' as const, youtubeUrl: `https://www.youtube.com/watch?v=${video.id}` },
+        duration: video.duration,
+        description: clip(video.description, DESCRIPTION_MAX) || null,
+        _status: draft ? ('draft' as const) : ('published' as const),
       }
-      await payload.create({
-        collection: 'videos',
-        draft,
-        data: {
-          title: clip(video.title, TITLE_MAX),
-          source: { provider: 'youtube', youtubeUrl: `https://www.youtube.com/watch?v=${video.id}` },
-          category: category as (typeof VIDEO_CATEGORIES)[number]['value'],
-          duration: video.duration,
-          description: clip(video.description, DESCRIPTION_MAX) || null,
-          publishedAt: video.publishedAt ?? new Date().toISOString(),
-          _status: draft ? 'draft' : 'published',
-        },
-        context,
-      })
-      known.add(video.id)
-      result.created++
+      const date = video.publishedAt ?? new Date().toISOString()
+      for (const target of missing) {
+        if (target === 'videos') {
+          await payload.create({
+            collection: 'videos',
+            draft,
+            data: { ...common, category: category as (typeof VIDEO_CATEGORIES)[number]['value'], publishedAt: date },
+            context,
+          })
+          result.videos++
+        } else {
+          await payload.create({ collection: 'replays', draft, data: { ...common, broadcastAt: date }, context })
+          result.replays++
+        }
+        present[target].add(video.id)
+      }
     }
+    result.created = result.videos + result.replays
     result.ok = true
     await payload.updateGlobal({
       slug: 'youtube',
-      data: {
-        channelId,
-        channelFrom: settings.channel,
-        importedIds: [...known],
-        lastImportAt: new Date().toISOString(),
-        lastResult: result.created ? `${result.created} nouvelle${result.created > 1 ? 's' : ''} vidéo${result.created > 1 ? 's' : ''} ajoutée${result.created > 1 ? 's' : ''}` : 'aucune nouvelle vidéo',
-        lastError: null,
-      },
+      data: { channelId, channelFrom: settings.channel, lastImportAt: new Date().toISOString(), lastResult: importSummary(result), lastError: null },
       context,
     })
   } catch (error) {
+    result.created = result.videos + result.replays
     result.error = error instanceof Error ? (error.name === 'TimeoutError' ? 'YouTube ne répond pas (délai de 10 s dépassé)' : error.message) : String(error)
-    // vidéos créées avant l'erreur : retenues quand même
-    await payload
-      .updateGlobal({ slug: 'youtube', data: { importedIds: [...known], lastImportAt: new Date().toISOString(), lastError: result.error }, context })
-      .catch(() => {})
+    await payload.updateGlobal({ slug: 'youtube', data: { lastImportAt: new Date().toISOString(), lastError: result.error }, context }).catch(() => {})
   }
   return result
 }

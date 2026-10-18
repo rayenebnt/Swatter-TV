@@ -6,7 +6,9 @@ import { useState } from 'react'
 
 const format = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
 
-type Result = { ok: boolean; created: number; skipped: number; total: number; error?: string }
+type Result = { ok: boolean; created: number; videos: number; replays: number; total: number; error?: string }
+
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`
 
 /** Fiche « Chaîne YouTube » : état du dernier import et bouton « Importer maintenant ». */
 export function YoutubeImport() {
@@ -27,7 +29,11 @@ export function YoutubeImport() {
       if (!res.ok || !json || !('ok' in json) || !json.ok) {
         toast.error(`Import impossible : ${json?.error ?? `erreur ${res.status}`}`)
       } else {
-        toast.success(json.created ? `${json.created} nouvelle${json.created > 1 ? 's' : ''} vidéo${json.created > 1 ? 's' : ''} ajoutée${json.created > 1 ? 's' : ''}` : 'Aucune nouvelle vidéo sur la chaîne')
+        toast.success(
+          json.created
+            ? [json.videos && `${plural(json.videos, 'vidéo')} ajoutée${json.videos > 1 ? 's' : ''} dans « Vidéos »`, json.replays && `${plural(json.replays, 'vidéo')} dans « Replays »`].filter(Boolean).join(', ')
+            : `Les ${plural(json.total, 'vidéo')} de la chaîne sont déjà sur le site`,
+        )
       }
       router.refresh()
     } finally {

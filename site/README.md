@@ -83,9 +83,9 @@ npm run dev
   de développement** (en production, le script refuse de s'exécuter sans ces deux variables). On peut aussi créer le premier
   compte depuis `http://localhost:3000/admin` : sur une base vide, ce premier compte devient automatiquement administrateur.
 - `npm run seed` remplit la base avec le jeu de démonstration : **il efface d’abord tous les contenus** (jamais les
-  utilisateurs), puis recrée médias, émissions, une grille de 8 jours à partir d’hier, replays, articles, agenda,
-  webcams, pages, réglages et prévisions météo (aucune vidéo : la rubrique « Vidéos » se remplit avec la chaîne YouTube
-  du client, fiche « Chaîne YouTube » de l’administration). Il est idempotent (relançable à volonté) et refuse de tourner en production
+  utilisateurs), puis recrée médias, émissions, une grille de 8 jours à partir d’hier, articles, agenda,
+  webcams, pages, réglages et prévisions météo (ni vidéos ni replays : ces rubriques se remplissent avec la chaîne
+  YouTube du client, fiche « Chaîne YouTube » de l’administration). Il est idempotent (relançable à volonté) et refuse de tourner en production
   sans `SEED_FORCE=1`. Les dates sont calculées à partir du jour du lancement : relancez-le pour « rajeunir » la grille,
   l’agenda et la météo.
 - Site : <http://localhost:3000> · administration : <http://localhost:3000/admin>.
@@ -228,8 +228,8 @@ Autres commandes ponctuelles : `docker compose run --rm tools npm run payload mi
 1. importe dans « L’Info » les articles des flux RSS actifs (collection « Flux RSS », sans doublon) ;
 2. met à jour les prévisions météo depuis Open-Meteo, si « Mise à jour automatique » est cochée dans le global « Météo »
    (sinon l’étape est simplement ignorée) ;
-3. importe dans « Vidéos » les nouvelles vidéos de la chaîne YouTube renseignée dans l’administration (global
-   « Chaîne YouTube », voir `src/lib/import/youtube.ts`) ;
+3. met dans « Vidéos » et « Replays » les dernières vidéos de la chaîne YouTube renseignée dans l’administration
+   (global « Chaîne YouTube », voir `src/lib/import/youtube.ts`) : celles qui manquent sont ajoutées ;
 4. supprime les fiches ouvertes avec « Ajouter » puis abandonnées sans titre depuis plus de 24 h (brouillons jamais
    publiés) ;
 5. régénère les pages du site si quelque chose a changé.

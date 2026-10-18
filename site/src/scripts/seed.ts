@@ -3,7 +3,7 @@
  * Usage : npm run seed   (= payload run src/scripts/seed.ts)
  *
  * Supprime d'abord tous les contenus (jamais les utilisateurs), puis recrée médias, émissions,
- * grille sur 8 jours, vidéos, replays, articles, agenda, webcams, pages, réglages et météo.
+ * grille sur 8 jours, articles, agenda, webcams, pages, réglages et météo.
  * Refuse de tourner en production, sauf SEED_FORCE=1.
  */
 import config from '@payload-config'
@@ -13,7 +13,6 @@ import { fileURLToPath } from 'url'
 
 import { labelOf, PROGRAM_GENRES } from '@/lib/categories'
 import { formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
-import { TIMEZONE } from '@/lib/site'
 import { slugify } from '@/lib/slugify'
 import { articleUrl, eventUrl } from '@/lib/urls'
 
@@ -24,7 +23,6 @@ import { MEDIA } from './seed/media'
 import { demoForecast } from './seed/meteo'
 import { PAGES, WEBCAMS } from './seed/pages'
 import { daySlots, primeOf, PROGRAMS } from './seed/programs'
-import { REPLAYS } from './seed/videos'
 
 if (process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== '1') {
   console.error('✖ Le jeu de démonstration efface tous les contenus : refusé en production (forcer avec SEED_FORCE=1).')
@@ -55,7 +53,6 @@ const pickEnd = weekendPick ? (weekendPick.end ?? weekendPick.start) : null
 const saturday =
   pickEnd?.from === 'saturday' && parisDateTime(addDays(nextSaturday, pickEnd.days), pickEnd.time) <= now ? addDays(nextSaturday, 7) : nextSaturday
 const relDay = (r: RelDay) => addDays(r.from === 'saturday' ? saturday : today, r.days)
-const shortDate = (d: Date) => new Intl.DateTimeFormat('fr-FR', { timeZone: TIMEZONE, day: 'numeric', month: 'short' }).format(d)
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** Exécute `fn` sur chaque élément, `size` à la fois. */
@@ -149,27 +146,8 @@ log(`${schedule.length} créneaux de grille créés (${firstDay} → ${addDays(f
 // ---------------------------------------------------------------------------------------------
 // 4. Vidéos et replays
 // ---------------------------------------------------------------------------------------------
-// « Vidéos » : aucune démonstration, les vidéos viennent de la chaîne YouTube (import automatique)
-const DATED = new Set(['journal', 'sport', 'agenda'])
-for (const r of REPLAYS) {
-  const broadcastAt = parisDateTime(addDays(today, r.day), r.time)
-  await payload.create({
-    collection: 'replays',
-    data: {
-      _status: 'published',
-      title: DATED.has(r.program) ? `${r.title} — ${shortDate(broadcastAt)}` : r.title,
-      program: programId(r.program),
-      thumbnail: mediaId(r.thumbnail),
-      source: upload(r.clip),
-      broadcastAt: broadcastAt.toISOString(),
-      duration: r.duration,
-      description: r.description,
-    },
-    overrideAccess: true,
-    context,
-  })
-}
-log(`${REPLAYS.length} replays créés (vidéos : import de la chaîne YouTube).`)
+// « Vidéos » et « Replays » : aucune démonstration, ils se remplissent avec la chaîne YouTube du client
+// (fiche « Chaîne YouTube » de l'administration, import automatique)
 
 // ---------------------------------------------------------------------------------------------
 // 5. Articles

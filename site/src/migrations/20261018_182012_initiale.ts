@@ -661,6 +661,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"channel" varchar,
   	"auto_import" boolean DEFAULT true,
+  	"in_videos" boolean DEFAULT true,
+  	"in_replays" boolean DEFAULT true,
   	"publish_mode" "enum_youtube_publish_mode" DEFAULT 'published' NOT NULL,
   	"category" "enum_youtube_category" DEFAULT 'divertissement' NOT NULL,
   	"last_import_at" timestamp(3) with time zone,
@@ -668,7 +670,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"last_error" varchar,
   	"channel_id" varchar,
   	"channel_from" varchar,
-  	"imported_ids" jsonb,
   	"updated_at" timestamp(3) with time zone,
   	"created_at" timestamp(3) with time zone
   );

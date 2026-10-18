@@ -7685,6 +7685,20 @@
           "notNull": false,
           "default": true
         },
+        "in_videos": {
+          "name": "in_videos",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "in_replays": {
+          "name": "in_replays",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
         "publish_mode": {
           "name": "publish_mode",
           "type": "enum_youtube_publish_mode",
@@ -7728,12 +7742,6 @@
         "channel_from": {
           "name": "channel_from",
           "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "imported_ids": {
-          "name": "imported_ids",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -8179,6 +8187,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "cdeb53f3-cf89-4bca-a28c-447437a74d96",
+  "id": "55dfaafd-da49-4186-99c4-e2c4f5b06aab",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

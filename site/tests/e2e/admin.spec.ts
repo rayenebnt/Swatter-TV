@@ -239,46 +239,54 @@ test.describe('administration', () => {
     }
   })
 
-  test('chaîne YouTube : import des vidéos de la chaîne, sans doublon ni retour des vidéos supprimées', async ({ page, request }) => {
+  test('chaîne YouTube : les vidéos de la chaîne dans « Vidéos » et « Replays », recréées si elles manquent', async ({ page, request }) => {
     // faux YouTube : le serveur du site doit être lancé avec YOUTUBE_BASE et YOUTUBE_THUMB_BASE pointant sur ce port
     const port = Number(process.env.E2E_YOUTUBE_MOCK_PORT)
     test.skip(!port, 'E2E_YOUTUBE_MOCK_PORT non défini (voir tests/e2e/youtube-mock.ts)')
     const mock = await startYoutubeMock(port)
     const headers = await adminHeaders(request)
     const before = (await (await request.get('/api/globals/youtube?depth=0', { headers })).json()) as Record<string, unknown>
-    const created: number[] = []
-    const findImported = async () =>
-      ((await (await request.get('/api/videos?limit=50&depth=0&where[title][like]=Test import', { headers })).json()) as { docs: { id: number; title: string; thumbnail?: number | null }[] }).docs
+    type Doc = { id: number; title: string; thumbnail?: number | null }
+    const find = async (collection: 'videos' | 'replays') =>
+      ((await (await request.get(`/api/${collection}?limit=50&depth=0&draft=true&where[title][like]=Test import`, { headers })).json()) as { docs: Doc[] }).docs
+    const cleanup = async () => {
+      for (const collection of ['videos', 'replays'] as const) for (const d of await find(collection)) await request.delete(`/api/${collection}/${d.id}`, { headers })
+    }
     try {
-      for (const v of await findImported()) await request.delete(`/api/videos/${v.id}`, { headers })
+      await cleanup()
       expect(
-        (await request.post('/api/globals/youtube', { headers, data: { channel: 'https://www.youtube.com/@swattertv-test', autoImport: true, publishMode: 'published', category: 'magazine', importedIds: [], channelId: null, channelFrom: null } })).ok(),
+        (await request.post('/api/globals/youtube', { headers, data: { channel: 'https://www.youtube.com/@swattertv-test', autoImport: true, inVideos: true, inReplays: true, publishMode: 'published', category: 'magazine', channelId: null, channelFrom: null } })).ok(),
       ).toBe(true)
 
       // bouton « Importer maintenant » de la fiche
       await login(page, ADMIN)
       await page.goto('/admin/globals/youtube')
       await page.getByRole('button', { name: 'Importer maintenant' }).click()
-      await expect(page.getByText('3 nouvelles vidéos ajoutées').first()).toBeVisible({ timeout: 30_000 })
+      await expect(page.getByText('3 vidéos ajoutées dans « Vidéos », 3 vidéos dans « Replays »').first()).toBeVisible({ timeout: 30_000 })
 
-      const imported = await findImported()
-      created.push(...imported.map((v) => v.id))
-      expect(imported.map((v) => v.title).sort()).toEqual(MOCK_VIDEOS.map((v) => v.title).sort())
-      expect(imported.every((v) => v.thumbnail), 'vignette YouTube récupérée').toBe(true)
+      const titles = MOCK_VIDEOS.map((v) => v.title).sort()
+      const videos = await find('videos')
+      expect(videos.map((v) => v.title).sort()).toEqual(titles)
+      expect((await find('replays')).map((v) => v.title).sort()).toEqual(titles)
+      expect(videos.every((v) => v.thumbnail), 'vignette YouTube récupérée').toBe(true)
       await page.goto('/videos')
       await expect(page.locator('main')).toContainText(MOCK_VIDEOS[2].title)
+      await page.goto('/replay')
+      await expect(page.locator('main')).toContainText(MOCK_VIDEOS[2].title)
 
-      // relancé : rien de nouveau ; une vidéo supprimée du site ne revient pas
-      await request.delete(`/api/videos/${imported[0].id}`, { headers })
-      const again = (await (await request.post('/api/youtube/import', { headers })).json()) as { ok: boolean; created: number; skipped: number }
-      expect(again).toMatchObject({ ok: true, created: 0, skipped: 3 })
-      expect(await findImported()).toHaveLength(2)
+      // relancé : rien à ajouter ; une vidéo supprimée revient, une vidéo « retirée du site » reste cachée
+      const sync = async () => (await (await request.post('/api/youtube/import', { headers })).json()) as { ok: boolean; videos: number; replays: number; total: number }
+      expect(await sync()).toMatchObject({ ok: true, videos: 0, replays: 0, total: 3 })
+      await request.delete(`/api/videos/${videos[0].id}`, { headers })
+      expect((await request.patch(`/api/videos/${videos[1].id}`, { headers, data: { _status: 'draft' } })).ok()).toBe(true)
+      expect(await sync()).toMatchObject({ ok: true, videos: 1, replays: 0 })
+      expect(await find('videos')).toHaveLength(3)
 
       // adresse invalide refusée à l'enregistrement
       const refused = await request.post('/api/globals/youtube', { headers, data: { channel: 'https://www.dailymotion.com/swattertv' } })
       expect(refused.status()).toBe(400)
     } finally {
-      for (const id of created) await request.delete(`/api/videos/${id}`, { headers })
+      await cleanup()
       await request.post('/api/globals/youtube', { headers, data: before })
       mock.close()
     }

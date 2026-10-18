@@ -8,7 +8,7 @@ import { getPayload } from 'payload'
 
 import { importMeteo } from '@/lib/import/meteo'
 import { importRss } from '@/lib/import/rss'
-import { importYoutube } from '@/lib/import/youtube'
+import { importSummary, importYoutube } from '@/lib/import/youtube'
 
 const payload = await getPayload({ config })
 let failed = false
@@ -38,7 +38,7 @@ try {
 }
 
 const youtube = await importYoutube(payload)
-if (youtube.ok) payload.logger.info(`YouTube : ${youtube.created} vidéo(s) ajoutée(s), ${youtube.skipped} déjà importée(s).`)
+if (youtube.ok) payload.logger.info(`YouTube : ${importSummary(youtube)}`)
 // chaîne non renseignée ou import automatique désactivé : ce n'est pas une erreur
 else if (/aucune chaîne|désactivé/.test(youtube.error ?? '')) payload.logger.info(`YouTube : ${youtube.error}`)
 else {
