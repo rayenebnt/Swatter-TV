@@ -34,11 +34,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_redirects_to_type" AS ENUM('reference', 'custom');
   CREATE TYPE "public"."enum_settings_hero_slides_badges_style" AS ENUM('live', 'gold', 'glass');
   CREATE TYPE "public"."enum_settings_hero_slides_kind" AS ENUM('live', 'custom');
-  CREATE TYPE "public"."enum_settings_live_provider" AS ENUM('youtube', 'bunny', 'url', 'upload');
+  CREATE TYPE "public"."enum_settings_live_provider" AS ENUM('youtube', 'twitch', 'bunny', 'url', 'upload');
   CREATE TYPE "public"."enum_settings_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__settings_v_version_hero_slides_badges_style" AS ENUM('live', 'gold', 'glass');
   CREATE TYPE "public"."enum__settings_v_version_hero_slides_kind" AS ENUM('live', 'custom');
-  CREATE TYPE "public"."enum__settings_v_version_live_provider" AS ENUM('youtube', 'bunny', 'url', 'upload');
+  CREATE TYPE "public"."enum__settings_v_version_live_provider" AS ENUM('youtube', 'twitch', 'bunny', 'url', 'upload');
   CREATE TYPE "public"."enum__settings_v_version_status" AS ENUM('draft', 'published');
   CREATE TABLE "videos" (
   	"id" serial PRIMARY KEY NOT NULL,
@@ -554,6 +554,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"live_enabled" boolean DEFAULT true,
   	"live_provider" "enum_settings_live_provider" DEFAULT 'youtube',
   	"live_youtube_url" varchar,
+  	"live_twitch_url" varchar,
   	"live_bunny_video_id" varchar,
   	"live_url" varchar,
   	"live_file_id" integer,
@@ -617,6 +618,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_live_enabled" boolean DEFAULT true,
   	"version_live_provider" "enum__settings_v_version_live_provider" DEFAULT 'youtube',
   	"version_live_youtube_url" varchar,
+  	"version_live_twitch_url" varchar,
   	"version_live_bunny_video_id" varchar,
   	"version_live_url" varchar,
   	"version_live_file_id" integer,

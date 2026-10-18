@@ -113,7 +113,7 @@ export function CookieBanner() {
         Vos choix cookies
       </h2>
       <p id={descId}>
-        Nous utilisons des cookies pour mesurer l’audience et afficher les vidéos intégrées (YouTube, Bunny). Vous pouvez changer d’avis à tout
+        Nous utilisons des cookies pour mesurer l’audience et afficher les vidéos intégrées (YouTube, Twitch, Bunny). Vous pouvez changer d’avis à tout
         moment depuis «&nbsp;Gestion des cookies&nbsp;», en bas de page.
       </p>
 
@@ -130,7 +130,7 @@ export function CookieBanner() {
           <CookieOption
             id={`${id}-ext`}
             title="Contenus externes"
-            text="Lecture des vidéos YouTube et Bunny, qui peuvent déposer leurs propres cookies."
+            text="Lecture des vidéos YouTube, Twitch et Bunny, qui peuvent déposer leurs propres cookies."
             checked={externes}
             onChange={setExternes}
           />

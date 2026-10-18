@@ -159,8 +159,8 @@ redirection, voir partie 19).
    elle apparaîtra toute seule ce jour-là.
 7. Vérifiez l’aperçu, puis **Publier les modifications**.
 
-Les vidéos YouTube et Bunny ne se lancent qu’avec l’accord du visiteur pour les « contenus externes » (bandeau cookies) :
-sinon, le lecteur l’invite à modifier son choix.
+Les vidéos YouTube, Twitch et Bunny ne se lancent qu’avec l’accord du visiteur pour les « contenus externes » (bandeau
+cookies) : sinon, le lecteur l’invite à modifier son choix.
 
 ## 5. La vidéo du jour et le Top 10
 
@@ -306,8 +306,12 @@ nouvelle. Vérifiez l’aperçu de la page d’accueil, puis **Publier les modif
 
 - **Direct actif** : décochez-le pendant une interruption ; la page « Le direct » affiche alors « Le direct reprend
   bientôt » ;
-- **Flux du direct** › **Où se trouve la vidéo ?** : sur YouTube, sur Bunny Stream, **Lien direct** (flux `.m3u8` de
-  votre diffuseur) ou fichier envoyé ;
+- **Flux du direct** › **Où se trouve la vidéo ?** : **Sur YouTube**, **Sur Twitch**, **Sur Bunny Stream**, **Lien
+  direct** (flux `.m3u8` de votre diffuseur) ou fichier envoyé ;
+  - **Sur Twitch** : collez dans **Lien de la chaîne Twitch** l’adresse de votre chaîne, copiée depuis la barre d’adresse
+    du navigateur sur Twitch (`https://www.twitch.tv/votre-chaine` ; le nom de la chaîne seul suffit aussi). Le lecteur
+    affiche le direct dès que la chaîne est en ligne sur Twitch. Une adresse qui n’est pas celle d’une chaîne Twitch est
+    refusée à la publication, avec un message ;
 - **Image affichée avant la lecture** : une belle image de la chaîne.
 
 Comme pour le reste de cette page, les changements ne s’appliquent qu’après **Publier les modifications** : pensez-y
@@ -333,7 +337,7 @@ l’adresse `/son-adresse` (champ **Adresse web (automatique)**) une fois publi�
 
 ## 16. La météo
 
-**La Météo** : les prévisions (Annecy, Chamonix, Chambéry, Lyon, Grenoble, Thonon-les-Bains) arrivent
+**La Météo** : les prévisions de la Haute-Savoie (Annecy, Annemasse, Thonon-les-Bains, Cluses, Chamonix, La Clusaz) arrivent
 **automatiquement toutes les heures** grâce à Open-Meteo, tant que **Mise à jour automatique (toutes les heures)** est
 cochée. **Dernière mise à jour automatique** indique l’heure du dernier passage ; le tableau de bord vous prévient si
 les prévisions n’ont pas été mises à jour depuis plus de 3 heures.

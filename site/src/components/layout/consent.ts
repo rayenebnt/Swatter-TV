@@ -10,7 +10,7 @@
 // - Événement window « swatter:cookies » (CustomEvent<{ trigger?: HTMLElement | null }>) : rouvre le
 //   bandeau sur le panneau « Personnaliser » (bouton « Gestion des cookies » du pied de page, page Vie privée…).
 //   Utiliser openCookieSettings(bouton) pour que le focus revienne au bouton à la fermeture.
-// - Les contenus externes (YouTube, Bunny) ne doivent être chargés que si `externes` est vrai ;
+// - Les contenus externes (YouTube, Twitch, Bunny) ne doivent être chargés que si `externes` est vrai ;
 //   la mesure d'audience uniquement si `audience` est vrai. Sans choix enregistré : tout est refusé.
 // À importer uniquement depuis un composant client ('use client') : le choix n'existe que dans le navigateur.
 import { useSyncExternalStore } from 'react'
@@ -19,7 +19,7 @@ export type ConsentChoice = {
   v: 1
   /** Mesure d'audience */
   audience: boolean
-  /** Contenus externes : vidéos YouTube et Bunny */
+  /** Contenus externes : vidéos YouTube, Twitch et Bunny */
   externes: boolean
   /** Date du choix (ISO 8601) */
   date: string

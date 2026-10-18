@@ -133,6 +133,8 @@ npm run seed           # données de démonstration
   échappe au rognage et élargit la page.
 - **Import météo** : `importMeteo()` renvoie `{ ok: false, skipped: true }` quand la mise à jour automatique est désactivée
   (ce n'est pas une erreur). En production, lancer `npm run import` une fois puis brancher la tâche planifiée `GET /api/cron/import`.
+  Villes suivies : `METEO_CITIES` (`src/lib/meteo.ts`), toutes en Haute-Savoie, la première étant la ville principale ;
+  une prévision enregistrée n'affiche que ces villes (les autres sont ignorées jusqu'au prochain import).
 - **Ne jamais faire varier le `className` d'un élément `[data-reveal]`** dans un composant client : React réécrit `class`
   et efface `is-in`, l'élément redevient invisible. Utiliser un attribut `data-*` ou un élément enfant.
 - **Open Graph** : une page qui définit `openGraph` sans `images` perd l'image par défaut (`opengraph-image` du groupe
@@ -218,6 +220,11 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   téléchargement YouTube). `getTop10()` affiche chaque vidéo à sa place exacte et complète les trous ; deux vidéos à la même
   place (ancienne donnée) : la plus récemment modifiée la garde.
 - **Médiathèque** : description de l'image (`alt`) facultative, reprise du nom du fichier si elle est vide.
+- **Direct sur Twitch** : option `twitch` du champ source (`videoSourceField(…, { twitch: true })`, direct seulement).
+  `twitchTarget()` (`src/lib/video.ts`) accepte l'adresse de la chaîne, son nom seul, une vidéo (`/videos/123`) ou un lien
+  de lecteur intégré ; le champ refuse le reste à la publication. Le lecteur Twitch exige le domaine de la page dans
+  `parent` (ajouté côté navigateur, avec celui de `NEXT_PUBLIC_SITE_URL`) et un site en **HTTPS** : il ne s'affiche pas
+  sur http://localhost (comportement de Twitch). Consentement « contenus externes » comme YouTube.
 - **Lenteur en développement** : `npm run dev` compile chaque écran de l'administration à la première visite (plusieurs
   secondes) et reste 5 à 10 fois plus lent qu'en production. Mesurer les temps de réponse avec `npm run build && npm start`
   (en production : 0,2 à 0,4 s par clic dans l'administration).

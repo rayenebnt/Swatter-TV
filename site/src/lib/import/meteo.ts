@@ -162,7 +162,7 @@ const pick = <T>(choices: readonly T[], seed: number, salt = 0): T => choices[(s
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 /** « 17 °C », « −2 °C » */
 const deg = (t: number) => `${t < 0 ? '−' : ''}${Math.abs(t)} °C`
-/** « à Lyon », « à Lyon et à Grenoble », « à Lyon, à Grenoble et à Chambéry » */
+/** « à Cluses », « à Cluses et à Annemasse », « à Cluses, à Annemasse et à La Clusaz » */
 function atPlaces(names: string[]): string {
   const at = names.map((n) => `à ${n}`)
   return at.length > 1 ? `${at.slice(0, -1).join(', ')} et ${at[at.length - 1]}` : (at[0] ?? '')
@@ -172,8 +172,8 @@ const fill = (template: string, values: Record<string, string>) => template.repl
 /** Journée homogène ({when} = « ce samedi »). */
 const UNIFORM: Record<WeatherKind, string[]> = {
   sun: [
-    '{when}, grand soleil sur les Pays de Savoie du matin au soir.',
-    'Le soleil s’impose {when} sur toute la région, avec un ciel limpide au-dessus des massifs.',
+    '{when}, grand soleil sur la Haute-Savoie du matin au soir.',
+    'Le soleil s’impose {when} sur tout le département, avec un ciel limpide au-dessus des massifs.',
     'Une journée radieuse s’annonce {when}, sans le moindre nuage à l’horizon.',
   ],
   partly: [
@@ -181,11 +181,11 @@ const UNIFORM: Record<WeatherKind, string[]> = {
     'Le ciel hésite {when} entre passages nuageux et belles éclaircies.',
     '{when}, le soleil joue à cache-cache avec les nuages.',
   ],
-  cloud: ['{when}, le ciel reste gris et chargé sur l’ensemble de la région.', 'Les nuages dominent {when} du matin au soir sur les Pays de Savoie.'],
-  rain: ['{when}, la pluie s’installe pour la journée : prévoyez le parapluie.', 'Journée maussade et pluvieuse {when} sur la Haute-Savoie et la Savoie.'],
-  snow: ['{when}, la neige tombe sur la région, jusque dans les vallées.', 'Place à la neige {when}, y compris à basse altitude : prudence sur les routes.'],
+  cloud: ['{when}, le ciel reste gris et chargé sur l’ensemble du département.', 'Les nuages dominent {when} du matin au soir sur la Haute-Savoie.'],
+  rain: ['{when}, la pluie s’installe pour la journée : prévoyez le parapluie.', 'Journée maussade et pluvieuse {when} sur toute la Haute-Savoie.'],
+  snow: ['{when}, la neige tombe sur le département, jusque dans les vallées.', 'Place à la neige {when}, y compris à basse altitude : prudence sur les routes.'],
   fog: ['{when}, le brouillard s’accroche aux vallées et peine à se dissiper.', 'Grisaille et brouillard persistent {when} dans les vallées.'],
-  storm: ['{when}, temps lourd et orageux sur la région : restez vigilants.', 'Des orages pourront éclater {when} à tout moment de la journée.'],
+  storm: ['{when}, temps lourd et orageux sur la Haute-Savoie : restez vigilants.', 'Des orages pourront éclater {when} à tout moment de la journée.'],
 }
 const NOUN: Record<WeatherKind, string> = {
   sun: 'du soleil',

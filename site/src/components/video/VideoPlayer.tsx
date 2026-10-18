@@ -1,5 +1,5 @@
 'use client'
-// Lecteur vidéo 16:9 : façade légère pour YouTube et Bunny Stream (iframe chargée au clic, selon le consentement),
+// Lecteur vidéo 16:9 : façade légère pour YouTube, Twitch et Bunny Stream (iframe chargée au clic, selon le consentement),
 // flux HLS (natif sur Safari et iOS, sinon hls.js chargé à la demande) et fichiers MP4.
 import Image, { getImageProps } from 'next/image'
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
@@ -8,7 +8,7 @@ import type Hls from 'hls.js'
 import { openCookieSettings, useConsent } from '@/components/layout/consent'
 import { Icon } from '@/components/ui/Icon'
 import { SITE_URL } from '@/lib/site'
-import type { ResolvedVideo } from '@/lib/video'
+import { twitchEmbedUrl, type ResolvedVideo } from '@/lib/video'
 import { useOffscreen } from './useOffscreen'
 import { fallbackVisual, imageSource } from './utils'
 import '@/styles/video.css'
@@ -19,23 +19,26 @@ export type VideoPlayerProps = {
   poster?: string | null
   /** Titre de la vidéo (titre de l'iframe, libellés accessibles) */
   title: string
-  /** Lecture automatique (sans le son pour les fichiers et flux ; pour YouTube / Bunny, seulement si les contenus externes sont acceptés) */
+  /** Lecture automatique (sans le son pour les fichiers et flux ; pour YouTube / Twitch / Bunny, seulement si les contenus externes sont acceptés) */
   autoPlay?: boolean
   /** Direct : badge « En direct » */
   live?: boolean
 }
 
-type EmbedVideo = Extract<ResolvedVideo, { kind: 'youtube' | 'iframe' }>
+type EmbedVideo = Extract<ResolvedVideo, { kind: 'youtube' | 'twitch' | 'iframe' }>
 type NativeVideo = Extract<ResolvedVideo, { kind: 'hls' | 'mp4' }>
 
 const SIZES = '(max-width: 1100px) 100vw, 900px'
-const PROVIDERS: Record<EmbedVideo['kind'], string> = { youtube: 'YouTube', iframe: 'Bunny Stream' }
+const PROVIDERS: Record<EmbedVideo['kind'], string> = { youtube: 'YouTube', twitch: 'Twitch', iframe: 'Bunny Stream' }
 
 const noop = () => () => {}
 /** Faux au rendu serveur et à l'hydratation, vrai ensuite (sans setState dans un effet). */
 const useHydrated = () => useSyncExternalStore(noop, () => true, () => false)
 
-const sourceKey = (v: ResolvedVideo | null) => (!v ? 'none' : v.kind === 'youtube' || v.kind === 'iframe' ? v.embedUrl : v.src)
+const sourceKey = (v: ResolvedVideo | null) =>
+  !v ? 'none' : v.kind === 'twitch' ? `twitch:${v.param}:${v.value}` : v.kind === 'youtube' || v.kind === 'iframe' ? v.embedUrl : v.src
+/** Adresse de l'iframe ; Twitch veut le domaine de la page (connu dans le navigateur, l'iframe n'est jamais rendue côté serveur). */
+const embedSrc = (v: EmbedVideo) => (v.kind === 'twitch' ? twitchEmbedUrl(v, [window.location.hostname, new URL(SITE_URL).hostname]) : v.embedUrl)
 /** Adresse absolue du site rendue relative (même origine que la page). */
 const localize = (url: string) => (url.startsWith(`${SITE_URL}/`) ? url.slice(SITE_URL.length) : url)
 
@@ -56,7 +59,7 @@ function Player({ video, poster, title, autoPlay = false, live = false }: VideoP
     <div ref={root} className={`vp${playable ? '' : ' vp--off'}${paused ? ' is-paused' : ''}`} role="region" aria-label={`Lecteur vidéo\u00a0: ${title}`}>
       {!playable ? (
         <Unavailable poster={poster} live={live} />
-      ) : playable.kind === 'youtube' || playable.kind === 'iframe' ? (
+      ) : playable.kind === 'youtube' || playable.kind === 'twitch' || playable.kind === 'iframe' ? (
         <Embed video={playable} poster={poster} title={title} autoPlay={autoPlay} />
       ) : (
         <Native video={playable} poster={poster} title={title} autoPlay={autoPlay} live={live} onError={fail} />
@@ -78,7 +81,7 @@ function Poster({ src }: { src: string }) {
   return <Image src={img.src} unoptimized={img.unoptimized} alt="" fill sizes={SIZES} preload className="vp__poster" />
 }
 
-/** YouTube / Bunny Stream : façade (affiche + bouton) ; l'iframe n'est chargée qu'au clic. */
+/** YouTube / Twitch / Bunny Stream : façade (affiche + bouton) ; l'iframe n'est chargée qu'au clic. */
 function Embed({ video, poster, title, autoPlay }: { video: EmbedVideo; poster?: string | null; title: string; autoPlay: boolean }) {
   const consent = useConsent()
   const allowed = consent?.externes === true
@@ -100,7 +103,7 @@ function Embed({ video, poster, title, autoPlay }: { video: EmbedVideo; poster?:
       <iframe
         ref={frame}
         className="vp__frame"
-        src={video.embedUrl}
+        src={embedSrc(video)}
         title={title}
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
         allowFullScreen

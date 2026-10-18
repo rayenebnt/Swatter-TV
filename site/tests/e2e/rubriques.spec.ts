@@ -52,12 +52,17 @@ test('info : le flux RSS est un XML valide', async ({ request }) => {
   }
 })
 
-test('météo : prévisions affichées', async ({ page }) => {
+test('météo : prévisions de la Haute-Savoie seulement', async ({ page }) => {
   const errors = watchErrors(page)
   await page.goto('/meteo')
   await settle(page)
-  await expect(page.locator('main').getByRole('heading', { name: /prévisions/i }).first()).toBeVisible()
-  await expect(page.locator('main')).toContainText(/-?\d+\s?°/)
+  const main = page.locator('main')
+  await expect(main.getByRole('heading', { name: /prévisions/i }).first()).toBeVisible()
+  await expect(main).toContainText(/-?\d+\s?°/)
+  await expect(main.getByRole('heading', { name: 'En Haute-Savoie' })).toBeVisible()
+  const cities = main.locator('.city-card__txt b')
+  await expect(cities).toHaveText(['Annecy', 'Annemasse', 'Thonon-les-Bains', 'Cluses', 'Chamonix', 'La Clusaz'])
+  for (const elsewhere of ['Lyon', 'Grenoble', 'Chambéry']) await expect(main).not.toContainText(elsewhere)
   expect(errors, errors.join('\n')).toEqual([])
 })
 

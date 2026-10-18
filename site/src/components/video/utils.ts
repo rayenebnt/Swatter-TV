@@ -1,5 +1,5 @@
 // Outils de la rubrique vidéo (utilisables côté serveur et client) : visuels de repli, images, données structurées.
-import type { ResolvedVideo } from '@/lib/video'
+import { twitchEmbedUrl, type ResolvedVideo } from '@/lib/video'
 import { absoluteUrl, SITE_URL } from '@/lib/site'
 
 const VISUALS = ['t-crepuscule-a', 't-matin-a', 't-nuit-b', 't-ete-a', 't-hiver-a', 't-alpenglow-a', 't-nuages-a', 't-orage-b', 't-crepuscule-b', 't-matin-b', 't-ete-b', 't-hiver-b']
@@ -95,6 +95,8 @@ export function videoLocation(video: ResolvedVideo | null): { embedUrl?: string;
   switch (video.kind) {
     case 'youtube':
       return { embedUrl: `https://www.youtube.com/embed/${video.id}` }
+    case 'twitch':
+      return { embedUrl: twitchEmbedUrl(video, [new URL(SITE_URL).hostname]) }
     case 'iframe':
       return { embedUrl: video.embedUrl.split('?')[0] }
     default:

@@ -75,17 +75,25 @@ export function formatTemp(t: number): string {
 
 export type MeteoCity = { name: string; latitude: number; longitude: number }
 
-/** Villes suivies, dans l'ordre d'affichage ; la première est la ville principale. */
+/**
+ * Villes suivies, toutes en Haute-Savoie, dans l'ordre d'affichage ; la première est la ville principale.
+ * Bassin annécien, Genevois, Chablais et Léman, vallée de l'Arve, massif du Mont-Blanc, Aravis.
+ */
 export const METEO_CITIES: readonly MeteoCity[] = [
   { name: 'Annecy', latitude: 45.899, longitude: 6.129 },
-  { name: 'Chamonix', latitude: 45.924, longitude: 6.869 },
-  { name: 'Chambéry', latitude: 45.564, longitude: 5.917 },
-  { name: 'Lyon', latitude: 45.764, longitude: 4.835 },
-  { name: 'Grenoble', latitude: 45.188, longitude: 5.724 },
+  { name: 'Annemasse', latitude: 46.193, longitude: 6.234 },
   { name: 'Thonon-les-Bains', latitude: 46.371, longitude: 6.479 },
+  { name: 'Cluses', latitude: 46.06, longitude: 6.58 },
+  { name: 'Chamonix', latitude: 45.924, longitude: 6.869 },
+  { name: 'La Clusaz', latitude: 45.904, longitude: 6.423 },
 ]
 
-export const METEO_REGION = 'Auvergne-Rhône-Alpes'
+export const METEO_REGION = 'Haute-Savoie'
+
+/** « Annecy, Annemasse, … et La Clusaz » */
+export const METEO_CITY_LIST = `${METEO_CITIES.slice(0, -1)
+  .map((c) => c.name)
+  .join(', ')} et ${METEO_CITIES[METEO_CITIES.length - 1].name}`
 export const OPEN_METEO_SOURCE = 'Open-Meteo (CC BY 4.0)'
 export const isOpenMeteo = (source: string) => /open-?meteo/i.test(source)
 
@@ -101,6 +109,8 @@ const obj = (v: unknown): Record<string, unknown> | null => (typeof v === 'objec
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 const text = (v: unknown): string => (typeof v === 'string' ? v.trim() : '')
 const int = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : null)
+
+const FOLLOWED = new Set(METEO_CITIES.map((c) => c.name))
 
 function readCity(v: unknown): ForecastCity | null {
   const c = obj(v)
@@ -136,7 +146,10 @@ function readDay(v: unknown): ForecastDay | null {
     main: { city: text(m.city) || METEO_CITIES[0].name, kind: m.kind, label: text(m.label) || KIND_LABEL[m.kind], now, min, max },
     hours,
     parts,
-    cities: list(d.cities).map(readCity).filter((c): c is ForecastCity => c !== null),
+    // seulement les villes suivies (une prévision enregistrée avant un changement de liste n'en montre pas d'autres)
+    cities: list(d.cities)
+      .map(readCity)
+      .filter((c): c is ForecastCity => c !== null && FOLLOWED.has(c.name)),
     bulletin: text(d.bulletin),
   }
 }
@@ -149,5 +162,5 @@ export function readForecast(value: unknown): Forecast | null {
     .filter((d): d is ForecastDay => d !== null)
     .sort((a, b) => a.date.localeCompare(b.date))
   if (!days.length) return null
-  return { region: text(value.region) || METEO_REGION, source: text(value.source), updatedAt: text(value.updatedAt), days }
+  return { region: METEO_REGION, source: text(value.source), updatedAt: text(value.updatedAt), days }
 }

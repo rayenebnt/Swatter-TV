@@ -214,6 +214,30 @@ test.describe('administration', () => {
     }
   })
 
+  test('direct sur Twitch : lien vérifié à la publication, lecteur Twitch au clic', async ({ page, request }) => {
+    const headers = await adminHeaders(request)
+    const published = (await (await request.get('/api/globals/settings?depth=0', { headers })).json()) as Record<string, unknown>
+    try {
+      const refused = await request.post('/api/globals/settings', { headers, data: { live: { provider: 'twitch', twitchUrl: 'https://www.youtube.com/@swattertv' } } })
+      expect(refused.status()).toBe(400)
+      expect(await refused.text()).toContain('chaîne Twitch')
+
+      const saved = await request.post('/api/globals/settings', { headers, data: { liveEnabled: true, live: { provider: 'twitch', twitchUrl: 'https://www.twitch.tv/SwatterTV' } } })
+      expect(saved.ok()).toBe(true)
+      await page.goto('/direct')
+      // façade : rien n'est chargé depuis Twitch avant le clic (consentement « contenus externes »)
+      await expect(page.locator('.vp__notice')).toContainText('lecteur Twitch')
+      await expect(page.locator('iframe.vp__frame')).toHaveCount(0)
+      await page.locator('.vp__play').click()
+      const src = new URL((await page.locator('iframe.vp__frame').getAttribute('src')) ?? '')
+      expect(src.origin).toBe('https://player.twitch.tv')
+      expect(src.searchParams.get('channel')).toBe('swattertv')
+      expect(src.searchParams.getAll('parent')).toContain(new URL(page.url()).hostname)
+    } finally {
+      await request.post('/api/globals/settings?depth=0', { headers, data: published })
+    }
+  })
+
   test('aperçu en direct : la modification s’affiche à côté du formulaire, le site change à la publication', async ({ page, request }) => {
     const errors = watchErrors(page)
     const headers = await adminHeaders(request)

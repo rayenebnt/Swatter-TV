@@ -97,7 +97,7 @@ export const Settings: GlobalConfig = {
           label: 'Le direct',
           fields: [
             { name: 'liveEnabled', label: 'Direct actif', type: 'checkbox', defaultValue: true, admin: { description: 'Décochez pour couper le direct : la page « Direct » affiche alors « Le direct reprend bientôt ».' } },
-            videoSourceField('live', 'Flux du direct', false),
+            videoSourceField('live', 'Flux du direct', false, { twitch: true }),
             { name: 'livePoster', label: 'Image affichée avant la lecture', type: 'upload', relationTo: 'media' },
           ],
         },

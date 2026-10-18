@@ -6697,6 +6697,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "live_twitch_url": {
+          "name": "live_twitch_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "live_bunny_video_id": {
           "name": "live_bunny_video_id",
           "type": "varchar",
@@ -7298,6 +7304,12 @@
         },
         "version_live_youtube_url": {
           "name": "version_live_youtube_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version_live_twitch_url": {
+          "name": "version_live_twitch_url",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -7987,6 +7999,7 @@
       "schema": "public",
       "values": [
         "youtube",
+        "twitch",
         "bunny",
         "url",
         "upload"
@@ -8022,6 +8035,7 @@
       "schema": "public",
       "values": [
         "youtube",
+        "twitch",
         "bunny",
         "url",
         "upload"
@@ -8046,6 +8060,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "9d008dc4-0dba-4d09-bab6-fa7fc38c312c",
+  "id": "d08eb4d4-ae85-46d8-9e18-6f34d5fb80aa",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

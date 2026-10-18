@@ -3,6 +3,7 @@ import type { Payload, Where } from 'payload'
 import { runningAdsWhere } from '@/access'
 import { shiftDay, tvDay } from '@/components/programme/model'
 import { parisDateTime } from '@/lib/format'
+import { twitchTarget } from '@/lib/video'
 
 export type Featured = { id: number; title: string; picked: boolean } | null
 
@@ -127,7 +128,16 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
 
   const live = settings?.live
   const liveConfigured = Boolean(
-    live?.provider && (live.provider === 'youtube' ? live.youtubeUrl : live.provider === 'bunny' ? live.bunnyVideoId : live.provider === 'url' ? live.url : live.file),
+    live?.provider &&
+      (live.provider === 'youtube'
+        ? live.youtubeUrl
+        : live.provider === 'twitch'
+          ? twitchTarget(live.twitchUrl)
+          : live.provider === 'bunny'
+            ? live.bunnyVideoId
+            : live.provider === 'url'
+              ? live.url
+              : live.file),
   )
 
   return {

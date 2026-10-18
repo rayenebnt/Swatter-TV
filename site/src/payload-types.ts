@@ -1268,11 +1268,15 @@ export interface Setting {
    */
   liveEnabled?: boolean | null;
   live?: {
-    provider?: ('youtube' | 'bunny' | 'url' | 'upload') | null;
+    provider?: ('youtube' | 'twitch' | 'bunny' | 'url' | 'upload') | null;
     /**
      * Sur YouTube, cliquez sur « Partager » sous la vidéo, copiez le lien et collez-le ici.
      */
     youtubeUrl?: string | null;
+    /**
+     * L’adresse de la chaîne, copiée depuis la barre d’adresse du navigateur sur Twitch (le nom de la chaîne seul suffit aussi).
+     */
+    twitchUrl?: string | null;
     /**
      * Visible dans Bunny Stream > votre vidéo.
      */
@@ -1371,6 +1375,7 @@ export interface SettingsSelect<T extends boolean = true> {
     | {
         provider?: T;
         youtubeUrl?: T;
+        twitchUrl?: T;
         bunnyVideoId?: T;
         url?: T;
         file?: T;
