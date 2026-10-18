@@ -195,7 +195,7 @@ export interface Video {
    */
   isVideoOfDay?: boolean | null;
   /**
-   * 1 à 10. Laissez vide si la vidéo n’est pas dans le Top 10.
+   * 1 à 10. Si la place est prise, les vidéos suivantes descendent d’un cran. Laissez vide si la vidéo n’est pas dans le Top 10.
    */
   top10Rank?: number | null;
   /**

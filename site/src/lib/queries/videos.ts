@@ -38,15 +38,26 @@ async function findVideos(where: Where | undefined, sort: string | string[], lim
   return res.docs
 }
 
-/** Top 10 : places 1 à 10 saisies dans l'administration, complétées par les vidéos les plus vues, puis les plus récentes. */
+/**
+ * Top 10 : chaque vidéo classée à la place saisie dans l'administration (une place vide est complétée par les vidéos
+ * les plus vues, puis les plus récentes). Deux vidéos à la même place (ancienne saisie) : la plus récemment modifiée
+ * la garde, l'autre prend la place libre suivante.
+ */
 export async function getTop10(): Promise<VideoListItem[]> {
   return safe(
     async () => {
-      const ranked = await findVideos({ top10Rank: { exists: true } }, 'top10Rank', 10)
-      if (ranked.length >= 10) return ranked
-      const ids = ranked.map((v) => v.id)
-      const fill = await findVideos(ids.length ? { id: { not_in: ids } } : undefined, ['-views', '-publishedAt'], 10 - ranked.length)
-      return [...ranked, ...fill]
+      const ranked = await findVideos({ top10Rank: { exists: true } }, ['top10Rank', '-updatedAt'], 20)
+      const slots: (VideoListItem | undefined)[] = Array.from({ length: 10 })
+      for (const video of ranked) {
+        let i = Math.min(Math.max(video.top10Rank ?? 10, 1), 10) - 1
+        while (i < 10 && slots[i]) i++
+        if (i < 10) slots[i] = video
+      }
+      const placed = slots.filter((v): v is VideoListItem => Boolean(v))
+      const free = 10 - placed.length
+      const fill = free ? await findVideos(placed.length ? { id: { not_in: placed.map((v) => v.id) } } : undefined, ['-views', '-publishedAt'], free) : []
+      let next = 0
+      return slots.map((v) => v ?? fill[next++]).filter((v): v is VideoListItem => Boolean(v))
     },
     [],
     'Top 10',

@@ -3,7 +3,8 @@ import { authenticated, publishedOrAuthenticated } from '@/access'
 import { dateTimePicker } from '@/fields/date'
 import { slugField } from '@/fields/slug'
 import { videoSourceField } from '@/fields/videoSource'
-import { revalidateHooks } from '@/hooks/revalidate'
+import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
+import { top10AfterChange, top10AfterDelete } from '@/hooks/top10'
 import { thumbnailUnlessYoutube, youtubeThumbnail } from '@/hooks/youtubeThumbnail'
 import { VIDEO_CATEGORIES } from '@/lib/categories'
 import { videoUrl } from '@/lib/urls'
@@ -14,13 +15,18 @@ export const Videos: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     group: 'Publier',
-    defaultColumns: ['title', 'category', 'publishedAt', 'isVideoOfDay'],
+    defaultColumns: ['title', 'category', 'publishedAt', 'isVideoOfDay', 'top10Rank'],
     description: 'Vidéo du jour, Top 10 et vidéos à la demande. Pour une vidéo YouTube, collez simplement son lien : l’image est récupérée toute seule.',
     preview: (doc) => (doc.slug ? videoUrl(doc as { slug: string }) : null),
   },
   access: { read: publishedOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
   defaultSort: '-publishedAt',
-  hooks: { ...revalidateHooks, beforeValidate: [youtubeThumbnail] },
+  hooks: {
+    beforeValidate: [youtubeThumbnail],
+    // Top 10 sans doublon (les autres vidéos classées se décalent), puis régénération du site
+    afterChange: [top10AfterChange, revalidateAfterChange],
+    afterDelete: [top10AfterDelete, revalidateAfterDelete],
+  },
   fields: [
     { name: 'title', label: 'Titre', type: 'text', required: true },
     videoSourceField(),
@@ -50,7 +56,17 @@ export const Videos: CollectionConfig = {
       admin: { position: 'sidebar', date: dateTimePicker(), description: 'Une date à venir programme la vidéo : elle apparaîtra toute seule ce jour-là.' },
     },
     { name: 'isVideoOfDay', label: 'Vidéo du jour', type: 'checkbox', defaultValue: false, admin: { position: 'sidebar', description: 'Affichée en grand dans « À la une ». Si plusieurs vidéos sont cochées, la plus récente l’emporte.' } },
-    { name: 'top10Rank', label: 'Place dans le Top 10', type: 'number', min: 1, max: 10, admin: { position: 'sidebar', description: '1 à 10. Laissez vide si la vidéo n’est pas dans le Top 10.' } },
+    {
+      name: 'top10Rank',
+      label: 'Place dans le Top 10',
+      type: 'number',
+      min: 1,
+      max: 10,
+      admin: {
+        position: 'sidebar',
+        description: '1 à 10. Si la place est prise, les vidéos suivantes descendent d’un cran. Laissez vide si la vidéo n’est pas dans le Top 10.',
+      },
+    },
     slugField(),
     // compteur repris de l'ancien site (affiché sur la page de la vidéo s'il est renseigné), sans intérêt dans le formulaire
     { name: 'views', label: 'Nombre de vues', type: 'number', defaultValue: 0, admin: { hidden: true } },

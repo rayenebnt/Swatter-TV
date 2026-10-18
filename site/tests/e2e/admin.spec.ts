@@ -100,6 +100,32 @@ test.describe('administration', () => {
     expect(((await empty.json()) as { error: string }).error).toMatch(/ne contient aucun créneau/)
   })
 
+  test('Top 10 : une vidéo mise à la place 1 est 1re sur l’accueil, les autres se décalent', async ({ page, request }) => {
+    const headers = await adminHeaders(request)
+    type V = { id: number; title: string; top10Rank?: number | null }
+    const list = async () =>
+      ((await (await request.get(`/api/videos?limit=200&depth=0&where[publishedAt][less_than_equal]=${new Date().toISOString()}`, { headers })).json()) as { docs: V[] }).docs
+    const before = await list()
+    const target = before.find((v) => v.top10Rank == null)
+    test.skip(!target || before.filter((v) => v.top10Rank != null).length === 0, 'il faut des vidéos classées et une vidéo hors classement (lancez npm run seed)')
+    const original = new Map(before.map((v) => [v.id, v.top10Rank ?? null]))
+    const setRank = (id: number, top10Rank: number | null) => request.patch(`/api/videos/${id}`, { headers, data: { top10Rank } })
+    try {
+      expect((await setRank(target!.id, 1)).ok()).toBe(true)
+      const after = await list()
+      const ranks = after.filter((v) => v.top10Rank != null).map((v) => v.top10Rank)
+      expect(new Set(ranks).size, 'aucune place en double').toBe(ranks.length)
+      await page.goto('/')
+      await expect(page.locator('#rail-top a').first()).toHaveAttribute('aria-label', `1. ${target!.title}`)
+    } finally {
+      // classement d'origine : la vidéo testée sort, puis chaque vidéo décalée retrouve sa place
+      await setRank(target!.id, null)
+      const now = await list()
+      const moved = now.filter((v) => (v.top10Rank ?? null) !== original.get(v.id)).sort((a, b) => (original.get(a.id) ?? 99) - (original.get(b.id) ?? 99))
+      for (const v of moved) await setRank(v.id, original.get(v.id) ?? null)
+    }
+  })
+
   test('éditeur : rubriques techniques masquées, compte personnel accessible', async ({ page, request }) => {
     const headers = await adminHeaders(request)
     const account = { email: 'e2e-editeur@swatter-tv.fr', password: 'e2e-editeur-2026!' }

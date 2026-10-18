@@ -1,5 +1,6 @@
 import type { CollectionBeforeValidateHook } from 'payload'
 import { youtubeId } from '@/lib/video'
+import { TOP10_REORDER } from './top10'
 
 /** Adresse des images YouTube (remplaçable pour les tests, sans accès à Internet). */
 const thumbBase = () => (process.env.YOUTUBE_THUMB_BASE || 'https://i.ytimg.com/vi').replace(/\/+$/, '')
@@ -24,8 +25,9 @@ async function downloadThumbnail(id: string): Promise<Buffer | null> {
  * Vidéo ou replay YouTube enregistré sans image : l'image de la vidéo est téléchargée dans la médiathèque
  * et utilisée comme vignette. En cas d'échec (YouTube injoignable), le site affiche un visuel de remplacement.
  */
-export const youtubeThumbnail: CollectionBeforeValidateHook = async ({ data, originalDoc, req }) => {
-  if (!data) return data
+export const youtubeThumbnail: CollectionBeforeValidateHook = async ({ data, originalDoc, req, context }) => {
+  // simple décalage de place dans le Top 10 : rien à télécharger
+  if (!data || context?.[TOP10_REORDER]) return data
   const thumbnail = data.thumbnail === undefined ? originalDoc?.thumbnail : data.thumbnail
   const source = (data.source ?? originalDoc?.source) as { provider?: string; youtubeUrl?: string } | undefined
   if (thumbnail || source?.provider !== 'youtube' || !source.youtubeUrl) return data

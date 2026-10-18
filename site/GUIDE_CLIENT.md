@@ -125,8 +125,11 @@ sinon, le lecteur l’invite à modifier son choix.
 - **Vidéo du jour** : dans la fiche d’une vidéo, cochez **Vidéo du jour** (colonne de droite). Elle s’affiche en grand
   dans « À la une » sur l’accueil. Si plusieurs vidéos sont cochées, c’est la plus récente qui l’emporte ; si aucune ne
   l’est, la dernière vidéo publiée est mise en avant (le tableau de bord vous le signale). Pensez à décocher l’ancienne.
-- **Top 10** : renseignez **Place dans le Top 10** (de 1 à 10) sur les vidéos de votre choix. Les places laissées libres
-  sont complétées automatiquement par les dernières vidéos publiées. Pour sortir une vidéo du classement, videz le champ.
+- **Top 10** : renseignez **Place dans le Top 10** (de 1 à 10) dans la fiche d’une vidéo : elle s’affiche exactement à
+  cette place. Si la place est déjà prise, la vidéo qui l’occupait et les suivantes descendent d’un cran (la 10e sort du
+  classement) ; quand une vidéo change de place ou quitte le Top 10 (champ vidé), les suivantes remontent. Une place
+  laissée libre est complétée automatiquement par les dernières vidéos publiées. La colonne **Place dans le Top 10** de
+  la liste des vidéos montre le classement en un coup d’œil.
 
 ## 6. Publier un article et choisir l’info du jour
 
