@@ -26,8 +26,18 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { MomentLabel as MomentLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../../../components/admin/RowLabels'
+import { SlotTimeCell as SlotTimeCell_33f74273138c7627b38e5753ac9f410b } from '../../../components/admin/SlotTimeCell'
+import { ScheduleTools as ScheduleTools_abf2b2e3656b47d854bf2cfdc3f414db } from '../../../components/admin/ScheduleTools'
+import { BadgeLabel as BadgeLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../../../components/admin/RowLabels'
+import { SlideLabel as SlideLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../../../components/admin/RowLabels'
+import { FlashLabel as FlashLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../../../components/admin/RowLabels'
 import { Icon as Icon_dfe4008080d895d460898c3a6155e9ba } from '../../../components/admin/Icon'
 import { Logo as Logo_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
+import { NavEnd as NavEnd_c025f118f75d1c67ec1517e1fc784abd } from '../../../components/admin/NavLinks'
+import { NavStart as NavStart_c025f118f75d1c67ec1517e1fc784abd } from '../../../components/admin/NavLinks'
+import { Dashboard as Dashboard_16b88e9b8c48e393fa86591406efd08f } from '../../../components/admin/Dashboard'
+import { HelpView as HelpView_dbf90f8b24efd36613f19005a2cfcf9d } from '../../../components/admin/HelpView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -60,7 +70,17 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/components/admin/RowLabels#MomentLabel": MomentLabel_a30613d846a340cabc3fc2ee7ca0f9f2,
+  "/components/admin/SlotTimeCell#SlotTimeCell": SlotTimeCell_33f74273138c7627b38e5753ac9f410b,
+  "/components/admin/ScheduleTools#ScheduleTools": ScheduleTools_abf2b2e3656b47d854bf2cfdc3f414db,
+  "/components/admin/RowLabels#BadgeLabel": BadgeLabel_a30613d846a340cabc3fc2ee7ca0f9f2,
+  "/components/admin/RowLabels#SlideLabel": SlideLabel_a30613d846a340cabc3fc2ee7ca0f9f2,
+  "/components/admin/RowLabels#FlashLabel": FlashLabel_a30613d846a340cabc3fc2ee7ca0f9f2,
   "/components/admin/Icon#Icon": Icon_dfe4008080d895d460898c3a6155e9ba,
   "/components/admin/Logo#Logo": Logo_91a09b539d3c86b0aebf520e7564ce08,
+  "/components/admin/NavLinks#NavEnd": NavEnd_c025f118f75d1c67ec1517e1fc784abd,
+  "/components/admin/NavLinks#NavStart": NavStart_c025f118f75d1c67ec1517e1fc784abd,
+  "/components/admin/Dashboard#Dashboard": Dashboard_16b88e9b8c48e393fa86591406efd08f,
+  "/components/admin/HelpView#HelpView": HelpView_dbf90f8b24efd36613f19005a2cfcf9d,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

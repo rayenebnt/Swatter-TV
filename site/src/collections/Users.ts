@@ -1,10 +1,16 @@
 import type { CollectionConfig } from 'payload'
-import { authenticated, isAdmin, isAdminField } from '@/access'
+import { authenticated, hiddenForEditors, isAdmin, isAdminField } from '@/access'
 
 export const Users: CollectionConfig = {
   slug: 'users',
   labels: { singular: 'Utilisateur', plural: 'Utilisateurs' },
-  admin: { useAsTitle: 'email', group: 'Réglages', defaultColumns: ['name', 'email', 'role'] },
+  admin: {
+    useAsTitle: 'email',
+    group: 'Administration',
+    hidden: hiddenForEditors,
+    defaultColumns: ['name', 'email', 'role'],
+    description: 'Les personnes qui peuvent se connecter. Un éditeur publie les contenus ; un administrateur gère aussi les comptes et les réglages techniques.',
+  },
   auth: { maxLoginAttempts: 5, lockTime: 10 * 60 * 1000 },
   hooks: {
     beforeChange: [
@@ -29,7 +35,7 @@ export const Users: CollectionConfig = {
     admin: ({ req }) => Boolean(req.user),
   },
   fields: [
-    { name: 'name', label: 'Nom', type: 'text' },
+    { name: 'name', label: 'Prénom et nom', type: 'text', admin: { description: 'Le prénom sert à vous saluer sur le tableau de bord.' } },
     {
       name: 'role',
       label: 'Rôle',

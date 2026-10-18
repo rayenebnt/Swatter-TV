@@ -5,8 +5,11 @@ import { revalidateGlobal } from '@/hooks/revalidate'
 
 export const Settings: GlobalConfig = {
   slug: 'settings',
-  label: 'Réglages du site',
-  admin: { group: 'Réglages' },
+  label: 'Accueil, direct et flash info',
+  admin: {
+    group: 'Le site',
+    description: 'Un onglet par sujet : le carrousel de l’accueil, le direct, le flash info, puis les coordonnées et réseaux sociaux de la chaîne.',
+  },
   access: { read: anyone, update: authenticated },
   hooks: { afterChange: [revalidateGlobal] },
   fields: [
@@ -22,7 +25,11 @@ export const Settings: GlobalConfig = {
               type: 'array',
               maxRows: 5,
               labels: { singular: 'Diapositive', plural: 'Diapositives' },
-              admin: { description: 'Grand bandeau en haut de l’accueil (3 diapositives conseillées).' },
+              admin: {
+                description: 'Grand bandeau en haut de l’accueil (3 diapositives conseillées). Cliquez sur une diapositive pour la déplier ; glissez-la par sa poignée pour changer l’ordre.',
+                initCollapsed: true,
+                components: { RowLabel: '/components/admin/RowLabels#SlideLabel' },
+              },
               fields: [
                 {
                   name: 'kind',
@@ -40,6 +47,8 @@ export const Settings: GlobalConfig = {
                   label: 'Étiquettes',
                   type: 'array',
                   maxRows: 3,
+                  labels: { singular: 'Étiquette', plural: 'Étiquettes' },
+                  admin: { description: 'Petits badges au-dessus du titre (« En direct », « Haute-Savoie »…).', components: { RowLabel: '/components/admin/RowLabels#BadgeLabel' } },
                   fields: [
                     {
                       type: 'row',
@@ -81,7 +90,7 @@ export const Settings: GlobalConfig = {
         {
           label: 'Le direct',
           fields: [
-            { name: 'liveEnabled', label: 'Direct actif', type: 'checkbox', defaultValue: true },
+            { name: 'liveEnabled', label: 'Direct actif', type: 'checkbox', defaultValue: true, admin: { description: 'Décochez pour couper le direct : la page « Direct » affiche alors « Le direct reprend bientôt ».' } },
             videoSourceField('live', 'Flux du direct', false),
             { name: 'livePoster', label: 'Image affichée avant la lecture', type: 'upload', relationTo: 'media' },
           ],
@@ -95,6 +104,8 @@ export const Settings: GlobalConfig = {
               label: 'Messages',
               type: 'array',
               maxRows: 10,
+              labels: { singular: 'Message', plural: 'Messages' },
+              admin: { initCollapsed: true, components: { RowLabel: '/components/admin/RowLabels#FlashLabel' } },
               fields: [
                 {
                   type: 'row',

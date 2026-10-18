@@ -1,6 +1,8 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, authenticated } from '@/access'
+import { dateTimePicker } from '@/fields/date'
 import { revalidateHooks } from '@/hooks/revalidate'
+import { copyWeekEndpoint } from '@/lib/schedule-copy'
 
 /** Grille de diffusion : une ligne = une émission à une date et une heure. */
 export const Schedule: CollectionConfig = {
@@ -9,11 +11,15 @@ export const Schedule: CollectionConfig = {
   admin: {
     useAsTitle: 'label',
     group: 'Programme TV',
-    defaultColumns: ['startsAt', 'program', 'durationMinutes'],
-    description: 'Ajoutez un créneau par émission diffusée (date, heure de début, durée).',
+    defaultColumns: ['startsAt', 'program', 'titleOverride', 'durationMinutes'],
+    description: 'Une ligne par émission diffusée : le jour et l’heure, l’émission, la durée.',
+    // une semaine de programmes tient sur une seule page
+    pagination: { defaultLimit: 300, limits: [50, 100, 300, 500] },
+    components: { beforeListTable: ['/components/admin/ScheduleTools#ScheduleTools'] },
   },
   access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
   defaultSort: 'startsAt',
+  endpoints: [copyWeekEndpoint],
   hooks: {
     ...revalidateHooks,
     beforeChange: [
@@ -36,12 +42,21 @@ export const Schedule: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'startsAt', label: 'Début', type: 'date', required: true, index: true, admin: { date: { pickerAppearance: 'dayAndTime', timeIntervals: 5, displayFormat: 'dd/MM/yyyy HH:mm' } } },
+        {
+          name: 'startsAt',
+          label: 'Jour et heure de début',
+          type: 'date',
+          required: true,
+          index: true,
+          // dans la liste : « mer. 21/10/2026 20:30 », jour de la semaine compris
+          admin: { date: dateTimePicker(5), components: { Cell: '/components/admin/SlotTimeCell#SlotTimeCell' } },
+        },
         { name: 'durationMinutes', label: 'Durée (minutes)', type: 'number', required: true, min: 1, max: 600, defaultValue: 30 },
       ],
     },
     { name: 'program', label: 'Émission', type: 'relationship', relationTo: 'programs', required: true },
     { name: 'titleOverride', label: 'Titre spécifique (facultatif)', type: 'text', admin: { description: 'Par ex. « Le journal des Alpes — Soir ». Sinon, le titre de l’émission est utilisé.' } },
-    { name: 'label', type: 'text', admin: { hidden: true } },
+    // « 18/10/2026 20:30 — Titre » : titre de la fiche et recherche de la liste
+    { name: 'label', label: 'Titre de l’émission', type: 'text', admin: { hidden: true } },
   ],
 }

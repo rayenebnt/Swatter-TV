@@ -7,6 +7,8 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Guide d'utilisation affiché par la page « Aide » de l'administration (lu sur le disque à l'exécution)
+  outputFileTracingIncludes: { '/admin/\\[\\[\\.\\.\\.segments\\]\\]': ['./GUIDE_CLIENT.md'] },
   poweredByHeader: false,
   images: {
     formats: ['image/avif', 'image/webp'],

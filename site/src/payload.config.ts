@@ -7,7 +7,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { s3Storage } from '@payloadcms/storage-s3'
 import { fr } from '@payloadcms/translations/languages/fr'
 import path from 'path'
-import { buildConfig, type Plugin } from 'payload'
+import { buildConfig, type Field, type Plugin } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -23,6 +23,7 @@ import { Schedule } from './collections/Schedule'
 import { Users } from './collections/Users'
 import { Videos } from './collections/Videos'
 import { Webcams } from './collections/Webcams'
+import { hiddenForEditors } from './access'
 import { Meteo } from './globals/Meteo'
 import { Settings } from './globals/Settings'
 import { importMeteo } from './lib/import/meteo'
@@ -44,9 +45,47 @@ const plugins: Plugin[] = [
   }),
   redirectsPlugin({
     collections: ['pages', 'articles', 'videos', 'replays', 'events'],
-    overrides: { admin: { group: 'Réglages' }, labels: { singular: 'Redirection', plural: 'Redirections' } },
+    overrides: {
+      admin: {
+        group: 'Administration',
+        hidden: hiddenForEditors,
+        description: 'Renvoie une ancienne adresse du site vers une nouvelle (par ex. après avoir changé l’adresse d’un contenu partagé).',
+      },
+      labels: { singular: 'Redirection', plural: 'Redirections' },
+    },
   }),
 ]
+
+/**
+ * Bloc « SEO » de plugin-seo replié en bas des fiches : il est facultatif (le titre et le résumé servent à défaut)
+ * et n'encombre plus le formulaire. Simple habillage : les données restent dans `meta`.
+ */
+const seoSection: Plugin = (config) => ({
+  ...config,
+  collections: config.collections?.map((collection) => ({
+    ...collection,
+    fields: collection.fields.map(
+      (field): Field =>
+        field.type === 'group' && 'name' in field && field.name === 'meta'
+          ? {
+              type: 'collapsible',
+              label: 'Référencement Google (facultatif)',
+              admin: { initCollapsed: true, description: 'Inutile de le remplir : le titre et le résumé du contenu sont repris automatiquement par Google et les réseaux sociaux.' },
+              fields: [{ ...field, label: false }],
+            }
+          : field,
+    ),
+  })),
+})
+plugins.push(seoSection)
+
+/** Onglet « API » des fiches masqué partout : réservé aux développeurs, il déroute plus qu'il n'aide. */
+const hideApiTab: Plugin = (config) => ({
+  ...config,
+  collections: config.collections?.map((c) => ({ ...c, admin: { ...c.admin, hideAPIURL: true } })),
+  globals: config.globals?.map((g) => ({ ...g, admin: { ...g.admin, hideAPIURL: true } })),
+})
+plugins.push(hideApiTab)
 
 if (process.env.S3_BUCKET) {
   plugins.push(
@@ -88,19 +127,56 @@ export default buildConfig({
       ],
       robots: { index: false, follow: false },
     },
-    // Habillage aux couleurs de Swatter TV (styles : src/app/(payload)/custom.scss)
+    // Habillage aux couleurs de Swatter TV et écrans pensés pour une équipe non technique (styles : src/app/(payload)/custom.scss)
     components: {
       graphics: {
         Logo: '/components/admin/Logo#Logo',
         Icon: '/components/admin/Icon#Icon',
+      },
+      beforeNavLinks: ['/components/admin/NavLinks#NavStart'],
+      afterNavLinks: ['/components/admin/NavLinks#NavEnd'],
+      views: {
+        // tableau de bord : actions courantes, état du site, derniers contenus modifiés
+        dashboard: { Component: '/components/admin/Dashboard#Dashboard' },
+        // guide d'utilisation (GUIDE_CLIENT.md) affiché dans l'administration
+        aide: { Component: '/components/admin/HelpView#HelpView', path: '/aide', meta: { title: 'Aide' } },
       },
     },
     dateFormat: 'dd/MM/yyyy HH:mm',
     // avatar neutre : pas d'appel à Gravatar (aucune donnée envoyée à un tiers)
     avatar: 'default',
   },
-  i18n: { supportedLanguages: { fr }, fallbackLanguage: 'fr' },
-  collections: [Videos, Replays, Articles, Events, Webcams, Ads, Pages, Programs, Schedule, Media, RssFeeds, Users],
+  i18n: {
+    supportedLanguages: { fr },
+    fallbackLanguage: 'fr',
+    // Formulations simples à la place des tournures génériques de Payload (« Créer un(e) nouveau ou nouvelle »…)
+    translations: {
+      fr: {
+        general: {
+          createNew: 'Ajouter',
+          createNewLabel: 'Ajouter : {{label}}',
+          creatingNewLabel: 'Nouvelle fiche : {{label}}',
+          // case vide d'une liste : un simple tiret plutôt que « <Pas de Titre spécifique (facultatif)> »
+          noLabel: '—',
+          payloadSettings: 'Préférences d’affichage',
+          save: 'Enregistrer',
+        },
+        fields: {
+          addNew: 'Ajouter',
+          addNewLabel: 'Ajouter : {{label}}',
+          chooseFromExisting: 'Choisir dans la médiathèque',
+          selectExistingLabel: 'Choisir : {{label}}',
+          uploadNewLabel: 'Envoyer un nouveau fichier',
+        },
+        upload: {
+          pasteURL: 'Coller un lien',
+          selectFile: 'Choisir un fichier',
+        },
+      },
+    },
+  },
+  // Ordre du menu : Publier (vidéos, info, agenda, replays), Programme TV, Le site, Administration
+  collections: [Videos, Articles, Events, Replays, Schedule, Programs, Webcams, Ads, Pages, Media, RssFeeds, Users],
   globals: [Settings, Meteo],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

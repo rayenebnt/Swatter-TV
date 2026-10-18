@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { authenticated } from '@/access'
+import { authenticated, hiddenForEditors } from '@/access'
+import { dateTimePicker } from '@/fields/date'
 import { DEPARTMENTS } from '@/lib/departments'
 
 export const RssFeeds: CollectionConfig = {
@@ -7,9 +8,10 @@ export const RssFeeds: CollectionConfig = {
   labels: { singular: 'Flux RSS', plural: 'Flux RSS (import de l’info)' },
   admin: {
     useAsTitle: 'name',
-    group: 'Réglages',
+    group: 'Administration',
+    hidden: hiddenForEditors,
     defaultColumns: ['name', 'department', 'active', 'lastFetchedAt'],
-    description: 'Les articles de ces flux sont importés automatiquement dans « L’Info ».',
+    description: 'Les articles de ces flux sont importés automatiquement dans « L’Info », toutes les heures.',
   },
   access: { read: authenticated, create: authenticated, update: authenticated, delete: authenticated },
   fields: [
@@ -24,7 +26,7 @@ export const RssFeeds: CollectionConfig = {
       ],
     },
     { name: 'active', label: 'Actif', type: 'checkbox', defaultValue: true, admin: { position: 'sidebar' } },
-    { name: 'lastFetchedAt', label: 'Dernier import', type: 'date', admin: { position: 'sidebar', readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+    { name: 'lastFetchedAt', label: 'Dernier import', type: 'date', admin: { position: 'sidebar', readOnly: true, date: dateTimePicker() } },
     { name: 'lastError', label: 'Dernière erreur', type: 'text', admin: { position: 'sidebar', readOnly: true } },
   ],
 }

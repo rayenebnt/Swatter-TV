@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'payload'
 import { anyone, authenticated } from '@/access'
+import { dateTimePicker } from '@/fields/date'
 import { revalidateGlobal } from '@/hooks/revalidate'
 import { parisDay } from '@/lib/format'
 
@@ -10,7 +11,10 @@ import { parisDay } from '@/lib/format'
 export const Meteo: GlobalConfig = {
   slug: 'meteo',
   label: 'Météo',
-  admin: { group: 'Réglages' },
+  admin: {
+    group: 'Le site',
+    description: 'Les prévisions se mettent à jour toutes seules, toutes les heures. Vous pouvez simplement remplacer le texte du jour par votre propre bulletin.',
+  },
   access: { read: anyone, update: authenticated },
   hooks: {
     // Jour du bulletin saisi à la main : il ne remplace le texte automatique que ce jour-là (heure de Paris)
@@ -28,8 +32,8 @@ export const Meteo: GlobalConfig = {
   fields: [
     { name: 'autoUpdate', label: 'Mise à jour automatique (toutes les heures)', type: 'checkbox', defaultValue: true },
     { name: 'bulletin', label: 'Bulletin du jour (facultatif)', type: 'textarea', admin: { description: 'Remplace le texte généré automatiquement, aujourd’hui seulement : dès le lendemain, le texte automatique reprend.' } },
-    { name: 'bulletinDay', label: 'Jour du bulletin', type: 'text', admin: { readOnly: true, description: 'Rempli automatiquement (AAAA-MM-JJ).' } },
-    { name: 'forecast', label: 'Prévisions (données automatiques)', type: 'json', admin: { readOnly: true } },
-    { name: 'updatedAt', label: 'Dernière mise à jour', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+    { name: 'bulletinDay', label: 'Jour du bulletin', type: 'text', admin: { readOnly: true, hidden: true } },
+    { name: 'forecast', label: 'Prévisions (données automatiques)', type: 'json', admin: { readOnly: true, hidden: true } },
+    { name: 'updatedAt', label: 'Dernière mise à jour automatique', type: 'date', admin: { readOnly: true, date: dateTimePicker() } },
   ],
 }

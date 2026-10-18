@@ -7,15 +7,20 @@ import { PROGRAM_GENRES } from '@/lib/categories'
 export const Programs: CollectionConfig = {
   slug: 'programs',
   labels: { singular: 'Émission', plural: 'Émissions' },
-  admin: { useAsTitle: 'title', group: 'Programme TV', defaultColumns: ['title', 'genre', 'isPremiere'] },
+  admin: {
+    useAsTitle: 'title',
+    group: 'Programme TV',
+    defaultColumns: ['title', 'genre', 'isPremiere'],
+    description: 'Les émissions de la chaîne. Une émission créée ici se choisit ensuite dans la grille et dans les replays.',
+  },
   access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
   hooks: revalidateHooks,
   fields: [
     { name: 'title', label: 'Titre', type: 'text', required: true },
-    slugField(),
     { name: 'genre', label: 'Genre', type: 'select', required: true, options: [...PROGRAM_GENRES], defaultValue: 'magazine' },
     { name: 'image', label: 'Image', type: 'upload', relationTo: 'media' },
     { name: 'synopsis', label: 'Résumé', type: 'textarea' },
-    { name: 'isPremiere', label: 'Inédit', type: 'checkbox', defaultValue: false, admin: { position: 'sidebar' } },
+    { name: 'isPremiere', label: 'Inédit', type: 'checkbox', defaultValue: false, admin: { position: 'sidebar', description: 'Affiche l’étiquette « Inédit » dans la grille.' } },
+    slugField(),
   ],
 }

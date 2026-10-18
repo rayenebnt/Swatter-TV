@@ -1,14 +1,43 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, authenticated } from '@/access'
 
+/** « lac-annecy_matin-2.jpg » → « Lac annecy matin 2 » : description de secours tirée du nom du fichier. */
+const altFromFilename = (filename: string) => {
+  const words = filename
+    .replace(/\.[a-z0-9]+$/i, '')
+    .replace(/[-_.]+/g, ' ')
+    .trim()
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : ''
+}
+
 export const Media: CollectionConfig = {
   slug: 'media',
   labels: { singular: 'Média', plural: 'Médiathèque' },
-  admin: { group: 'Contenus', description: 'Images et vidéos du site.' },
+  admin: {
+    group: 'Le site',
+    description: 'Toutes les images et vidéos envoyées sur le site. Une image ajoutée depuis une fiche (vidéo, article…) arrive aussi ici.',
+  },
   access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  hooks: {
+    // Description laissée vide : on reprend le nom du fichier plutôt que de bloquer l'envoi
+    beforeChange: [
+      ({ data, originalDoc }) => {
+        if (typeof data.alt === 'string' && data.alt.trim()) return data
+        const filename = data.filename ?? originalDoc?.filename
+        return typeof filename === 'string' ? { ...data, alt: altFromFilename(filename) || null } : data
+      },
+    ],
+  },
   fields: [
-    { name: 'alt', label: 'Texte alternatif', type: 'text', required: true, admin: { description: 'Décrit l’image pour les personnes malvoyantes et pour Google.' } },
-    { name: 'credit', label: 'Crédit', type: 'text' },
+    {
+      name: 'alt',
+      label: 'Description de l’image',
+      type: 'text',
+      admin: {
+        description: 'Une courte phrase qui décrit l’image, par ex. « Le lac d’Annecy au lever du soleil ». Utile à Google et aux personnes malvoyantes.',
+      },
+    },
+    { name: 'credit', label: 'Crédit photo (facultatif)', type: 'text', admin: { placeholder: '© Swatter TV' } },
   ],
   upload: {
     staticDir: 'media',

@@ -32,20 +32,20 @@ const published = (where?: Where): Where => ({
   and: [{ publishedAt: { less_than_equal: new Date().toISOString() } }, ...(where ? [where] : [])],
 })
 
-async function findVideos(where: Where | undefined, sort: string, limit: number): Promise<VideoListItem[]> {
+async function findVideos(where: Where | undefined, sort: string | string[], limit: number): Promise<VideoListItem[]> {
   const payload = await getPayloadClient()
   const res = await payload.find({ collection: 'videos', where: published(where), sort, limit, depth: 1, pagination: false, select: LIST_SELECT })
   return res.docs
 }
 
-/** Top 10 : places 1 à 10 saisies dans l'administration, complétées par les vidéos les plus vues. */
+/** Top 10 : places 1 à 10 saisies dans l'administration, complétées par les vidéos les plus vues, puis les plus récentes. */
 export async function getTop10(): Promise<VideoListItem[]> {
   return safe(
     async () => {
       const ranked = await findVideos({ top10Rank: { exists: true } }, 'top10Rank', 10)
       if (ranked.length >= 10) return ranked
       const ids = ranked.map((v) => v.id)
-      const fill = await findVideos(ids.length ? { id: { not_in: ids } } : undefined, '-views', 10 - ranked.length)
+      const fill = await findVideos(ids.length ? { id: { not_in: ids } } : undefined, ['-views', '-publishedAt'], 10 - ranked.length)
       return [...ranked, ...fill]
     },
     [],

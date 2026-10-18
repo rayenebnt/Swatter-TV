@@ -1,11 +1,17 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, runningAdsOrAuthenticated } from '@/access'
+import { dayPicker } from '@/fields/date'
 import { revalidateHooks } from '@/hooks/revalidate'
 
 export const Ads: CollectionConfig = {
   slug: 'ads',
   labels: { singular: 'Publicité', plural: 'Publicités' },
-  admin: { useAsTitle: 'name', group: 'Contenus', defaultColumns: ['name', 'placement', 'active', 'endsAt'] },
+  admin: {
+    useAsTitle: 'name',
+    group: 'Le site',
+    defaultColumns: ['name', 'placement', 'active', 'endsAt'],
+    description: 'Les bannières des annonceurs. Une publicité s’affiche du jour de début au jour de fin inclus, si elle est cochée « Active ».',
+  },
   access: { read: runningAdsOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
   hooks: revalidateHooks,
   fields: [
@@ -23,14 +29,14 @@ export const Ads: CollectionConfig = {
     },
     { name: 'image', label: 'Visuel (bureau, 970 × 250)', type: 'upload', relationTo: 'media', required: true },
     { name: 'imageMobile', label: 'Visuel mobile (facultatif, 320 × 100)', type: 'upload', relationTo: 'media' },
-    { name: 'link', label: 'Lien', type: 'text' },
+    { name: 'link', label: 'Lien (site de l’annonceur)', type: 'text', admin: { placeholder: 'https://…' } },
     {
       type: 'row',
       fields: [
-        { name: 'startsAt', label: 'Début', type: 'date' },
-        { name: 'endsAt', label: 'Fin', type: 'date' },
+        { name: 'startsAt', label: 'Premier jour', type: 'date', admin: { date: dayPicker(), description: 'Vide : dès maintenant.' } },
+        { name: 'endsAt', label: 'Dernier jour', type: 'date', admin: { date: dayPicker(), description: 'Vide : sans date de fin.' } },
       ],
     },
-    { name: 'active', label: 'Active', type: 'checkbox', defaultValue: true, admin: { position: 'sidebar' } },
+    { name: 'active', label: 'Active', type: 'checkbox', defaultValue: true, admin: { position: 'sidebar', description: 'Décochez pour suspendre la campagne sans la supprimer.' } },
   ],
 }

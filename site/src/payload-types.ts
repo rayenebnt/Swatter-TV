@@ -68,14 +68,14 @@ export interface Config {
   blocks: {};
   collections: {
     videos: Video;
-    replays: Replay;
     articles: Article;
     events: Event;
+    replays: Replay;
+    schedule: Schedule;
+    programs: Program;
     webcams: Webcam;
     ads: Ad;
     pages: Page;
-    programs: Program;
-    schedule: Schedule;
     media: Media;
     'rss-feeds': RssFeed;
     users: User;
@@ -88,14 +88,14 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     videos: VideosSelect<false> | VideosSelect<true>;
-    replays: ReplaysSelect<false> | ReplaysSelect<true>;
     articles: ArticlesSelect<false> | ArticlesSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
+    replays: ReplaysSelect<false> | ReplaysSelect<true>;
+    schedule: ScheduleSelect<false> | ScheduleSelect<true>;
+    programs: ProgramsSelect<false> | ProgramsSelect<true>;
     webcams: WebcamsSelect<false> | WebcamsSelect<true>;
     ads: AdsSelect<false> | AdsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
-    programs: ProgramsSelect<false> | ProgramsSelect<true>;
-    schedule: ScheduleSelect<false> | ScheduleSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'rss-feeds': RssFeedsSelect<false> | RssFeedsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -146,7 +146,7 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Vidéos du jour, Top 10 et vidéos à la demande.
+ * Vidéo du jour, Top 10 et vidéos à la demande. Pour une vidéo YouTube, collez simplement son lien : l’image est récupérée toute seule.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "videos".
@@ -154,10 +154,26 @@ export interface UserAuthOperations {
 export interface Video {
   id: number;
   title: string;
+  source: {
+    provider: 'youtube' | 'bunny' | 'url' | 'upload';
+    /**
+     * Sur YouTube, cliquez sur « Partager » sous la vidéo, copiez le lien et collez-le ici.
+     */
+    youtubeUrl?: string | null;
+    /**
+     * Visible dans Bunny Stream > votre vidéo.
+     */
+    bunnyVideoId?: string | null;
+    url?: string | null;
+    /**
+     * MP4 conseillé. Pour les vidéos longues, préférez YouTube ou Bunny Stream.
+     */
+    file?: (number | null) | Media;
+  };
   /**
-   * Partie finale de l’adresse de la page. Laissez vide pour la générer depuis le titre.
+   * Facultative pour une vidéo YouTube : son image est récupérée automatiquement à l’enregistrement.
    */
-  slug?: string | null;
+  thumbnail?: (number | null) | Media;
   category:
     | 'divertissement'
     | 'series-realite'
@@ -169,27 +185,23 @@ export interface Video {
     | 'info'
     | 'magazine';
   duration?: string | null;
-  thumbnail: number | Media;
-  source: {
-    provider: 'youtube' | 'bunny' | 'url' | 'upload';
-    youtubeUrl?: string | null;
-    /**
-     * Visible dans Bunny Stream > votre vidéo.
-     */
-    bunnyVideoId?: string | null;
-    url?: string | null;
-    file?: (number | null) | Media;
-  };
   description?: string | null;
+  /**
+   * Une date à venir programme la vidéo : elle apparaîtra toute seule ce jour-là.
+   */
   publishedAt: string;
   /**
-   * Affichée en grand dans « À la une ».
+   * Affichée en grand dans « À la une ». Si plusieurs vidéos sont cochées, la plus récente l’emporte.
    */
   isVideoOfDay?: boolean | null;
   /**
    * 1 à 10. Laissez vide si la vidéo n’est pas dans le Top 10.
    */
   top10Rank?: number | null;
+  /**
+   * Se remplit toute seule à partir du titre à l’enregistrement. Inutile d’y toucher.
+   */
+  slug?: string | null;
   views?: number | null;
   meta?: {
     title?: string | null;
@@ -203,7 +215,7 @@ export interface Video {
   createdAt: string;
 }
 /**
- * Images et vidéos du site.
+ * Toutes les images et vidéos envoyées sur le site. Une image ajoutée depuis une fiche (vidéo, article…) arrive aussi ici.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
@@ -211,9 +223,9 @@ export interface Video {
 export interface Media {
   id: number;
   /**
-   * Décrit l’image pour les personnes malvoyantes et pour Google.
+   * Une courte phrase qui décrit l’image, par ex. « Le lac d’Annecy au lever du soleil ». Utile à Google et aux personnes malvoyantes.
    */
-  alt: string;
+  alt?: string | null;
   credit?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -270,70 +282,7 @@ export interface Media {
   };
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "replays".
- */
-export interface Replay {
-  id: number;
-  title: string;
-  /**
-   * Partie finale de l’adresse de la page. Laissez vide pour la générer depuis le titre.
-   */
-  slug?: string | null;
-  program?: (number | null) | Program;
-  thumbnail: number | Media;
-  source: {
-    provider: 'youtube' | 'bunny' | 'url' | 'upload';
-    youtubeUrl?: string | null;
-    /**
-     * Visible dans Bunny Stream > votre vidéo.
-     */
-    bunnyVideoId?: string | null;
-    url?: string | null;
-    file?: (number | null) | Media;
-  };
-  broadcastAt: string;
-  duration?: string | null;
-  description?: string | null;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "programs".
- */
-export interface Program {
-  id: number;
-  title: string;
-  /**
-   * Partie finale de l’adresse de la page. Laissez vide pour la générer depuis le titre.
-   */
-  slug?: string | null;
-  genre: 'info' | 'meteo' | 'documentaire' | 'magazine' | 'agenda' | 'divertissement' | 'sport' | 'serie' | 'cinema';
-  image?: (number | null) | Media;
-  synopsis?: string | null;
-  isPremiere?: boolean | null;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Articles saisis par l’équipe ou importés automatiquement depuis les flux RSS.
+ * Les articles écrits par l’équipe, et ceux importés automatiquement depuis les flux d’information (RSS).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "articles".
@@ -342,13 +291,13 @@ export interface Article {
   id: number;
   title: string;
   /**
-   * Partie finale de l’adresse de la page. Laissez vide pour la générer depuis le titre.
-   */
-  slug?: string | null;
-  /**
-   * 2 ou 3 lignes affichées sous le titre.
+   * 2 ou 3 lignes, affichées sous le titre et dans les listes d’articles.
    */
   excerpt?: string | null;
+  /**
+   * Une photo en largeur (format paysage), d’au moins 1200 pixels de large.
+   */
+  image?: (number | null) | Media;
   content?: {
     root: {
       type: string;
@@ -364,7 +313,6 @@ export interface Article {
     };
     [k: string]: unknown;
   } | null;
-  image?: (number | null) | Media;
   imageUrl?: string | null;
   department:
     | 'haute-savoie'
@@ -381,14 +329,21 @@ export interface Article {
     | 'allier';
   city?: string | null;
   kicker?: string | null;
+  /**
+   * Une date à venir programme l’article : il apparaîtra tout seul ce jour-là.
+   */
   publishedAt: string;
   /**
-   * Affichée dans « À la une ».
+   * Affichée dans « À la une ». Si plusieurs articles sont cochés, le plus récent l’emporte.
    */
   isInfoOfDay?: boolean | null;
   source?: ('manual' | 'rss') | null;
   sourceName?: string | null;
   sourceUrl?: string | null;
+  /**
+   * Se remplit toute seule à partir du titre à l’enregistrement. Inutile d’y toucher.
+   */
+  slug?: string | null;
   guid?: string | null;
   meta?: {
     title?: string | null;
@@ -402,23 +357,27 @@ export interface Article {
   createdAt: string;
 }
 /**
+ * Les sorties et événements de la région. Ils disparaissent tout seuls de l’agenda une fois passés.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events".
  */
 export interface Event {
   id: number;
   title: string;
-  /**
-   * Partie finale de l’adresse de la page. Laissez vide pour la générer depuis le titre.
-   */
-  slug?: string | null;
   startDate: string;
+  /**
+   * Pour un événement sur plusieurs jours.
+   */
   endDate?: string | null;
   city: string;
   place?: string | null;
   category?: ('terroir' | 'musique' | 'sport' | 'famille' | 'culture' | 'fete' | 'marche' | 'autre') | null;
   poster?: (number | null) | Media;
   description?: string | null;
+  /**
+   * Ajoutez un moment par horaire : « 10h30 — Ouverture du marché »…
+   */
   program?:
     | {
         time: string;
@@ -431,6 +390,10 @@ export interface Event {
    * Mise en avant dans « À la une » et sur l’accueil.
    */
   isWeekendPick?: boolean | null;
+  /**
+   * Se remplit toute seule à partir du titre à l’enregistrement. Inutile d’y toucher.
+   */
+  slug?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -443,71 +406,48 @@ export interface Event {
   createdAt: string;
 }
 /**
+ * Les émissions déjà diffusées, à revoir sur le site. Pour une vidéo YouTube, l’image est récupérée toute seule.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "webcams".
+ * via the `definition` "replays".
  */
-export interface Webcam {
-  id: number;
-  name: string;
-  place?: string | null;
-  /**
-   * Partie finale de l’adresse de la page. Laissez vide pour la générer depuis le titre.
-   */
-  slug?: string | null;
-  provider: 'iframe' | 'hls' | 'youtube' | 'image';
-  embedUrl: string;
-  image: number | Media;
-  temperature?: string | null;
-  order?: number | null;
-  active?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ads".
- */
-export interface Ad {
-  id: number;
-  name: string;
-  placement: 'home-leaderboard' | 'inner-leaderboard';
-  image: number | Media;
-  imageMobile?: (number | null) | Media;
-  link?: string | null;
-  startsAt?: string | null;
-  endsAt?: string | null;
-  active?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pages".
- */
-export interface Page {
+export interface Replay {
   id: number;
   title: string;
   /**
-   * Partie finale de l’adresse de la page. Laissez vide pour la générer depuis le titre.
+   * L’émission dont ce replay est un numéro (facultatif).
+   */
+  program?: (number | null) | Program;
+  source: {
+    provider: 'youtube' | 'bunny' | 'url' | 'upload';
+    /**
+     * Sur YouTube, cliquez sur « Partager » sous la vidéo, copiez le lien et collez-le ici.
+     */
+    youtubeUrl?: string | null;
+    /**
+     * Visible dans Bunny Stream > votre vidéo.
+     */
+    bunnyVideoId?: string | null;
+    url?: string | null;
+    /**
+     * MP4 conseillé. Pour les vidéos longues, préférez YouTube ou Bunny Stream.
+     */
+    file?: (number | null) | Media;
+  };
+  /**
+   * Facultative pour une vidéo YouTube : son image est récupérée automatiquement à l’enregistrement.
+   */
+  thumbnail?: (number | null) | Media;
+  /**
+   * Le replay apparaît sur le site à partir de cette date.
+   */
+  broadcastAt: string;
+  duration?: string | null;
+  description?: string | null;
+  /**
+   * Se remplit toute seule à partir du titre à l’enregistrement. Inutile d’y toucher.
    */
   slug?: string | null;
-  intro?: string | null;
-  content?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  footerGroup?: ('chaine' | 'swatter') | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -520,7 +460,38 @@ export interface Page {
   createdAt: string;
 }
 /**
- * Ajoutez un créneau par émission diffusée (date, heure de début, durée).
+ * Les émissions de la chaîne. Une émission créée ici se choisit ensuite dans la grille et dans les replays.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "programs".
+ */
+export interface Program {
+  id: number;
+  title: string;
+  genre: 'info' | 'meteo' | 'documentaire' | 'magazine' | 'agenda' | 'divertissement' | 'sport' | 'serie' | 'cinema';
+  image?: (number | null) | Media;
+  synopsis?: string | null;
+  /**
+   * Affiche l’étiquette « Inédit » dans la grille.
+   */
+  isPremiere?: boolean | null;
+  /**
+   * Se remplit toute seule à partir du titre à l’enregistrement. Inutile d’y toucher.
+   */
+  slug?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Une ligne par émission diffusée : le jour et l’heure, l’émission, la durée.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "schedule".
@@ -539,7 +510,111 @@ export interface Schedule {
   createdAt: string;
 }
 /**
- * Les articles de ces flux sont importés automatiquement dans « L’Info ».
+ * Les vues en direct de la page « Webcams ». Décochez « Active » pour masquer une webcam sans la supprimer.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "webcams".
+ */
+export interface Webcam {
+  id: number;
+  name: string;
+  place?: string | null;
+  provider: 'iframe' | 'hls' | 'youtube' | 'image';
+  /**
+   * Fourni par le service de la webcam (bouton « Intégrer » ou « Partager »).
+   */
+  embedUrl: string;
+  /**
+   * Affichée avant le chargement de la webcam.
+   */
+  image: number | Media;
+  temperature?: string | null;
+  /**
+   * Les plus petits nombres en premier.
+   */
+  order?: number | null;
+  active?: boolean | null;
+  /**
+   * Se remplit toute seule à partir du titre à l’enregistrement. Inutile d’y toucher.
+   */
+  slug?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Les bannières des annonceurs. Une publicité s’affiche du jour de début au jour de fin inclus, si elle est cochée « Active ».
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ads".
+ */
+export interface Ad {
+  id: number;
+  name: string;
+  placement: 'home-leaderboard' | 'inner-leaderboard';
+  image: number | Media;
+  imageMobile?: (number | null) | Media;
+  link?: string | null;
+  /**
+   * Vide : dès maintenant.
+   */
+  startsAt?: string | null;
+  /**
+   * Vide : sans date de fin.
+   */
+  endsAt?: string | null;
+  /**
+   * Décochez pour suspendre la campagne sans la supprimer.
+   */
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Les pages fixes : mentions légales, vie privée, le groupe, canaux de réception…
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  title: string;
+  intro?: string | null;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Pour ajouter un lien vers cette page en bas du site.
+   */
+  footerGroup?: ('chaine' | 'swatter') | null;
+  /**
+   * Se remplit toute seule à partir du titre à l’enregistrement. Inutile d’y toucher.
+   */
+  slug?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Les articles de ces flux sont importés automatiquement dans « L’Info », toutes les heures.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "rss-feeds".
@@ -570,11 +645,16 @@ export interface RssFeed {
   createdAt: string;
 }
 /**
+ * Les personnes qui peuvent se connecter. Un éditeur publie les contenus ; un administrateur gère aussi les comptes et les réglages techniques.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: number;
+  /**
+   * Le prénom sert à vous saluer sur le tableau de bord.
+   */
   name?: string | null;
   role: 'admin' | 'editeur';
   updatedAt: string;
@@ -598,6 +678,8 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Renvoie une ancienne adresse du site vers une nouvelle (par ex. après avoir changé l’adresse d’un contenu partagé).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
@@ -661,16 +743,24 @@ export interface PayloadLockedDocument {
         value: number | Video;
       } | null)
     | ({
-        relationTo: 'replays';
-        value: number | Replay;
-      } | null)
-    | ({
         relationTo: 'articles';
         value: number | Article;
       } | null)
     | ({
         relationTo: 'events';
         value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'replays';
+        value: number | Replay;
+      } | null)
+    | ({
+        relationTo: 'schedule';
+        value: number | Schedule;
+      } | null)
+    | ({
+        relationTo: 'programs';
+        value: number | Program;
       } | null)
     | ({
         relationTo: 'webcams';
@@ -683,14 +773,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pages';
         value: number | Page;
-      } | null)
-    | ({
-        relationTo: 'programs';
-        value: number | Program;
-      } | null)
-    | ({
-        relationTo: 'schedule';
-        value: number | Schedule;
       } | null)
     | ({
         relationTo: 'media';
@@ -756,10 +838,6 @@ export interface PayloadMigration {
  */
 export interface VideosSelect<T extends boolean = true> {
   title?: T;
-  slug?: T;
-  category?: T;
-  duration?: T;
-  thumbnail?: T;
   source?:
     | T
     | {
@@ -769,42 +847,15 @@ export interface VideosSelect<T extends boolean = true> {
         url?: T;
         file?: T;
       };
+  thumbnail?: T;
+  category?: T;
+  duration?: T;
   description?: T;
   publishedAt?: T;
   isVideoOfDay?: T;
   top10Rank?: T;
-  views?: T;
-  meta?:
-    | T
-    | {
-        title?: T;
-        description?: T;
-        image?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "replays_select".
- */
-export interface ReplaysSelect<T extends boolean = true> {
-  title?: T;
   slug?: T;
-  program?: T;
-  thumbnail?: T;
-  source?:
-    | T
-    | {
-        provider?: T;
-        youtubeUrl?: T;
-        bunnyVideoId?: T;
-        url?: T;
-        file?: T;
-      };
-  broadcastAt?: T;
-  duration?: T;
-  description?: T;
+  views?: T;
   meta?:
     | T
     | {
@@ -821,10 +872,9 @@ export interface ReplaysSelect<T extends boolean = true> {
  */
 export interface ArticlesSelect<T extends boolean = true> {
   title?: T;
-  slug?: T;
   excerpt?: T;
-  content?: T;
   image?: T;
+  content?: T;
   imageUrl?: T;
   department?: T;
   city?: T;
@@ -834,6 +884,7 @@ export interface ArticlesSelect<T extends boolean = true> {
   source?: T;
   sourceName?: T;
   sourceUrl?: T;
+  slug?: T;
   guid?: T;
   meta?:
     | T
@@ -851,7 +902,6 @@ export interface ArticlesSelect<T extends boolean = true> {
  */
 export interface EventsSelect<T extends boolean = true> {
   title?: T;
-  slug?: T;
   startDate?: T;
   endDate?: T;
   city?: T;
@@ -868,6 +918,72 @@ export interface EventsSelect<T extends boolean = true> {
       };
   externalUrl?: T;
   isWeekendPick?: T;
+  slug?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "replays_select".
+ */
+export interface ReplaysSelect<T extends boolean = true> {
+  title?: T;
+  program?: T;
+  source?:
+    | T
+    | {
+        provider?: T;
+        youtubeUrl?: T;
+        bunnyVideoId?: T;
+        url?: T;
+        file?: T;
+      };
+  thumbnail?: T;
+  broadcastAt?: T;
+  duration?: T;
+  description?: T;
+  slug?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "schedule_select".
+ */
+export interface ScheduleSelect<T extends boolean = true> {
+  startsAt?: T;
+  durationMinutes?: T;
+  program?: T;
+  titleOverride?: T;
+  label?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "programs_select".
+ */
+export interface ProgramsSelect<T extends boolean = true> {
+  title?: T;
+  genre?: T;
+  image?: T;
+  synopsis?: T;
+  isPremiere?: T;
+  slug?: T;
   meta?:
     | T
     | {
@@ -885,13 +1001,13 @@ export interface EventsSelect<T extends boolean = true> {
 export interface WebcamsSelect<T extends boolean = true> {
   name?: T;
   place?: T;
-  slug?: T;
   provider?: T;
   embedUrl?: T;
   image?: T;
   temperature?: T;
   order?: T;
   active?: T;
+  slug?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -917,31 +1033,10 @@ export interface AdsSelect<T extends boolean = true> {
  */
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
-  slug?: T;
   intro?: T;
   content?: T;
   footerGroup?: T;
-  meta?:
-    | T
-    | {
-        title?: T;
-        description?: T;
-        image?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "programs_select".
- */
-export interface ProgramsSelect<T extends boolean = true> {
-  title?: T;
   slug?: T;
-  genre?: T;
-  image?: T;
-  synopsis?: T;
-  isPremiere?: T;
   meta?:
     | T
     | {
@@ -949,19 +1044,6 @@ export interface ProgramsSelect<T extends boolean = true> {
         description?: T;
         image?: T;
       };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "schedule_select".
- */
-export interface ScheduleSelect<T extends boolean = true> {
-  startsAt?: T;
-  durationMinutes?: T;
-  program?: T;
-  titleOverride?: T;
-  label?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1136,17 +1218,22 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
+ * Un onglet par sujet : le carrousel de l’accueil, le direct, le flash info, puis les coordonnées et réseaux sociaux de la chaîne.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "settings".
  */
 export interface Setting {
   id: number;
   /**
-   * Grand bandeau en haut de l’accueil (3 diapositives conseillées).
+   * Grand bandeau en haut de l’accueil (3 diapositives conseillées). Cliquez sur une diapositive pour la déplier ; glissez-la par sa poignée pour changer l’ordre.
    */
   heroSlides?:
     | {
         kind: 'live' | 'custom';
+        /**
+         * Petits badges au-dessus du titre (« En direct », « Haute-Savoie »…).
+         */
         badges?:
           | {
               label: string;
@@ -1166,15 +1253,24 @@ export interface Setting {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Décochez pour couper le direct : la page « Direct » affiche alors « Le direct reprend bientôt ».
+   */
   liveEnabled?: boolean | null;
   live?: {
     provider?: ('youtube' | 'bunny' | 'url' | 'upload') | null;
+    /**
+     * Sur YouTube, cliquez sur « Partager » sous la vidéo, copiez le lien et collez-le ici.
+     */
     youtubeUrl?: string | null;
     /**
      * Visible dans Bunny Stream > votre vidéo.
      */
     bunnyVideoId?: string | null;
     url?: string | null;
+    /**
+     * MP4 conseillé. Pour les vidéos longues, préférez YouTube ou Bunny Stream.
+     */
     file?: (number | null) | Media;
   };
   livePoster?: (number | null) | Media;
@@ -1206,6 +1302,8 @@ export interface Setting {
   createdAt?: string | null;
 }
 /**
+ * Les prévisions se mettent à jour toutes seules, toutes les heures. Vous pouvez simplement remplacer le texte du jour par votre propre bulletin.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "meteo".
  */
@@ -1216,9 +1314,6 @@ export interface Meteo {
    * Remplace le texte généré automatiquement, aujourd’hui seulement : dès le lendemain, le texte automatique reprend.
    */
   bulletin?: string | null;
-  /**
-   * Rempli automatiquement (AAAA-MM-JJ).
-   */
   bulletinDay?: string | null;
   forecast?:
     | {

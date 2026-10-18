@@ -13,22 +13,26 @@ export const videoSourceField = (name = 'source', label = 'Vidéo', required = t
   fields: [
     {
       name: 'provider',
-      label: 'Type de source',
+      label: 'Où se trouve la vidéo ?',
       type: 'select',
       required,
       defaultValue: 'youtube',
       options: [
-        { label: 'YouTube (lien de la vidéo)', value: 'youtube' },
-        { label: 'Bunny Stream (identifiant)', value: 'bunny' },
-        { label: 'Lien direct (MP4 ou flux HLS .m3u8)', value: 'url' },
-        { label: 'Fichier envoyé', value: 'upload' },
+        { label: 'Sur YouTube', value: 'youtube' },
+        { label: 'Sur Bunny Stream', value: 'bunny' },
+        { label: 'Lien direct vers un fichier MP4 ou un flux .m3u8', value: 'url' },
+        { label: 'Fichier envoyé dans la médiathèque', value: 'upload' },
       ],
     },
     {
       name: 'youtubeUrl',
-      label: 'Lien YouTube',
+      label: 'Lien de la vidéo YouTube',
       type: 'text',
-      admin: { condition: (_, s) => s?.provider === 'youtube', placeholder: 'https://www.youtube.com/watch?v=…' },
+      admin: {
+        condition: (_, s) => s?.provider === 'youtube',
+        placeholder: 'https://www.youtube.com/watch?v=…',
+        description: 'Sur YouTube, cliquez sur « Partager » sous la vidéo, copiez le lien et collez-le ici.',
+      },
     },
     {
       name: 'bunnyVideoId',
@@ -47,7 +51,7 @@ export const videoSourceField = (name = 'source', label = 'Vidéo', required = t
       label: 'Fichier vidéo',
       type: 'upload',
       relationTo: 'media',
-      admin: { condition: (_, s) => s?.provider === 'upload' },
+      admin: { condition: (_, s) => s?.provider === 'upload', description: 'MP4 conseillé. Pour les vidéos longues, préférez YouTube ou Bunny Stream.' },
     },
   ],
 })
