@@ -54,7 +54,7 @@ remplacez-les par les vôtres avant l’ouverture.
 2. Saisissez votre **E-mail** et votre **Mot de passe**, puis cliquez sur **Se connecter**.
 
 - Après 5 essais erronés, le compte est bloqué 10 minutes : patientez, puis réessayez.
-- Mot de passe perdu : demandez à un administrateur de vous en définir un nouveau (fiche **Utilisateurs**).
+- Mot de passe perdu : cliquez sur **Mot de passe oublié ?** sur la page de connexion, un lien vous est envoyé par e-mail (si l’envoi d’e-mails a été configuré par votre prestataire) ; sinon, demandez à un administrateur de vous en définir un nouveau (fiche **Utilisateurs**).
 - Pour changer votre mot de passe : cliquez sur l’avatar en haut à droite (page **Compte**), puis sur **Changer le mot de passe**.
 - Pensez à vous déconnecter (**Se déconnecter**) sur un ordinateur partagé.
 

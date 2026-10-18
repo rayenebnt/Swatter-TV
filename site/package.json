@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.91.0",
+    "@payloadcms/email-nodemailer": "3.91.0",
     "@payloadcms/next": "3.91.0",
     "@payloadcms/plugin-redirects": "3.91.0",
     "@payloadcms/plugin-seo": "3.91.0",

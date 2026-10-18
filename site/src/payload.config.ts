@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { redirectsPlugin } from '@payloadcms/plugin-redirects'
 import { seoPlugin } from '@payloadcms/plugin-seo'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -103,6 +104,22 @@ export default buildConfig({
   globals: [Settings, Meteo],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
+  // E-mails de l'administration (mot de passe oublié…) : envoyés par SMTP dès que SMTP_HOST est renseigné,
+  // sinon simplement écrits dans le journal du serveur
+  ...(process.env.SMTP_HOST
+    ? {
+        email: nodemailerAdapter({
+          defaultFromAddress: process.env.SMTP_FROM || 'contact@swatter-tv.fr',
+          defaultFromName: 'Swatter TV',
+          transportOptions: {
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT || 587),
+            secure: process.env.SMTP_PORT === '465',
+            auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || '' } : undefined,
+          },
+        }),
+      }
+    : {}),
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
     pool: { connectionString: process.env.DATABASE_URI || '' },
