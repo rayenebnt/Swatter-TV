@@ -17,7 +17,10 @@ export function watchErrors(page: Page): string[] {
   })
   page.on('response', (response) => {
     const url = new URL(response.url())
-    if (url.origin === ORIGIN && response.status() >= 400 && !url.pathname.startsWith('/__nextjs')) {
+    // « test-import… » : fiches créées puis supprimées par le test d'import YouTube qui tourne en parallèle (admin.spec.ts) ;
+    // une page déjà affichée peut encore précharger leur lien
+    const transient = response.status() === 404 && url.pathname.includes('/test-import')
+    if (url.origin === ORIGIN && response.status() >= 400 && !url.pathname.startsWith('/__nextjs') && !transient) {
       errors.push(`HTTP ${response.status()} : ${url.pathname}${url.search}`)
     }
   })

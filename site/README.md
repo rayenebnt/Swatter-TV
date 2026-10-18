@@ -85,8 +85,10 @@ npm run dev
 - `npm run seed` remplit la base avec les contenus de départ, des modèles marqués « Exemple » que le client remplace
   (liste dans GUIDE_CLIENT.md, partie 1) : **il efface d’abord tous les contenus** (jamais les
   utilisateurs), puis recrée médias, 4 émissions d’exemple et une grille type sur 8 jours à partir d’hier, 3 articles,
-  3 événements, 2 webcams, les pages (« [à compléter] »), les réglages et des prévisions météo (ni vidéos ni replays : ces rubriques se remplissent avec la chaîne
-  YouTube du client, fiche « Chaîne YouTube » de l’administration). Il est idempotent (relançable à volonté) et refuse de tourner en production
+  3 événements, 1 replay, 2 webcams, les pages (« [à compléter] »), les réglages et la météo : les prévisions actuelles
+  d’Open-Meteo, ou à défaut (pas d’accès à internet) des prévisions de démonstration remplacées dès que le site joint
+  Open-Meteo (aucune vidéo : « Vidéos » et « Replays » se remplissent avec la chaîne YouTube du client, fiche « Chaîne
+  YouTube » de l’administration). Il est idempotent (relançable à volonté) et refuse de tourner en production
   sans `SEED_FORCE=1`. Les dates sont calculées à partir du jour du lancement : relancez-le pour « rajeunir » la grille,
   l’agenda et la météo.
 - Après un `git pull`, si le serveur ou `npm run seed` restent bloqués sur une question en anglais (« Is … column
@@ -239,6 +241,11 @@ contenus : jamais une fois le site rempli).
 3. supprime les fiches ouvertes avec « Ajouter » puis abandonnées sans titre depuis plus de 24 h (brouillons jamais
    publiés) ;
 4. régénère les pages du site si quelque chose a changé.
+
+Filet de sécurité pour la météo (poste de développement, hébergement sans tâche planifiée) : quand une page affiche des
+prévisions de plus d’une heure, ou celles de démonstration, le site interroge lui-même Open-Meteo en arrière-plan, au plus
+une fois toutes les 10 minutes (`src/lib/meteo-refresh.ts`) ; les pages montrent les nouvelles prévisions à leur
+régénération suivante (moins d’une minute). `OPEN_METEO_URL` remplace l’adresse d’Open-Meteo (tests hors ligne).
 
 La réponse JSON détaille le résultat (`meteo.ok`, `youtube.videos`, `drafts.deleted`…). Avec Docker Compose, le service `cron`
 s’en charge. Sur un serveur sans Docker, une ligne de crontab suffit :

@@ -4,7 +4,7 @@
  * Usage : npm run seed   (= payload run src/scripts/seed.ts)
  *
  * Supprime d'abord tous les contenus (jamais les utilisateurs), puis recrée médias, émissions d'exemple,
- * grille sur 8 jours, articles et événements d'exemple, webcams d'exemple, pages, réglages et météo.
+ * grille sur 8 jours, articles, événements et replay d'exemple, webcams d'exemple, pages, réglages et météo (Open-Meteo).
  * Refuse de tourner en production, sauf SEED_FORCE=1.
  */
 import config from '@payload-config'
@@ -13,6 +13,7 @@ import { getPayload, type CollectionSlug } from 'payload'
 import { fileURLToPath } from 'url'
 
 import { formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
+import { importMeteo } from '@/lib/import/meteo'
 import { slugify } from '@/lib/slugify'
 import { articleUrl, eventUrl } from '@/lib/urls'
 
@@ -146,8 +147,25 @@ log(`${schedule.length} créneaux de grille créés (${firstDay} → ${addDays(f
 // ---------------------------------------------------------------------------------------------
 // 4. Vidéos et replays
 // ---------------------------------------------------------------------------------------------
-// « Vidéos » et « Replays » : aucun exemple, ils se remplissent avec la chaîne YouTube du client
-// (fiche « Chaîne YouTube » de l'administration, import automatique)
+// « Vidéos » se remplit avec la chaîne YouTube du client (fiche « Chaîne YouTube », import automatique).
+// « Replays » aussi (vidéos longues de la chaîne) ; un replay d'exemple montre en attendant à quoi ressemble la rubrique.
+await payload.create({
+  collection: 'replays',
+  data: {
+    _status: 'published',
+    title: 'Exemple — Un replay à remplacer',
+    program: programId('documentaire'),
+    source: upload('direct-mont-blanc'),
+    thumbnail: mediaId('hero-crepuscule'),
+    broadcastAt: parisDateTime(addDays(today, -1), '20:45').toISOString(),
+    duration: '52 min',
+    description:
+      'Replay d’exemple : les vidéos longues de votre chaîne YouTube arrivent ici toutes seules (fiche « Chaîne YouTube »). Vous pouvez aussi ajouter un replay à la main (Replays › Ajouter). Supprimez cet exemple avant l’ouverture.',
+  },
+  overrideAccess: true,
+  context,
+})
+log('1 replay d’exemple créé.')
 
 // ---------------------------------------------------------------------------------------------
 // 5. Articles
@@ -338,7 +356,7 @@ await payload.updateGlobal({
 })
 
 // ---------------------------------------------------------------------------------------------
-// 9. Météo (prévisions de démonstration ; remplacées par Open-Meteo à la première mise à jour automatique)
+// 9. Météo (Open-Meteo, ou prévisions de démonstration si le service est injoignable)
 // ---------------------------------------------------------------------------------------------
 await payload.updateGlobal({
   slug: 'meteo',
@@ -352,6 +370,10 @@ await payload.updateGlobal({
   overrideAccess: true,
   context,
 })
+// Vraies prévisions tout de suite si Open-Meteo répond (sinon : celles de démonstration, remplacées dès que le site
+// pourra joindre Open-Meteo)
+const live = await importMeteo(payload)
+log(live.ok ? 'Météo : prévisions actuelles d’Open-Meteo.' : `Météo : prévisions de démonstration en attendant Open-Meteo (${live.error}).`)
 
 // ---------------------------------------------------------------------------------------------
 // Récapitulatif

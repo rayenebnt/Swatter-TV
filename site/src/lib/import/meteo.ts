@@ -1,11 +1,14 @@
 // Import des prévisions (Open-Meteo, sans clé) dans le global « meteo » : un seul appel multi-points,
 // puis une transformation pure (buildForecast) testable hors ligne.
+import http from 'node:http'
+import https from 'node:https'
 import type { Payload } from 'payload'
 import { formatDayLong, parisDateTime, parisDay } from '@/lib/format'
 import { addDays, KIND_LABEL, METEO_CITIES, METEO_REGION, OPEN_METEO_SOURCE, PART_LABELS, wmoKind, wmoLabel } from '@/lib/meteo'
 import type { Forecast, ForecastCity, ForecastDay, WeatherKind } from '@/lib/meteo-types'
 
-const API = 'https://api.open-meteo.com/v1/forecast'
+// OPEN_METEO_URL : autre adresse (tests sans accès à internet)
+const API = process.env.OPEN_METEO_URL || 'https://api.open-meteo.com/v1/forecast'
 const TIMEOUT_MS = 10_000
 /** Jours conservés. Un sixième est demandé pour disposer de minuit (0 h) du dernier jour. */
 const DAYS = 5
@@ -363,6 +366,36 @@ export function buildForecast(responses: readonly unknown[], now: Date): Forecas
 }
 
 /**
+ * GET JSON par le client HTTP de Node plutôt que par fetch : le fetch de Next refuse les requêtes sans cache pendant la
+ * régénération d'une page, moment où la mise à jour en arrière-plan est lancée (voir src/lib/meteo-refresh.ts).
+ */
+function getJson(url: string): Promise<{ ok: boolean; status: number; json: unknown }> {
+  return new Promise((resolve, reject) => {
+    const req = (url.startsWith('https:') ? https : http).get(url, { headers: { accept: 'application/json' }, timeout: TIMEOUT_MS }, (res) => {
+      let body = ''
+      res.setEncoding('utf8')
+      res.on('data', (chunk: string) => (body += chunk))
+      res.on('end', () => {
+        let json: unknown = null
+        try {
+          json = JSON.parse(body)
+        } catch {
+          // réponse illisible : json reste null
+        }
+        const status = res.statusCode ?? 0
+        resolve({ ok: status >= 200 && status < 300, status, json })
+      })
+    })
+    req.on('timeout', () => {
+      const error = new Error('délai dépassé')
+      error.name = 'TimeoutError'
+      req.destroy(error)
+    })
+    req.on('error', reject)
+  })
+}
+
+/**
  * Met à jour le global « meteo » (appelé par GET /api/cron/import et `npm run import`).
  * Ne fait rien si la mise à jour automatique est désactivée ; ne lève jamais d'exception.
  */
@@ -372,8 +405,8 @@ export async function importMeteo(payload: Payload): Promise<{ ok: boolean; erro
     if (meteo.autoUpdate === false) {
       return { ok: false, skipped: true, error: 'mise à jour automatique désactivée dans l’administration (Réglages › Météo)' }
     }
-    const res = await fetch(meteoRequestUrl(), { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { accept: 'application/json' }, cache: 'no-store' })
-    const json: unknown = await res.json().catch(() => null)
+    const res = await getJson(meteoRequestUrl())
+    const json = res.json
     if (!res.ok) {
       const reason = obj(json)?.reason
       return { ok: false, error: `Open-Meteo a répondu ${res.status}${typeof reason === 'string' ? ` (${reason})` : ''}` }

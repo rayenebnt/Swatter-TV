@@ -60,6 +60,7 @@ avant l’ouverture :
 |---|---|
 | **L’Info** | 3 articles « Exemple — … » |
 | **Agenda** | 3 événements « Exemple — … », dont la sortie du week-end |
+| **Replays** | 1 replay « Exemple — Un replay à remplacer » (vos vidéos longues YouTube arriveront ici toutes seules) |
 | **Émissions** et **Programme TV** | 4 émissions « (exemple) » et une grille type répétée chaque jour : remplacez-les par vos émissions et votre vraie grille (voir partie 8) |
 | **Webcams** | 2 webcams « (exemple) » qui affichent une simple photo : collez l’adresse de vos vraies webcams |
 | **Accueil et direct** › **Carrousel** | les textes des 3 diapositives (« Texte d’exemple… », « Votre émission de ce soir », « Votre sortie du week-end ») |
@@ -68,7 +69,7 @@ avant l’ouverture :
 | **Accueil et direct** › **Chaîne et contact** | la **Note affichée** et le **Compteur de vues** de l’accueil |
 | **Publicités** | « Exemple de campagne » (inactive) : un modèle à dupliquer pour votre première publicité |
 
-Les rubriques **Vidéos** et **Replays** sont vides au départ : elles se remplissent avec votre chaîne YouTube (partie 4).
+La rubrique **Vidéos** est vide au départ : elle se remplit avec votre chaîne YouTube, comme **Replays** (partie 4).
 
 ## 2. Se connecter
 
@@ -389,7 +390,8 @@ l’adresse `/son-adresse` (champ **Adresse web (automatique)**) une fois publi�
 
 **La Météo** : les prévisions de la Haute-Savoie (Annecy, Annemasse, Thonon-les-Bains, Cluses, Chamonix, La Clusaz) arrivent
 **automatiquement toutes les heures** grâce à Open-Meteo, tant que **Mise à jour automatique (toutes les heures)** est
-cochée. **Dernière mise à jour automatique** indique l’heure du dernier passage ; le tableau de bord vous prévient si
+cochée : ce sont les prévisions actuelles, pas des exemples. Le site affiche sous la météo l’heure de la dernière mise à
+jour (« Mis à jour à 14:05 ») et la source (Open-Meteo). **Dernière mise à jour automatique** indique l’heure du dernier passage ; le tableau de bord vous prévient si
 les prévisions n’ont pas été mises à jour depuis plus de 3 heures.
 
 Pour écrire vous-même le texte du jour, remplissez **Bulletin du jour (facultatif)** : il remplace le texte généré
