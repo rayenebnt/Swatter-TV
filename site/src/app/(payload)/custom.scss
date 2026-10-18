@@ -192,6 +192,52 @@ html[data-theme='dark'] {
   }
 }
 
+/* bouton « Voir sur le site » des fiches */
+.sw-view-site {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: calc(var(--base) * 1.6);
+  padding: 0 12px;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-s);
+  color: var(--theme-text);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: var(--swatter-accent);
+  }
+
+  &:hover {
+    border-color: var(--swatter-gold);
+    color: var(--swatter-accent);
+  }
+}
+
+/* heure des dernières prévisions (fiche Météo) */
+.sw-meteo-status {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--spacing-field, 24px);
+  padding: 12px 16px;
+  border-inline-start: 3px solid var(--swatter-gold);
+  border-radius: 0 var(--style-radius-m) var(--style-radius-m) 0;
+  background: var(--theme-elevation-50);
+
+  span {
+    color: var(--theme-elevation-600);
+
+    &:first-of-type::first-letter {
+      text-transform: uppercase;
+    }
+  }
+}
+
 /* ---------- Tableau de bord ---------- */
 .sw-dash {
   display: flex;

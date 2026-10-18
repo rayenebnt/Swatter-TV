@@ -152,3 +152,38 @@ npm run seed           # données de démonstration
   vers la même émission la rouvre).
 - **Contenus programmés** : articles, vidéos (date de publication) et replays (date de diffusion) dans le futur restent
   invisibles sur le site et dans l'API publique ; l'équipe connectée les voit dans l'administration.
+
+## Administration (pensée pour une équipe non technique)
+
+Composants dans `src/components/admin/`, déclarés dans `src/payload.config.ts` (`admin.components`) ou dans les collections ;
+après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. Styles : `src/app/(payload)/custom.scss`
+(variables du thème Payload, thèmes clair et sombre).
+
+- **Tableau de bord** (`Dashboard.tsx` + `dashboard-data.ts`, `admin.components.views.dashboard`) : actions courantes,
+  état du site (chaque requête échoue sans bloquer la page), derniers contenus modifiés (hors articles importés).
+- **Menu** : groupes Publier / Programme TV / Le site / Administration (ordre = ordre des collections dans la config,
+  les globals à la fin de leur groupe). Comptes, flux RSS et redirections : `admin.hidden: hiddenForEditors`
+  (masqués aux éditeurs, l'API garde ses propres règles d'accès). `NavLinks.tsx` : « Tableau de bord », « Voir le site », « Aide ».
+- **Page « Aide »** (`/admin/aide`, `HelpView.tsx`) : rend `GUIDE_CLIENT.md` (mini-rendu `markdown.tsx`, identifiants
+  d'intertitres à la GitHub pour le sommaire). Le fichier est lu à l'exécution et embarqué dans le build autonome par
+  `outputFileTracingIncludes` (`next.config.ts`) : **tenir le guide à jour à chaque changement d'écran**.
+- **Formulaires** : `src/fields/date.ts` (dates `dd/MM/yyyy HH:mm`, heures sur 24 h). Pas de jeton dépendant de la langue
+  (jour, mois en lettres) dans `displayFormat` : la traduction du sélecteur se charge après son premier rendu et
+  afficherait « Sun ». Le jour de la semaine de la grille passe par une cellule Intl (`SlotTimeCell.tsx`).
+  Traductions remplacées dans `i18n.translations.fr` (« Ajouter », « Enregistrer », « Choisir dans la médiathèque »…).
+  Plugins locaux de la config : `seoSection` (bloc SEO replié, données inchangées dans `meta`) et `simpleDocuments`
+  (onglet API masqué, bouton « Voir sur le site » pour les collections qui ont `admin.preview`).
+- **Adresses uniques** (`src/fields/slug.ts`) : un titre déjà pris donne `titre-2`, `titre-3`… au lieu d'une erreur
+  « valeur unique » ; l'adresse d'un contenu existant ne change pas quand on modifie son titre.
+- **Vignette YouTube** (`src/hooks/youtubeThumbnail.ts`) : vidéo ou replay YouTube enregistré sans image → téléchargement
+  de `maxresdefault`, puis `sddefault`, `hqdefault` dans la médiathèque (`youtube-<id>`), réutilisé s'il existe déjà.
+  En cas d'échec, enregistrement sans image (visuel de repli sur le site) et avertissement dans le journal. Pour tester sans
+  accès à YouTube : `YOUTUBE_THUMB_BASE=http://127.0.0.1:8765/vi` (servir `vi/<id>/maxresdefault.jpg`).
+- **Grille des programmes** : `ScheduleTools.tsx` (au-dessus du tableau de la liste) ouvre la semaine en cours, filtre par
+  jour et appelle `POST /api/schedule/copy-week` `{ from, days: 7 | 1, replace }` (`src/lib/schedule-copy.ts`) : recopie à
+  la même heure de Paris sept jours plus tard, dans une transaction (tout ou rien), refus (409) si l'arrivée n'est pas vide
+  sans `replace`. Semaines et journées TV de 2 h à 2 h (`src/lib/schedule-week.ts`, partagé client / serveur).
+- **Médiathèque** : description de l'image (`alt`) facultative, reprise du nom du fichier si elle est vide.
+- Tests : `tests/e2e/admin.spec.ts` (identifiants `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`, par défaut ceux du poste de
+  développement ; ignorés si la connexion échoue).
+

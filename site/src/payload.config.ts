@@ -79,13 +79,25 @@ const seoSection: Plugin = (config) => ({
 })
 plugins.push(seoSection)
 
-/** Onglet « API » des fiches masqué partout : réservé aux développeurs, il déroute plus qu'il n'aide. */
-const hideApiTab: Plugin = (config) => ({
+/**
+ * Fiches simplifiées partout : onglet « API » masqué (réservé aux développeurs, il déroute plus qu'il n'aide) et,
+ * pour les contenus qui ont une page publique (admin.preview), bouton « Voir sur le site » au lieu d'une icône seule.
+ */
+const simpleDocuments: Plugin = (config) => ({
   ...config,
-  collections: config.collections?.map((c) => ({ ...c, admin: { ...c.admin, hideAPIURL: true } })),
+  collections: config.collections?.map((c) => ({
+    ...c,
+    admin: {
+      ...c.admin,
+      hideAPIURL: true,
+      ...(c.admin?.preview
+        ? { components: { ...c.admin.components, edit: { ...c.admin.components?.edit, PreviewButton: '/components/admin/ViewOnSiteButton#ViewOnSiteButton' } } }
+        : {}),
+    },
+  })),
   globals: config.globals?.map((g) => ({ ...g, admin: { ...g.admin, hideAPIURL: true } })),
 })
-plugins.push(hideApiTab)
+plugins.push(simpleDocuments)
 
 if (process.env.S3_BUCKET) {
   plugins.push(
@@ -156,10 +168,13 @@ export default buildConfig({
           createNew: 'Ajouter',
           createNewLabel: 'Ajouter : {{label}}',
           creatingNewLabel: 'Nouvelle fiche : {{label}}',
+          // cases à cocher dans les listes et les filtres : « oui » / « non » plutôt que « vrai » / « faux »
+          false: 'Non',
           // case vide d'une liste : un simple tiret plutôt que « <Pas de Titre spécifique (facultatif)> »
           noLabel: '—',
           payloadSettings: 'Préférences d’affichage',
           save: 'Enregistrer',
+          true: 'Oui',
         },
         fields: {
           addNew: 'Ajouter',

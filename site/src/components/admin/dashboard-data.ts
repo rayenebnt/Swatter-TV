@@ -17,6 +17,8 @@ export type DashboardData = {
   ads: number
   meteo: { auto: boolean; updatedAt: string | null }
   rss: { activeFeeds: number; failingFeeds: number; importedToday: number }
+  /** vidéos et replays sans image (image YouTube introuvable à l'enregistrement) */
+  missingImages: { videos: number; replays: number }
   recent: RecentItem[]
 }
 
@@ -98,7 +100,8 @@ async function recent(payload: Payload): Promise<RecentItem[]> {
 
 export async function getDashboardData(payload: Payload): Promise<DashboardData> {
   const since = new Date(Date.now() - DAY_MS).toISOString()
-  const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, feeds, importedToday, recentItems] = await Promise.all([
+  const noImage: Where = { thumbnail: { exists: false } }
+  const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, feeds, importedToday, videosNoImage, replaysNoImage, recentItems] = await Promise.all([
     attempt(() => payload.findGlobal({ slug: 'settings', depth: 0 }), null),
     attempt(() => payload.findGlobal({ slug: 'meteo', depth: 0 }), null),
     attempt(() => featured(payload, 'videos', 'isVideoOfDay'), null),
@@ -112,6 +115,8 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
       [] as { lastError?: string | null }[],
     ),
     attempt(async () => (await payload.count({ collection: 'articles', where: { and: [{ source: { equals: 'rss' } }, { createdAt: { greater_than_equal: since } }] } })).totalDocs, 0),
+    attempt(async () => (await payload.count({ collection: 'videos', where: noImage })).totalDocs, 0),
+    attempt(async () => (await payload.count({ collection: 'replays', where: noImage })).totalDocs, 0),
     attempt(() => recent(payload), [] as RecentItem[]),
   ])
 
@@ -128,8 +133,10 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     flash: { messages: settings?.flashItems?.length ?? 0, auto: settings?.flashAuto !== false },
     emptyDays: empty,
     ads,
-    meteo: { auto: meteo?.autoUpdate !== false, updatedAt: meteo?.updatedAt ?? null },
+    // heure de l'import, lue dans les prévisions (la date de modification de la fiche change aussi avec un bulletin)
+    meteo: { auto: meteo?.autoUpdate !== false, updatedAt: (meteo?.forecast as { updatedAt?: string } | null | undefined)?.updatedAt ?? null },
     rss: { activeFeeds: feeds.length, failingFeeds: feeds.filter((f) => f.lastError).length, importedToday },
+    missingImages: { videos: videosNoImage, replays: replaysNoImage },
     recent: recentItems,
   }
 }

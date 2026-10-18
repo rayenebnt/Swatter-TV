@@ -4,7 +4,8 @@ Site de **Swatter TV & Info**, web TV régionale de la Haute-Savoie et d’Auver
 le direct, les vidéos et le Top 10, le replay, l’info par département, la météo, le programme TV, l’agenda des sorties
 et les webcams, le tout administré par l’équipe de la chaîne depuis `/admin`.
 
-Ce document s’adresse aux développeurs. Pour l’équipe éditoriale, voir **[GUIDE_CLIENT.md](GUIDE_CLIENT.md)** ;
+Ce document s’adresse aux développeurs. Pour l’équipe éditoriale, voir **[GUIDE_CLIENT.md](GUIDE_CLIENT.md)** (également
+affiché dans l’administration, page « Aide ») ;
 pour les conventions de code et les contrats entre rubriques, voir **[DEV_NOTES.md](DEV_NOTES.md)**.
 
 ## Pile technique
@@ -114,7 +115,8 @@ src/
   app/robots.ts, sitemap.ts
   collections/ globals/ modèle de données (vidéos, replays, articles, agenda, webcams, publicités, pages, émissions,
                         grille, médiathèque, flux RSS, utilisateurs ; réglages du site, météo)
-  components/<rubrique>/ composants de chaque rubrique ; components/ui/ primitives partagées ; components/admin/ logo
+  components/<rubrique>/ composants de chaque rubrique ; components/ui/ primitives partagées ; components/admin/ écrans
+                        de l’administration (tableau de bord, aide, outils de la grille, logo)
   lib/                  accès aux données (queries/), dates en heure de Paris (format.ts), liens (urls.ts), imports (import/)
   scripts/              init-db.ts, seed.ts (+ seed/ : données de démonstration), import.ts
   styles/               globals.css (jetons et composants communs) + un fichier par rubrique
@@ -279,7 +281,10 @@ Deux projets : `bureau` (1440 × 900) et `mobile` (390 × 844, tactile). Les fic
   valides ; administration et API joignables ; tâche planifiée refusée sans secret ;
 - `rubriques.spec.ts` : contenu de chaque rubrique (accueil complet, info et flux RSS, météo, programme TV, agenda,
   webcams, vidéos, replay, direct, recherche, page éditoriale et redirections) ;
-- `interactions.spec.ts` : recherche au clavier, bandeau cookies, menu mobile, lien d’évitement.
+- `interactions.spec.ts` : recherche au clavier, bandeau cookies, menu mobile, lien d’évitement ;
+- `admin.spec.ts` (bureau) : tableau de bord, page d’aide, outil de la grille des programmes, recopie de semaine refusée
+  proprement, rubriques techniques masquées aux éditeurs. Identifiants : `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` (par défaut
+  ceux du poste de développement) ; sans compte valide, ces tests sont ignorés.
 
 Les adresses de détail sont lues dans l’API REST : sans données, les tests concernés sont ignorés. Le Chromium de Playwright
 ne décode pas le H.264 : les MP4 de démonstration y apparaissent en « Vidéo indisponible ». Les tests vérifient donc la

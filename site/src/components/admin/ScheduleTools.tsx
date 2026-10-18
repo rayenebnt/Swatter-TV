@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, toast, useConfig, useListQuery } from '@payloadcms/ui'
+import { Button, toast, useConfig, useListQuery, useRouteTransition } from '@payloadcms/ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useId, useState } from 'react'
 import type { Where } from 'payload'
@@ -11,6 +11,11 @@ import { AdminIcon } from './icons'
 
 /** Toute la grille : un filtre toujours vrai, pour ne pas revenir automatiquement à la semaine en cours. */
 const ALL: Where = { or: [{ and: [{ startsAt: { exists: true } }] }] }
+/** Filtre ALL relu depuis l'adresse (où `true` devient la chaîne « true »). */
+const isAll = (where: Where | undefined) => {
+  const and = (where?.or as Where[] | undefined)?.[0]?.and as Where[] | undefined
+  return where?.or?.length === 1 && and?.length === 1 && String((and[0]?.startsAt as { exists?: unknown } | undefined)?.exists) === 'true'
+}
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
 
@@ -25,6 +30,8 @@ export function ScheduleTools() {
     config: { routes },
   } = useConfig()
   const router = useRouter()
+  // pendant un changement de semaine, `query` est déjà à jour mais `data` (rendu serveur) pas encore
+  const { isTransitioning } = useRouteTransition()
   const replaceId = useId()
   const [replace, setReplace] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -34,7 +41,7 @@ export function ScheduleTools() {
   const range = rangeFromWhere(where) ?? (noFilter ? { first: currentMonday(), days: 7 as const } : null)
   const thisWeek = currentMonday()
   const today = tvDay()
-  const total = data?.totalDocs
+  const total = isTransitioning || noFilter ? undefined : data?.totalDocs
 
   // À l'ouverture, sans filtre ni recherche : la semaine en cours plutôt que des créneaux passés depuis longtemps
   useEffect(() => {
@@ -78,7 +85,7 @@ export function ScheduleTools() {
     return (
       <div className="sw-week">
         <div className="sw-week__bar">
-          <p className="sw-week__title">Toute la grille{JSON.stringify(where) !== JSON.stringify(ALL) ? ' (filtrée)' : ''}</p>
+          <p className="sw-week__title">Toute la grille{isAll(where) ? '' : ' (filtrée)'}</p>
           <div className="sw-week__nav">
             <Button buttonStyle="secondary" size="small" margin={false} onClick={() => void show(thisWeek, 7)}>
               Revenir à la semaine en cours
@@ -91,7 +98,7 @@ export function ScheduleTools() {
 
   const monday = range.days === 7 ? range.first : mondayOf(range.first)
   const day = range.days === 1 ? range.first : null
-  const empty = total === 0 && !noFilter
+  const empty = total === 0
   const weekDays = Array.from({ length: 7 }, (_, i) => shiftDay(monday, i))
 
   return (
@@ -102,8 +109,8 @@ export function ScheduleTools() {
           <p className="sw-week__count">
             {monday === thisWeek ? 'Semaine en cours · ' : ''}
             {day ? `${dayLabel(day)} : ` : ''}
-            {/* à l'ouverture, la liste n'est pas encore filtrée sur la semaine : pas de total trompeur */}
-            {total !== undefined && !noFilter ? plural(total, 'créneau', 'créneaux') : '…'}
+            {/* liste pas encore filtrée sur la semaine affichée (ouverture, changement de semaine) : pas de total trompeur */}
+            {total !== undefined ? plural(total, 'créneau', 'créneaux') : '…'}
           </p>
         </div>
         <div className="sw-week__nav">

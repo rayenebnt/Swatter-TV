@@ -34,6 +34,9 @@ export const Meteo: GlobalConfig = {
     { name: 'bulletin', label: 'Bulletin du jour (facultatif)', type: 'textarea', admin: { description: 'Remplace le texte généré automatiquement, aujourd’hui seulement : dès le lendemain, le texte automatique reprend.' } },
     { name: 'bulletinDay', label: 'Jour du bulletin', type: 'text', admin: { readOnly: true, hidden: true } },
     { name: 'forecast', label: 'Prévisions (données automatiques)', type: 'json', admin: { readOnly: true, hidden: true } },
-    { name: 'updatedAt', label: 'Dernière mise à jour automatique', type: 'date', admin: { readOnly: true, date: dateTimePicker() } },
+    // date de modification de la fiche (change aussi quand l'équipe enregistre un bulletin) : l'heure de l'import
+    // est lue dans les prévisions et affichée par MeteoStatus
+    { name: 'updatedAt', label: 'Dernière modification', type: 'date', admin: { readOnly: true, hidden: true, date: dateTimePicker() } },
+    { name: 'importStatus', type: 'ui', admin: { components: { Field: '/components/admin/MeteoStatus#MeteoStatus' } } },
   ],
 }

@@ -11,6 +11,8 @@ type Tone = 'ok' | 'warn' | 'off'
 
 const TYPE_LABELS: Record<RecentCollection, string> = { videos: 'Vidéo', articles: 'Info', events: 'Agenda', replays: 'Replay' }
 
+const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
+
 /**
  * Tableau de bord de l'administration (admin.components.views.dashboard) : les actions courantes en gros boutons,
  * ce qui est affiché sur le site en ce moment (avec les oublis à corriger) et les derniers contenus modifiés.
@@ -198,6 +200,22 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
               }
               href={global('meteo')}
             />
+            {data.missingImages.videos + data.missingImages.replays > 0 && (
+              <StatusRow
+                icon="media"
+                label="Images manquantes"
+                tone="warn"
+                value={`${[
+                  data.missingImages.videos ? plural(data.missingImages.videos, 'vidéo', 'vidéos') : null,
+                  data.missingImages.replays ? plural(data.missingImages.replays, 'replay', 'replays') : null,
+                ]
+                  .filter(Boolean)
+                  .join(' et ')} sans image (YouTube était peut-être injoignable) : enregistrez à nouveau ${
+                  data.missingImages.videos + data.missingImages.replays > 1 ? 'les fiches' : 'la fiche'
+                } ou ajoutez une image`}
+                href={`${collection(data.missingImages.videos ? 'videos' : 'replays')}?${new URLSearchParams({ 'where[or][0][and][0][thumbnail][exists]': 'false' })}`}
+              />
+            )}
             {data.rss.activeFeeds > 0 && (
               <StatusRow
                 icon="rss"

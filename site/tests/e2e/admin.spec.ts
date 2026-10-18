@@ -54,6 +54,16 @@ test.describe('administration', () => {
     expect(errors).toEqual([])
   })
 
+  test('aide : réservée aux personnes connectées', async ({ page }) => {
+    await page.goto('/admin/aide')
+    await expect(page).toHaveURL(/\/admin\/login\?redirect=/)
+    await expect(page.getByText('Guide de l’administration')).toHaveCount(0)
+    await page.fill('input[name="email"]', ADMIN.email)
+    await page.fill('input[name="password"]', ADMIN.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/admin\/aide$/)
+  })
+
   test('aide : le guide s’affiche et le sommaire mène aux parties', async ({ page }) => {
     const errors = watchErrors(page)
     await login(page, ADMIN)
