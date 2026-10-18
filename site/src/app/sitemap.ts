@@ -7,7 +7,8 @@ import { safe } from '@/lib/safe'
 import { absoluteUrl } from '@/lib/site'
 import { articleUrl, departmentUrl, eventUrl, pageUrl, replayUrl, videoUrl } from '@/lib/urls'
 
-export const revalidate = 3600
+// Régénéré toutes les 10 minutes : vite à jour après un déploiement (le build Docker se fait sans base) ou une publication
+export const revalidate = 600
 
 /** Plafond par collection (un sitemap accepte 50 000 adresses). */
 const MAX = 5000

@@ -9,6 +9,12 @@ function isConnectionError(error: unknown): boolean {
   return e?.cause ? isConnectionError(e.cause) : false
 }
 
+type SafeOptions = {
+  /** Panne de la base : « fallback » renvoie le repli au lieu de relancer l'erreur (requêtes de la mise en page commune :
+   * en-tête et pied de page restent affichés, et la page d'erreur du site peut s'afficher à l'intérieur). */
+  outage?: 'throw' | 'fallback'
+}
+
 /**
  * Exécute une requête de données et renvoie `fallback` en cas d'erreur, pour qu'une section en échec
  * disparaisse sans casser la page.
@@ -17,12 +23,12 @@ function isConnectionError(error: unknown): boolean {
  * - En fonctionnement, une panne de la base est relancée : Next garde alors la dernière version en cache de la
  *   page au lieu de la remplacer par une version vide (et affiche la page d'erreur si rien n'est en cache).
  */
-export async function safe<T>(fn: () => Promise<T>, fallback: T, label = 'requête'): Promise<T> {
+export async function safe<T>(fn: () => Promise<T>, fallback: T, label = 'requête', options: SafeOptions = {}): Promise<T> {
   try {
     return await fn()
   } catch (error) {
     if (BUILD()) return fallback
-    if (isConnectionError(error)) throw error
+    if (isConnectionError(error) && options.outage !== 'fallback') throw error
     console.error(`[swatter] Échec ${label} :`, error instanceof Error ? error.message : error)
     return fallback
   }

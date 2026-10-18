@@ -29,6 +29,7 @@ async function getFooterPages() {
     },
     [],
     'pages du pied de page',
+    { outage: 'fallback' },
   )
 }
 
