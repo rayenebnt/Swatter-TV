@@ -1,5 +1,6 @@
 import { expect, request as apiRequest, test, type APIRequestContext, type Page } from '@playwright/test'
 import { watchErrors } from './helpers'
+import { MOCK_VIDEOS, startYoutubeMock } from './youtube-mock'
 
 /**
  * Administration pensée pour une équipe non technique : tableau de bord, aide intégrée, outil de la grille,
@@ -235,6 +236,51 @@ test.describe('administration', () => {
       expect(src.searchParams.getAll('parent')).toContain(new URL(page.url()).hostname)
     } finally {
       await request.post('/api/globals/settings?depth=0', { headers, data: published })
+    }
+  })
+
+  test('chaîne YouTube : import des vidéos de la chaîne, sans doublon ni retour des vidéos supprimées', async ({ page, request }) => {
+    // faux YouTube : le serveur du site doit être lancé avec YOUTUBE_BASE et YOUTUBE_THUMB_BASE pointant sur ce port
+    const port = Number(process.env.E2E_YOUTUBE_MOCK_PORT)
+    test.skip(!port, 'E2E_YOUTUBE_MOCK_PORT non défini (voir tests/e2e/youtube-mock.ts)')
+    const mock = await startYoutubeMock(port)
+    const headers = await adminHeaders(request)
+    const before = (await (await request.get('/api/globals/youtube?depth=0', { headers })).json()) as Record<string, unknown>
+    const created: number[] = []
+    const findImported = async () =>
+      ((await (await request.get('/api/videos?limit=50&depth=0&where[title][like]=Test import', { headers })).json()) as { docs: { id: number; title: string; thumbnail?: number | null }[] }).docs
+    try {
+      for (const v of await findImported()) await request.delete(`/api/videos/${v.id}`, { headers })
+      expect(
+        (await request.post('/api/globals/youtube', { headers, data: { channel: 'https://www.youtube.com/@swattertv-test', autoImport: true, publishMode: 'published', category: 'magazine', importedIds: [], channelId: null, channelFrom: null } })).ok(),
+      ).toBe(true)
+
+      // bouton « Importer maintenant » de la fiche
+      await login(page, ADMIN)
+      await page.goto('/admin/globals/youtube')
+      await page.getByRole('button', { name: 'Importer maintenant' }).click()
+      await expect(page.getByText('3 nouvelles vidéos ajoutées').first()).toBeVisible({ timeout: 30_000 })
+
+      const imported = await findImported()
+      created.push(...imported.map((v) => v.id))
+      expect(imported.map((v) => v.title).sort()).toEqual(MOCK_VIDEOS.map((v) => v.title).sort())
+      expect(imported.every((v) => v.thumbnail), 'vignette YouTube récupérée').toBe(true)
+      await page.goto('/videos')
+      await expect(page.locator('main')).toContainText(MOCK_VIDEOS[2].title)
+
+      // relancé : rien de nouveau ; une vidéo supprimée du site ne revient pas
+      await request.delete(`/api/videos/${imported[0].id}`, { headers })
+      const again = (await (await request.post('/api/youtube/import', { headers })).json()) as { ok: boolean; created: number; skipped: number }
+      expect(again).toMatchObject({ ok: true, created: 0, skipped: 3 })
+      expect(await findImported()).toHaveLength(2)
+
+      // adresse invalide refusée à l'enregistrement
+      const refused = await request.post('/api/globals/youtube', { headers, data: { channel: 'https://www.dailymotion.com/swattertv' } })
+      expect(refused.status()).toBe(400)
+    } finally {
+      for (const id of created) await request.delete(`/api/videos/${id}`, { headers })
+      await request.post('/api/globals/youtube', { headers, data: before })
+      mock.close()
     }
   })
 

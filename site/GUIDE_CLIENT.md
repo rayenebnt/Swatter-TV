@@ -82,7 +82,7 @@ Le **menu** s’ouvre avec le bouton ☰ en haut à gauche (il reste ouvert sur 
 - **Tableau de bord**, tout en haut, pour revenir à l’accueil de l’administration ;
 - **Les rubriques du site** : **Accueil et direct** (carrousel, direct, flash info, coordonnées de la chaîne),
   **L’Info**, **La Météo**, **Agenda**, **Programme TV** (avec, juste en dessous, **Émissions**), **Le Replay**,
-  **Vidéos**, **Webcams** ;
+  **Vidéos** (avec, juste en dessous, **Chaîne YouTube**), **Webcams** ;
 - **Également** : **Publicités**, **Pages (pied de page)**, **Médiathèque** ;
 - en bas : **Voir le site** (dans un nouvel onglet) et **Aide** (ce guide).
 
@@ -139,6 +139,21 @@ automatiquement. Évitez de modifier l’adresse d’un contenu déjà publié e
 redirection, voir partie 19).
 
 ## 4. Ajouter une vidéo
+
+**Les vidéos de votre chaîne YouTube arrivent toutes seules.** Dans **Chaîne YouTube** (sous **Vidéos** dans le menu),
+collez une fois pour toutes l’**Adresse de la chaîne YouTube** (ouvrez la chaîne sur YouTube et copiez l’adresse du
+navigateur, par exemple `https://www.youtube.com/@votre-chaine`), puis cliquez sur **Publier les modifications**.
+
+- Toutes les heures, les nouvelles vidéos de la chaîne sont ajoutées à **Vidéos**, avec leur titre, leur description,
+  leur date et leur image. **Importer maintenant** lance l’import sans attendre ; **Dernier import** indique quand il a
+  eu lieu et ce qu’il a donné (ou l’erreur, par exemple une adresse mal recopiée).
+- **Les vidéos importées sont…** : **En ligne aussitôt**, ou **En brouillon (à publier soi-même)** pour les relire avant.
+- **Catégorie donnée aux vidéos importées** : modifiable ensuite vidéo par vidéo.
+- Une vidéo importée se modifie comme les autres (titre, catégorie, **Vidéo du jour**, **Top 10**…). Supprimée du site,
+  elle ne revient pas au prochain import.
+- Décochez **Importer automatiquement les nouvelles vidéos** pour suspendre l’import.
+
+Pour ajouter une vidéo à la main (une vidéo d’une autre chaîne, par exemple) :
 
 **Tableau de bord › Publier une vidéo** (ou **Vidéos › Ajouter**)
 

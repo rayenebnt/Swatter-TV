@@ -220,6 +220,14 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   téléchargement YouTube). `getTop10()` affiche chaque vidéo à sa place exacte et complète les trous ; deux vidéos à la même
   place (ancienne donnée) : la plus récemment modifiée la garde.
 - **Médiathèque** : description de l'image (`alt`) facultative, reprise du nom du fichier si elle est vide.
+- **Chaîne YouTube** (global `youtube`, `src/lib/import/youtube.ts`) : l'adresse saisie (`@pseudo`, `/channel/UC…`, `/c/…`)
+  est convertie en identifiant `UC…` (API si `YOUTUBE_API_KEY`, sinon lecture de la page de la chaîne, avec le cookie
+  `SOCS` pour éviter la page de consentement européenne), mémorisé dans `channelId` tant que l'adresse ne change pas.
+  Sans clé : flux RSS (15 dernières vidéos) ; avec clé : liste « Mises en ligne » (`UU…`) et durées. Les identifiants déjà
+  importés sont gardés dans `importedIds` : une vidéo supprimée du site ne revient pas, une vidéo déjà présente (ajoutée à
+  la main avec son lien) n'est pas doublée. Vignette par le hook `youtubeThumbnail`. Tests : `YOUTUBE_BASE`,
+  `YOUTUBE_API_BASE`, `YOUTUBE_THUMB_BASE` remplacent les adresses de YouTube. Ne garder que les vidéos de la chaîne :
+  `npm run payload run src/scripts/videos-chaine-seulement.ts` (importe, puis supprime les autres vidéos).
 - **Direct sur Twitch** : option `twitch` du champ source (`videoSourceField(…, { twitch: true })`, direct seulement).
   `twitchTarget()` (`src/lib/video.ts`) accepte l'adresse de la chaîne, son nom seul, une vidéo (`/videos/123`) ou un lien
   de lecteur intégré ; le champ refuse le reste à la publication. Le lecteur Twitch exige le domaine de la page dans

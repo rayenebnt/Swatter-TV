@@ -40,6 +40,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum__settings_v_version_hero_slides_kind" AS ENUM('live', 'custom');
   CREATE TYPE "public"."enum__settings_v_version_live_provider" AS ENUM('youtube', 'twitch', 'bunny', 'url', 'upload');
   CREATE TYPE "public"."enum__settings_v_version_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum_youtube_publish_mode" AS ENUM('published', 'draft');
+  CREATE TYPE "public"."enum_youtube_category" AS ENUM('divertissement', 'series-realite', 'series', 'cinema', 'documentaire', 'nature', 'sport', 'info', 'magazine');
   CREATE TABLE "videos" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"title" varchar,
@@ -655,6 +657,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"created_at" timestamp(3) with time zone
   );
   
+  CREATE TABLE "youtube" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"channel" varchar,
+  	"auto_import" boolean DEFAULT true,
+  	"publish_mode" "enum_youtube_publish_mode" DEFAULT 'published' NOT NULL,
+  	"category" "enum_youtube_category" DEFAULT 'divertissement' NOT NULL,
+  	"last_import_at" timestamp(3) with time zone,
+  	"last_result" varchar,
+  	"last_error" varchar,
+  	"channel_id" varchar,
+  	"channel_from" varchar,
+  	"imported_ids" jsonb,
+  	"updated_at" timestamp(3) with time zone,
+  	"created_at" timestamp(3) with time zone
+  );
+  
   ALTER TABLE "videos" ADD CONSTRAINT "videos_source_file_id_media_id_fk" FOREIGN KEY ("source_file_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "videos" ADD CONSTRAINT "videos_thumbnail_id_media_id_fk" FOREIGN KEY ("thumbnail_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "videos" ADD CONSTRAINT "videos_meta_image_id_media_id_fk" FOREIGN KEY ("meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
@@ -969,6 +987,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "_settings_v_version_flash_items" CASCADE;
   DROP TABLE "_settings_v" CASCADE;
   DROP TABLE "meteo" CASCADE;
+  DROP TABLE "youtube" CASCADE;
   DROP TYPE "public"."enum_videos_source_provider";
   DROP TYPE "public"."enum_videos_category";
   DROP TYPE "public"."enum_videos_status";
@@ -1006,5 +1025,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum__settings_v_version_hero_slides_badges_style";
   DROP TYPE "public"."enum__settings_v_version_hero_slides_kind";
   DROP TYPE "public"."enum__settings_v_version_live_provider";
-  DROP TYPE "public"."enum__settings_v_version_status";`)
+  DROP TYPE "public"."enum__settings_v_version_status";
+  DROP TYPE "public"."enum_youtube_publish_mode";
+  DROP TYPE "public"."enum_youtube_category";`)
 }

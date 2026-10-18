@@ -61,6 +61,7 @@ cp .env.example .env
 | `NEXT_PUBLIC_SITE_URL` | oui | adresse publique sans `/` final ; **`http://localhost:3000` en local** (URL canoniques, flux RSS, Open Graph, adresse du serveur Payload) |
 | `CRON_SECRET` | oui en production | secret de la tâche planifiée `GET /api/cron/import` (`openssl rand -hex 16`) |
 | `NEXT_PUBLIC_BUNNY_LIBRARY_ID` | non | bibliothèque Bunny Stream (vidéos de type « Bunny Stream ») |
+| `YOUTUBE_API_KEY` | non | clé de l’API YouTube Data v3 : l’import de la chaîne reprend **toutes** ses vidéos (et leur durée) ; sans clé, il lit le flux RSS public de la chaîne, limité à ses 15 dernières vidéos |
 | `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | non | médias sur S3 / R2 / Scaleway au lieu du dossier `media/` (activé dès que `S3_BUCKET` est renseigné) |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | oui en production | premier administrateur créé par `src/scripts/init-db.ts` (mot de passe de 12 caractères au moins) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | non (recommandé) | envoi des e-mails de l’administration (« Mot de passe oublié ») ; sans `SMTP_HOST`, ils sont seulement écrits dans le journal du serveur |
@@ -226,9 +227,11 @@ Autres commandes ponctuelles : `docker compose run --rm tools npm run payload mi
 1. importe dans « L’Info » les articles des flux RSS actifs (collection « Flux RSS », sans doublon) ;
 2. met à jour les prévisions météo depuis Open-Meteo, si « Mise à jour automatique » est cochée dans le global « Météo »
    (sinon l’étape est simplement ignorée) ;
-3. supprime les fiches ouvertes avec « Ajouter » puis abandonnées sans titre depuis plus de 24 h (brouillons jamais
+3. importe dans « Vidéos » les nouvelles vidéos de la chaîne YouTube renseignée dans l’administration (global
+   « Chaîne YouTube », voir `src/lib/import/youtube.ts`) ;
+4. supprime les fiches ouvertes avec « Ajouter » puis abandonnées sans titre depuis plus de 24 h (brouillons jamais
    publiés) ;
-4. régénère les pages du site si quelque chose a changé.
+5. régénère les pages du site si quelque chose a changé.
 
 La réponse JSON détaille le résultat (`rss.created`, `rss.errors`, `meteo.ok`, `drafts.deleted`…). Avec Docker Compose, le service `cron`
 s’en charge. Sur un serveur sans Docker, une ligne de crontab suffit :
@@ -277,6 +280,9 @@ npx playwright install --with-deps chromium        # une seule fois
 E2E_BASE_URL=http://localhost:3000 npx playwright test
 # Ou build de production puis tests (« npm run start » est lancé automatiquement) :
 npm run build && npm run test:e2e
+# Import de la chaîne YouTube, avec un faux YouTube local (tests/e2e/youtube-mock.ts) : serveur lancé avec
+# YOUTUBE_BASE=http://127.0.0.1:8765 YOUTUBE_THUMB_BASE=http://127.0.0.1:8765/vi, puis
+E2E_YOUTUBE_MOCK_PORT=8765 E2E_BASE_URL=http://localhost:3000 npx playwright test
 ```
 
 Deux projets : `bureau` (1440 × 900) et `mobile` (390 × 844, tactile). Les fichiers de `tests/e2e/` :

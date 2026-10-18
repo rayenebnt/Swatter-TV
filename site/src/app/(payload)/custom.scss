@@ -309,6 +309,37 @@ html[data-theme='dark'] {
   }
 }
 
+/* Fiche « Chaîne YouTube » : erreur du dernier import et bouton « Importer maintenant » */
+.sw-youtube {
+  gap: 6px;
+
+  .sw-youtube__error {
+    color: var(--theme-error-500);
+  }
+
+  &__button {
+    margin-top: 6px;
+    padding: 8px 16px;
+    border: 0;
+    border-radius: var(--style-radius-m);
+    background: var(--swatter-gold);
+    color: #1a1406;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--theme-text);
+      outline-offset: 2px;
+    }
+  }
+}
+
 /* ---------- Tableau de bord ---------- */
 .sw-dash {
   display: flex;

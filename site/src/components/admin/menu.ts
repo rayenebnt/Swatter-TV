@@ -30,6 +30,7 @@ export const MENU: MenuSection[] = [
       { label: 'Émissions', path: '/collections/programs', icon: 'tv', sub: true },
       { label: 'Le Replay', path: '/collections/replays', icon: 'replay' },
       { label: 'Vidéos', path: '/collections/videos', icon: 'video' },
+      { label: 'Chaîne YouTube', path: '/globals/youtube', icon: 'video', sub: true },
       { label: 'Webcams', path: '/collections/webcams', icon: 'webcam' },
     ],
   },

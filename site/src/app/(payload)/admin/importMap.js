@@ -36,6 +36,7 @@ import { SlideLabel as SlideLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../..
 import { FlashLabel as FlashLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../../../components/admin/RowLabels'
 import { NoUnpublish as NoUnpublish_2cd51b07477114a79a4ba4c35a501f68 } from '../../../components/admin/NoUnpublish'
 import { MeteoStatus as MeteoStatus_5414c4f2a5b941936c3916aa8d446ed3 } from '../../../components/admin/MeteoStatus'
+import { YoutubeImport as YoutubeImport_1408895ae821178fe3353e1a5ad62add } from '../../../components/admin/YoutubeImport'
 import { Icon as Icon_dfe4008080d895d460898c3a6155e9ba } from '../../../components/admin/Icon'
 import { Logo as Logo_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
 import { NavEnd as NavEnd_c025f118f75d1c67ec1517e1fc784abd } from '../../../components/admin/NavLinks'
@@ -84,6 +85,7 @@ export const importMap = {
   "/components/admin/RowLabels#FlashLabel": FlashLabel_a30613d846a340cabc3fc2ee7ca0f9f2,
   "/components/admin/NoUnpublish#NoUnpublish": NoUnpublish_2cd51b07477114a79a4ba4c35a501f68,
   "/components/admin/MeteoStatus#MeteoStatus": MeteoStatus_5414c4f2a5b941936c3916aa8d446ed3,
+  "/components/admin/YoutubeImport#YoutubeImport": YoutubeImport_1408895ae821178fe3353e1a5ad62add,
   "/components/admin/Icon#Icon": Icon_dfe4008080d895d460898c3a6155e9ba,
   "/components/admin/Logo#Logo": Logo_91a09b539d3c86b0aebf520e7564ce08,
   "/components/admin/NavLinks#NavEnd": NavEnd_c025f118f75d1c67ec1517e1fc784abd,

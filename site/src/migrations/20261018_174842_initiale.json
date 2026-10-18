@@ -7661,6 +7661,102 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.youtube": {
+      "name": "youtube",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "auto_import": {
+          "name": "auto_import",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "publish_mode": {
+          "name": "publish_mode",
+          "type": "enum_youtube_publish_mode",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'published'"
+        },
+        "category": {
+          "name": "category",
+          "type": "enum_youtube_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'divertissement'"
+        },
+        "last_import_at": {
+          "name": "last_import_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_result": {
+          "name": "last_result",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "channel_id": {
+          "name": "channel_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "channel_from": {
+          "name": "channel_from",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imported_ids": {
+          "name": "imported_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -8048,6 +8144,29 @@
         "draft",
         "published"
       ]
+    },
+    "public.enum_youtube_publish_mode": {
+      "name": "enum_youtube_publish_mode",
+      "schema": "public",
+      "values": [
+        "published",
+        "draft"
+      ]
+    },
+    "public.enum_youtube_category": {
+      "name": "enum_youtube_category",
+      "schema": "public",
+      "values": [
+        "divertissement",
+        "series-realite",
+        "series",
+        "cinema",
+        "documentaire",
+        "nature",
+        "sport",
+        "info",
+        "magazine"
+      ]
     }
   },
   "schemas": {},
@@ -8060,6 +8179,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "d08eb4d4-ae85-46d8-9e18-6f34d5fb80aa",
+  "id": "cdeb53f3-cf89-4bca-a28c-447437a74d96",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

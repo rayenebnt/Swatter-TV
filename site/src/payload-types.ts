@@ -112,10 +112,12 @@ export interface Config {
   globals: {
     settings: Setting;
     meteo: Meteo;
+    youtube: Youtube;
   };
   globalsSelect: {
     settings: SettingsSelect<false> | SettingsSelect<true>;
     meteo: MeteoSelect<false> | MeteoSelect<true>;
+    youtube: YoutubeSelect<false> | YoutubeSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1343,6 +1345,47 @@ export interface Meteo {
   createdAt?: string | null;
 }
 /**
+ * Les vidéos publiées sur la chaîne YouTube arrivent toutes seules dans « Vidéos », toutes les heures. Une vidéo supprimée du site ne revient pas.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "youtube".
+ */
+export interface Youtube {
+  id: number;
+  /**
+   * Sur YouTube, ouvrez la page de la chaîne et copiez l’adresse affichée dans la barre du navigateur.
+   */
+  channel?: string | null;
+  autoImport?: boolean | null;
+  publishMode: 'published' | 'draft';
+  category:
+    | 'divertissement'
+    | 'series-realite'
+    | 'series'
+    | 'cinema'
+    | 'documentaire'
+    | 'nature'
+    | 'sport'
+    | 'info'
+    | 'magazine';
+  lastImportAt?: string | null;
+  lastResult?: string | null;
+  lastError?: string | null;
+  channelId?: string | null;
+  channelFrom?: string | null;
+  importedIds?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "settings_select".
  */
@@ -1423,6 +1466,25 @@ export interface MeteoSelect<T extends boolean = true> {
   bulletin?: T;
   bulletinDay?: T;
   forecast?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "youtube_select".
+ */
+export interface YoutubeSelect<T extends boolean = true> {
+  channel?: T;
+  autoImport?: T;
+  publishMode?: T;
+  category?: T;
+  lastImportAt?: T;
+  lastResult?: T;
+  lastError?: T;
+  channelId?: T;
+  channelFrom?: T;
+  importedIds?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

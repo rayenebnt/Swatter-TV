@@ -26,9 +26,11 @@ import { Webcams } from './collections/Webcams'
 import { hiddenForEditors } from './access'
 import { Meteo } from './globals/Meteo'
 import { Settings } from './globals/Settings'
+import { Youtube } from './globals/Youtube'
 import { deleteEmptyDrafts } from './lib/drafts-cleanup'
 import { importMeteo } from './lib/import/meteo'
 import { importRss } from './lib/import/rss'
+import { importYoutube } from './lib/import/youtube'
 import { DRAFT_COLLECTIONS, publicationAware } from './lib/publication'
 import { previewPath, previewUrl } from './lib/preview'
 import { search } from './lib/search'
@@ -228,7 +230,7 @@ export default buildConfig({
   },
   // Le menu de l'administration suit l'ordre du site : voir src/components/admin/menu.ts
   collections: [Videos, Articles, Events, Replays, Schedule, Programs, Webcams, Ads, Pages, Media, RssFeeds, Users],
-  globals: [Settings, Meteo],
+  globals: [Settings, Meteo, Youtube],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   // E-mails de l'administration (mot de passe oublié…) : envoyés par SMTP dès que SMTP_HOST est renseigné,
@@ -267,16 +269,18 @@ export default buildConfig({
         if (!sameSecret(secret, process.env.CRON_SECRET)) {
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
-        const [rss, meteo, drafts] = await Promise.all([
+        const [rss, meteo, youtube, drafts] = await Promise.all([
           importRss(req.payload).catch((e: unknown) => ({ created: 0, skipped: 0, errors: [String(e)] })),
           importMeteo(req.payload).catch((e: unknown) => ({ ok: false, error: String(e) })),
+          // nouvelles vidéos de la chaîne YouTube (global « youtube »)
+          importYoutube(req.payload).catch((e: unknown) => ({ ok: false, created: 0, skipped: 0, total: 0, error: String(e) })),
           // fiches ouvertes avec « Ajouter » puis abandonnées sans titre (voir src/lib/drafts-cleanup.ts)
           deleteEmptyDrafts(req.payload).then(
             (deleted) => ({ deleted }),
             (e: unknown) => ({ deleted: 0, error: String(e) }),
           ),
         ])
-        if (rss.created > 0 || ('ok' in meteo && meteo.ok)) {
+        if (rss.created > 0 || youtube.created > 0 || ('ok' in meteo && meteo.ok)) {
           try {
             const { revalidatePath } = await import('next/cache')
             revalidatePath('/', 'layout')
@@ -284,7 +288,25 @@ export default buildConfig({
             // hors runtime Next.js
           }
         }
-        return Response.json({ rss, meteo, drafts })
+        return Response.json({ rss, meteo, youtube, drafts })
+      },
+    },
+    {
+      // Bouton « Importer maintenant » de la fiche « Chaîne YouTube » (personnes connectées seulement)
+      path: '/youtube/import',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) return Response.json({ error: 'Connectez-vous pour lancer l’import.' }, { status: 401 })
+        const result = await importYoutube(req.payload, { force: true })
+        if (result.created > 0) {
+          try {
+            const { revalidatePath } = await import('next/cache')
+            revalidatePath('/', 'layout')
+          } catch {
+            // hors runtime Next.js
+          }
+        }
+        return Response.json(result, { status: result.ok ? 200 : 502 })
       },
     },
     {
