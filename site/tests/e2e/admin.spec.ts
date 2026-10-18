@@ -37,7 +37,7 @@ test.describe('administration', () => {
     test.skip(!res.ok(), 'identifiants administrateur de test indisponibles (E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD)')
   })
 
-  test('tableau de bord : actions courantes et état du site', async ({ page }) => {
+  test('tableau de bord : actions courantes et état du site', async ({ page, request }) => {
     const errors = watchErrors(page)
     await login(page, ADMIN)
     await expect(page.getByRole('heading', { level: 1, name: /^Bon(jour|soir)/ })).toBeVisible()
@@ -49,12 +49,17 @@ test.describe('administration', () => {
     await expect(page.getByRole('heading', { name: 'Derniers contenus modifiés' })).toBeVisible()
 
     await page.getByRole('link', { name: /Publier une vidéo/ }).click()
-    await expect(page).toHaveURL(/\/admin\/collections\/videos\/create/)
-    // formulaire en français simple : pas de « Créer un(e) nouveau ou nouvelle », dates au format français
-    await expect(page.getByText('Nouvelle fiche : Vidéo')).toBeVisible()
-    await expect(page.getByText('Où se trouve la vidéo ?')).toBeVisible()
-    await expect(page.locator('.date-time-picker input').first()).toHaveValue(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/)
-    expect(errors).toEqual([])
+    // la fiche est créée aussitôt en brouillon (enregistrement automatique), intitulée « Nouvelle fiche » sans titre
+    await expect(page).toHaveURL(/\/admin\/collections\/videos\/\d+$/)
+    const id = new URL(page.url()).pathname.split('/').pop()
+    try {
+      await expect(page.getByRole('heading', { level: 1, name: 'Nouvelle fiche : Vidéo' })).toBeVisible()
+      await expect(page.getByText('Où se trouve la vidéo ?')).toBeVisible()
+      await expect(page.locator('.date-time-picker input').first()).toHaveValue(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/)
+      expect(errors).toEqual([])
+    } finally {
+      await request.delete(`/api/videos/${id}`, { headers: await adminHeaders(request) })
+    }
   })
 
   test('aide : réservée aux personnes connectées', async ({ page }) => {
@@ -186,6 +191,25 @@ test.describe('administration', () => {
       expect(await live.text()).toContain(title)
     } finally {
       await request.delete(`/api/pages/${doc.id}`, { headers })
+      await anonymous.dispose()
+    }
+  })
+
+  test('accueil et direct : un brouillon reste invisible des visiteurs, même par l’API', async ({ request }) => {
+    const headers = await adminHeaders(request)
+    const published = (await (await request.get('/api/globals/settings?depth=0', { headers })).json()) as { flashItems?: unknown[] }
+    const message = `Message de test en brouillon ${Date.now()}`
+    const anonymous = await visitor()
+    try {
+      const draft = await request.post('/api/globals/settings?draft=true', { headers, data: { flashItems: [{ label: 'Essai', text: message }] } })
+      expect(draft.ok()).toBe(true)
+      expect(await (await request.get('/api/globals/settings?depth=0&draft=true', { headers })).text()).toContain(message)
+      for (const url of ['/api/globals/settings?depth=0', '/api/globals/settings?depth=0&draft=true', '/']) {
+        expect(await (await anonymous.get(url)).text(), url).not.toContain(message)
+      }
+    } finally {
+      // retour à la version publiée (comme « Annuler les modifications »)
+      await request.post('/api/globals/settings?depth=0', { headers, data: published })
       await anonymous.dispose()
     }
   })

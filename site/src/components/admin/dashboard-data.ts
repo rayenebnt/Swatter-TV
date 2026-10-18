@@ -82,7 +82,7 @@ async function recent(payload: Payload): Promise<RecentItem[]> {
   const collections: RecentCollection[] = ['videos', 'articles', 'events', 'replays']
   const lists = await Promise.all(
     collections.map(async (collection) => {
-      // dernières versions, brouillons compris (signalés « Brouillon » : pas encore sur le site)
+      // dernières versions, brouillons compris (signalés « À publier » : modifications pas encore sur le site)
       const { docs } = await payload.find({
         collection,
         draft: true,

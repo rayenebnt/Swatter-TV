@@ -99,6 +99,7 @@ npm run dev
 | `npm run seed` | jeu de démonstration (voir ci-dessus) |
 | `npm run import` | import manuel des flux RSS et de la météo (même traitement que la tâche planifiée) |
 | `npm run payload run src/scripts/init-db.ts` | tables + premier administrateur |
+| `npm run payload run src/scripts/publish-existing.ts` | une seule fois, sur une base de développement remplie avant l’arrivée des brouillons : publie les contenus existants (sinon invisibles sur le site) |
 | `npm run generate:types` | régénère `src/payload-types.ts` après une modification des collections ou des globals |
 | `npm run generate:importmap` | régénère `src/app/(payload)/admin/importMap.js` après l’ajout d’un composant d’administration |
 | `npm run payload migrate:create <nom>` | crée une migration à partir des changements de schéma |
@@ -118,7 +119,9 @@ src/
   components/<rubrique>/ composants de chaque rubrique ; components/ui/ primitives partagées ; components/admin/ écrans
                         de l’administration (tableau de bord, aide, outils de la grille, logo)
   lib/                  accès aux données (queries/), dates en heure de Paris (format.ts), liens (urls.ts), imports (import/)
-  scripts/              init-db.ts, seed.ts (+ seed/ : données de démonstration), import.ts
+  app/(frontend)/apercu/ mode aperçu (brouillons visibles, réservé aux personnes connectées)
+  proxy.ts              grille des programmes de l’administration ouverte sur la semaine en cours
+  scripts/              init-db.ts, seed.ts (+ seed/ : données de démonstration), import.ts, publish-existing.ts
   styles/               globals.css (jetons et composants communs) + un fichier par rubrique
 seed/assets/            vignettes et clips vidéo du jeu de démonstration
 public/visuels/         visuels de repli quand un contenu n’a pas d’image
@@ -223,9 +226,11 @@ Autres commandes ponctuelles : `docker compose run --rm tools npm run payload mi
 1. importe dans « L’Info » les articles des flux RSS actifs (collection « Flux RSS », sans doublon) ;
 2. met à jour les prévisions météo depuis Open-Meteo, si « Mise à jour automatique » est cochée dans le global « Météo »
    (sinon l’étape est simplement ignorée) ;
-3. régénère les pages du site si quelque chose a changé.
+3. supprime les fiches ouvertes avec « Ajouter » puis abandonnées sans titre depuis plus de 24 h (brouillons jamais
+   publiés) ;
+4. régénère les pages du site si quelque chose a changé.
 
-La réponse JSON détaille le résultat (`rss.created`, `rss.errors`, `meteo.ok`…). Avec Docker Compose, le service `cron`
+La réponse JSON détaille le résultat (`rss.created`, `rss.errors`, `meteo.ok`, `drafts.deleted`…). Avec Docker Compose, le service `cron`
 s’en charge. Sur un serveur sans Docker, une ligne de crontab suffit :
 
 ```
@@ -256,7 +261,7 @@ archive du dossier `media/`. Avec S3 / R2, activez le versionnage du bucket ou s
 
 - **Code du site** : `git pull` puis `docker compose up -d --build` ; les nouvelles migrations s’appliquent avant le
   redémarrage du site (`docker compose logs migrate` en cas de doute).
-- **Dépendances** : tous les paquets `payload` et `@payloadcms/*` doivent garder **exactement la même version** ; mettez-les
+- **Dépendances** : tous les paquets `payload` et `@payloadcms/*` (dont `@payloadcms/live-preview-react`) doivent garder **exactement la même version** ; mettez-les
   à jour ensemble, avec Next.js et React, après lecture des notes de version. Puis `npm run generate:importmap`,
   `npm run generate:types`, `npm run typecheck`, `npm run lint`, `npm run build` et les tests de bout en bout ; une
   migration est nécessaire si la mise à jour change le schéma (`migrate:create` ne trouve rien sinon).

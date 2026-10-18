@@ -244,7 +244,7 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
                     <span className={`sw-chip sw-chip--${item.collection}`}>{TYPE_LABELS[item.collection]}</span>
                     <span className="sw-recent__title">
                       {item.title}
-                      {item.draft && <span className="sw-draft">Brouillon</span>}
+                      {item.draft && <span className="sw-draft">À publier</span>}
                     </span>
                     <span className="sw-recent__when">{timeAgo(item.updatedAt, now)}</span>
                   </Link>

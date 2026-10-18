@@ -1,5 +1,5 @@
 import type { GlobalConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, publishedStatusOrAuthenticated } from '@/access'
 import { globalDraftVersions } from '@/fields/drafts'
 import { videoSourceField } from '@/fields/videoSource'
 import { revalidateGlobal } from '@/hooks/revalidate'
@@ -9,8 +9,10 @@ export const Settings: GlobalConfig = {
   label: 'Accueil, direct et flash info',
   admin: {
     description: 'Un onglet par sujet : le carrousel de l’accueil, le direct, le flash info, puis les coordonnées et réseaux sociaux de la chaîne.',
+    components: { elements: { UnpublishButton: '/components/admin/NoUnpublish#NoUnpublish' } },
   },
-  access: { read: anyone, update: authenticated },
+  // API publique : jamais le brouillon (sans cette règle, ?draft=true le renverrait à un visiteur)
+  access: { read: publishedStatusOrAuthenticated, update: authenticated },
   // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
   versions: globalDraftVersions,
   // sans cela, l'administration affiche « Brouillon » (et pas « Modifications non publiées ») dès qu'un brouillon existe

@@ -26,6 +26,7 @@ import { Webcams } from './collections/Webcams'
 import { hiddenForEditors } from './access'
 import { Meteo } from './globals/Meteo'
 import { Settings } from './globals/Settings'
+import { deleteEmptyDrafts } from './lib/drafts-cleanup'
 import { importMeteo } from './lib/import/meteo'
 import { importRss } from './lib/import/rss'
 import { DRAFT_COLLECTIONS, publicationAware } from './lib/publication'
@@ -82,7 +83,8 @@ plugins.push(seoSection)
 
 /**
  * Fiches simplifiées partout : onglet « API » masqué (réservé aux développeurs, il déroute plus qu'il n'aide) et,
- * pour les contenus qui ont une page publique (admin.preview), bouton « Voir sur le site » au lieu d'une icône seule.
+ * pour les contenus qui ont une page publique (admin.preview), bouton « Voir sur le site » au lieu d'une icône seule ;
+ * fiches à brouillons : « Nouvelle fiche : Vidéo » plutôt que le numéro de la fiche tant qu'elle n'a pas de titre.
  * Menu : groupes automatiques de Payload masqués (group: false), remplacés par le menu dans l'ordre du site
  * (src/components/admin/NavLinks.tsx).
  */
@@ -94,9 +96,16 @@ const simpleDocuments: Plugin = (config) => ({
       ...c.admin,
       group: false,
       hideAPIURL: true,
-      ...(c.admin?.preview
-        ? { components: { ...c.admin.components, edit: { ...c.admin.components?.edit, PreviewButton: '/components/admin/ViewOnSiteButton#ViewOnSiteButton' } } }
-        : {}),
+      components: {
+        ...c.admin?.components,
+        edit: {
+          ...c.admin?.components?.edit,
+          ...(c.admin?.preview ? { PreviewButton: '/components/admin/ViewOnSiteButton#ViewOnSiteButton' } : {}),
+          ...(c.versions && typeof c.versions === 'object' && c.versions.drafts
+            ? { beforeDocumentControls: [...(c.admin?.components?.edit?.beforeDocumentControls ?? []), '/components/admin/UntitledTitle#UntitledTitle'] }
+            : {}),
+        },
+      },
     },
   })),
   globals: config.globals?.map((g) => ({ ...g, admin: { ...g.admin, group: false, hideAPIURL: true } })),
@@ -258,9 +267,14 @@ export default buildConfig({
         if (!sameSecret(secret, process.env.CRON_SECRET)) {
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
-        const [rss, meteo] = await Promise.all([
+        const [rss, meteo, drafts] = await Promise.all([
           importRss(req.payload).catch((e: unknown) => ({ created: 0, skipped: 0, errors: [String(e)] })),
           importMeteo(req.payload).catch((e: unknown) => ({ ok: false, error: String(e) })),
+          // fiches ouvertes avec « Ajouter » puis abandonnées sans titre (voir src/lib/drafts-cleanup.ts)
+          deleteEmptyDrafts(req.payload).then(
+            (deleted) => ({ deleted }),
+            (e: unknown) => ({ deleted: 0, error: String(e) }),
+          ),
         ])
         if (rss.created > 0 || ('ok' in meteo && meteo.ok)) {
           try {
@@ -270,7 +284,7 @@ export default buildConfig({
             // hors runtime Next.js
           }
         }
-        return Response.json({ rss, meteo })
+        return Response.json({ rss, meteo, drafts })
       },
     },
     {

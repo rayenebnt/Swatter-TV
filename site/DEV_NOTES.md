@@ -152,6 +152,25 @@ npm run seed           # données de démonstration
   vers la même émission la rouvre).
 - **Contenus programmés** : articles, vidéos (date de publication) et replays (date de diffusion) dans le futur restent
   invisibles sur le site et dans l'API publique ; l'équipe connectée les voit dans l'administration.
+- **Brouillons** (`versions: draftVersions`, `src/fields/drafts.ts`) : vidéos, articles, événements, replays, pages et le
+  global `settings`. Enregistrement automatique en brouillon (table des versions seulement), mise en ligne par
+  « Publier les modifications » (ligne principale). Toute lecture du site passe par `getPayloadClient()`, qui enveloppe
+  Payload dans `publicationAware()` (`src/lib/publication.ts`) : hors aperçu, `find` / `count` / `findDistinct` sur ces
+  collections ajoutent `_status = published` ; en aperçu, `find` et `findGlobal` passent `draft: true` (dernière version).
+  Les règles d'accès anonymes (`src/access`) exigent aussi `_status = published` (API publique). Création par script ou
+  import : passer `_status: 'published'` (la valeur par défaut est « brouillon »). Base créée avant les brouillons :
+  `npm run payload run src/scripts/publish-existing.ts` publie les contenus qui n'ont encore aucune version.
+  Avec l'enregistrement automatique, Payload crée la fiche dès l'ouverture de « Ajouter » (ce qui permet l'aperçu dès
+  la première saisie) : `UntitledTitle.tsx` l'intitule « Nouvelle fiche : … » au lieu de son numéro, et la tâche horaire
+  supprime les brouillons jamais publiés restés sans titre plus de 24 h (`src/lib/drafts-cleanup.ts`). Tant qu'une fiche
+  n'a jamais été publiée, sa ligne principale reste vide : ses données sont dans la table des versions (`draft: true`).
+- **Revalidation** (`src/hooks/revalidate.ts`) : un enregistrement de brouillon ne touche pas au cache ; publication,
+  retrait du site (le statut de la ligne principale repasse à `draft`) et suppression revalident.
+- **Mode aperçu** : `/apercu?chemin=/page` (connexion requise, sinon page de connexion) active le `draftMode` de Next
+  (cookie de contournement du cache ISR) ; `/apercu/quitter?chemin=` le désactive. `safePath()` (`src/lib/preview.ts`)
+  n'accepte que des chemins internes. `PreviewMode` (mise en page du site) : dans l'iframe de l'aperçu en direct,
+  `RefreshRouteOnSave` rafraîchit la page à chaque enregistrement automatique ; dans un onglet, bandeau « Aperçu ».
+  Requêtes par adresse (`src/lib/queries`) : en aperçu, pas de filtre de date (un contenu programmé se prévisualise).
 
 ## Administration (pensée pour une équipe non technique)
 
@@ -161,9 +180,17 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
 
 - **Tableau de bord** (`Dashboard.tsx` + `dashboard-data.ts`, `admin.components.views.dashboard`) : actions courantes,
   état du site (chaque requête échoue sans bloquer la page), derniers contenus modifiés (hors articles importés).
-- **Menu** : groupes Publier / Programme TV / Le site / Administration (ordre = ordre des collections dans la config,
-  les globals à la fin de leur groupe). Comptes, flux RSS et redirections : `admin.hidden: hiddenForEditors`
-  (masqués aux éditeurs, l'API garde ses propres règles d'accès). `NavLinks.tsx` : « Tableau de bord », « Voir le site », « Aide ».
+- **Menu** : menu sur mesure, **dans l'ordre du menu du site** (`menu.ts`, rendu par `NavLinks.tsx` en `beforeNavLinks`) ;
+  le menu automatique de Payload est vidé (`admin.group: false` sur toutes les collections et tous les globals, plugin
+  `simpleDocuments`). Une nouvelle collection doit donc être ajoutée à `menu.ts`. La section « Administration » (comptes,
+  flux RSS, redirections) n'est affichée qu'aux administrateurs ; ces collections gardent `admin.hidden: hiddenForEditors`
+  (l'API garde ses propres règles d'accès). Liens sans préchargement (`prefetch={false}`) : le préchargement de dizaines de
+  vues de l'administration ralentissait la navigation.
+- **Aperçu en direct** (`admin.livePreview`, config) : ouvert d'office sur les fiches à brouillons et sur « Accueil et
+  direct » (aperçu de l'accueil) ; adresse calculée par `previewPath()` puis `previewUrl()` (`src/lib/preview.ts`, URL
+  absolue d'après l'hôte de la requête, exigée par `postMessage`). Le bouton de l'aperçu est restylé avec un libellé
+  (`#live-preview-toggler`, `custom.scss`). `settings` a `forceSelect: { _status: true }` : sans cela, Payload affiche
+  « Brouillon » au lieu de « Modifications non publiées » sur un global qui a un brouillon.
 - **Page « Aide »** (`/admin/aide`, `HelpView.tsx`) : rend `GUIDE_CLIENT.md` (mini-rendu `markdown.tsx`, identifiants
   d'intertitres à la GitHub pour le sommaire). Le fichier est lu à l'exécution et embarqué dans le build autonome par
   `outputFileTracingIncludes` (`next.config.ts`) : **tenir le guide à jour à chaque changement d'écran**.
@@ -179,7 +206,9 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   de `maxresdefault`, puis `sddefault`, `hqdefault` dans la médiathèque (`youtube-<id>`), réutilisé s'il existe déjà.
   En cas d'échec, enregistrement sans image (visuel de repli sur le site) et avertissement dans le journal. Pour tester sans
   accès à YouTube : `YOUTUBE_THUMB_BASE=http://127.0.0.1:8765/vi` (servir `vi/<id>/maxresdefault.jpg`).
-- **Grille des programmes** : `ScheduleTools.tsx` (au-dessus du tableau de la liste) ouvre la semaine en cours, filtre par
+- **Grille des programmes** : `src/proxy.ts` (le « middleware » de Next 16) redirige `/admin/collections/schedule` sans
+  filtre vers la semaine en cours, côté serveur (un filtre posé côté client entrait en concurrence avec la synchronisation
+  d'adresse de Payload et chargeait toute la grille). `ScheduleTools.tsx` (au-dessus du tableau de la liste) filtre par
   jour et appelle `POST /api/schedule/copy-week` `{ from, days: 7 | 1, replace }` (`src/lib/schedule-copy.ts`) : recopie à
   la même heure de Paris sept jours plus tard, dans une transaction (tout ou rien), refus (409) si l'arrivée n'est pas vide
   sans `replace`. Semaines et journées TV de 2 h à 2 h (`src/lib/schedule-week.ts`, partagé client / serveur).
@@ -189,6 +218,9 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   téléchargement YouTube). `getTop10()` affiche chaque vidéo à sa place exacte et complète les trous ; deux vidéos à la même
   place (ancienne donnée) : la plus récemment modifiée la garde.
 - **Médiathèque** : description de l'image (`alt`) facultative, reprise du nom du fichier si elle est vide.
-- Tests : `tests/e2e/admin.spec.ts` (identifiants `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`, par défaut ceux du poste de
+- **Lenteur en développement** : `npm run dev` compile chaque écran de l'administration à la première visite (plusieurs
+  secondes) et reste 5 à 10 fois plus lent qu'en production. Mesurer les temps de réponse avec `npm run build && npm start`
+  (en production : 0,2 à 0,4 s par clic dans l'administration).
+- Tests : `tests/e2e/admin.spec.ts` (brouillon invisible des visiteurs, aperçu, aperçu en direct, identifiants `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`, par défaut ceux du poste de
   développement ; ignorés si la connexion échoue).
 

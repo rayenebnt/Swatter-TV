@@ -258,6 +258,11 @@ html[data-theme='dark'] {
   display: none;
 }
 
+/* « Accueil et direct » : « Retirer du site » est retiré (NoUnpublish.tsx), le menu « ⋮ » resterait vide */
+.global-edit--settings .doc-controls__popup {
+  display: none;
+}
+
 /* bouton « Voir sur le site » des fiches */
 .sw-view-site {
   display: inline-flex;

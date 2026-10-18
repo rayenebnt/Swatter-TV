@@ -5,8 +5,12 @@ publier une info, annoncer une sortie, mettre à jour la grille des programmes�
 nécessaire. Chaque partie correspond à une tâche : allez directement à celle dont vous avez besoin. Ce guide est
 toujours disponible dans l’administration : lien **Aide**, en haut du tableau de bord et en bas du menu.
 
-> Bon à savoir : un contenu enregistré est **en ligne aussitôt** (il n’y a pas de brouillon). Le site se met à jour
-> en moins d’une minute ; si une page semble ne pas avoir changé, rechargez-la.
+> Bon à savoir : pour les **vidéos**, l’**info**, l’**agenda**, les **replays**, les **pages** et **l’accueil, le direct et
+> le flash info**, vos modifications restent en **brouillon** tant que vous n’avez pas cliqué sur **Publier les
+> modifications** ; l’**aperçu**, à côté du formulaire, montre le résultat sur le site avant de publier (voir
+> [Brouillon, aperçu et publication](#brouillon-aperçu-et-publication)). Ailleurs (grille des programmes, émissions,
+> webcams, publicités, météo, médiathèque), **Enregistrer** met en ligne aussitôt. Le site se met à jour en moins
+> d’une minute ; si une page semble ne pas avoir changé, rechargez-la.
 
 ## Sommaire
 
@@ -38,11 +42,13 @@ Quelques informations ne pouvaient pas être inventées : merci de les renseigne
 
 | Où | Quoi |
 |---|---|
-| **Le site › Accueil, direct et flash info** › onglet **Chaîne et contact** › **Réseaux sociaux** | les adresses de vos pages Facebook, Instagram, YouTube et TikTok (une case vide = l’icône n’apparaît pas) |
-| **Le site › Accueil, direct et flash info** › onglet **Chaîne et contact** › **Contact** › **Téléphone** | votre numéro, ou une mention comme « Uniquement par mail » |
-| **Le site › Pages** › **Mentions légales** | forme juridique, capital, SIRET, directeur de la publication, hébergeur : remplacez chaque « [à compléter] » |
-| **Le site › Pages** › **Canaux de réception** | les box des opérateurs et numéros de canal |
-| **Le site › Pages** › **Crédits** | la conception et le développement du site |
+| **Accueil et direct** › onglet **Chaîne et contact** › **Réseaux sociaux** | les adresses de vos pages Facebook, Instagram, YouTube et TikTok (une case vide = l’icône n’apparaît pas) |
+| **Accueil et direct** › onglet **Chaîne et contact** › **Contact** › **Téléphone** | votre numéro, ou une mention comme « Uniquement par mail » |
+| **Pages (pied de page)** › **Mentions légales** | forme juridique, capital, SIRET, directeur de la publication, hébergeur : remplacez chaque « [à compléter] » |
+| **Pages (pied de page)** › **Canaux de réception** | les box des opérateurs et numéros de canal |
+| **Pages (pied de page)** › **Crédits** | la conception et le développement du site |
+
+Une fois une page complétée, cliquez sur **Publier les modifications** pour la mettre en ligne.
 
 Si votre site contient encore des contenus d’exemple (vidéos, articles, événements de démonstration), supprimez-les ou
 remplacez-les par les vôtres avant l’ouverture.
@@ -61,20 +67,23 @@ remplacez-les par les vôtres avant l’ouverture.
 
 Après la connexion, le **tableau de bord** rassemble l’essentiel :
 
-- **Publier** : quatre grands boutons pour les tâches de tous les jours : **Publier une vidéo**, **Écrire une info**,
-  **Ajouter une sortie**, **Mettre un replay en ligne** ;
-- **Gérer le site** : **Programme TV**, **Accueil et direct**, **Météo**, **Publicités**, **Webcams**, **Médiathèque** ;
+- **Publier** : quatre grands boutons pour les tâches de tous les jours : **Écrire une info**, **Ajouter une sortie**,
+  **Mettre un replay en ligne**, **Publier une vidéo** ;
+- **Gérer le site** : **Accueil et direct**, **La Météo**, **Programme TV**, **Webcams**, **Publicités**, **Médiathèque** ;
 - **Sur le site en ce moment** : ce que voient les visiteurs (le direct, la vidéo du jour, l’info du jour, la sortie du
   week-end, le programme TV, le flash info, les publicités, la météo). Une pastille **À vérifier** signale un oubli, par
   exemple « Rien de prévu : sam. 24 » pour le programme TV ; le lien **Modifier** mène directement au bon endroit ;
-- **Derniers contenus modifiés** : pour reprendre un contenu en un clic.
+- **Derniers contenus modifiés** : pour reprendre un contenu en un clic ; la mention **À publier** signale des
+  modifications que les visiteurs ne voient pas encore.
 
-Le **menu** s’ouvre avec le bouton ☰ en haut à gauche (il reste ouvert sur un grand écran) :
+Le **menu** s’ouvre avec le bouton ☰ en haut à gauche (il reste ouvert sur un grand écran). Ses rubriques sont
+**dans le même ordre que le menu du site** :
 
 - **Tableau de bord**, tout en haut, pour revenir à l’accueil de l’administration ;
-- **Publier** : Vidéos, L’Info (articles), Agenda, Replays ;
-- **Programme TV** : Grille des programmes, Émissions ;
-- **Le site** : Webcams, Publicités, Pages, Médiathèque, Accueil, direct et flash info, Météo ;
+- **Les rubriques du site** : **Accueil et direct** (carrousel, direct, flash info, coordonnées de la chaîne),
+  **L’Info**, **La Météo**, **Agenda**, **Programme TV** (avec, juste en dessous, **Émissions**), **Le Replay**,
+  **Vidéos**, **Webcams** ;
+- **Également** : **Publicités**, **Pages (pied de page)**, **Médiathèque** ;
 - en bas : **Voir le site** (dans un nouvel onglet) et **Aide** (ce guide).
 
 Les administrateurs voient en plus une rubrique **Administration** (partie 19).
@@ -84,12 +93,45 @@ Dans une **liste** : le bouton **Ajouter**, à côté du titre, crée un nouveau
 
 Dans une **fiche** :
 
-- **Enregistrer** enregistre et met en ligne ;
+- **Publier les modifications** (vidéos, info, agenda, replays, pages, accueil et direct) met en ligne ce que montre le
+  formulaire ; ailleurs, **Enregistrer** enregistre et met en ligne aussitôt ;
 - **Voir sur le site** ouvre la page publique du contenu dans un nouvel onglet (une fois sa date de publication passée) ;
-- le menu « ⋮ » permet de **Dupliquer** ou de **Supprimer** ;
+- le menu « ⋮ » permet de **Dupliquer** ou de **Supprimer** (et de **Retirer du site**, voir ci-dessous) ;
 - les champs marqués d’une étoile sont obligatoires, et le petit texte gris sous un champ explique à quoi il sert ;
 - les dates s’écrivent jour/mois/année et l’heure sur 24 h (`18/10/2026 20:30`) ; l’icône calendrier permet de les
   choisir sans les taper.
+
+### Brouillon, aperçu et publication
+
+Pour les **vidéos**, l’**info**, l’**agenda**, les **replays**, les **pages** et **Accueil et direct**, rien n’arrive sur
+le site sans votre accord :
+
+1. **Modifiez** la fiche : vos changements sont enregistrés automatiquement, en brouillon, au fil de la saisie. Vous
+   pouvez fermer la page et reprendre plus tard. **Ajouter** ouvre directement une fiche enregistrée en brouillon,
+   intitulée « Nouvelle fiche » jusqu’à ce que vous lui donniez un titre ; une fiche quittée sans titre est supprimée
+   automatiquement au bout d’une journée.
+2. **Regardez l’aperçu** : il s’ouvre à droite du formulaire et montre la page du site telle qu’elle sera, mise à jour
+   quelques secondes après chaque changement (pour **Accueil et direct**, c’est la page d’accueil). Le bouton **Fermer
+   l’aperçu** (ou **Aperçu en direct** pour le rouvrir) libère de la place ; au-dessus de l’aperçu, la liste
+   **Responsive** affiche la page comme sur un **Téléphone**, une **Tablette** ou un **Ordinateur**.
+3. **Publiez** : **Publier les modifications** met la nouvelle version en ligne pour tous les visiteurs.
+
+En haut de la fiche, **Statut** indique où en est le contenu :
+
+- **Brouillon** : jamais publié, invisible des visiteurs ;
+- **Publié** : les visiteurs voient exactement ce que montre la fiche ;
+- **Modifications non publiées** : les visiteurs voient encore la version précédente. Le lien **Annuler les
+  modifications**, à côté, efface le brouillon et revient à la version en ligne.
+
+Autres outils :
+
+- **Retirer du site** (menu « ⋮ ») retire un contenu publié sans le supprimer : il redevient un brouillon, que vous pourrez
+  republier plus tard ;
+- **Historique** (en haut à droite) liste les versions précédentes : ouvrez-en une pour la comparer à la version actuelle
+  et, si besoin, la rétablir ;
+- après un passage par l’aperçu, le site ouvert dans un autre onglet du même navigateur (avec **Voir sur le site**, par
+  exemple) montre lui aussi les modifications pas encore publiées : un bandeau **Aperçu**, en bas de l’écran, le
+  rappelle. Cliquez sur **Voir le site comme les visiteurs** pour retrouver le site tel qu’il est en ligne.
 
 **Adresse web (automatique)**, à droite des fiches, se remplit toute seule à partir du titre : inutile d’y toucher. Deux
 contenus peuvent porter le même titre (le replay quotidien d’une émission, par exemple) : leur adresse est différenciée
@@ -98,7 +140,7 @@ redirection, voir partie 19).
 
 ## 4. Ajouter une vidéo
 
-**Tableau de bord › Publier une vidéo** (ou **Publier › Vidéos › Ajouter**)
+**Tableau de bord › Publier une vidéo** (ou **Vidéos › Ajouter**)
 
 1. **Titre** : court et parlant.
 2. **Vidéo** › **Où se trouve la vidéo ?**, puis le champ qui apparaît :
@@ -113,16 +155,17 @@ redirection, voir partie 19).
 4. **Catégorie** (Divertissement, Séries-réalité, Séries, Cinéma, Documentaire, Nature, Sport, Info, Magazine) et
    **Durée (facultatif)**, par exemple `02:14` ou `1:34:00`.
 5. **Description** : quelques lignes, affichées sous le lecteur.
-6. À droite : **Date de publication** (maintenant par défaut). Une date à venir programme la vidéo : elle apparaîtra
-   toute seule ce jour-là.
-7. **Enregistrer**.
+6. À droite : **Date de publication** (maintenant par défaut). Une date à venir programme la vidéo : une fois publiée,
+   elle apparaîtra toute seule ce jour-là.
+7. Vérifiez l’aperçu, puis **Publier les modifications**.
 
 Les vidéos YouTube et Bunny ne se lancent qu’avec l’accord du visiteur pour les « contenus externes » (bandeau cookies) :
 sinon, le lecteur l’invite à modifier son choix.
 
 ## 5. La vidéo du jour et le Top 10
 
-- **Vidéo du jour** : dans la fiche d’une vidéo, cochez **Vidéo du jour** (colonne de droite). Elle s’affiche en grand
+- **Vidéo du jour** : dans la fiche d’une vidéo, cochez **Vidéo du jour** (colonne de droite), puis **Publier les
+  modifications**. Elle s’affiche en grand
   dans « À la une » sur l’accueil. Si plusieurs vidéos sont cochées, c’est la plus récente qui l’emporte ; si aucune ne
   l’est, la dernière vidéo publiée est mise en avant (le tableau de bord vous le signale). Pensez à décocher l’ancienne.
 - **Top 10** : renseignez **Place dans le Top 10** (de 1 à 10) dans la fiche d’une vidéo : elle s’affiche exactement à
@@ -133,7 +176,7 @@ sinon, le lecteur l’invite à modifier son choix.
 
 ## 6. Publier un article et choisir l’info du jour
 
-**Tableau de bord › Écrire une info** (ou **Publier › L’Info (articles) › Ajouter**)
+**Tableau de bord › Écrire une info** (ou **L’Info › Ajouter**)
 
 1. **Titre**, puis **Résumé** : 2 ou 3 lignes affichées sous le titre et dans les listes.
 2. **Image** : la photo principale, en largeur (format paysage), d’au moins 1200 pixels de large.
@@ -141,9 +184,9 @@ sinon, le lecteur l’invite à modifier son choix.
    citations). Sélectionnez un mot pour faire apparaître la barre de mise en forme ; tapez « / » pour insérer un bloc.
 4. **Département** (obligatoire : il range l’article dans la bonne rubrique, par exemple « /info/haute-savoie »),
    **Commune** et **Rubrique** (Sport, Faits divers, Société…).
-5. À droite : **Date de publication**. Une date à venir programme la mise en ligne : l’article apparaîtra tout seul à
-   cette date.
-6. **Enregistrer**.
+5. À droite : **Date de publication**. Une date à venir programme la mise en ligne : une fois publié, l’article
+   apparaîtra tout seul à cette date.
+6. Vérifiez l’aperçu, puis **Publier les modifications**.
 
 **Info du jour** : cochez **Info du jour** (à droite) pour placer l’article dans « À la une ». Comme pour la vidéo du
 jour, la plus récente des infos cochées l’emporte, et à défaut le dernier article publié est mis en avant.
@@ -154,7 +197,7 @@ autres.
 
 ## 7. Annoncer un événement et la sortie du week-end
 
-**Tableau de bord › Ajouter une sortie** (ou **Publier › Agenda › Ajouter**)
+**Tableau de bord › Ajouter une sortie** (ou **Agenda › Ajouter**)
 
 1. **Titre**, **Début** (jour et heure) et, si l’événement dure plusieurs jours, **Fin (facultatif)**.
 2. **Commune** (obligatoire), **Lieu** (salle, place…) et **Catégorie** (Terroir, Musique, Sport, Famille, Culture,
@@ -163,7 +206,7 @@ autres.
 4. **Programme de la journée (facultatif)** : cliquez sur **Ajouter Moment** pour chaque horaire, puis remplissez
    **Horaire** (`10h30` ou « Toute la journée ») et **Description**.
 5. **Lien externe** : billetterie, office de tourisme…
-6. **Enregistrer**.
+6. Vérifiez l’aperçu, puis **Publier les modifications**.
 
 Les événements passés disparaissent d’eux-mêmes de l’agenda. **Sortie du week-end** : cochez la case (à droite) sur
 l’événement à mettre en avant dans « À la une » et sur l’accueil ; c’est le prochain événement coché qui est affiché
@@ -171,12 +214,12 @@ l’événement à mettre en avant dans « À la une » et sur l’accueil ; c�
 
 ## 8. La grille des programmes et les émissions
 
-**Programme TV › Émissions** : la fiche de chaque émission, créée une fois pour toutes : **Titre**, **Genre** (Info,
+**Émissions** (sous **Programme TV** dans le menu) : la fiche de chaque émission, créée une fois pour toutes : **Titre**, **Genre** (Info,
 Météo, Documentaire, Magazine, Agenda, Divertissement, Sport, Série, Cinéma), **Image**, **Résumé** et, à droite,
 **Inédit** (étiquette affichée dans la grille). Une émission créée ici se choisit ensuite dans la grille et dans les
 replays.
 
-**Programme TV › Grille des programmes** (ou **Tableau de bord › Programme TV**) : une ligne, appelée **créneau**, par
+**Programme TV** (dans le menu ou sur le tableau de bord) : la grille des programmes, une ligne, appelée **créneau**, par
 diffusion.
 
 - La liste s’ouvre sur **la semaine en cours** (« Semaine du lundi 12 au dimanche 18 octobre »). Les boutons
@@ -203,15 +246,15 @@ l’accueil (« en ce moment », « ce soir ») se mettent à jour d’après ce
 
 ## 9. Les replays
 
-**Tableau de bord › Mettre un replay en ligne** (ou **Publier › Replays › Ajouter**) : **Titre**, **Émission** (pour
+**Tableau de bord › Mettre un replay en ligne** (ou **Le Replay › Ajouter**) : **Titre**, **Émission** (pour
 regrouper les numéros d’une même émission), **Vidéo** (mêmes sources que pour les vidéos, partie 4), **Image de la
 vidéo** (facultative pour YouTube), **Diffusé le** (le replay apparaît sur le site à partir de cette date), **Durée
-(facultatif)** (`52 min`) et **Description**. Les replays s’affichent du plus récent au plus ancien, et la page Replay
+(facultatif)** (`52 min`) et **Description**, puis **Publier les modifications**. Les replays s’affichent du plus récent au plus ancien, et la page Replay
 peut être filtrée par émission. Le même titre peut servir tous les jours (« Le journal des Alpes »).
 
 ## 10. Les webcams
 
-**Le site › Webcams › Ajouter**
+**Webcams › Ajouter**
 
 1. **Nom** (« Lac du Bourget ») et **Lieu précis** (« Port d’Aix-les-Bains »).
 2. **Type de flux**, puis **Lien du flux** (fourni par le service de la webcam, bouton « Intégrer » ou « Partager ») :
@@ -225,7 +268,7 @@ peut être filtrée par émission. Le même titre peut servir tous les jours («
 
 ## 11. Les publicités
 
-**Le site › Publicités › Ajouter**
+**Publicités › Ajouter**
 
 1. **Annonceur / campagne** : un nom pour retrouver la campagne dans la liste.
 2. **Emplacement** : **Accueil — bannière horizontale** ou **Pages intérieures — bannière** (vidéos, info, agenda…).
@@ -241,7 +284,7 @@ Une seule bannière par emplacement : la plus récente des campagnes actives et 
 
 ## 12. Le carrousel de l’accueil
 
-**Le site › Accueil, direct et flash info** › onglet **Accueil (carrousel)** › **Diapositives du carrousel** (5 au
+**Accueil et direct** › onglet **Accueil (carrousel)** › **Diapositives du carrousel** (5 au
 maximum, 3 conseillées). Les diapositives sont repliées, chacune avec son titre (« Diapositive 2 : Ce soir — La Vallée
 blanche ») : cliquez sur une diapositive pour la déplier. Pour chaque diapositive :
 
@@ -255,11 +298,11 @@ blanche ») : cliquez sur une diapositive pour la déplier. Pour chaque diaposit
   `/programme-tv`, ou adresse complète).
 
 Glissez les diapositives par leur poignée (à gauche) pour changer leur ordre ; **Ajouter Diapositive** en crée une
-nouvelle. **Enregistrer**.
+nouvelle. Vérifiez l’aperçu de la page d’accueil, puis **Publier les modifications**.
 
 ## 13. Le direct
 
-**Le site › Accueil, direct et flash info** › onglet **Le direct** :
+**Accueil et direct** › onglet **Le direct** :
 
 - **Direct actif** : décochez-le pendant une interruption ; la page « Le direct » affiche alors « Le direct reprend
   bientôt » ;
@@ -267,25 +310,30 @@ nouvelle. **Enregistrer**.
   votre diffuseur) ou fichier envoyé ;
 - **Image affichée avant la lecture** : une belle image de la chaîne.
 
+Comme pour le reste de cette page, les changements ne s’appliquent qu’après **Publier les modifications** : pensez-y
+quand vous coupez ou relancez le direct.
+
 ## 14. Le flash info
 
-**Le site › Accueil, direct et flash info** › onglet **Flash info** : le bandeau défilant de l’accueil.
+**Accueil et direct** › onglet **Flash info** : le bandeau défilant de l’accueil.
 
 - **Messages** (10 au maximum), repliés et résumés sur une ligne (« Message 1 : Annecy — … ») : un **Lieu / thème (en
   doré)**, le **Message** et un **Lien (facultatif)** vers l’article ;
 - **Compléter automatiquement avec les derniers articles** : ajoute les titres des derniers articles à vos messages.
   Décochez-la pour n’afficher que vos messages.
 
+Le bandeau apparaît dans l’aperçu de la page d’accueil : vérifiez-le, puis **Publier les modifications**.
+
 ## 15. Les pages (mentions légales, le groupe…)
 
-**Le site › Pages** : les pages fixes (Canaux de réception, Le groupe, Crédits, Vie privée, Mentions légales). Chaque
+**Pages (pied de page)** : les pages fixes (Canaux de réception, Le groupe, Crédits, Vie privée, Mentions légales). Chaque
 page a un **Titre**, une **Introduction**, un **Contenu** (même éditeur que les articles) et, à droite, un **Lien dans le
 pied de page** : **Colonne « La chaîne »**, **Colonne « Swatter TV »** ou aucun. Une nouvelle page est accessible à
-l’adresse `/son-adresse` (champ **Adresse web (automatique)**).
+l’adresse `/son-adresse` (champ **Adresse web (automatique)**) une fois publiée.
 
 ## 16. La météo
 
-**Le site › Météo** : les prévisions (Annecy, Chamonix, Chambéry, Lyon, Grenoble, Thonon-les-Bains) arrivent
+**La Météo** : les prévisions (Annecy, Chamonix, Chambéry, Lyon, Grenoble, Thonon-les-Bains) arrivent
 **automatiquement toutes les heures** grâce à Open-Meteo, tant que **Mise à jour automatique (toutes les heures)** est
 cochée. **Dernière mise à jour automatique** indique l’heure du dernier passage ; le tableau de bord vous prévient si
 les prévisions n’ont pas été mises à jour depuis plus de 3 heures.
@@ -296,7 +344,7 @@ vider le champ.
 
 ## 17. Les images et la médiathèque
 
-**Le site › Médiathèque** rassemble toutes les images et vidéos envoyées. Une image ajoutée depuis une fiche (vidéo,
+**Médiathèque** rassemble toutes les images et vidéos envoyées. Une image ajoutée depuis une fiche (vidéo,
 article…) y arrive aussi. Dans un champ image d’une fiche :
 
 - **Ajouter** envoie un nouveau fichier depuis votre ordinateur (ou glissez-déposez-le dans le cadre) ;
