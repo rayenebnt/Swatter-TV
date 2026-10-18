@@ -89,6 +89,9 @@ npm run dev
   YouTube du client, fiche « Chaîne YouTube » de l’administration). Il est idempotent (relançable à volonté) et refuse de tourner en production
   sans `SEED_FORCE=1`. Les dates sont calculées à partir du jour du lancement : relancez-le pour « rajeunir » la grille,
   l’agenda et la météo.
+- Après un `git pull`, si le serveur ou `npm run seed` restent bloqués sur une question en anglais (« Is … column
+  created or renamed from another column? », « Accept warnings? »), ou si l’administration ne montre pas les nouveaux
+  contenus : arrêtez le serveur (Ctrl+C), lancez **`npm run reinit`**, puis `npm run dev`.
 - Site : <http://localhost:3000> · administration : <http://localhost:3000/admin>.
 
 ## Commandes
@@ -101,6 +104,7 @@ npm run dev
 | `npm run typecheck` | vérification TypeScript (`tsc --noEmit`) |
 | `npm run lint` | ESLint sur tout le projet |
 | `npm run seed` | contenus de départ « Exemple » (voir ci-dessus) |
+| `npm run reinit` | **après un `git pull` qui change la structure des données** : remet la base locale à neuf sans aucune question (garde les comptes et leurs mots de passe, vide la médiathèque, recharge les contenus « Exemple »). Arrêtez `npm run dev` avant. Refusé en production |
 | `npm run import` | import manuel de la météo et des vidéos de la chaîne YouTube (même traitement que la tâche planifiée) |
 | `npm run payload run src/scripts/init-db.ts` | tables + premier administrateur |
 | `npm run payload run src/scripts/publish-existing.ts` | une seule fois, sur une base de développement remplie avant l’arrivée des brouillons : publie les contenus existants (sinon invisibles sur le site) |

@@ -1297,6 +1297,9 @@ export interface Setting {
   viewsCount?: number | null;
   tagline?: string | null;
   contact?: {
+    /**
+     * Affiché sur le site ; reçoit aussi les messages du formulaire « Proposer une info ».
+     */
     email?: string | null;
     phone?: string | null;
     address?: string | null;
