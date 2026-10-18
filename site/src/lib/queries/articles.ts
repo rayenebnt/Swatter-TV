@@ -120,18 +120,17 @@ export const getArticleBySlug = cache(
     ),
 )
 
-/** Nombre d'articles publiés par département (seuls les départements qui en ont figurent dans le résultat). */
-export const getDepartmentCounts = cache(
-  async (): Promise<Partial<Record<DepartmentSlug, number>>> =>
+/** Départements qui ont au moins un article publié, dans l'ordre de DEPARTMENTS (une seule requête au lieu d'un comptage par département). */
+export const getDepartmentsWithArticles = cache(
+  async (): Promise<DepartmentSlug[]> =>
     safe(
       async () => {
         const payload = await getPayloadClient()
-        const counts = await Promise.all(
-          DEPARTMENTS.map(async ({ value }) => [value, (await payload.count({ collection: 'articles', where: published(value) })).totalDocs] as const),
-        )
-        return Object.fromEntries(counts.filter(([, n]) => n > 0))
+        const res = await payload.findDistinct({ collection: 'articles', field: 'department', where: published(null) })
+        const present = new Set<unknown>(res.values.map((v) => v.department))
+        return DEPARTMENTS.map((d) => d.value).filter((d) => present.has(d))
       },
-      {},
+      [],
       'départements de l’info',
     ),
 )

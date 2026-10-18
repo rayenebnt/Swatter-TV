@@ -1,12 +1,12 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, runningAdsOrAuthenticated } from '@/access'
 import { revalidateHooks } from '@/hooks/revalidate'
 
 export const Ads: CollectionConfig = {
   slug: 'ads',
   labels: { singular: 'Publicité', plural: 'Publicités' },
   admin: { useAsTitle: 'name', group: 'Contenus', defaultColumns: ['name', 'placement', 'active', 'endsAt'] },
-  access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  access: { read: runningAdsOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
   hooks: revalidateHooks,
   fields: [
     { name: 'name', label: 'Annonceur / campagne', type: 'text', required: true },

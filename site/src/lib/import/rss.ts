@@ -292,6 +292,31 @@ function decode(buf: ArrayBuffer, contentType: string | null): string {
   }
 }
 
+/** Corps de la réponse, lu au fil de l'eau et abandonné au-delà de MAX_BYTES (réponse compressée ou sans Content-Length). */
+async function readCapped(res: Response): Promise<ArrayBuffer> {
+  const reader = res.body?.getReader()
+  if (!reader) return new ArrayBuffer(0)
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > MAX_BYTES) {
+      await reader.cancel().catch(() => {})
+      throw new Error('flux trop volumineux')
+    }
+    chunks.push(value)
+  }
+  const out = new Uint8Array(size)
+  let offset = 0
+  for (const c of chunks) {
+    out.set(c, offset)
+    offset += c.byteLength
+  }
+  return out.buffer
+}
+
 async function fetchFeed(url: string): Promise<string> {
   const target = absUrl(url, null)
   if (!target) throw new Error('adresse du flux invalide (http ou https attendu)')
@@ -303,9 +328,7 @@ async function fetchFeed(url: string): Promise<string> {
   })
   if (!res.ok) throw new Error(`réponse HTTP ${res.status}`)
   if (Number(res.headers.get('content-length')) > MAX_BYTES) throw new Error('flux trop volumineux')
-  const buf = await res.arrayBuffer()
-  if (buf.byteLength > MAX_BYTES) throw new Error('flux trop volumineux')
-  return decode(buf, res.headers.get('content-type'))
+  return decode(await readCapped(res), res.headers.get('content-type'))
 }
 
 /**

@@ -1,4 +1,5 @@
-import type { Access, FieldAccess } from 'payload'
+import type { Access, FieldAccess, Where } from 'payload'
+import { parisDateTime, parisDay } from '@/lib/format'
 
 export const anyone: Access = () => true
 export const authenticated: Access = ({ req }) => Boolean(req.user)
@@ -14,3 +15,23 @@ export const publishedOrAuthenticated: Access = ({ req }) => {
   if (req.user) return true
   return { publishedAt: { less_than_equal: new Date().toISOString() } }
 }
+
+/**
+ * Publicités en cours de diffusion : cochées actives et dans leur période. « Début » et « Fin » sont des jours (l'administration
+ * les enregistre à midi UTC) : la campagne court du premier jour à 0 h jusqu'à la fin du dernier jour, heure de Paris.
+ */
+export function runningAdsWhere(now = new Date()): Where {
+  const today = parisDay(now)
+  const [y, m, d] = today.split('-').map(Number)
+  const tomorrow = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10)
+  return {
+    and: [
+      { active: { equals: true } },
+      { or: [{ startsAt: { exists: false } }, { startsAt: { less_than: parisDateTime(tomorrow).toISOString() } }] },
+      { or: [{ endsAt: { exists: false } }, { endsAt: { greater_than_equal: parisDateTime(today).toISOString() } }] },
+    ],
+  }
+}
+
+/** Publicités : l'équipe connectée voit tout ; l'API publique, seulement les campagnes en cours (ni inactives ni à venir). */
+export const runningAdsOrAuthenticated: Access = ({ req }) => (req.user ? true : runningAdsWhere())

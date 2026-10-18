@@ -7,7 +7,7 @@ import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { DEPARTMENTS, departmentLabel, type DepartmentSlug } from '@/lib/departments'
 import { ogImage } from '@/lib/og'
-import { getArticlesPage, getDepartmentCounts, getFeaturedArticle, type ArticleListItem, type ArticlesPage } from '@/lib/queries/articles'
+import { getArticlesPage, getDepartmentsWithArticles, getFeaturedArticle, type ArticleListItem, type ArticlesPage } from '@/lib/queries/articles'
 import { SITE_NAME } from '@/lib/site'
 import { departmentUrl } from '@/lib/urls'
 import { ArticleCard } from './ArticleCard'
@@ -63,9 +63,9 @@ export type Listing = { featured: ArticleListItem | null; list: ArticlesPage; de
 
 /** Données d'une page de liste : article à la une, page d'articles (sans lui) et départements qui ont de l'info. */
 export async function loadListing(dept: DepartmentSlug | null, page: number): Promise<Listing> {
-  const [featured, counts] = await Promise.all([getFeaturedArticle(dept), getDepartmentCounts()])
+  const [featured, withInfo] = await Promise.all([getFeaturedArticle(dept), getDepartmentsWithArticles()])
   const list = await getArticlesPage(dept, page, PER_PAGE, featured?.id ?? null)
-  return { featured, list, departments: DEPARTMENTS.map((d) => d.value).filter((v) => (counts[v] ?? 0) > 0 || v === dept) }
+  return { featured, list, departments: DEPARTMENTS.map((d) => d.value).filter((v) => withInfo.includes(v) || v === dept) }
 }
 
 /** Métadonnées d'une page de liste : titre, description, adresse canonique (avec ?page=), flux RSS, image de l'article à la une. */

@@ -55,7 +55,7 @@ export async function getReplaysPage({ programId, page = 1, limit = 24 }: { prog
   )
 }
 
-/** Émissions qui ont au moins un replay, par ordre alphabétique. */
+/** Émissions qui ont au moins un replay, par ordre alphabétique (images chargées : image de partage de la page de l'émission). */
 export const getReplayPrograms = cache(async (): Promise<Program[]> =>
   safe(
     async () => {
@@ -68,7 +68,7 @@ export const getReplayPrograms = cache(async (): Promise<Program[]> =>
         })
         .filter((id): id is number => typeof id === 'number' && Number.isFinite(id))
       if (!ids.length) return []
-      const res = await payload.find({ collection: 'programs', where: { id: { in: ids } }, sort: 'title', depth: 0, limit: ids.length, pagination: false })
+      const res = await payload.find({ collection: 'programs', where: { id: { in: ids } }, sort: 'title', depth: 1, limit: ids.length, pagination: false })
       return res.docs
     },
     [],

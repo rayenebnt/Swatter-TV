@@ -46,6 +46,8 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          // HTTPS imposé aux visites suivantes (ignoré en HTTP, donc sans effet en développement) ; sous-domaines non concernés
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
         ],
       },
     ]

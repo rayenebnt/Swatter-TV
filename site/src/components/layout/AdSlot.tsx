@@ -1,5 +1,6 @@
 import { getImageProps } from 'next/image'
 import type { CSSProperties } from 'react'
+import { runningAdsWhere } from '@/access'
 import { Icon } from '@/components/ui/Icon'
 import { mediaAlt, mediaSize, mediaUrl, type MediaRef } from '@/lib/media'
 import { getPayloadClient } from '@/lib/payload'
@@ -10,22 +11,14 @@ import '@/styles/shell.css'
 
 type Placement = Ad['placement']
 
-/** Publicité active pour l'emplacement : cochée active, dans sa période de diffusion ; la plus récente. */
+/** Publicité active pour l'emplacement : cochée active, dans sa période de diffusion (jours de Paris) ; la plus récente. */
 async function getActiveAd(placement: Placement): Promise<Ad | null> {
   return safe(
     async () => {
       const payload = await getPayloadClient()
-      const now = new Date().toISOString()
       const res = await payload.find({
         collection: 'ads',
-        where: {
-          and: [
-            { placement: { equals: placement } },
-            { active: { equals: true } },
-            { or: [{ startsAt: { exists: false } }, { startsAt: { less_than_equal: now } }] },
-            { or: [{ endsAt: { exists: false } }, { endsAt: { greater_than_equal: now } }] },
-          ],
-        },
+        where: { and: [{ placement: { equals: placement } }, runningAdsWhere()] },
         sort: '-createdAt',
         depth: 1,
         limit: 1,
