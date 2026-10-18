@@ -2,7 +2,7 @@
 
 import { Button, toast, useConfig, useListQuery, useRouteTransition } from '@payloadcms/ui'
 import { useRouter } from 'next/navigation'
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import type { Where } from 'payload'
 import { shiftDay, tvDay } from '@/components/programme/model'
 import { dateChip, parisDateTime } from '@/lib/format'
@@ -36,19 +36,12 @@ export function ScheduleTools() {
   const [replace, setReplace] = useState(false)
   const [busy, setBusy] = useState(false)
 
+  // la liste s'ouvre toujours filtrée sur la semaine en cours (redirection côté serveur : src/proxy.ts)
   const where = query?.where as Where | undefined
-  const noFilter = !where || Object.keys(where).length === 0
-  const range = rangeFromWhere(where) ?? (noFilter ? { first: currentMonday(), days: 7 as const } : null)
+  const range = rangeFromWhere(where)
   const thisWeek = currentMonday()
   const today = tvDay()
-  const total = isTransitioning || noFilter ? undefined : data?.totalDocs
-
-  // À l'ouverture, sans filtre ni recherche : la semaine en cours plutôt que des créneaux passés depuis longtemps
-  useEffect(() => {
-    if (noFilter && !query?.search) void refineListData({ where: rangeWhere(currentMonday(), 7), page: 1 }, false)
-    // une seule fois, à l'ouverture de la liste
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const total = isTransitioning ? undefined : data?.totalDocs
 
   const show = (first: string, days: 1 | 7) => refineListData({ where: rangeWhere(first, days), page: 1 })
 

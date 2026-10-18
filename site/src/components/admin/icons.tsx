@@ -22,6 +22,10 @@ export type IconName =
   | 'copy'
   | 'arrow-left'
   | 'arrow-right'
+  | 'tv'
+  | 'page'
+  | 'users'
+  | 'redirect'
 
 const PATHS: Record<IconName, ReactNode> = {
   video: (
@@ -131,6 +135,25 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M16 8V5.5a2 2 0 0 0-2-2H5.5a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2H8" />
     </>
   ),
+  tv: (
+    <>
+      <rect x="2.5" y="5.5" width="19" height="13" rx="2.5" />
+      <path d="M8 21h8M8.5 2.5 12 5.5l3.5-3" />
+    </>
+  ),
+  page: (
+    <>
+      <path d="M6 3.5h8.5L19 8v12.5H6z" />
+      <path d="M14.5 3.5V8H19M9 12h7M9 15.5h7" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 20a6.5 6.5 0 0 0-2.5-5.1" />
+    </>
+  ),
+  redirect: <path d="M4 17V11a4 4 0 0 1 4-4h11M15 3l4 4-4 4M4 21h7" />,
   'arrow-left': <path d="M19 12H5M11 6l-6 6 6 6" />,
   'arrow-right': <path d="M5 12h14M13 6l6 6-6 6" />,
 }

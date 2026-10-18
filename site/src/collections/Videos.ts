@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, publishedOrAuthenticated } from '@/access'
 import { dateTimePicker } from '@/fields/date'
+import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { videoSourceField } from '@/fields/videoSource'
 import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
@@ -14,12 +15,13 @@ export const Videos: CollectionConfig = {
   labels: { singular: 'Vidéo', plural: 'Vidéos' },
   admin: {
     useAsTitle: 'title',
-    group: 'Publier',
     defaultColumns: ['title', 'category', 'publishedAt', 'isVideoOfDay', 'top10Rank'],
     description: 'Vidéo du jour, Top 10 et vidéos à la demande. Pour une vidéo YouTube, collez simplement son lien : l’image est récupérée toute seule.',
     preview: (doc) => (doc.slug ? videoUrl(doc as { slug: string }) : null),
   },
   access: { read: publishedOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
+  // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
+  versions: draftVersions,
   defaultSort: '-publishedAt',
   hooks: {
     beforeValidate: [youtubeThumbnail],

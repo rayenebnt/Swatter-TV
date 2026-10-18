@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, publishedOrAuthenticated } from '@/access'
 import { dateTimePicker } from '@/fields/date'
+import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
 import { DEPARTMENTS } from '@/lib/departments'
@@ -11,12 +12,13 @@ export const Articles: CollectionConfig = {
   labels: { singular: 'Article', plural: 'L’Info (articles)' },
   admin: {
     useAsTitle: 'title',
-    group: 'Publier',
     defaultColumns: ['title', 'department', 'publishedAt', 'source'],
     description: 'Les articles écrits par l’équipe, et ceux importés automatiquement depuis les flux d’information (RSS).',
     preview: (doc) => (doc.slug ? articleUrl(doc as { slug: string; department?: string }) : null),
   },
   access: { read: publishedOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
+  // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
+  versions: draftVersions,
   defaultSort: '-publishedAt',
   hooks: revalidateHooks,
   fields: [

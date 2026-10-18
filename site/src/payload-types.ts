@@ -213,6 +213,7 @@ export interface Video {
   };
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Toutes les images et vidéos envoyées sur le site. Une image ajoutée depuis une fiche (vidéo, article…) arrive aussi ici.
@@ -355,6 +356,7 @@ export interface Article {
   };
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Les sorties et événements de la région. Ils disparaissent tout seuls de l’agenda une fois passés.
@@ -404,6 +406,7 @@ export interface Event {
   };
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Les émissions déjà diffusées, à revoir sur le site. Pour une vidéo YouTube, l’image est récupérée toute seule.
@@ -458,6 +461,7 @@ export interface Replay {
   };
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Les émissions de la chaîne. Une émission créée ici se choisit ensuite dans la grille et dans les replays.
@@ -612,6 +616,7 @@ export interface Page {
   };
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Les articles de ces flux sont importés automatiquement dans « L’Info », toutes les heures.
@@ -865,6 +870,7 @@ export interface VideosSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -895,6 +901,7 @@ export interface ArticlesSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -928,6 +935,7 @@ export interface EventsSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -959,6 +967,7 @@ export interface ReplaysSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1046,6 +1055,7 @@ export interface PagesSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1298,6 +1308,7 @@ export interface Setting {
     tiktok?: string | null;
   };
   protectNotice?: string | null;
+  _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1393,6 +1404,7 @@ export interface SettingsSelect<T extends boolean = true> {
         tiktok?: T;
       };
   protectNotice?: T;
+  _status?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

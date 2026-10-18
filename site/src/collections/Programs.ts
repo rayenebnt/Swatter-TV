@@ -9,7 +9,6 @@ export const Programs: CollectionConfig = {
   labels: { singular: 'Émission', plural: 'Émissions' },
   admin: {
     useAsTitle: 'title',
-    group: 'Programme TV',
     defaultColumns: ['title', 'genre', 'isPremiere'],
     description: 'Les émissions de la chaîne. Une émission créée ici se choisit ensuite dans la grille et dans les replays.',
   },

@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, publishedStatusOrAuthenticated } from '@/access'
 import { dateTimePicker } from '@/fields/date'
+import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
 import { EVENT_CATEGORIES } from '@/lib/categories'
@@ -11,12 +12,13 @@ export const Events: CollectionConfig = {
   labels: { singular: 'Événement', plural: 'Agenda' },
   admin: {
     useAsTitle: 'title',
-    group: 'Publier',
     defaultColumns: ['title', 'startDate', 'city', 'isWeekendPick'],
     description: 'Les sorties et événements de la région. Ils disparaissent tout seuls de l’agenda une fois passés.',
     preview: (doc) => (doc.slug ? eventUrl(doc as { slug: string }) : null),
   },
-  access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  access: { read: publishedStatusOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
+  // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
+  versions: draftVersions,
   defaultSort: 'startDate',
   hooks: revalidateHooks,
   fields: [

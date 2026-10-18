@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { airedOrAuthenticated, authenticated } from '@/access'
 import { dateTimePicker } from '@/fields/date'
+import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { videoSourceField } from '@/fields/videoSource'
 import { revalidateHooks } from '@/hooks/revalidate'
@@ -12,12 +13,13 @@ export const Replays: CollectionConfig = {
   labels: { singular: 'Replay', plural: 'Replays' },
   admin: {
     useAsTitle: 'title',
-    group: 'Publier',
     defaultColumns: ['title', 'program', 'broadcastAt'],
     description: 'Les émissions déjà diffusées, à revoir sur le site. Pour une vidéo YouTube, l’image est récupérée toute seule.',
     preview: (doc) => (doc.slug ? replayUrl(doc as { slug: string }) : null),
   },
   access: { read: airedOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
+  // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
+  versions: draftVersions,
   defaultSort: '-broadcastAt',
   hooks: { ...revalidateHooks, beforeValidate: [youtubeThumbnail] },
   fields: [

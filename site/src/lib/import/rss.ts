@@ -403,6 +403,8 @@ async function importFeed(payload: Payload, feed: RssFeed): Promise<ImportResult
         await payload.create({
           collection: 'articles',
           data: {
+            // publié aussitôt (la collection a des brouillons : sans statut, l'article resterait en brouillon)
+            _status: 'published',
             title: item.title,
             slug: await uniqueSlug(payload, item.title),
             excerpt: item.excerpt || null,

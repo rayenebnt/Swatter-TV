@@ -15,8 +15,12 @@ export const hiddenForEditors = ({ user }: { user?: unknown }) => (user as { rol
  */
 export const publishedOrAuthenticated: Access = ({ req }) => {
   if (req.user) return true
-  return { publishedAt: { less_than_equal: new Date().toISOString() } }
+  const where: Where = { and: [{ _status: { equals: 'published' } }, { publishedAt: { less_than_equal: new Date().toISOString() } }] }
+  return where
 }
+
+/** Contenus à brouillons sans date de publication (agenda, pages) : le public ne voit que les versions publiées. */
+export const publishedStatusOrAuthenticated: Access = ({ req }) => (req.user ? true : { _status: { equals: 'published' } })
 
 /**
  * Publicités en cours de diffusion : cochées actives et dans leur période. « Début » et « Fin » sont des jours (l'administration
@@ -41,5 +45,6 @@ export const runningAdsOrAuthenticated: Access = ({ req }) => (req.user ? true :
 /** Lecture publique des replays déjà diffusés ; l'équipe connectée voit aussi ceux programmés plus tard. */
 export const airedOrAuthenticated: Access = ({ req }) => {
   if (req.user) return true
-  return { broadcastAt: { less_than_equal: new Date().toISOString() } }
+  const where: Where = { and: [{ _status: { equals: 'published' } }, { broadcastAt: { less_than_equal: new Date().toISOString() } }] }
+  return where
 }

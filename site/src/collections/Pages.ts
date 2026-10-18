@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { authenticated, publishedStatusOrAuthenticated } from '@/access'
+import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
 import { pageUrl } from '@/lib/urls'
@@ -10,12 +11,13 @@ export const Pages: CollectionConfig = {
   labels: { singular: 'Page', plural: 'Pages' },
   admin: {
     useAsTitle: 'title',
-    group: 'Le site',
     defaultColumns: ['title', 'slug', 'footerGroup'],
     description: 'Les pages fixes : mentions légales, vie privée, le groupe, canaux de réception…',
     preview: (doc) => (doc.slug ? pageUrl(doc as { slug: string }) : null),
   },
-  access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  access: { read: publishedStatusOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
+  // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
+  versions: draftVersions,
   hooks: revalidateHooks,
   fields: [
     { name: 'title', label: 'Titre', type: 'text', required: true },

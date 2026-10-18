@@ -3,7 +3,7 @@ import { cache } from 'react'
 import type { Where } from 'payload'
 import type { Article } from '@/payload-types'
 import { DEPARTMENTS, type DepartmentSlug } from '../departments'
-import { getPayloadClient } from '../payload'
+import { getPayloadClient, isPreview } from '../payload'
 import { safe } from '../safe'
 
 const HOUR_MS = 60 * 60 * 1000
@@ -106,9 +106,10 @@ export const getArticleBySlug = cache(
     safe(
       async () => {
         const payload = await getPayloadClient()
+        // en aperçu, un article programmé (date à venir) se prévisualise aussi
         const res = await payload.find({
           collection: 'articles',
-          where: published(null, { slug: { equals: slug } }),
+          where: (await isPreview()) ? { slug: { equals: slug } } : published(null, { slug: { equals: slug } }),
           limit: 1,
           depth: 1,
           pagination: false,

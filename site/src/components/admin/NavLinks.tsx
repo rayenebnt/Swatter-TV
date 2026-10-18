@@ -1,24 +1,54 @@
 'use client'
 
-import { useConfig } from '@payloadcms/ui'
+import { useAuth, useConfig } from '@payloadcms/ui'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdminIcon } from './icons'
+import { MENU } from './menu'
 
-/** Haut du menu (admin.components.beforeNavLinks) : retour au tableau de bord, toujours à portée de clic. */
+/**
+ * Menu de l'administration (admin.components.beforeNavLinks), dans l'ordre du menu du site. Les groupes automatiques
+ * de Payload sont masqués (admin.group: false, voir payload.config.ts) ; la rubrique Administration est réservée
+ * aux administrateurs.
+ */
 export function NavStart() {
   const pathname = usePathname()
   const {
     config: { routes },
   } = useConfig()
-  const active = pathname === routes.admin
+  const { user } = useAuth()
+  const isAdmin = (user as { role?: string } | null)?.role === 'admin'
+  const home = pathname === routes.admin
   return (
-    <div className="sw-nav sw-nav--start">
-      <Link className={`sw-nav__link${active ? ' is-active' : ''}`} href={routes.admin} aria-current={active ? 'page' : undefined} prefetch={false}>
-        <AdminIcon name="dashboard" />
-        Tableau de bord
-      </Link>
-    </div>
+    <>
+      <div className="sw-nav sw-nav--start">
+        <Link className={`sw-nav__link${home ? ' is-active' : ''}`} href={routes.admin} aria-current={home ? 'page' : undefined} prefetch={false}>
+          <AdminIcon name="dashboard" />
+          Tableau de bord
+        </Link>
+      </div>
+      {MENU.filter((section) => !section.adminOnly || isAdmin).map((section) => (
+        <div className="sw-nav sw-nav--section" key={section.title}>
+          <p className="sw-nav__heading">{section.title}</p>
+          {section.items.map((item) => {
+            const href = `${routes.admin}${item.path}`
+            const active = pathname === href || pathname.startsWith(`${href}/`)
+            return (
+              <Link
+                key={item.path}
+                className={`sw-nav__link${item.sub ? ' sw-nav__link--sub' : ''}${active ? ' is-active' : ''}`}
+                href={item.search ? `${href}${item.search()}` : href}
+                aria-current={active ? 'page' : undefined}
+                prefetch={false}
+              >
+                <AdminIcon name={item.icon} />
+                {item.label}
+              </Link>
+            )
+          })}
+        </div>
+      ))}
+    </>
   )
 }
 

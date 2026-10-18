@@ -154,6 +154,7 @@ for (const v of VIDEOS) {
   const doc = await payload.create({
     collection: 'videos',
     data: {
+      _status: 'published',
       title: v.title,
       category: v.category,
       duration: v.duration,
@@ -177,6 +178,7 @@ for (const r of REPLAYS) {
   await payload.create({
     collection: 'replays',
     data: {
+      _status: 'published',
       title: DATED.has(r.program) ? `${r.title} — ${shortDate(broadcastAt)}` : r.title,
       program: programId(r.program),
       thumbnail: mediaId(r.thumbnail),
@@ -200,6 +202,7 @@ for (const a of ARTICLES) {
   const doc = await payload.create({
     collection: 'articles',
     data: {
+      _status: 'published',
       title: a.title,
       slug,
       excerpt: a.excerpt,
@@ -231,6 +234,7 @@ for (const e of EVENTS) {
   const doc = await payload.create({
     collection: 'events',
     data: {
+      _status: 'published',
       title: e.title,
       startDate: startDate.toISOString(),
       endDate: e.end ? parisDateTime(relDay(e.end), e.end.time).toISOString() : null,
@@ -276,6 +280,7 @@ for (const p of PAGES) {
   await payload.create({
     collection: 'pages',
     data: {
+      _status: 'published',
       title: p.title,
       slug: p.slug,
       intro: p.intro,
@@ -316,6 +321,7 @@ const primeLine2 = primeWords.slice(Math.ceil(primeWords.length / 2)).join(' ')
 await payload.updateGlobal({
   slug: 'settings',
   data: {
+    _status: 'published',
     heroSlides: [
       {
         kind: 'live',

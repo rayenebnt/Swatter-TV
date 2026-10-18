@@ -8,7 +8,6 @@ export const RssFeeds: CollectionConfig = {
   labels: { singular: 'Flux RSS', plural: 'Flux RSS (import de l’info)' },
   admin: {
     useAsTitle: 'name',
-    group: 'Administration',
     hidden: hiddenForEditors,
     defaultColumns: ['name', 'department', 'active', 'lastFetchedAt'],
     description: 'Les articles de ces flux sont importés automatiquement dans « L’Info », toutes les heures.',

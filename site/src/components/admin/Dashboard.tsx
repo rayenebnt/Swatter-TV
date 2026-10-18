@@ -5,6 +5,7 @@ import { dayLabel, tvDay } from '@/components/programme/model'
 import { formatDayLong, formatTime, timeAgo } from '@/lib/format'
 import { rangeSearch } from '@/lib/schedule-week'
 import { getDashboardData, type Featured, type RecentCollection } from './dashboard-data'
+import { scheduleSearch } from './menu'
 import { AdminIcon, type IconName } from './icons'
 
 type Tone = 'ok' | 'warn' | 'off'
@@ -31,18 +32,19 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
   const todayLabel = formatDayLong(now)
   const today = tvDay(now)
 
+  // dans l'ordre du menu du site (L'Info, Agenda, Le Replay, Vidéos…), comme le menu de l'administration
   const publish: { href: string; icon: IconName; title: string; text: string }[] = [
-    { href: `${collection('videos')}/create`, icon: 'video', title: 'Publier une vidéo', text: 'Un lien YouTube suffit' },
     { href: `${collection('articles')}/create`, icon: 'article', title: 'Écrire une info', text: 'Un article pour L’Info' },
     { href: `${collection('events')}/create`, icon: 'event', title: 'Ajouter une sortie', text: 'Un événement dans l’agenda' },
     { href: `${collection('replays')}/create`, icon: 'replay', title: 'Mettre un replay en ligne', text: 'Une émission à revoir' },
+    { href: `${collection('videos')}/create`, icon: 'video', title: 'Publier une vidéo', text: 'Un lien YouTube suffit' },
   ]
   const manage: { href: string; icon: IconName; title: string; text: string }[] = [
-    { href: collection('schedule'), icon: 'grid', title: 'Programme TV', text: 'La grille de la semaine' },
     { href: global('settings'), icon: 'home', title: 'Accueil et direct', text: 'Carrousel, direct, flash info' },
-    { href: global('meteo'), icon: 'weather', title: 'Météo', text: 'Le bulletin du jour' },
-    { href: collection('ads'), icon: 'ad', title: 'Publicités', text: 'Les bannières des annonceurs' },
+    { href: global('meteo'), icon: 'weather', title: 'La Météo', text: 'Le bulletin du jour' },
+    { href: `${collection('schedule')}${scheduleSearch()}`, icon: 'grid', title: 'Programme TV', text: 'La grille de la semaine' },
     { href: collection('webcams'), icon: 'webcam', title: 'Webcams', text: 'Les vues en direct' },
+    { href: collection('ads'), icon: 'ad', title: 'Publicités', text: 'Les bannières des annonceurs' },
     { href: collection('media'), icon: 'media', title: 'Médiathèque', text: 'Toutes les images et vidéos' },
   ]
 
@@ -65,7 +67,7 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
             <AdminIcon name="external" />
             Voir le site
           </a>
-          <Link className="sw-btn" href={`${admin}/aide`}>
+          <Link prefetch={false} className="sw-btn" href={`${admin}/aide`}>
             <AdminIcon name="help" />
             Aide
           </Link>
@@ -79,7 +81,7 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
         <ul className="sw-dash__actions">
           {publish.map((a) => (
             <li key={a.href}>
-              <Link className="sw-action" href={a.href}>
+              <Link prefetch={false} className="sw-action" href={a.href}>
                 <span className="sw-action__icon">
                   <AdminIcon name={a.icon} />
                 </span>
@@ -100,7 +102,7 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
         <ul className="sw-dash__tiles">
           {manage.map((t) => (
             <li key={t.href}>
-              <Link className="sw-tile" href={t.href}>
+              <Link prefetch={false} className="sw-tile" href={t.href}>
                 <AdminIcon name={t.icon} className="sw-tile__icon" />
                 <span className="sw-tile__text">
                   <strong>{t.title}</strong>
@@ -119,6 +121,19 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
           </h2>
           <ul className="sw-status">
             <StatusRow
+              icon="flash"
+              label="Flash info"
+              tone={data.flash.messages || data.flash.auto ? 'ok' : 'off'}
+              value={
+                data.flash.messages
+                  ? `${data.flash.messages} message${data.flash.messages > 1 ? 's' : ''}${data.flash.auto ? ', complétés par les derniers articles' : ''}`
+                  : data.flash.auto
+                    ? 'Les derniers articles défilent automatiquement'
+                    : 'Aucun message : le bandeau est masqué'
+              }
+              href={global('settings')}
+            />
+            <StatusRow
               icon="live"
               label="Le direct"
               tone={data.live.enabled && data.live.configured ? 'ok' : data.live.enabled ? 'warn' : 'off'}
@@ -132,18 +147,37 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
               href={global('settings')}
             />
             <StatusRow
-              icon="star"
-              label="Vidéo du jour"
-              tone={data.videoOfDay?.picked ? 'ok' : 'warn'}
-              value={featuredValue(data.videoOfDay, 'Aucune vidéo publiée', 'la dernière vidéo publiée')}
-              href={data.videoOfDay?.picked ? edit('videos', data.videoOfDay.id) : collection('videos')}
-            />
-            <StatusRow
               icon="article"
               label="Info du jour"
               tone={data.infoOfDay?.picked ? 'ok' : 'warn'}
               value={featuredValue(data.infoOfDay, 'Aucun article publié', 'le dernier article publié')}
               href={data.infoOfDay?.picked ? edit('articles', data.infoOfDay.id) : collection('articles')}
+            />
+            {data.rss.activeFeeds > 0 && (
+              <StatusRow
+                icon="rss"
+                label="Import de l’info"
+                tone={data.rss.failingFeeds ? 'warn' : 'ok'}
+                value={`${data.rss.importedToday} article${data.rss.importedToday > 1 ? 's' : ''} importé${data.rss.importedToday > 1 ? 's' : ''} en 24 h${
+                  data.rss.failingFeeds ? ` · ${data.rss.failingFeeds} flux en erreur` : ''
+                }`}
+                href={collection('articles')}
+              />
+            )}
+            <StatusRow
+              icon="weather"
+              label="Météo"
+              tone={!data.meteo.auto ? 'off' : meteoLate ? 'warn' : 'ok'}
+              value={
+                !data.meteo.auto
+                  ? 'Mise à jour automatique désactivée'
+                  : meteoLate
+                    ? data.meteo.updatedAt
+                      ? `Pas de mise à jour depuis ${timeAgo(data.meteo.updatedAt, now).toLowerCase().replace(/^il y a /, '')} : si cela dure, prévenez votre webmaster`
+                      : 'Prévisions pas encore importées'
+                    : `Mise à jour automatique (${timeAgo(data.meteo.updatedAt!, now).toLowerCase()})`
+              }
+              href={global('meteo')}
             />
             <StatusRow
               icon="event"
@@ -166,39 +200,11 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
               href={data.emptyDays.length && data.emptyDays.length < 7 ? `${collection('schedule')}${rangeSearch(data.emptyDays[0], 1)}` : collection('schedule')}
             />
             <StatusRow
-              icon="flash"
-              label="Flash info"
-              tone={data.flash.messages || data.flash.auto ? 'ok' : 'off'}
-              value={
-                data.flash.messages
-                  ? `${data.flash.messages} message${data.flash.messages > 1 ? 's' : ''}${data.flash.auto ? ', complétés par les derniers articles' : ''}`
-                  : data.flash.auto
-                    ? 'Les derniers articles défilent automatiquement'
-                    : 'Aucun message : le bandeau est masqué'
-              }
-              href={global('settings')}
-            />
-            <StatusRow
-              icon="ad"
-              label="Publicités"
-              tone={data.ads ? 'ok' : 'off'}
-              value={data.ads ? `${data.ads} campagne${data.ads > 1 ? 's' : ''} en cours` : 'Aucune campagne en cours'}
-              href={collection('ads')}
-            />
-            <StatusRow
-              icon="weather"
-              label="Météo"
-              tone={!data.meteo.auto ? 'off' : meteoLate ? 'warn' : 'ok'}
-              value={
-                !data.meteo.auto
-                  ? 'Mise à jour automatique désactivée'
-                  : meteoLate
-                    ? data.meteo.updatedAt
-                      ? `Pas de mise à jour depuis ${timeAgo(data.meteo.updatedAt, now).toLowerCase().replace(/^il y a /, '')} : si cela dure, prévenez votre webmaster`
-                      : 'Prévisions pas encore importées'
-                    : `Mise à jour automatique (${timeAgo(data.meteo.updatedAt!, now).toLowerCase()})`
-              }
-              href={global('meteo')}
+              icon="star"
+              label="Vidéo du jour"
+              tone={data.videoOfDay?.picked ? 'ok' : 'warn'}
+              value={featuredValue(data.videoOfDay, 'Aucune vidéo publiée', 'la dernière vidéo publiée')}
+              href={data.videoOfDay?.picked ? edit('videos', data.videoOfDay.id) : collection('videos')}
             />
             {data.missingImages.videos + data.missingImages.replays > 0 && (
               <StatusRow
@@ -216,17 +222,13 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
                 href={`${collection(data.missingImages.videos ? 'videos' : 'replays')}?${new URLSearchParams({ 'where[or][0][and][0][thumbnail][exists]': 'false' })}`}
               />
             )}
-            {data.rss.activeFeeds > 0 && (
-              <StatusRow
-                icon="rss"
-                label="Import de l’info"
-                tone={data.rss.failingFeeds ? 'warn' : 'ok'}
-                value={`${data.rss.importedToday} article${data.rss.importedToday > 1 ? 's' : ''} importé${data.rss.importedToday > 1 ? 's' : ''} en 24 h${
-                  data.rss.failingFeeds ? ` · ${data.rss.failingFeeds} flux en erreur` : ''
-                }`}
-                href={collection('articles')}
-              />
-            )}
+            <StatusRow
+              icon="ad"
+              label="Publicités"
+              tone={data.ads ? 'ok' : 'off'}
+              value={data.ads ? `${data.ads} campagne${data.ads > 1 ? 's' : ''} en cours` : 'Aucune campagne en cours'}
+              href={collection('ads')}
+            />
           </ul>
         </section>
 
@@ -238,9 +240,12 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
             <ul className="sw-recent">
               {data.recent.map((item) => (
                 <li key={`${item.collection}-${item.id}`}>
-                  <Link className="sw-recent__link" href={edit(item.collection, item.id)}>
+                  <Link prefetch={false} className="sw-recent__link" href={edit(item.collection, item.id)}>
                     <span className={`sw-chip sw-chip--${item.collection}`}>{TYPE_LABELS[item.collection]}</span>
-                    <span className="sw-recent__title">{item.title}</span>
+                    <span className="sw-recent__title">
+                      {item.title}
+                      {item.draft && <span className="sw-draft">Brouillon</span>}
+                    </span>
                     <span className="sw-recent__when">{timeAgo(item.updatedAt, now)}</span>
                   </Link>
                 </li>
@@ -267,7 +272,7 @@ function StatusRow({ icon, label, value, tone, href }: { icon: IconName; label: 
         <span>{value}</span>
       </span>
       <span className="sw-status__tone">{toneLabel}</span>
-      <Link className="sw-status__edit" href={href} aria-label={`Modifier : ${label}`}>
+      <Link prefetch={false} className="sw-status__edit" href={href} aria-label={`Modifier : ${label}`}>
         Modifier
       </Link>
     </li>

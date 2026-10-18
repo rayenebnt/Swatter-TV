@@ -6,7 +6,6 @@ export const Users: CollectionConfig = {
   labels: { singular: 'Utilisateur', plural: 'Utilisateurs' },
   admin: {
     useAsTitle: 'email',
-    group: 'Administration',
     hidden: hiddenForEditors,
     defaultColumns: ['name', 'email', 'role'],
     description: 'Les personnes qui peuvent se connecter. Un éditeur publie les contenus ; un administrateur gère aussi les comptes et les réglages techniques.',

@@ -28,6 +28,8 @@ import { Meteo } from './globals/Meteo'
 import { Settings } from './globals/Settings'
 import { importMeteo } from './lib/import/meteo'
 import { importRss } from './lib/import/rss'
+import { DRAFT_COLLECTIONS, publicationAware } from './lib/publication'
+import { previewPath, previewUrl } from './lib/preview'
 import { search } from './lib/search'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -47,7 +49,6 @@ const plugins: Plugin[] = [
     collections: ['pages', 'articles', 'videos', 'replays', 'events'],
     overrides: {
       admin: {
-        group: 'Administration',
         hidden: hiddenForEditors,
         description: 'Renvoie une ancienne adresse du site vers une nouvelle (par ex. après avoir changé l’adresse d’un contenu partagé).',
       },
@@ -82,6 +83,8 @@ plugins.push(seoSection)
 /**
  * Fiches simplifiées partout : onglet « API » masqué (réservé aux développeurs, il déroute plus qu'il n'aide) et,
  * pour les contenus qui ont une page publique (admin.preview), bouton « Voir sur le site » au lieu d'une icône seule.
+ * Menu : groupes automatiques de Payload masqués (group: false), remplacés par le menu dans l'ordre du site
+ * (src/components/admin/NavLinks.tsx).
  */
 const simpleDocuments: Plugin = (config) => ({
   ...config,
@@ -89,13 +92,14 @@ const simpleDocuments: Plugin = (config) => ({
     ...c,
     admin: {
       ...c.admin,
+      group: false,
       hideAPIURL: true,
       ...(c.admin?.preview
         ? { components: { ...c.admin.components, edit: { ...c.admin.components?.edit, PreviewButton: '/components/admin/ViewOnSiteButton#ViewOnSiteButton' } } }
         : {}),
     },
   })),
-  globals: config.globals?.map((g) => ({ ...g, admin: { ...g.admin, hideAPIURL: true } })),
+  globals: config.globals?.map((g) => ({ ...g, admin: { ...g.admin, group: false, hideAPIURL: true } })),
 })
 plugins.push(simpleDocuments)
 
@@ -154,6 +158,19 @@ export default buildConfig({
         aide: { Component: '/components/admin/HelpView#HelpView', path: '/aide', meta: { title: 'Aide' } },
       },
     },
+    // Aperçu en direct : la page du site s'affiche à côté du formulaire et suit chaque enregistrement automatique
+    livePreview: {
+      // ouvert d'emblée à la première visite d'une fiche (ensuite, le choix de chacun est mémorisé)
+      openByDefault: true,
+      url: ({ data, collectionConfig, globalConfig, req }) => previewUrl(req, previewPath(collectionConfig?.slug, globalConfig?.slug, data)),
+      collections: [...DRAFT_COLLECTIONS],
+      globals: ['settings'],
+      breakpoints: [
+        { name: 'mobile', label: 'Téléphone', width: 390, height: 844 },
+        { name: 'tablet', label: 'Tablette', width: 820, height: 1180 },
+        { name: 'desktop', label: 'Ordinateur', width: 1440, height: 900 },
+      ],
+    },
     dateFormat: 'dd/MM/yyyy HH:mm',
     // avatar neutre : pas d'appel à Gravatar (aucune donnée envoyée à un tiers)
     avatar: 'default',
@@ -187,10 +204,20 @@ export default buildConfig({
           pasteURL: 'Coller un lien',
           selectFile: 'Choisir un fichier',
         },
+        // brouillons : statut et actions en mots simples
+        version: {
+          versions: 'Historique',
+          changed: 'Modifications non publiées',
+          currentDraft: 'Brouillon en cours',
+          unpublish: 'Retirer du site',
+          aboutToUnpublish: 'Ce contenu va être retiré du site (il reste enregistré en brouillon). Continuer ?',
+          confirmUnpublish: 'Confirmer le retrait',
+          revertToPublished: 'Annuler les modifications',
+        },
       },
     },
   },
-  // Ordre du menu : Publier (vidéos, info, agenda, replays), Programme TV, Le site, Administration
+  // Le menu de l'administration suit l'ordre du site : voir src/components/admin/menu.ts
   collections: [Videos, Articles, Events, Replays, Schedule, Programs, Webcams, Ads, Pages, Media, RssFeeds, Users],
   globals: [Settings, Meteo],
   editor: lexicalEditor(),
@@ -253,7 +280,8 @@ export default buildConfig({
       handler: async (req) => {
         const q = (req.searchParams.get('q') || '').trim().slice(0, 80)
         if (q.length < 2) return Response.json({ hits: [] })
-        const hits = await search(req.payload, q, 8)
+        // recherche publique : contenus publiés seulement (jamais les brouillons)
+        const hits = await search(publicationAware(req.payload, false), q, 8)
         return Response.json({ hits }, { headers: { 'Cache-Control': 'public, max-age=60, s-maxage=60' } })
       },
     },

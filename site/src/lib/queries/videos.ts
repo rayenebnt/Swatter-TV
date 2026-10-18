@@ -3,7 +3,7 @@ import type { Where } from 'payload'
 import { cache } from 'react'
 import type { Video } from '@/payload-types'
 import { VIDEO_CATEGORIES } from '../categories'
-import { getPayloadClient } from '../payload'
+import { getPayloadClient, isPreview } from '../payload'
 import { safe } from '../safe'
 
 export type VideoCategory = Video['category']
@@ -109,7 +109,9 @@ export const getVideoBySlug = cache(async (slug: string): Promise<Video | null> 
   safe(
     async () => {
       const payload = await getPayloadClient()
-      const res = await payload.find({ collection: 'videos', where: published({ slug: { equals: slug } }), depth: 1, limit: 1, pagination: false })
+      // en aperçu, une vidéo programmée (date à venir) se prévisualise aussi
+      const bySlug: Where = { slug: { equals: slug } }
+      const res = await payload.find({ collection: 'videos', where: (await isPreview()) ? bySlug : published(bySlug), depth: 1, limit: 1, pagination: false })
       return res.docs[0] ?? null
     },
     null,

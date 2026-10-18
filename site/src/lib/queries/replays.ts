@@ -2,7 +2,7 @@
 import type { Where } from 'payload'
 import { cache } from 'react'
 import type { Program, Replay } from '@/payload-types'
-import { getPayloadClient } from '../payload'
+import { getPayloadClient, isPreview } from '../payload'
 import { safe } from '../safe'
 
 /** Champs utiles aux cartes et rails (sans la source vidéo). L'émission est chargée (depth 1). */
@@ -86,7 +86,9 @@ export const getReplayBySlug = cache(async (slug: string): Promise<Replay | null
   safe(
     async () => {
       const payload = await getPayloadClient()
-      const res = await payload.find({ collection: 'replays', where: aired({ slug: { equals: slug } }), depth: 1, limit: 1, pagination: false })
+      // en aperçu, un replay dont la diffusion est à venir se prévisualise aussi
+      const bySlug: Where = { slug: { equals: slug } }
+      const res = await payload.find({ collection: 'replays', where: (await isPreview()) ? bySlug : aired(bySlug), depth: 1, limit: 1, pagination: false })
       return res.docs[0] ?? null
     },
     null,

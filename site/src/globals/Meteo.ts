@@ -12,7 +12,6 @@ export const Meteo: GlobalConfig = {
   slug: 'meteo',
   label: 'Météo',
   admin: {
-    group: 'Le site',
     description: 'Les prévisions se mettent à jour toutes seules, toutes les heures. Vous pouvez simplement remplacer le texte du jour par votre propre bulletin.',
   },
   access: { read: anyone, update: authenticated },

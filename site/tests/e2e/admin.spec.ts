@@ -1,9 +1,9 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
+import { expect, request as apiRequest, test, type APIRequestContext, type Page } from '@playwright/test'
 import { watchErrors } from './helpers'
 
 /**
- * Administration pensée pour une équipe non technique : tableau de bord, aide intégrée, outil de la grille
- * et rubriques techniques masquées aux éditeurs. Identifiants : E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD
+ * Administration pensée pour une équipe non technique : tableau de bord, aide intégrée, outil de la grille,
+ * brouillons avec aperçu avant publication et rubriques techniques masquées aux éditeurs. Identifiants : E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD
  * (par défaut ceux du poste de développement, voir README) ; sans compte valide, ces tests sont ignorés.
  */
 const ADMIN = {
@@ -18,6 +18,9 @@ async function login(page: Page, account: { email: string; password: string }) {
   await page.click('button[type="submit"]')
   await page.waitForURL((url) => !url.pathname.includes('/login'))
 }
+
+/** Requêtes d'un visiteur anonyme (sans les cookies de connexion des autres requêtes du test). */
+const visitor = () => apiRequest.newContext({ baseURL: test.info().project.use.baseURL })
 
 async function adminHeaders(request: APIRequestContext) {
   const res = await request.post('/api/users/login', { data: ADMIN })
@@ -140,7 +143,7 @@ test.describe('administration', () => {
       await login(page, account)
       await expect(page.getByRole('heading', { level: 1, name: /Dominique/ })).toBeVisible()
       const nav = page.locator('.nav__wrap')
-      await expect(nav.getByText('Publier', { exact: true })).toHaveCount(1)
+      await expect(nav.getByText('Les rubriques du site', { exact: true })).toHaveCount(1)
       await expect(nav.getByText('Administration', { exact: true })).toHaveCount(0)
       await page.goto('/admin/collections/users')
       await expect(page.getByText('Rien n’a été trouvé')).toBeVisible()
@@ -148,6 +151,72 @@ test.describe('administration', () => {
       await expect(page.getByText('Changer le mot de passe')).toBeVisible()
     } finally {
       await request.delete(`/api/users/${doc.id}`, { headers })
+    }
+  })
+
+  test('brouillon : invisible des visiteurs, visible en aperçu, en ligne une fois publié', async ({ page, request }) => {
+    const headers = await adminHeaders(request)
+    const slug = `e2e-brouillon-${Date.now()}`
+    const title = 'Page de test en brouillon'
+    const created = await request.post('/api/pages?draft=true', { headers, data: { title, slug, _status: 'draft' } })
+    expect(created.ok()).toBe(true)
+    const { doc } = (await created.json()) as { doc: { id: number } }
+    const anonymous = await visitor()
+    try {
+      expect((await anonymous.get(`/${slug}`)).status()).toBe(404)
+      expect(((await (await anonymous.get(`/api/pages?where[slug][equals]=${slug}`)).json()) as { totalDocs: number }).totalDocs).toBe(0)
+
+      // l'aperçu demande d'être connecté, puis montre le brouillon avec un bandeau
+      await page.goto(`/apercu?chemin=${encodeURIComponent(`/${slug}`)}`)
+      await expect(page).toHaveURL(/\/admin\/login\?redirect=/)
+      await page.fill('input[name="email"]', ADMIN.email)
+      await page.fill('input[name="password"]', ADMIN.password)
+      await page.click('button[type="submit"]')
+      await expect(page).toHaveURL(new RegExp(`/${slug}$`))
+      await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+      await expect(page.locator('.preview-bar')).toContainText('pas encore publiées')
+
+      await page.getByRole('link', { name: 'Voir le site comme les visiteurs' }).click()
+      await expect(page.locator('.preview-bar')).toHaveCount(0)
+      await expect(page.getByRole('heading', { level: 1, name: title })).toHaveCount(0)
+
+      expect((await request.patch(`/api/pages/${doc.id}`, { headers, data: { _status: 'published' } })).ok()).toBe(true)
+      const live = await anonymous.get(`/${slug}`)
+      expect(live.status()).toBe(200)
+      expect(await live.text()).toContain(title)
+    } finally {
+      await request.delete(`/api/pages/${doc.id}`, { headers })
+      await anonymous.dispose()
+    }
+  })
+
+  test('aperçu en direct : la modification s’affiche à côté du formulaire, le site change à la publication', async ({ page, request }) => {
+    const errors = watchErrors(page)
+    const headers = await adminHeaders(request)
+    const slug = `e2e-apercu-${Date.now()}`
+    const created = await request.post('/api/pages', { headers, data: { title: 'Page de test publiée', slug, _status: 'published' } })
+    expect(created.ok()).toBe(true)
+    const { doc } = (await created.json()) as { doc: { id: number } }
+    const anonymous = await visitor()
+    const changed = 'Titre modifié dans l’aperçu'
+    try {
+      await login(page, ADMIN)
+      await page.goto(`/admin/collections/pages/${doc.id}`)
+      // l'aperçu s'ouvre d'office à côté du formulaire
+      const preview = page.frameLocator('.live-preview-window iframe')
+      await expect(preview.getByRole('heading', { level: 1, name: 'Page de test publiée' })).toBeVisible({ timeout: 30_000 })
+      await page.locator('#field-title').fill(changed)
+      await expect(preview.getByRole('heading', { level: 1, name: changed })).toBeVisible({ timeout: 30_000 })
+      await expect(page.locator('.doc-controls__status')).toContainText('Modifications non publiées')
+      expect(await (await anonymous.get(`/${slug}`)).text()).not.toContain(changed)
+
+      await page.getByRole('button', { name: 'Publier les modifications' }).click()
+      await expect(page.locator('.doc-controls__status')).toContainText('Publié')
+      expect(await (await anonymous.get(`/${slug}`)).text()).toContain(changed)
+      expect(errors).toEqual([])
+    } finally {
+      await request.delete(`/api/pages/${doc.id}`, { headers })
+      await anonymous.dispose()
     }
   })
 })

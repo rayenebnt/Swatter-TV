@@ -133,10 +133,33 @@ html[data-theme='dark'] {
     border-bottom: 1px solid var(--theme-elevation-100);
   }
 
+  &--section {
+    margin-bottom: 16px;
+  }
+
   &--end {
-    margin-top: 22px;
+    margin-top: 6px;
     padding-top: 14px;
     border-top: 1px solid var(--theme-elevation-100);
+  }
+
+  &__heading {
+    margin: 0 0 6px;
+    color: var(--theme-elevation-500);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__link--sub {
+    padding-inline-start: 22px;
+    font-weight: 500;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 
   &__link {
@@ -190,6 +213,49 @@ html[data-theme='dark'] {
     border-color: var(--swatter-gold);
     color: var(--swatter-accent);
   }
+}
+
+/* bouton de l'aperçu en direct (icône seule chez Payload) : libellé explicite */
+#live-preview-toggler {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  padding: 0 12px;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-0);
+  color: var(--theme-text);
+  font-weight: 600;
+  white-space: nowrap;
+
+  &::after {
+    content: 'Aperçu en direct';
+  }
+
+  svg,
+  .icon {
+    position: static;
+    width: 18px;
+    height: 18px;
+    color: var(--swatter-accent);
+    transform: none;
+  }
+
+  &:hover,
+  &.live-preview-toggler--active {
+    border-color: var(--swatter-gold);
+    color: var(--swatter-accent);
+  }
+
+  &.live-preview-toggler--active::after {
+    content: 'Fermer l’aperçu';
+  }
+}
+
+/* aperçu ouvert : la barre d'actions se resserre, les dates de création et de modification s'effacent */
+[class*='--is-live-previewing'] .doc-controls__value-wrap {
+  display: none;
 }
 
 /* bouton « Voir sur le site » des fiches */
@@ -582,6 +648,18 @@ html[data-theme='dark'] {
     background: rgba(217, 170, 69, 0.18);
     color: var(--swatter-accent);
   }
+}
+
+/* contenu modifié mais pas encore publié */
+.sw-draft {
+  margin-inline-start: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--sw-warn-bg);
+  color: var(--sw-warn);
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: 1px;
 }
 
 /* ---------- Grille des programmes : semaine affichée et recopie ---------- */

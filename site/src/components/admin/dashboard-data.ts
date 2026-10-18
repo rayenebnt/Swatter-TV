@@ -22,7 +22,7 @@ export type DashboardData = {
   recent: RecentItem[]
 }
 
-export type RecentItem = { collection: RecentCollection; id: number; title: string; updatedAt: string }
+export type RecentItem = { collection: RecentCollection; id: number; title: string; updatedAt: string; draft: boolean }
 export type RecentCollection = 'videos' | 'articles' | 'events' | 'replays'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -38,8 +38,11 @@ async function attempt<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
 }
 
 /** Contenu mis en avant (case cochée) ; à défaut, celui que le site affiche à la place (le plus récent). */
+/** Version en ligne seulement (les brouillons ne sont pas sur le site). */
+const LIVE: Where = { _status: { equals: 'published' } }
+
 async function featured(payload: Payload, collection: 'videos' | 'articles', flag: 'isVideoOfDay' | 'isInfoOfDay'): Promise<Featured> {
-  const published: Where = { publishedAt: { less_than_equal: new Date().toISOString() } }
+  const published: Where = { and: [LIVE, { publishedAt: { less_than_equal: new Date().toISOString() } }] }
   const find = (where: Where) => payload.find({ collection, where, sort: '-publishedAt', limit: 1, depth: 0, pagination: false, select: { title: true } })
   const picked = (await find({ and: [published, { [flag]: { equals: true } }] })).docs[0]
   const doc = picked ?? (await find(published)).docs[0]
@@ -49,7 +52,7 @@ async function featured(payload: Payload, collection: 'videos' | 'articles', fla
 async function weekendPick(payload: Payload): Promise<Featured> {
   const now = new Date().toISOString()
   const upcoming: Where = { or: [{ startDate: { greater_than_equal: now } }, { endDate: { greater_than_equal: now } }] }
-  const find = (where: Where) => payload.find({ collection: 'events', where, sort: 'startDate', limit: 1, depth: 0, pagination: false, select: { title: true } })
+  const find = (where: Where) => payload.find({ collection: 'events', where: { and: [LIVE, where] }, sort: 'startDate', limit: 1, depth: 0, pagination: false, select: { title: true } })
   const picked = (await find({ and: [upcoming, { isWeekendPick: { equals: true } }] })).docs[0]
   const doc = picked ?? (await find({ startDate: { greater_than_equal: now } })).docs[0]
   return doc ? { id: doc.id, title: doc.title, picked: Boolean(picked) } : null
@@ -79,17 +82,19 @@ async function recent(payload: Payload): Promise<RecentItem[]> {
   const collections: RecentCollection[] = ['videos', 'articles', 'events', 'replays']
   const lists = await Promise.all(
     collections.map(async (collection) => {
+      // dernières versions, brouillons compris (signalés « Brouillon » : pas encore sur le site)
       const { docs } = await payload.find({
         collection,
+        draft: true,
         // les articles importés automatiquement (RSS) ne sont pas des modifications de l'équipe
         where: collection === 'articles' ? { source: { not_equals: 'rss' } } : undefined,
         sort: '-updatedAt',
         limit: 6,
         depth: 0,
         pagination: false,
-        select: { title: true, updatedAt: true },
+        select: { title: true, updatedAt: true, _status: true },
       })
-      return docs.map((d) => ({ collection, id: d.id, title: d.title, updatedAt: d.updatedAt }))
+      return docs.map((d) => ({ collection, id: d.id, title: d.title || 'Sans titre', updatedAt: d.updatedAt, draft: d._status === 'draft' }))
     }),
   )
   return lists
@@ -100,7 +105,7 @@ async function recent(payload: Payload): Promise<RecentItem[]> {
 
 export async function getDashboardData(payload: Payload): Promise<DashboardData> {
   const since = new Date(Date.now() - DAY_MS).toISOString()
-  const noImage: Where = { thumbnail: { exists: false } }
+  const noImage: Where = { and: [LIVE, { thumbnail: { exists: false } }] }
   const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, feeds, importedToday, videosNoImage, replaysNoImage, recentItems] = await Promise.all([
     attempt(() => payload.findGlobal({ slug: 'settings', depth: 0 }), null),
     attempt(() => payload.findGlobal({ slug: 'meteo', depth: 0 }), null),

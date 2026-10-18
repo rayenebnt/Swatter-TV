@@ -10,7 +10,6 @@ export const Schedule: CollectionConfig = {
   labels: { singular: 'Créneau', plural: 'Grille des programmes' },
   admin: {
     useAsTitle: 'label',
-    group: 'Programme TV',
     defaultColumns: ['startsAt', 'program', 'titleOverride', 'durationMinutes'],
     description: 'Une ligne par émission diffusée : le jour et l’heure, l’émission, la durée.',
     // une semaine de programmes tient sur une seule page

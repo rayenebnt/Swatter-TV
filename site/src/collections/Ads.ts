@@ -8,7 +8,6 @@ export const Ads: CollectionConfig = {
   labels: { singular: 'Publicité', plural: 'Publicités' },
   admin: {
     useAsTitle: 'name',
-    group: 'Le site',
     defaultColumns: ['name', 'placement', 'active', 'endsAt'],
     description: 'Les bannières des annonceurs. Une publicité s’affiche du jour de début au jour de fin inclus, si elle est cochée « Active ».',
   },

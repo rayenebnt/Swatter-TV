@@ -9,6 +9,7 @@ import { CookieBanner } from '@/components/layout/CookieBanner'
 import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
 import { TabBar } from '@/components/layout/TabBar'
+import { PreviewMode } from '@/components/preview/PreviewMode'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { SiteJsonLd } from '@/components/seo/SiteJsonLd'
 import { Effects } from '@/components/ui/Effects'
@@ -45,6 +46,7 @@ export default function FrontendLayout({ children }: { children: ReactNode }) {
         <TabBar />
         <SearchOverlay />
         <CookieBanner />
+        <PreviewMode />
         <Effects />
         <SiteJsonLd />
       </body>

@@ -8,7 +8,6 @@ export const Webcams: CollectionConfig = {
   labels: { singular: 'Webcam', plural: 'Webcams' },
   admin: {
     useAsTitle: 'name',
-    group: 'Le site',
     defaultColumns: ['name', 'place', 'active', 'order'],
     description: 'Les vues en direct de la page « Webcams ». Décochez « Active » pour masquer une webcam sans la supprimer.',
   },

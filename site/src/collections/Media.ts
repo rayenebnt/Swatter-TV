@@ -14,7 +14,6 @@ export const Media: CollectionConfig = {
   slug: 'media',
   labels: { singular: 'Média', plural: 'Médiathèque' },
   admin: {
-    group: 'Le site',
     description: 'Toutes les images et vidéos envoyées sur le site. Une image ajoutée depuis une fiche (vidéo, article…) arrive aussi ici.',
   },
   access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },

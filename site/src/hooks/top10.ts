@@ -72,9 +72,11 @@ async function apply(req: PayloadRequest, changes: Map<number, number | null>) {
  * une vidéo qui change de place ou sort du classement laisse les suivantes remonter.
  */
 export const top10AfterChange: CollectionAfterChangeHook = async ({ doc, previousDoc, operation, req, context }) => {
-  if (context?.[TOP10_REORDER]) return doc
+  // un brouillon ne change pas le classement en ligne : on réordonne à la publication
+  if (context?.[TOP10_REORDER] || doc._status === 'draft') return doc
   const rank = typeof doc.top10Rank === 'number' ? doc.top10Rank : null
-  const before = operation === 'update' && typeof previousDoc?.top10Rank === 'number' ? previousDoc.top10Rank : null
+  // place libérée : seulement celle d'une version déjà publiée (un brouillon n'occupait aucune place sur le site)
+  const before = operation === 'update' && previousDoc?._status !== 'draft' && typeof previousDoc?.top10Rank === 'number' ? previousDoc.top10Rank : null
   const freed = before !== null && before !== rank ? before : null
   if (rank === null && freed === null) return doc
   await apply(req, reorderTop10(await otherRanked(req, doc.id), freed, rank))
