@@ -6,7 +6,7 @@ const ROUTES = [
   '/',
   '/direct',
   '/info',
-  '/info/haute-savoie',
+  '/contact',
   '/meteo',
   '/agenda',
   '/programme-tv',

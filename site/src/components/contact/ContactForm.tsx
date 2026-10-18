@@ -1,0 +1,176 @@
+'use client'
+// Formulaire « Proposer une info » : vérification immédiate, envoi à POST /api/contact, confirmation à l'écran.
+import { useSearchParams } from 'next/navigation'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { Icon } from '@/components/ui/Icon'
+import { CONTACT_SUBJECTS, checkContact, isSubject, type ContactErrors } from '@/lib/contact'
+
+type State = 'idle' | 'sending' | 'sent'
+
+export function ContactForm() {
+  const params = useSearchParams()
+  const initial = params.get('sujet')
+  const [subject, setSubject] = useState(isSubject(initial) ? initial : 'info')
+  const [errors, setErrors] = useState<ContactErrors>({})
+  const [failure, setFailure] = useState('')
+  const [state, setState] = useState<State>('idle')
+  const form = useRef<HTMLFormElement>(null)
+  const done = useRef<HTMLHeadingElement>(null)
+  const shownAt = useRef(0)
+  const id = useId()
+
+  useEffect(() => {
+    shownAt.current = Date.now()
+  }, [state])
+  useEffect(() => {
+    if (state === 'sent') done.current?.focus()
+  }, [state])
+
+  const focusFirstError = (errs: ContactErrors) => {
+    const first = Object.keys(errs)[0]
+    if (first) form.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus()
+  }
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const raw = { ...Object.fromEntries(fd.entries()), consent: fd.get('consent') === 'on', subject }
+    const { errors: errs } = checkContact(raw)
+    setErrors(errs)
+    setFailure('')
+    if (Object.keys(errs).length) return focusFirstError(errs)
+    setState('sending')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...raw, shownAt: shownAt.current }),
+      })
+      const json = (await res.json().catch(() => null)) as { ok?: boolean; errors?: ContactErrors; error?: string } | null
+      if (res.ok && json?.ok) return setState('sent')
+      if (json?.errors) {
+        setErrors(json.errors)
+        focusFirstError(json.errors)
+      } else setFailure(json?.error ?? 'L’envoi n’a pas abouti. Réessayez dans un instant.')
+    } catch {
+      setFailure('L’envoi n’a pas abouti (connexion interrompue). Réessayez dans un instant.')
+    }
+    setState('idle')
+  }
+
+  if (state === 'sent') {
+    return (
+      <div className="contact-done" role="status">
+        <span className="contact-done__icon" aria-hidden="true">
+          <Icon name="mail" />
+        </span>
+        <h2 ref={done} tabIndex={-1}>
+          Merci, votre message est bien parti&nbsp;!
+        </h2>
+        <p>La rédaction de Swatter TV l’a reçu et vous répondra par e-mail si besoin.</p>
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setState('idle')}>
+          Envoyer un autre message
+        </button>
+      </div>
+    )
+  }
+
+  const field = (name: keyof ContactErrors) => ({
+    name,
+    id: `${id}-${name}`,
+    'aria-invalid': errors[name] ? true : undefined,
+    'aria-describedby': errors[name] ? `${id}-${name}-err` : undefined,
+  })
+  const error = (name: keyof ContactErrors) =>
+    errors[name] ? (
+      <p className="contact-err" id={`${id}-${name}-err`}>
+        {errors[name]}
+      </p>
+    ) : null
+
+  return (
+    <form ref={form} className="contact-form" onSubmit={submit} noValidate>
+      <fieldset className="contact-subjects">
+        <legend>Vous souhaitez</legend>
+        {CONTACT_SUBJECTS.map((s) => (
+          <label key={s.value} className={subject === s.value ? 'is-on' : undefined}>
+            <input type="radio" name="subject" value={s.value} checked={subject === s.value} onChange={() => setSubject(s.value)} />
+            {s.label}
+          </label>
+        ))}
+      </fieldset>
+
+      <div className="contact-grid">
+        <div className="contact-field">
+          <label htmlFor={`${id}-name`}>
+            Nom et prénom <span aria-hidden="true">*</span>
+          </label>
+          <input {...field('name')} type="text" autoComplete="name" required maxLength={120} />
+          {error('name')}
+        </div>
+        <div className="contact-field">
+          <label htmlFor={`${id}-email`}>
+            E-mail <span aria-hidden="true">*</span>
+          </label>
+          <input {...field('email')} type="email" autoComplete="email" required maxLength={200} />
+          {error('email')}
+        </div>
+        <div className="contact-field">
+          <label htmlFor={`${id}-phone`}>Téléphone (facultatif)</label>
+          <input {...field('phone')} type="tel" autoComplete="tel" maxLength={40} />
+        </div>
+        <div className="contact-field">
+          <label htmlFor={`${id}-city`}>Commune concernée (facultatif)</label>
+          <input {...field('city')} type="text" autoComplete="address-level2" maxLength={120} placeholder="Annecy, Cluses…" />
+        </div>
+      </div>
+
+      <div className="contact-field">
+        <label htmlFor={`${id}-message`}>
+          {subject === 'info' ? 'Votre info : que s’est-il passé, où et quand ?' : 'Votre message'} <span aria-hidden="true">*</span>
+        </label>
+        <textarea {...field('message')} rows={7} required maxLength={5000} />
+        {error('message')}
+      </div>
+
+      <div className="contact-field">
+        <label htmlFor={`${id}-link`}>Lien vers vos photos ou votre vidéo (facultatif)</label>
+        <input {...field('link')} type="url" inputMode="url" maxLength={500} placeholder="https://…" />
+        <p className="contact-hint">Un lien de partage (Google Drive, WeTransfer, YouTube…) : la rédaction pourra récupérer vos images.</p>
+        {error('link')}
+      </div>
+
+      {/* champ piège invisible : seuls les robots le remplissent */}
+      <div className="contact-trap" aria-hidden="true">
+        <label htmlFor={`${id}-website`}>Ne pas remplir</label>
+        <input id={`${id}-website`} name="website" type="text" tabIndex={-1} autoComplete="off" />
+      </div>
+
+      <div className="contact-field contact-consent">
+        <label>
+          <input {...field('consent')} type="checkbox" />
+          <span>
+            J’accepte que Swatter TV utilise ces informations pour traiter ma demande et me répondre. <span aria-hidden="true">*</span>
+          </span>
+        </label>
+        {error('consent')}
+      </div>
+
+      {failure && (
+        <p className="contact-err contact-err--global" role="alert">
+          {failure}
+        </p>
+      )}
+
+      <div className="contact-actions">
+        <button type="submit" className="btn btn--gold" disabled={state === 'sending'}>
+          <Icon name="mail" />
+          {state === 'sending' ? 'Envoi en cours…' : 'Envoyer à la rédaction'}
+        </button>
+        <p className="contact-hint">
+          <span aria-hidden="true">*</span> Champs obligatoires.
+        </p>
+      </div>
+    </form>
+  )
+}

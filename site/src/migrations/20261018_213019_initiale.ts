@@ -38,6 +38,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_pages_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__pages_v_version_footer_group" AS ENUM('chaine', 'swatter');
   CREATE TYPE "public"."enum__pages_v_version_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum_messages_subject" AS ENUM('info', 'publicite', 'autre');
   CREATE TYPE "public"."enum_users_role" AS ENUM('admin', 'editeur');
   CREATE TYPE "public"."enum_redirects_to_type" AS ENUM('reference', 'custom');
   CREATE TYPE "public"."enum_settings_hero_slides_badges_style" AS ENUM('live', 'gold', 'glass');
@@ -485,6 +486,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"sizes_og_filename" varchar
   );
   
+  CREATE TABLE "messages" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"subject" "enum_messages_subject" NOT NULL,
+  	"name" varchar NOT NULL,
+  	"email" varchar NOT NULL,
+  	"phone" varchar,
+  	"city" varchar,
+  	"link" varchar,
+  	"message" varchar NOT NULL,
+  	"handled" boolean DEFAULT false,
+  	"emailed" boolean DEFAULT false,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
   CREATE TABLE "users_sessions" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
@@ -558,6 +574,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"ads_id" integer,
   	"pages_id" integer,
   	"media_id" integer,
+  	"messages_id" integer,
   	"users_id" integer,
   	"redirects_id" integer
   );
@@ -632,11 +649,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"flash_auto" boolean DEFAULT true,
   	"rating" numeric DEFAULT 4.5,
   	"views_count" numeric DEFAULT 0,
-  	"tagline" varchar DEFAULT 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie et en Auvergne-Rhône-Alpes.',
+  	"tagline" varchar DEFAULT 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.',
   	"contact_email" varchar DEFAULT 'contact@swatter-tv.fr',
   	"contact_phone" varchar DEFAULT 'Uniquement par mail',
   	"contact_address" varchar DEFAULT '36 rue de la Chaumière, 74300 Thyez
-  Haute-Savoie · Auvergne-Rhône-Alpes',
+  Haute-Savoie',
   	"socials_facebook" varchar,
   	"socials_instagram" varchar,
   	"socials_youtube" varchar,
@@ -696,11 +713,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_flash_auto" boolean DEFAULT true,
   	"version_rating" numeric DEFAULT 4.5,
   	"version_views_count" numeric DEFAULT 0,
-  	"version_tagline" varchar DEFAULT 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie et en Auvergne-Rhône-Alpes.',
+  	"version_tagline" varchar DEFAULT 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.',
   	"version_contact_email" varchar DEFAULT 'contact@swatter-tv.fr',
   	"version_contact_phone" varchar DEFAULT 'Uniquement par mail',
   	"version_contact_address" varchar DEFAULT '36 rue de la Chaumière, 74300 Thyez
-  Haute-Savoie · Auvergne-Rhône-Alpes',
+  Haute-Savoie',
   	"version_socials_facebook" varchar,
   	"version_socials_instagram" varchar,
   	"version_socials_youtube" varchar,
@@ -745,8 +762,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"channel" varchar,
   	"auto_import" boolean DEFAULT true,
-  	"in_videos" boolean DEFAULT true,
-  	"in_replays" boolean DEFAULT true,
+  	"replay_minutes" numeric DEFAULT 20 NOT NULL,
   	"publish_mode" "enum_youtube_publish_mode" DEFAULT 'published' NOT NULL,
   	"category" "enum_youtube_category" DEFAULT 'divertissement' NOT NULL,
   	"last_import_at" timestamp(3) with time zone,
@@ -823,6 +839,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_ads_fk" FOREIGN KEY ("ads_id") REFERENCES "public"."ads"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_pages_fk" FOREIGN KEY ("pages_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_media_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_messages_fk" FOREIGN KEY ("messages_id") REFERENCES "public"."messages"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_redirects_fk" FOREIGN KEY ("redirects_id") REFERENCES "public"."redirects"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_preferences"("id") ON DELETE cascade ON UPDATE no action;
@@ -1012,6 +1029,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "media_sizes_poster_sizes_poster_filename_idx" ON "media" USING btree ("sizes_poster_filename");
   CREATE INDEX "media_sizes_hero_sizes_hero_filename_idx" ON "media" USING btree ("sizes_hero_filename");
   CREATE INDEX "media_sizes_og_sizes_og_filename_idx" ON "media" USING btree ("sizes_og_filename");
+  CREATE INDEX "messages_updated_at_idx" ON "messages" USING btree ("updated_at");
+  CREATE INDEX "messages_created_at_idx" ON "messages" USING btree ("created_at");
   CREATE INDEX "users_sessions_order_idx" ON "users_sessions" USING btree ("_order");
   CREATE INDEX "users_sessions_parent_id_idx" ON "users_sessions" USING btree ("_parent_id");
   CREATE INDEX "users_updated_at_idx" ON "users" USING btree ("updated_at");
@@ -1045,6 +1064,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_ads_id_idx" ON "payload_locked_documents_rels" USING btree ("ads_id");
   CREATE INDEX "payload_locked_documents_rels_pages_id_idx" ON "payload_locked_documents_rels" USING btree ("pages_id");
   CREATE INDEX "payload_locked_documents_rels_media_id_idx" ON "payload_locked_documents_rels" USING btree ("media_id");
+  CREATE INDEX "payload_locked_documents_rels_messages_id_idx" ON "payload_locked_documents_rels" USING btree ("messages_id");
   CREATE INDEX "payload_locked_documents_rels_users_id_idx" ON "payload_locked_documents_rels" USING btree ("users_id");
   CREATE INDEX "payload_locked_documents_rels_redirects_id_idx" ON "payload_locked_documents_rels" USING btree ("redirects_id");
   CREATE INDEX "payload_preferences_key_idx" ON "payload_preferences" USING btree ("key");
@@ -1111,6 +1131,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "pages" CASCADE;
   DROP TABLE "_pages_v" CASCADE;
   DROP TABLE "media" CASCADE;
+  DROP TABLE "messages" CASCADE;
   DROP TABLE "users_sessions" CASCADE;
   DROP TABLE "users" CASCADE;
   DROP TABLE "redirects" CASCADE;
@@ -1168,6 +1189,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_pages_status";
   DROP TYPE "public"."enum__pages_v_version_footer_group";
   DROP TYPE "public"."enum__pages_v_version_status";
+  DROP TYPE "public"."enum_messages_subject";
   DROP TYPE "public"."enum_users_role";
   DROP TYPE "public"."enum_redirects_to_type";
   DROP TYPE "public"."enum_settings_hero_slides_badges_style";

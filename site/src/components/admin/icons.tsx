@@ -25,6 +25,7 @@ export type IconName =
   | 'page'
   | 'users'
   | 'redirect'
+  | 'mail'
 
 const PATHS: Record<IconName, ReactNode> = {
   video: (
@@ -147,6 +148,12 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   redirect: <path d="M4 17V11a4 4 0 0 1 4-4h11M15 3l4 4-4 4M4 21h7" />,
+  mail: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m4 7 8 6 8-6" />
+    </>
+  ),
   'arrow-left': <path d="M19 12H5M11 6l-6 6 6 6" />,
   'arrow-right': <path d="M5 12h14M13 6l6 6-6 6" />,
 }

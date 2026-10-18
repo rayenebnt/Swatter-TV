@@ -16,6 +16,8 @@ export type DashboardData = {
   /** jours TV (AAAA-MM-JJ) sans aucun créneau, parmi aujourd'hui et les 6 suivants */
   emptyDays: string[]
   ads: number
+  /** messages du formulaire de contact pas encore traités */
+  messages: number
   meteo: { auto: boolean; updatedAt: string | null }
   /** vidéos et replays sans image (image YouTube introuvable à l'enregistrement) */
   missingImages: { videos: number; replays: number }
@@ -103,7 +105,7 @@ async function recent(payload: Payload): Promise<RecentItem[]> {
 
 export async function getDashboardData(payload: Payload): Promise<DashboardData> {
   const noImage: Where = { and: [LIVE, { thumbnail: { exists: false } }] }
-  const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, videosNoImage, replaysNoImage, recentItems] = await Promise.all([
+  const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, messages, videosNoImage, replaysNoImage, recentItems] = await Promise.all([
     attempt(() => payload.findGlobal({ slug: 'settings', depth: 0 }), null),
     attempt(() => payload.findGlobal({ slug: 'meteo', depth: 0 }), null),
     attempt(() => featured(payload, 'videos', 'isVideoOfDay'), null),
@@ -111,6 +113,7 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     attempt(() => weekendPick(payload), null),
     attempt(() => emptyDays(payload), [] as string[]),
     attempt(async () => (await payload.count({ collection: 'ads', where: { and: [LIVE, runningAdsWhere()] } })).totalDocs, 0),
+    attempt(async () => (await payload.count({ collection: 'messages', where: { handled: { not_equals: true } } })).totalDocs, 0),
     attempt(async () => (await payload.count({ collection: 'videos', where: noImage })).totalDocs, 0),
     attempt(async () => (await payload.count({ collection: 'replays', where: noImage })).totalDocs, 0),
     attempt(() => recent(payload), [] as RecentItem[]),
@@ -138,6 +141,7 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     flash: { messages: settings?.flashItems?.length ?? 0, auto: settings?.flashAuto !== false },
     emptyDays: empty,
     ads,
+    messages,
     // heure de l'import, lue dans les prévisions (la date de modification de la fiche change aussi avec un bulletin)
     meteo: { auto: meteo?.autoUpdate !== false, updatedAt: (meteo?.forecast as { updatedAt?: string } | null | undefined)?.updatedAt ?? null },
     missingImages: { videos: videosNoImage, replays: replaysNoImage },

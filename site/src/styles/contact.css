@@ -1,0 +1,51 @@
+/* Page « Proposer une info » : formulaire à gauche, conseils et coordonnées à droite. */
+.contact-page { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; align-items: start; }
+.contact-page__main { padding: clamp(20px, 3vw, 34px); border: 1px solid var(--line); border-radius: var(--r-xl); background: var(--surface); }
+.contact-page__side { display: grid; gap: 14px; padding: 26px; border: 1px solid var(--line); border-radius: var(--r-xl); background: rgba(255, 255, 255, .03); }
+.contact-page__side h2 { font-family: var(--font-display); font-size: 18px; color: var(--ink); }
+.contact-page__side h2 + .contact-tips { margin-bottom: 8px; }
+.contact-tips { display: grid; gap: 10px; color: var(--ink-2); font-size: 15px; }
+.contact-tips li { display: flex; align-items: flex-start; gap: 10px; }
+.contact-tips svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; color: var(--gold); }
+.contact-tips a { color: var(--gold-light); text-decoration: underline; text-underline-offset: 3px; }
+.contact-address { white-space: pre-line; }
+.contact-privacy { color: var(--muted); font-size: 13.5px; }
+.contact-privacy a { color: var(--ink-2); text-decoration: underline; }
+
+.contact-form { display: grid; gap: 20px; }
+.contact-subjects { display: flex; flex-wrap: wrap; gap: 10px; border: 0; }
+.contact-subjects legend { margin-bottom: 10px; font-family: var(--font-display); font-weight: 600; color: var(--ink); }
+.contact-subjects label { position: relative; display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border: 1px solid var(--line-2); border-radius: 999px; color: var(--ink-2); font-weight: 600; font-size: 14.5px; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+.contact-subjects label.is-on { border-color: var(--gold); background: rgba(217, 170, 69, .14); color: var(--ink); }
+.contact-subjects input { position: absolute; opacity: 0; pointer-events: none; }
+.contact-subjects label:has(input:focus-visible) { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.contact-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.contact-field { display: grid; gap: 7px; }
+.contact-field > label { font-weight: 600; font-size: 14.5px; color: var(--ink); }
+.contact-field > label span { color: var(--gold); }
+.contact-field input:not([type='checkbox']), .contact-field textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--bg); color: var(--ink); font-size: 16px; transition: border-color .2s, box-shadow .2s; }
+.contact-field textarea { resize: vertical; min-height: 150px; line-height: 1.55; }
+.contact-field input:focus-visible, .contact-field textarea:focus-visible { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(217, 170, 69, .25); }
+.contact-field [aria-invalid='true'] { border-color: var(--live) !important; }
+.contact-hint { color: var(--muted); font-size: 13.5px; }
+.contact-err { color: #ff8a8d; font-size: 14px; font-weight: 600; }
+.contact-err--global { padding: 12px 14px; border: 1px solid rgba(232, 56, 61, .45); border-radius: 12px; background: rgba(232, 56, 61, .1); }
+.contact-consent label { display: flex; align-items: flex-start; gap: 10px; color: var(--ink-2); font-size: 14.5px; font-weight: 400; cursor: pointer; }
+.contact-consent input { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; accent-color: var(--gold); }
+.contact-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.contact-actions .btn[disabled] { opacity: .7; cursor: progress; }
+/* champ piège : hors de l'écran, jamais visible */
+.contact-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+.contact-done { display: grid; justify-items: start; gap: 14px; padding: 10px 0; }
+.contact-done__icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: rgba(217, 170, 69, .16); color: var(--gold-light); }
+.contact-done__icon svg { width: 26px; height: 26px; }
+.contact-done h2 { font-family: var(--font-display); font-size: clamp(22px, 3vw, 28px); color: var(--ink); outline: none; }
+.contact-done p { color: var(--ink-2); }
+
+@media (max-width: 1000px) {
+  .contact-page { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .contact-grid { grid-template-columns: 1fr; }
+}

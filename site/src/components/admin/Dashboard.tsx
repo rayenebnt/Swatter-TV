@@ -217,6 +217,13 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
               value={data.ads ? `${data.ads} campagne${data.ads > 1 ? 's' : ''} en cours` : 'Aucune campagne en cours'}
               href={collection('ads')}
             />
+            <StatusRow
+              icon="mail"
+              label="Messages reçus"
+              tone={data.messages ? 'warn' : 'ok'}
+              value={data.messages ? `${data.messages} message${data.messages > 1 ? 's' : ''} à traiter` : 'Aucun message en attente'}
+              href={collection('messages')}
+            />
           </ul>
         </section>
 

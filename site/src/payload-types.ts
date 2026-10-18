@@ -77,6 +77,7 @@ export interface Config {
     ads: Ad;
     pages: Page;
     media: Media;
+    messages: Message;
     users: User;
     redirects: Redirect;
     'payload-kv': PayloadKv;
@@ -96,6 +97,7 @@ export interface Config {
     ads: AdsSelect<false> | AdsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    messages: MessagesSelect<false> | MessagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -354,7 +356,7 @@ export interface Article {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Les sorties et événements de la région. Ils disparaissent tout seuls de l’agenda une fois passés.
+ * Les sorties et événements de la Haute-Savoie. Ils disparaissent tout seuls de l’agenda une fois passés.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events".
@@ -618,6 +620,32 @@ export interface Page {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Les messages envoyés depuis la page « Proposer une info » du site. Chacun arrive aussi par e-mail. Cochez « Traité » une fois la réponse faite.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages".
+ */
+export interface Message {
+  id: number;
+  subject: 'info' | 'publicite' | 'autre';
+  name: string;
+  email: string;
+  phone?: string | null;
+  city?: string | null;
+  link?: string | null;
+  message: string;
+  /**
+   * Cochez une fois la réponse faite.
+   */
+  handled?: boolean | null;
+  /**
+   * Décoché : l’envoi de l’e-mail a échoué, le message n’est qu’ici.
+   */
+  emailed?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Les personnes qui peuvent se connecter. Un éditeur publie les contenus ; un administrateur gère aussi les comptes et les réglages techniques.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -750,6 +778,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'messages';
+        value: number | Message;
       } | null)
     | ({
         relationTo: 'users';
@@ -1095,6 +1127,23 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages_select".
+ */
+export interface MessagesSelect<T extends boolean = true> {
+  subject?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  city?: T;
+  link?: T;
+  message?: T;
+  handled?: T;
+  emailed?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
@@ -1291,7 +1340,7 @@ export interface Meteo {
   createdAt?: string | null;
 }
 /**
- * Les dernières vidéos de la chaîne YouTube sont mises sur le site toutes les heures, dans « Vidéos » et « Replays ». Pour cacher une vidéo, utilisez « Retirer du site » dans sa fiche (supprimée, elle reviendrait au prochain import).
+ * Les dernières vidéos de la chaîne YouTube sont mises sur le site toutes les heures : les émissions longues dans « Replays », les autres dans « Vidéos ». Pour cacher une vidéo, utilisez « Retirer du site » dans sa fiche (supprimée, elle reviendrait au prochain import).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "youtube".
@@ -1303,8 +1352,10 @@ export interface Youtube {
    */
   channel?: string | null;
   autoImport?: boolean | null;
-  inVideos?: boolean | null;
-  inReplays?: boolean | null;
+  /**
+   * Les vidéos plus longues vont dans « Replays », rattachées à l’émission dont le titre commence le leur ; les Shorts et les vidéos plus courtes vont dans « Vidéos ».
+   */
+  replayMinutes: number;
   publishMode: 'published' | 'draft';
   category:
     | 'divertissement'
@@ -1417,8 +1468,7 @@ export interface MeteoSelect<T extends boolean = true> {
 export interface YoutubeSelect<T extends boolean = true> {
   channel?: T;
   autoImport?: T;
-  inVideos?: T;
-  inReplays?: T;
+  replayMinutes?: T;
   publishMode?: T;
   category?: T;
   lastImportAt?: T;

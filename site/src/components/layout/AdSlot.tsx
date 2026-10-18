@@ -1,10 +1,10 @@
+import Link from 'next/link'
 import { getImageProps } from 'next/image'
 import type { CSSProperties } from 'react'
 import { runningAdsWhere } from '@/access'
 import { Icon } from '@/components/ui/Icon'
 import { mediaAlt, mediaSize, mediaUrl, type MediaRef } from '@/lib/media'
 import { getPayloadClient } from '@/lib/payload'
-import { getSettings } from '@/lib/queries/settings'
 import { safe } from '@/lib/safe'
 import type { Ad } from '@/payload-types'
 import '@/styles/shell.css'
@@ -49,7 +49,7 @@ function adImage(media: MediaRef, alt: string, sizes: string) {
 
 /**
  * Emplacement publicitaire. La hauteur est réservée d'après les proportions du visuel (aucun décalage
- * de mise en page) ; sans campagne active, encart « Espace partenaire » avec contact par e-mail.
+ * de mise en page) ; sans campagne active, encart « Espace partenaire » qui mène au formulaire de contact.
  */
 export async function AdSlot({ placement }: { placement: Placement }) {
   const ad = await getActiveAd(placement)
@@ -57,20 +57,16 @@ export async function AdSlot({ placement }: { placement: Placement }) {
   const desktop = ad ? adImage(ad.image, alt, '(max-width: 1360px) 92vw, 1272px') : null
 
   if (!ad || !desktop) {
-    const settings = await getSettings()
-    const email = settings?.contact?.email?.trim()
     return (
       <aside className="ad" aria-label="Publicité" data-preview="ad">
         <small>Publicité</small>
         <p className="ad__empty">
           <b>Espace partenaire</b>
           <span>Faites connaître votre activité auprès des téléspectateurs de Swatter TV.</span>
-          {email && (
-            <a href={`mailto:${email}?subject=${encodeURIComponent('Publicité sur Swatter TV')}`}>
-              Devenir partenaire
-              <Icon name="arrow" />
-            </a>
-          )}
+          <Link href="/contact?sujet=publicite">
+            Devenir partenaire
+            <Icon name="arrow" />
+          </Link>
         </p>
       </aside>
     )

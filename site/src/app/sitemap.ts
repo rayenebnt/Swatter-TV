@@ -4,7 +4,7 @@ import { parisDateTime, parisDay } from '@/lib/format'
 import { getPayloadClient } from '@/lib/payload'
 import { safe } from '@/lib/safe'
 import { absoluteUrl } from '@/lib/site'
-import { articleUrl, departmentUrl, eventUrl, pageUrl, replayUrl, videoUrl } from '@/lib/urls'
+import { articleUrl, eventUrl, pageUrl, replayUrl, videoUrl } from '@/lib/urls'
 
 // Régénéré toutes les 10 minutes : vite à jour après un déploiement (le build Docker se fait sans base) ou une publication
 export const revalidate = 600
@@ -81,12 +81,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ])
     : [[], [], [], [], []]
 
-  // Départements qui ont au moins un article publié, avec la date de leur article le plus récent
-  const departments = new Map<string, string>()
-  for (const a of allArticles) {
-    const prev = departments.get(a.department)
-    if (!prev || a.updatedAt > prev) departments.set(a.department, a.updatedAt)
-  }
   const articles = withSlug(allArticles)
   const lastInfo = latest(articles)
   const lastVideo = latest(videos)
@@ -98,7 +92,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/', lastAll),
     entry('/direct'),
     entry('/info', lastInfo),
-    ...[...departments].map(([dept, date]) => entry(departmentUrl(dept), date)),
     entry('/meteo'),
     entry('/agenda', lastEvent),
     entry('/programme-tv'),

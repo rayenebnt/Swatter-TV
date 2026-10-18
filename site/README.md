@@ -64,12 +64,12 @@ cp .env.example .env
 | `YOUTUBE_API_KEY` | non | clé de l’API YouTube Data v3 : l’import de la chaîne reprend **toutes** ses vidéos (et leur durée) ; sans clé, il lit le flux RSS public de la chaîne, limité à ses 15 dernières vidéos |
 | `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | non | médias sur S3 / R2 / Scaleway au lieu du dossier `media/` (activé dès que `S3_BUCKET` est renseigné) |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | oui en production | premier administrateur créé par `src/scripts/init-db.ts` (mot de passe de 12 caractères au moins) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | non (recommandé) | envoi des e-mails de l’administration (« Mot de passe oublié ») ; sans `SMTP_HOST`, ils sont seulement écrits dans le journal du serveur |
-| `SEED_FORCE` | non | `1` pour autoriser le jeu de démonstration quand `NODE_ENV=production` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | **oui en production** | envoi des e-mails : « Mot de passe oublié » et messages du formulaire « Proposer une info » (vers l’e-mail de contact des réglages, à défaut contact@swatter-tv.fr). Sans `SMTP_HOST`, ils sont seulement écrits dans le journal du serveur (les messages restent lisibles dans « Messages reçus »). `SMTP_FROM` : adresse d’expédition autorisée par le serveur SMTP (par défaut contact@swatter-tv.fr) ; port 465 = SSL, sinon STARTTLS |
+| `SEED_FORCE` | non | `1` pour autoriser les contenus de départ (`npm run seed`) quand `NODE_ENV=production` |
 
 Les variables `NEXT_PUBLIC_*` sont figées dans le code au moment du build : les changer impose de reconstruire le site.
 
-### 3. Dépendances, premier administrateur et données de démonstration
+### 3. Dépendances, premier administrateur et contenus de départ
 
 ```bash
 npm install
@@ -82,9 +82,10 @@ npm run dev
   Sans `ADMIN_EMAIL` / `ADMIN_PASSWORD`, il utilise `admin@swatter-tv.fr` / `swatter-admin-2026` : **uniquement sur le poste
   de développement** (en production, le script refuse de s'exécuter sans ces deux variables). On peut aussi créer le premier
   compte depuis `http://localhost:3000/admin` : sur une base vide, ce premier compte devient automatiquement administrateur.
-- `npm run seed` remplit la base avec le jeu de démonstration : **il efface d’abord tous les contenus** (jamais les
-  utilisateurs), puis recrée médias, émissions, une grille de 8 jours à partir d’hier, articles, agenda,
-  webcams, pages, réglages et prévisions météo (ni vidéos ni replays : ces rubriques se remplissent avec la chaîne
+- `npm run seed` remplit la base avec les contenus de départ, des modèles marqués « Exemple » que le client remplace
+  (liste dans GUIDE_CLIENT.md, partie 1) : **il efface d’abord tous les contenus** (jamais les
+  utilisateurs), puis recrée médias, 4 émissions d’exemple et une grille type sur 8 jours à partir d’hier, 3 articles,
+  3 événements, 2 webcams, les pages (« [à compléter] »), les réglages et des prévisions météo (ni vidéos ni replays : ces rubriques se remplissent avec la chaîne
   YouTube du client, fiche « Chaîne YouTube » de l’administration). Il est idempotent (relançable à volonté) et refuse de tourner en production
   sans `SEED_FORCE=1`. Les dates sont calculées à partir du jour du lancement : relancez-le pour « rajeunir » la grille,
   l’agenda et la météo.
@@ -99,7 +100,7 @@ npm run dev
 | `npm run build` puis `npm run start` | build de production puis serveur de production (environ 4 Go de mémoire pour le build) |
 | `npm run typecheck` | vérification TypeScript (`tsc --noEmit`) |
 | `npm run lint` | ESLint sur tout le projet |
-| `npm run seed` | jeu de démonstration (voir ci-dessus) |
+| `npm run seed` | contenus de départ « Exemple » (voir ci-dessus) |
 | `npm run import` | import manuel de la météo et des vidéos de la chaîne YouTube (même traitement que la tâche planifiée) |
 | `npm run payload run src/scripts/init-db.ts` | tables + premier administrateur |
 | `npm run payload run src/scripts/publish-existing.ts` | une seule fois, sur une base de développement remplie avant l’arrivée des brouillons : publie les contenus existants (sinon invisibles sur le site) |
@@ -124,9 +125,9 @@ src/
   lib/                  accès aux données (queries/), dates en heure de Paris (format.ts), liens (urls.ts), imports (import/)
   app/(frontend)/apercu/ mode aperçu (brouillons visibles, réservé aux personnes connectées)
   proxy.ts              grille des programmes de l’administration ouverte sur la semaine en cours
-  scripts/              init-db.ts, seed.ts (+ seed/ : données de démonstration), import.ts, publish-existing.ts
+  scripts/              init-db.ts, seed.ts (+ seed/ : contenus de départ), import.ts, publish-existing.ts
   styles/               globals.css (jetons et composants communs) + un fichier par rubrique
-seed/assets/            vignettes et clips vidéo du jeu de démonstration
+seed/assets/            clip vidéo d’exemple du direct (contenus de départ)
 public/visuels/         visuels de repli quand un contenu n’a pas d’image
 tests/e2e/              tests Playwright
 ```
@@ -201,8 +202,9 @@ docker compose run --rm -e ADMIN_EMAIL=… -e ADMIN_PASSWORD=… tools npm run p
 ```
 
 Autres commandes ponctuelles : `docker compose run --rm tools npm run payload migrate:status`,
-`docker compose run --rm tools npm run import`, et pour une démonstration seulement
-`docker compose run --rm -e SEED_FORCE=1 tools npm run seed` (efface les contenus).
+`docker compose run --rm tools npm run import`, et **au premier déploiement seulement**, pour livrer le site avec
+les contenus de départ à modifier : `docker compose run --rm -e SEED_FORCE=1 tools npm run seed` (efface tous les
+contenus : jamais une fois le site rempli).
 
 **Coolify** : créer une ressource « Docker Compose » depuis le dépôt Git, répertoire de base `/site`, fichier
 `docker-compose.yml` ; saisir les variables d’environnement dans Coolify et attribuer le domaine au service `app`

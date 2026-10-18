@@ -121,7 +121,7 @@ export async function Footer() {
           <div>
             <h2 className="footer__title">Swatter TV</h2>
             <ul>
-              <LinkList links={swatter} />
+              <LinkList links={[{ href: '/contact', label: 'Proposer une info' }, ...swatter]} />
               <li>
                 <CookieSettingsButton />
               </li>

@@ -125,9 +125,9 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
           </Link>
         ))}
       </nav>
-      <Link className="btn btn--gold" href="/admin" prefetch={false} style={{ '--i': items.length } as CSSProperties}>
-        <Icon name="user" />
-        Se connecter
+      <Link className="btn btn--gold" href="/contact" onClick={close} style={{ '--i': items.length } as CSSProperties}>
+        <Icon name="mail" />
+        Proposer une info
       </Link>
     </div>
   )

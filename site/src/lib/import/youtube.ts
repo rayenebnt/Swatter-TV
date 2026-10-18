@@ -1,10 +1,12 @@
-// Import des vidéos de la chaîne YouTube de Swatter TV dans la collection « videos » (global « youtube »).
+// Import des vidéos de la chaîne YouTube de Swatter TV (global « youtube »).
 // Sans clé : flux RSS public de la chaîne (ses 15 dernières vidéos). Avec YOUTUBE_API_KEY : toute la chaîne (API YouTube).
 // Appelé par GET /api/cron/import (toutes les heures), POST /api/youtube/import (bouton « Importer maintenant ») et
-// src/scripts/import.ts. Synchronisation : chaque vidéo lue sur la chaîne qui manque dans « Vidéos » ou « Replays » y est
-// (re)créée ; une vidéo « retirée du site » (brouillon) reste en place et n'est donc pas recréée.
+// src/scripts/import.ts. Chaque vidéo va dans une seule rubrique : les Shorts et vidéos courtes dans « Vidéos », les
+// émissions longues dans « Replays » (rattachées à leur émission d'après le titre). Synchronisation : une vidéo lue sur la
+// chaîne et absente du site y est (re)créée ; une vidéo « retirée du site » (brouillon) reste en place, donc pas recréée.
 import { XMLParser } from 'fast-xml-parser'
 import type { Payload } from 'payload'
+import { foldText } from '@/components/search/text'
 import { VIDEO_CATEGORIES } from '@/lib/categories'
 
 export type YoutubeImportResult = {
@@ -21,7 +23,16 @@ export type YoutubeImportResult = {
   error?: string
 }
 
-export type ChannelVideo = { id: string; title: string; description: string; publishedAt: string | null; duration: string | null }
+export type ChannelVideo = {
+  id: string
+  title: string
+  description: string
+  publishedAt: string | null
+  /** durée en secondes (null : inconnue) */
+  seconds: number | null
+  /** Short YouTube (vidéo verticale de quelques secondes) */
+  short: boolean
+}
 
 /** Adresses de YouTube (remplaçables pour les tests, sans accès à Internet). */
 const siteBase = () => (process.env.YOUTUBE_BASE || 'https://www.youtube.com').replace(/\/+$/, '')
@@ -115,7 +126,9 @@ export function parseChannelFeed(xml: string): ChannelVideo[] {
     const title = text(entry?.title)
     if (!entry || !/^[\w-]{11}$/.test(id) || !title) return []
     const group = obj(entry['media:group'])
-    return [{ id, title, description: text(group?.['media:description']), publishedAt: isoDate(entry.published), duration: null }]
+    // le lien d'un Short mène à /shorts/…, celui d'une vidéo à /watch?v=…
+    const links = (Array.isArray(entry.link) ? entry.link : [entry.link]).map((l) => String(obj(l)?.['@_href'] ?? ''))
+    return [{ id, title, description: text(group?.['media:description']), publishedAt: isoDate(entry.published), seconds: null, short: links.some((h) => h.includes('/shorts/')) }]
   })
 }
 
@@ -128,15 +141,42 @@ async function feedVideos(channelId: string): Promise<ChannelVideo[]> {
 
 // ----- API YouTube (avec clé : toute la chaîne, durées comprises) -----
 
-/** « PT1H2M3S » → « 1:02:03 » ; « PT4M5S » → « 04:05 ». */
-export function formatIsoDuration(iso: string | null | undefined): string | null {
+/** « PT1H2M3S » → 3723 (secondes), ou null. */
+export function isoSeconds(iso: string | null | undefined): number | null {
   const m = iso?.match(/^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/)
   if (!m) return null
-  const hours = Number(m[1] ?? 0) * 24 + Number(m[2] ?? 0)
-  const [min, sec] = [Number(m[3] ?? 0), Number(m[4] ?? 0)]
-  if (!hours && !min && !sec) return null
+  const total = Number(m[1] ?? 0) * 86400 + Number(m[2] ?? 0) * 3600 + Number(m[3] ?? 0) * 60 + Number(m[4] ?? 0)
+  return total > 0 ? total : null
+}
+
+/** Durée d'une vidéo : 245 → « 04:05 », 3723 → « 1:02:03 ». */
+export function clockDuration(seconds: number | null): string | null {
+  if (!seconds) return null
   const pad = (n: number) => String(n).padStart(2, '0')
-  return hours ? `${hours}:${pad(min)}:${pad(sec)}` : `${pad(min)}:${pad(sec)}`
+  const [h, m, s] = [Math.floor(seconds / 3600), Math.floor((seconds % 3600) / 60), seconds % 60]
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
+}
+
+/** Durée d'un replay, comme dans la grille : 3120 → « 52 min », 4500 → « 1 h 15 ». */
+export function minutesDuration(seconds: number | null): string | null {
+  if (!seconds) return null
+  const total = Math.max(1, Math.round(seconds / 60))
+  const [h, m] = [Math.floor(total / 60), total % 60]
+  return h ? `${h} h${m ? ` ${String(m).padStart(2, '0')}` : ''}` : `${total} min`
+}
+
+/** Durée lue dans la page publique de la vidéo (sans clé d'API) ; null si elle est introuvable. */
+export async function pageSeconds(id: string): Promise<number | null> {
+  try {
+    const res = await get(`${siteBase()}/watch?v=${id}`)
+    if (!res.ok) return null
+    const html = await res.text()
+    const length = html.match(/"lengthSeconds":"(\d+)"/)?.[1]
+    if (length) return Number(length) || null
+    return isoSeconds(html.match(/<meta itemprop="duration" content="([^"]+)"/)?.[1])
+  } catch {
+    return null
+  }
 }
 
 async function apiJson<T>(path: string, apiKey: string): Promise<T> {
@@ -159,7 +199,7 @@ async function apiVideos(channelId: string, apiKey: string): Promise<ChannelVide
       const title = item.snippet?.title?.trim() ?? ''
       // vidéos privées ou supprimées : titre « Private video » / « Deleted video », sans date de publication
       if (!/^[\w-]{11}$/.test(id) || !title || !item.contentDetails?.videoPublishedAt) continue
-      videos.push({ id, title, description: item.snippet?.description?.trim() ?? '', publishedAt: isoDate(item.contentDetails.videoPublishedAt), duration: null })
+      videos.push({ id, title, description: item.snippet?.description?.trim() ?? '', publishedAt: isoDate(item.contentDetails.videoPublishedAt), seconds: null, short: false })
     }
     token = page.nextPageToken
   } while (token && videos.length < API_MAX_VIDEOS)
@@ -168,8 +208,8 @@ async function apiVideos(channelId: string, apiKey: string): Promise<ChannelVide
   for (let i = 0; i < videos.length; i += 50) {
     const batch = videos.slice(i, i + 50)
     const json = await apiJson<{ items?: { id?: string; contentDetails?: { duration?: string } }[] }>(`videos?part=contentDetails&id=${batch.map((v) => v.id).join(',')}`, apiKey)
-    const durations = new Map((json.items ?? []).map((v) => [v.id, formatIsoDuration(v.contentDetails?.duration)]))
-    for (const v of batch) v.duration = durations.get(v.id) ?? null
+    const durations = new Map((json.items ?? []).map((v) => [v.id, isoSeconds(v.contentDetails?.duration)]))
+    for (const v of batch) v.seconds = durations.get(v.id) ?? null
   }
   return videos
 }
@@ -187,15 +227,40 @@ const CATEGORIES = new Set<string>(VIDEO_CATEGORIES.map((c) => c.value))
 
 type Target = 'videos' | 'replays'
 
+/** Durée maximale d'un Short (YouTube les limite à 3 minutes) : sans lien /shorts/, une vidéo d'une minute au plus en est un. */
+const SHORT_MAX_SECONDS = 60
+
+/** Rubrique d'une vidéo : Shorts et vidéos courtes (ou de durée inconnue) dans « Vidéos », émissions longues dans « Replays ». */
+export function destination(video: Pick<ChannelVideo, 'seconds' | 'short'>, replayMinutes: number): Target {
+  if (video.short || (video.seconds !== null && video.seconds <= SHORT_MAX_SECONDS)) return 'videos'
+  return video.seconds !== null && video.seconds >= replayMinutes * 60 ? 'replays' : 'videos'
+}
+
 /** Identifiants YouTube des fiches d'une collection (brouillons et contenus retirés du site compris). */
 async function onSite(payload: Payload, collection: Target): Promise<Set<string>> {
   const { docs } = await payload.find({ collection, draft: true, where: { 'source.provider': { equals: 'youtube' } }, pagination: false, depth: 0, select: { source: true } })
   return new Set(docs.map((d) => youtubeIdOf(d.source?.youtubeUrl)).filter((id): id is string => Boolean(id)))
 }
 
+/**
+ * Émission d'un replay d'après son titre : celle dont le titre commence le titre de la vidéo (ou y figure), la plus longue
+ * l'emportant (« Le journal des Alpes — Soir » → « Le journal des Alpes »). Sans correspondance : aucune émission.
+ */
+export function matchProgram(title: string, programs: { id: number; title: string }[]): number | null {
+  const t = foldText(title)
+  let best: { id: number; score: number } | null = null
+  for (const p of programs) {
+    const name = foldText(p.title).trim()
+    if (name.length < 3) continue
+    const score = t.startsWith(name) ? name.length * 2 : t.includes(name) ? name.length : 0
+    if (score && (!best || score > best.score)) best = { id: p.id, score }
+  }
+  return best?.id ?? null
+}
+
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`
 
-/** « 3 vidéos et 3 replays ajoutés », « aucune nouvelle fiche (15 vidéos de la chaîne déjà sur le site) » */
+/** « 3 vidéos dans « Vidéos » et 2 vidéos dans « Replays » (sur 15 vidéos lues sur la chaîne) » */
 export function importSummary(r: Pick<YoutubeImportResult, 'videos' | 'replays' | 'total'>): string {
   if (!r.videos && !r.replays) return `rien à ajouter : ${plural(r.total, 'vidéo')} de la chaîne, toutes déjà sur le site`
   const parts = [r.videos ? `${plural(r.videos, 'vidéo')} dans « Vidéos »` : '', r.replays ? `${plural(r.replays, 'vidéo')} dans « Replays »` : ''].filter(Boolean)
@@ -203,9 +268,9 @@ export function importSummary(r: Pick<YoutubeImportResult, 'videos' | 'replays' 
 }
 
 /**
- * Met sur le site les vidéos lues sur la chaîne (sans clé : les 15 dernières) : chacune qui manque dans « Vidéos » ou
- * « Replays » (selon les cases cochées) y est créée. `force` : même si l'import automatique est désactivé (bouton
- * « Importer maintenant »). Ne lève jamais d'exception ; le résultat est noté dans le global.
+ * Met sur le site les vidéos lues sur la chaîne (sans clé : les 15 dernières) : chacune qui n'est encore ni dans
+ * « Vidéos » ni dans « Replays » est créée dans la rubrique que lui donne sa durée. `force` : même si l'import
+ * automatique est désactivé (bouton « Importer maintenant »). Ne lève jamais d'exception ; le résultat est noté dans le global.
  */
 export async function importYoutube(payload: Payload, { force = false } = {}): Promise<YoutubeImportResult> {
   const result: YoutubeImportResult = { ok: false, created: 0, videos: 0, replays: 0, skipped: 0, total: 0, ids: [] }
@@ -223,38 +288,47 @@ export async function importYoutube(payload: Payload, { force = false } = {}): P
     result.total = videos.length
     result.ids = videos.map((v) => v.id)
 
-    const targets: Target[] = [...(settings.inVideos !== false ? (['videos'] as const) : []), ...(settings.inReplays !== false ? (['replays'] as const) : [])]
-    if (!targets.length) throw new Error('cochez au moins « Vidéos » ou « Replays »')
-    const present = Object.fromEntries(await Promise.all(targets.map(async (t) => [t, await onSite(payload, t)] as const))) as Record<Target, Set<string>>
+    // une vidéo déjà dans l'une des deux rubriques n'est pas recréée dans l'autre
+    const [inVideos, inReplays] = await Promise.all([onSite(payload, 'videos'), onSite(payload, 'replays')])
+    const replayMinutes = typeof settings.replayMinutes === 'number' && settings.replayMinutes > 0 ? settings.replayMinutes : 20
     const category = settings.category && CATEGORIES.has(settings.category) ? settings.category : 'divertissement'
     const draft = settings.publishMode === 'draft'
+    const programs = (await payload.find({ collection: 'programs', pagination: false, depth: 0, select: { title: true } })).docs.map((p) => ({ id: p.id, title: p.title }))
 
     // les plus anciennes d'abord : à date égale, l'ordre de création suit celui de la chaîne
     for (const video of [...videos].reverse()) {
-      const missing = targets.filter((t) => !present[t].has(video.id))
-      if (!missing.length) result.skipped++
+      if (inVideos.has(video.id) || inReplays.has(video.id)) {
+        result.skipped++
+        continue
+      }
+      // sans clé d'API, la durée se lit sur la page de la vidéo
+      if (video.seconds === null && !video.short) video.seconds = await pageSeconds(video.id)
       const common = {
         title: clip(video.title, TITLE_MAX),
         source: { provider: 'youtube' as const, youtubeUrl: `https://www.youtube.com/watch?v=${video.id}` },
-        duration: video.duration,
         description: clip(video.description, DESCRIPTION_MAX) || null,
         _status: draft ? ('draft' as const) : ('published' as const),
       }
       const date = video.publishedAt ?? new Date().toISOString()
-      for (const target of missing) {
-        if (target === 'videos') {
-          await payload.create({
-            collection: 'videos',
-            draft,
-            data: { ...common, category: category as (typeof VIDEO_CATEGORIES)[number]['value'], publishedAt: date },
-            context,
-          })
-          result.videos++
-        } else {
-          await payload.create({ collection: 'replays', draft, data: { ...common, broadcastAt: date }, context })
-          result.replays++
-        }
-        present[target].add(video.id)
+      if (destination(video, replayMinutes) === 'replays') {
+        const program = matchProgram(video.title, programs)
+        await payload.create({
+          collection: 'replays',
+          draft,
+          data: { ...common, duration: minutesDuration(video.seconds), broadcastAt: date, ...(program ? { program } : {}) },
+          context,
+        })
+        inReplays.add(video.id)
+        result.replays++
+      } else {
+        await payload.create({
+          collection: 'videos',
+          draft,
+          data: { ...common, duration: clockDuration(video.seconds), category: category as (typeof VIDEO_CATEGORIES)[number]['value'], publishedAt: date },
+          context,
+        })
+        inVideos.add(video.id)
+        result.videos++
       }
     }
     result.created = result.videos + result.replays

@@ -13,7 +13,7 @@ export const Youtube: GlobalConfig = {
   label: 'Chaîne YouTube',
   admin: {
     description:
-      'Les dernières vidéos de la chaîne YouTube sont mises sur le site toutes les heures, dans « Vidéos » et « Replays ». Pour cacher une vidéo, utilisez « Retirer du site » dans sa fiche (supprimée, elle reviendrait au prochain import).',
+      'Les dernières vidéos de la chaîne YouTube sont mises sur le site toutes les heures : les émissions longues dans « Replays », les autres dans « Vidéos ». Pour cacher une vidéo, utilisez « Retirer du site » dans sa fiche (supprimée, elle reviendrait au prochain import).',
   },
   access: { read: authenticated, update: authenticated },
   fields: [
@@ -30,11 +30,16 @@ export const Youtube: GlobalConfig = {
     },
     { name: 'autoImport', label: 'Importer automatiquement les vidéos de la chaîne (toutes les heures)', type: 'checkbox', defaultValue: true },
     {
-      type: 'row',
-      fields: [
-        { name: 'inVideos', label: 'Afficher dans « Vidéos »', type: 'checkbox', defaultValue: true },
-        { name: 'inReplays', label: 'Afficher dans « Replays »', type: 'checkbox', defaultValue: true },
-      ],
+      name: 'replayMinutes',
+      label: 'Durée à partir de laquelle une vidéo va dans « Replays » (minutes)',
+      type: 'number',
+      required: true,
+      min: 1,
+      defaultValue: 20,
+      admin: {
+        description:
+          'Les vidéos plus longues vont dans « Replays », rattachées à l’émission dont le titre commence le leur ; les Shorts et les vidéos plus courtes vont dans « Vidéos ».',
+      },
     },
     {
       type: 'row',

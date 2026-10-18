@@ -74,7 +74,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `lib/meteo-types.ts` | `Forecast`, `ForecastDay`, `ForecastCity`, `WeatherKind`, `isForecast` : format du champ `forecast` du global météo |
 | `components/ui/RichText` | rendu du contenu riche Lexical (classe `.prose`) |
 | `public/visuels/*.webp` | visuels de la maquette, servis en `/visuels/<nom>.webp` : images de repli quand un contenu n'a pas d'image |
-| `seed/assets/*.jpg` | vignettes réelles du site actuel, pour le jeu de données de démonstration |
+| `seed/assets/videos/direct-mont-blanc.mp4` | clip d’exemple du direct (contenus de départ) |
 | `agenda/EventCard({event, now, variant: 'row' \| 'poster'})` | carte d'événement réutilisable |
 | `webcams/LiveClock`, `webcams/WebcamPlayer({cam})` | horloge de Paris partagée (un seul minuteur), lecteur de webcam selon la source |
 | `lib/queries/events.ts` | `upcomingWhere`, `getUpcomingEvents`, `getAgendaHighlights`, `getEventBySlug` |
@@ -88,7 +88,8 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 |---|---|
 | `/` | accueil |
 | `/direct` | le direct |
-| `/info`, `/info/[departement]`, `/info/[departement]/[slug]` | l'info, par département, article |
+| `/info`, `/info/[departement]/[slug]` | l'info (Haute-Savoie seulement : `/info/haute-savoie` redirige vers `/info`, les autres départements sont en 404), article |
+| `/contact` | formulaire « Proposer une info » (`?sujet=publicite` présélectionne la publicité) |
 | `/meteo` | la météo |
 | `/agenda`, `/agenda/[slug]` | agenda, événement |
 | `/programme-tv` | programme TV |
@@ -107,7 +108,7 @@ npm run build          # build de production
 npm run typecheck      # TypeScript
 npm run lint           # ESLint
 npm run payload run src/scripts/init-db.ts   # tables + premier administrateur
-npm run seed           # données de démonstration
+npm run seed           # contenus de départ « Exemple » (efface les contenus)
 ```
 
 ## Notes d'intégration (mises à jour en cours de développement)
@@ -174,6 +175,23 @@ npm run seed           # données de démonstration
   n'accepte que des chemins internes. `PreviewMode` (mise en page du site) : dans l'iframe de l'aperçu en direct,
   `RefreshRouteOnSave` rafraîchit la page à chaque enregistrement automatique ; dans un onglet, bandeau « Aperçu ».
   Requêtes par adresse (`src/lib/queries`) : en aperçu, pas de filtre de date (un contenu programmé se prévisualise).
+- **Info Haute-Savoie seulement** (`src/lib/departments.ts`) : `INFO_DEPARTMENT` est imposé par un hook
+  `beforeValidate` d'Articles (champ caché). `ALL_DEPARTMENTS` garde les 12 valeurs pour que l'enum de la base ne change
+  pas ; les adresses d'article gardent le segment `/info/haute-savoie/`.
+- **Formulaire de contact** : `POST /api/contact` (payload.config.ts) → champ piège `website` et délai minimal de 3 s
+  (`shownAt`) pour les robots (réponse `{ok:true}` sans rien faire), validation partagée client/serveur
+  (`src/lib/contact.ts`), puis 5 messages valides par IP et par quart d'heure (mémoire du processus). `sendContact`
+  (`src/lib/contact-send.ts`) enregistre d'abord dans la collection `messages` (création réservée au serveur), puis
+  envoie l'e-mail (`replyTo` = l'expéditeur) à `settings.contact.email`, à défaut `contact@swatter-tv.fr` ; `emailed`
+  n'est coché que si SMTP est configuré et l'envoi réussi.
+- **Mot de passe oublié** : e-mail en français (`Users.ts`, `auth.forgotPassword`), lien `/admin/reset/<jeton>` valable
+  1 h. Comme le formulaire de contact, il demande `SMTP_HOST` (voir README) pour partir vraiment.
+- **Import YouTube** : `destination()` (`src/lib/import/youtube.ts`) range les Shorts et les vidéos de 60 s ou moins dans
+  « Vidéos », celles d'au moins `replayMinutes` (fiche Chaîne YouTube, 20 min par défaut) dans « Replays » (émission
+  devinée par `matchProgram()` : titre commençant par le nom de l'émission), le reste dans « Vidéos ». La durée vient du
+  flux RSS si présente, sinon de la page `watch` (`lengthSeconds`).
+- **Tests et connexions** : Payload garde les sessions dans la fiche de l'utilisateur ; deux connexions simultanées au
+  même compte peuvent s'écraser. Seul `admin.spec.ts` (en série) se connecte en administrateur.
 
 ## Administration (pensée pour une équipe non technique)
 

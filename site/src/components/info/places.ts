@@ -16,8 +16,8 @@ const PHRASES: Record<DepartmentSlug, { in: string; of: string }> = {
   allier: { in: 'dans l’Allier', of: 'de l’Allier' },
 }
 
-/** « en Haute-Savoie » (« en Auvergne-Rhône-Alpes » pour toute la région) */
-export const inPlace = (d: DepartmentSlug | null) => (d ? PHRASES[d].in : 'en Auvergne-Rhône-Alpes')
+/** « en Haute-Savoie » (la Haute-Savoie aussi sans département précis : c'est toute l'info du site) */
+export const inPlace = (d: DepartmentSlug | null) => PHRASES[d ?? 'haute-savoie'].in
 
-/** « de la Haute-Savoie » (« de toute la région » pour toute la région) */
-export const ofPlace = (d: DepartmentSlug | null) => (d ? PHRASES[d].of : 'de toute la région')
+/** « de la Haute-Savoie » */
+export const ofPlace = (d: DepartmentSlug | null) => PHRASES[d ?? 'haute-savoie'].of

@@ -1,4 +1,4 @@
-// Pages éditoriales, webcams et autres contenus de démonstration.
+// Pages éditoriales (à compléter : voir les « [à compléter] ») et webcams d'exemple.
 import type { Page, Webcam } from '@/payload-types'
 
 export type SeedPage = {
@@ -33,14 +33,14 @@ export const PAGES: SeedPage[] = [
     slug: 'le-groupe',
     footerGroup: 'swatter',
     intro: 'Swatter TV & Info est une web TV régionale installée à Thyez, au cœur de la Haute-Savoie.',
-    metaDescription: 'Présentation de Swatter TV & Info, web TV régionale de la Haute-Savoie et de l’Auvergne-Rhône-Alpes, installée à Thyez.',
+    metaDescription: 'Présentation de Swatter TV & Info, web TV régionale de la Haute-Savoie, installée à Thyez.',
     body: [
       '## Notre mission',
-      'Raconter la vie de notre territoire : l’actualité, la météo, les sorties, le sport et les talents de la Haute-Savoie et de l’Auvergne-Rhône-Alpes, au plus près des habitants.',
+      'Raconter la vie de notre territoire : l’actualité, la météo, les sorties, le sport et les talents de la Haute-Savoie, au plus près des habitants.',
       '## Ce que nous proposons',
       '- Un direct 24 h sur 24 avec journaux, magazines et documentaires.',
-      '- L’info régionale en continu, département par département.',
-      '- La météo, l’agenda des sorties et les webcams des plus beaux sites de la région.',
+      '- L’info de la Haute-Savoie en continu, commune par commune.',
+      '- La météo, l’agenda des sorties et les webcams des plus beaux sites du département.',
       '- Le replay de nos émissions et des vidéos à la demande.',
       '## Nous contacter',
       'Swatter TV & Info, 36 rue de la Chaumière, 74300 Thyez. Par e-mail : [contact@swatter-tv.fr](mailto:contact@swatter-tv.fr).',
@@ -114,12 +114,8 @@ export type SeedWebcam = {
   temperature: string
 }
 
-/** Webcams de démonstration (type « image rafraîchie » pointant vers un visuel du site). */
+/** Webcams d'exemple (type « image rafraîchie » pointant vers un visuel du site) : à remplacer par les vraies webcams. */
 export const WEBCAMS: (SeedWebcam & { provider: Webcam['provider'] })[] = [
-  { name: 'Lac d’Annecy', place: 'Talloires', image: 't-ete-a', temperature: '14°', provider: 'image' },
-  { name: 'Chamonix', place: 'Aiguille du Midi', image: 't-hiver-b', temperature: '-2°', provider: 'image' },
-  { name: 'La Clusaz', place: 'Front de neige', image: 't-hiver-a', temperature: '6°', provider: 'image' },
-  { name: 'Avoriaz', place: 'Village des Dromonts', image: 't-nuages-a', temperature: '3°', provider: 'image' },
-  { name: 'Le Grand-Bornand', place: 'Le Chinaillon', image: 't-alpenglow-b', temperature: '7°', provider: 'image' },
-  { name: 'Thonon-les-Bains', place: 'Port de Rives', image: 't-crepuscule-a', temperature: '13°', provider: 'image' },
+  { name: 'Lac d’Annecy (exemple)', place: 'Lieu à préciser', image: 't-ete-a', temperature: '', provider: 'image' },
+  { name: 'Station de ski (exemple)', place: 'Lieu à préciser', image: 't-hiver-a', temperature: '', provider: 'image' },
 ]

@@ -9,4 +9,5 @@ export const eventUrl = (e: WithSlug) => `/agenda/${e.slug ?? ''}`
 export const webcamUrl = (w: WithSlug) => `/webcams#${w.slug ?? ''}`
 export const programUrl = (p: WithSlug) => `/programme-tv#${p.slug ?? ''}`
 export const pageUrl = (p: WithSlug) => `/${p.slug ?? ''}`
-export const departmentUrl = (dept: string) => `/info/${dept}`
+/** L'info ne couvre que la Haute-Savoie : la page d'un département est celle de L'Info. */
+export const departmentUrl = (_dept: string) => '/info'

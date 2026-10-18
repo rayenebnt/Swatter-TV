@@ -82,7 +82,7 @@ export function InfoFeed({ items }: { items: ArticleTeaser[] }) {
           <Icon name="news" />
           <p>
             <b>{place ? 'Pas encore d’info pour ce département' : 'Pas encore d’info pour le moment'}</b>
-            {place ? 'Revenez plus tard ou consultez l’actualité de toute la région.' : 'Revenez bientôt\u00a0: l’actualité de la région s’affichera ici.'}
+            {place ? 'Revenez plus tard.' : 'Revenez bientôt\u00a0: l’actualité de la Haute-Savoie s’affichera ici.'}
           </p>
         </div>
       )}

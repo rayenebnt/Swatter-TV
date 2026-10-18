@@ -1,6 +1,6 @@
 import { expect, request as apiRequest, test, type APIRequestContext, type Page } from '@playwright/test'
-import { watchErrors } from './helpers'
-import { MOCK_VIDEOS, startYoutubeMock } from './youtube-mock'
+import { settle, watchErrors } from './helpers'
+import { MOCK_PROGRAM, MOCK_VIDEOS, startYoutubeMock } from './youtube-mock'
 
 /**
  * Administration pensée pour une équipe non technique : tableau de bord, aide intégrée, outil de la grille,
@@ -14,6 +14,8 @@ const ADMIN = {
 
 async function login(page: Page, account: { email: string; password: string }) {
   await page.goto('/admin/login')
+  // formulaire prêt (hydraté) : sinon la saisie peut être effacée au chargement
+  await page.waitForLoadState('networkidle')
   await page.fill('input[name="email"]', account.email)
   await page.fill('input[name="password"]', account.password)
   await page.click('button[type="submit"]')
@@ -36,6 +38,51 @@ test.describe('administration', () => {
   test.beforeAll(async ({ request }) => {
     const res = await request.post('/api/users/login', { data: ADMIN })
     test.skip(!res.ok(), 'identifiants administrateur de test indisponibles (E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD)')
+  })
+
+  test('mot de passe oublié : un lien de réinitialisation est demandé par e-mail', async ({ page }) => {
+    const errors = watchErrors(page)
+    await page.goto('/admin/login')
+    await page.getByRole('link', { name: 'Mot de passe oublié ?' }).click()
+    await page.waitForURL(/\/admin\/forgot/)
+    await page.waitForLoadState('networkidle')
+    await page.fill('input[name="email"]', ADMIN.email)
+    await page.click('button[type="submit"]')
+    await expect(page.getByText(/Si l.adresse e-mail est associée à un compte/)).toBeVisible()
+    expect(errors, errors.join('\n')).toEqual([])
+  })
+
+  test('formulaire de contact : un message envoyé arrive dans « Messages reçus »', async ({ page, request }) => {
+    const headers = await adminHeaders(request)
+    const name = `Test contact ${Date.now()}`
+    const errors = watchErrors(page)
+    try {
+      await page.goto('/contact')
+      await settle(page)
+      await page.getByLabel(/Nom et prénom/).fill(name)
+      await page.getByLabel(/^E-mail/).fill('lecteur@example.com')
+      await page.getByLabel(/Commune/).fill('Cluses')
+      await page.getByLabel(/Votre info/).fill('Un nouveau marché de producteurs ouvre samedi sur la place.')
+      await page.getByLabel(/Lien vers vos photos/).fill('https://example.com/photos')
+      await page.getByLabel(/J’accepte/).check()
+      // un humain met plus de 3 s à remplir le formulaire (en dessous : traité comme un robot)
+      await page.waitForTimeout(3200)
+      await page.getByRole('button', { name: 'Envoyer à la rédaction' }).click()
+      await expect(page.getByRole('heading', { name: /Merci, votre message est bien parti/ })).toBeVisible()
+      const res = await request.get(`/api/messages?where[name][equals]=${encodeURIComponent(name)}&depth=0`, { headers })
+      const { docs } = (await res.json()) as { docs: { subject: string; city: string; link: string; handled: boolean }[] }
+      expect(docs).toHaveLength(1)
+      expect(docs[0]).toMatchObject({ subject: 'info', city: 'Cluses', link: 'https://example.com/photos', handled: false })
+      // un visiteur ne peut pas lire les messages reçus
+      const anonymous = await page.request.get('/api/messages?depth=0', { headers: { Authorization: '' } })
+      expect(((await anonymous.json()) as { docs?: unknown[] }).docs ?? []).toHaveLength(0)
+      // l'envoi direct à l'API, sans passer par le formulaire (contact.spec.ts), n'a rien enregistré
+      const robot = await request.get('/api/messages?where[name][equals]=Robot%20Test&depth=0', { headers })
+      expect(((await robot.json()) as { totalDocs: number }).totalDocs).toBe(0)
+      expect(errors, errors.join('\n')).toEqual([])
+    } finally {
+      await request.delete(`/api/messages?where[name][like]=Test%20contact`, { headers })
+    }
   })
 
   test('tableau de bord : actions courantes et état du site', async ({ page, request }) => {
@@ -67,6 +114,7 @@ test.describe('administration', () => {
     await page.goto('/admin/aide')
     await expect(page).toHaveURL(/\/admin\/login\?redirect=/)
     await expect(page.getByText('Guide de l’administration')).toHaveCount(0)
+    await page.waitForLoadState('networkidle')
     await page.fill('input[name="email"]', ADMIN.email)
     await page.fill('input[name="password"]', ADMIN.password)
     await page.click('button[type="submit"]')
@@ -239,48 +287,49 @@ test.describe('administration', () => {
     }
   })
 
-  test('chaîne YouTube : les vidéos de la chaîne dans « Vidéos » et « Replays », recréées si elles manquent', async ({ page, request }) => {
+  test('chaîne YouTube : Shorts et vidéos courtes dans « Vidéos », émissions longues dans « Replays »', async ({ page, request }) => {
     // faux YouTube : le serveur du site doit être lancé avec YOUTUBE_BASE et YOUTUBE_THUMB_BASE pointant sur ce port
     const port = Number(process.env.E2E_YOUTUBE_MOCK_PORT)
     test.skip(!port, 'E2E_YOUTUBE_MOCK_PORT non défini (voir tests/e2e/youtube-mock.ts)')
     const mock = await startYoutubeMock(port)
     const headers = await adminHeaders(request)
     const before = (await (await request.get('/api/globals/youtube?depth=0', { headers })).json()) as Record<string, unknown>
-    type Doc = { id: number; title: string; thumbnail?: number | null }
-    const find = async (collection: 'videos' | 'replays') =>
+    type Doc = { id: number; title: string; thumbnail?: number | null; duration?: string | null; program?: number | null }
+    const find = async (collection: 'videos' | 'replays' | 'programs') =>
       ((await (await request.get(`/api/${collection}?limit=50&depth=0&draft=true&where[title][like]=Test import`, { headers })).json()) as { docs: Doc[] }).docs
     const cleanup = async () => {
-      for (const collection of ['videos', 'replays'] as const) for (const d of await find(collection)) await request.delete(`/api/${collection}/${d.id}`, { headers })
+      for (const collection of ['videos', 'replays', 'programs'] as const) for (const d of await find(collection)) await request.delete(`/api/${collection}/${d.id}`, { headers })
     }
     try {
       await cleanup()
+      const program = (await (await request.post('/api/programs', { headers, data: { title: MOCK_PROGRAM, genre: 'magazine', _status: 'published' } })).json()) as { doc: { id: number } }
       expect(
-        (await request.post('/api/globals/youtube', { headers, data: { channel: 'https://www.youtube.com/@swattertv-test', autoImport: true, inVideos: true, inReplays: true, publishMode: 'published', category: 'magazine', channelId: null, channelFrom: null } })).ok(),
+        (await request.post('/api/globals/youtube', { headers, data: { channel: 'https://www.youtube.com/@swattertv-test', autoImport: true, replayMinutes: 20, publishMode: 'published', category: 'magazine', channelId: null, channelFrom: null } })).ok(),
       ).toBe(true)
 
       // bouton « Importer maintenant » de la fiche
       await login(page, ADMIN)
       await page.goto('/admin/globals/youtube')
       await page.getByRole('button', { name: 'Importer maintenant' }).click()
-      await expect(page.getByText('3 vidéos ajoutées dans « Vidéos », 3 vidéos dans « Replays »').first()).toBeVisible({ timeout: 30_000 })
+      await expect(page.getByText('2 vidéos ajoutées dans « Vidéos », 1 vidéo dans « Replays »').first()).toBeVisible({ timeout: 30_000 })
 
-      const titles = MOCK_VIDEOS.map((v) => v.title).sort()
+      const [short, medium, long] = MOCK_VIDEOS
       const videos = await find('videos')
-      expect(videos.map((v) => v.title).sort()).toEqual(titles)
-      expect((await find('replays')).map((v) => v.title).sort()).toEqual(titles)
+      expect(videos.map((v) => v.title).sort()).toEqual([short.title, medium.title].sort())
+      expect(videos.find((v) => v.title === medium.title)?.duration).toBe('04:05')
       expect(videos.every((v) => v.thumbnail), 'vignette YouTube récupérée').toBe(true)
-      await page.goto('/videos')
-      await expect(page.locator('main')).toContainText(MOCK_VIDEOS[2].title)
+      const replays = await find('replays')
+      expect(replays.map((r) => r.title)).toEqual([long.title])
+      expect(replays[0]).toMatchObject({ duration: '45 min', program: program.doc.id })
       await page.goto('/replay')
-      await expect(page.locator('main')).toContainText(MOCK_VIDEOS[2].title)
+      await expect(page.locator('main')).toContainText(long.title)
 
       // relancé : rien à ajouter ; une vidéo supprimée revient, une vidéo « retirée du site » reste cachée
       const sync = async () => (await (await request.post('/api/youtube/import', { headers })).json()) as { ok: boolean; videos: number; replays: number; total: number }
       expect(await sync()).toMatchObject({ ok: true, videos: 0, replays: 0, total: 3 })
-      await request.delete(`/api/videos/${videos[0].id}`, { headers })
-      expect((await request.patch(`/api/videos/${videos[1].id}`, { headers, data: { _status: 'draft' } })).ok()).toBe(true)
-      expect(await sync()).toMatchObject({ ok: true, videos: 1, replays: 0 })
-      expect(await find('videos')).toHaveLength(3)
+      await request.delete(`/api/replays/${replays[0].id}`, { headers })
+      expect((await request.patch(`/api/videos/${videos[0].id}`, { headers, data: { _status: 'draft' } })).ok()).toBe(true)
+      expect(await sync()).toMatchObject({ ok: true, videos: 0, replays: 1 })
 
       // adresse invalide refusée à l'enregistrement
       const refused = await request.post('/api/globals/youtube', { headers, data: { channel: 'https://www.dailymotion.com/swattertv' } })

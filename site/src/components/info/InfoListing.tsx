@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import type { CSSProperties } from 'react'
 import { AdSlot } from '@/components/layout/AdSlot'
 import { Icon } from '@/components/ui/Icon'
@@ -43,11 +42,11 @@ function texts(dept: DepartmentSlug | null) {
   if (!dept) {
     return {
       eyebrow: '7j/7 · 24h/24',
-      h1: 'L’Info en Auvergne-Rhône-Alpes',
-      lede: 'Le flux d’actualité de toute la région, département par département.',
-      title: 'L’info en Auvergne-Rhône-Alpes : l’actualité en continu',
+      h1: 'L’Info en Haute-Savoie',
+      lede: 'Le flux d’actualité de la Haute-Savoie, commune par commune.',
+      title: 'L’info en Haute-Savoie : l’actualité en continu',
       description:
-        'Toute l’actualité d’Auvergne-Rhône-Alpes en continu, département par département : faits divers, sport, société, culture, montagne… avec Swatter TV, la chaîne locale de la Haute-Savoie.',
+        'Toute l’actualité de la Haute-Savoie en continu, commune par commune : faits divers, sport, société, culture, montagne… avec Swatter TV, la chaîne locale de la Haute-Savoie.',
     }
   }
   return {
@@ -108,9 +107,11 @@ export function InfoListing({ dept, page, data }: { dept: DepartmentSlug | null;
     <>
       <PageHeader eyebrow={t.eyebrow} title={t.h1} description={t.lede} crumbs={crumbs} />
 
-      <div className="container">
-        <DeptLinks links={links} />
-      </div>
+      {departments.length > 1 && (
+        <div className="container">
+          <DeptLinks links={links} />
+        </div>
+      )}
 
       {lead && (
         <section className="section section--tight container" aria-labelledby="info-une-title">
@@ -152,10 +153,10 @@ export function InfoListing({ dept, page, data }: { dept: DepartmentSlug | null;
                 <b>{dept ? 'Pas encore d’info pour ce département' : 'Pas encore d’info pour le moment'}</b>
                 {dept ? (
                   <>
-                    Revenez plus tard ou consultez <Link href="/info">l’actualité de toute la région</Link>.
+                    Revenez plus tard.
                   </>
                 ) : (
-                  'Revenez bientôt : l’actualité de la région s’affichera ici.'
+                  'Revenez bientôt : l’actualité de la Haute-Savoie s’affichera ici.'
                 )}
               </div>
             </div>

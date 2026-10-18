@@ -8,7 +8,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
   return listingMetadata(null, parsePage(await searchParams))
 }
 
-/** L'info de toute la région : article à la une, filtres par département et liste paginée (?page=). */
+/** L'info de la Haute-Savoie : article à la une et liste paginée (?page=). */
 export default async function InfoPage({ searchParams }: { searchParams: SearchParams }) {
   const page = parsePage(await searchParams)
   const data = await loadListing(null, page)

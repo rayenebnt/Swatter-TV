@@ -39,6 +39,7 @@ export const MENU: MenuSection[] = [
     items: [
       { label: 'Publicités', path: '/collections/ads', icon: 'ad' },
       { label: 'Pages (pied de page)', path: '/collections/pages', icon: 'page' },
+      { label: 'Messages reçus', path: '/collections/messages', icon: 'mail' },
       { label: 'Médiathèque', path: '/collections/media', icon: 'media' },
     ],
   },

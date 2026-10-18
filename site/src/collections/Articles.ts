@@ -4,7 +4,7 @@ import { dateTimePicker } from '@/fields/date'
 import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
-import { DEPARTMENTS } from '@/lib/departments'
+import { ALL_DEPARTMENTS, INFO_DEPARTMENT } from '@/lib/departments'
 import { articleUrl } from '@/lib/urls'
 
 export const Articles: CollectionConfig = {
@@ -20,7 +20,11 @@ export const Articles: CollectionConfig = {
   // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
   versions: draftVersions,
   defaultSort: '-publishedAt',
-  hooks: revalidateHooks,
+  hooks: {
+    ...revalidateHooks,
+    // l'info du site ne couvre que la Haute-Savoie
+    beforeValidate: [({ data }) => (data ? { ...data, department: INFO_DEPARTMENT } : data)],
+  },
   fields: [
     { name: 'title', label: 'Titre', type: 'text', required: true },
     { name: 'excerpt', label: 'Résumé', type: 'textarea', admin: { description: '2 ou 3 lignes, affichées sous le titre et dans les listes d’articles.' } },
@@ -29,7 +33,8 @@ export const Articles: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'department', label: 'Département', type: 'select', required: true, options: DEPARTMENTS.map(({ value, label }) => ({ value, label })), defaultValue: 'haute-savoie', index: true },
+        // toujours la Haute-Savoie (masqué) : seule la commune se choisit
+        { name: 'department', label: 'Département', type: 'select', required: true, options: ALL_DEPARTMENTS.map(({ value, label }) => ({ value, label })), defaultValue: INFO_DEPARTMENT, index: true, admin: { hidden: true } },
         { name: 'city', label: 'Commune', type: 'text' },
         { name: 'kicker', label: 'Rubrique', type: 'text', admin: { placeholder: 'Sport, Faits divers, Société…' } },
       ],

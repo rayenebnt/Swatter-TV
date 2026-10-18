@@ -22,13 +22,16 @@ test('accueil : toutes les rubriques sont présentes', async ({ page, request })
   expect(errors, errors.join('\n')).toEqual([])
 })
 
-test('info : liste, département et article', async ({ page }) => {
+test('info : liste (Haute-Savoie seulement) et article', async ({ page }) => {
   const errors = watchErrors(page)
   await page.goto('/info')
   const articles = await linksMatching(page, /^\/info\/[a-z-]+\/[a-z0-9-]+$/)
   expect(articles.length, 'articles listés sur /info').toBeGreaterThanOrEqual(3)
-  await page.goto('/info/haute-savoie')
-  expect((await linksMatching(page, /^\/info\/haute-savoie\/[a-z0-9-]+$/)).length, 'articles de Haute-Savoie').toBeGreaterThanOrEqual(1)
+  // l'info ne couvre que la Haute-Savoie : l'ancienne page du département renvoie vers /info, les autres n'existent pas
+  const dept = await page.request.get('/info/haute-savoie', { maxRedirects: 0 })
+  expect([301, 308], 'redirection /info/haute-savoie').toContain(dept.status())
+  expect(dept.headers().location).toMatch(/\/info$/)
+  expect((await page.request.get('/info/isere')).status()).toBe(404)
   const response = await page.goto(articles[0])
   expect(response?.status()).toBe(200)
   await settle(page)

@@ -135,15 +135,15 @@ export const Settings: GlobalConfig = {
                 { name: 'viewsCount', label: 'Compteur de vues', type: 'number', defaultValue: 0 },
               ],
             },
-            { name: 'tagline', label: 'Présentation (pied de page)', type: 'textarea', defaultValue: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie et en Auvergne-Rhône-Alpes.' },
+            { name: 'tagline', label: 'Présentation (pied de page)', type: 'textarea', defaultValue: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.' },
             {
               name: 'contact',
               label: 'Contact',
               type: 'group',
               fields: [
-                { name: 'email', label: 'E-mail', type: 'email', defaultValue: 'contact@swatter-tv.fr' },
+                { name: 'email', label: 'E-mail', type: 'email', defaultValue: 'contact@swatter-tv.fr', admin: { description: 'Affiché sur le site ; reçoit aussi les messages du formulaire « Proposer une info ».' } },
                 { name: 'phone', label: 'Téléphone', type: 'text', defaultValue: 'Uniquement par mail' },
-                { name: 'address', label: 'Adresse', type: 'textarea', defaultValue: '36 rue de la Chaumière, 74300 Thyez\nHaute-Savoie · Auvergne-Rhône-Alpes' },
+                { name: 'address', label: 'Adresse', type: 'textarea', defaultValue: '36 rue de la Chaumière, 74300 Thyez\nHaute-Savoie' },
               ],
             },
             {

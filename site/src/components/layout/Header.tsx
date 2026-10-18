@@ -29,9 +29,10 @@ export function Header() {
             <kbd className="k" aria-hidden="true">
               /
             </kbd>
-            <Link className="btn btn--gold btn--sm login" href="/admin" prefetch={false}>
-              <Icon name="user" />
-              Se connecter
+            {/* l'administration reste à l'adresse /admin : rien ne la signale aux visiteurs */}
+            <Link className="btn btn--gold btn--sm login" href="/contact">
+              <Icon name="mail" />
+              Proposer une info
             </Link>
             <MenuButton />
           </div>

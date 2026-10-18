@@ -1,9 +1,10 @@
 /**
- * Jeu de données de démonstration (idempotent).
+ * Contenus de départ (idempotent) : quelques modèles marqués « Exemple » que le client remplace par les siens,
+ * pour que chaque rubrique montre où va quoi.
  * Usage : npm run seed   (= payload run src/scripts/seed.ts)
  *
- * Supprime d'abord tous les contenus (jamais les utilisateurs), puis recrée médias, émissions,
- * grille sur 8 jours, articles, agenda, webcams, pages, réglages et météo.
+ * Supprime d'abord tous les contenus (jamais les utilisateurs), puis recrée médias, émissions d'exemple,
+ * grille sur 8 jours, articles et événements d'exemple, webcams d'exemple, pages, réglages et météo.
  * Refuse de tourner en production, sauf SEED_FORCE=1.
  */
 import config from '@payload-config'
@@ -11,7 +12,6 @@ import path from 'path'
 import { getPayload, type CollectionSlug } from 'payload'
 import { fileURLToPath } from 'url'
 
-import { labelOf, PROGRAM_GENRES } from '@/lib/categories'
 import { formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
 import { slugify } from '@/lib/slugify'
 import { articleUrl, eventUrl } from '@/lib/urls'
@@ -22,10 +22,10 @@ import { lexical } from './seed/lexical'
 import { MEDIA } from './seed/media'
 import { demoForecast } from './seed/meteo'
 import { PAGES, WEBCAMS } from './seed/pages'
-import { daySlots, primeOf, PROGRAMS } from './seed/programs'
+import { daySlots, PROGRAMS } from './seed/programs'
 
 if (process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== '1') {
-  console.error('✖ Le jeu de démonstration efface tous les contenus : refusé en production (forcer avec SEED_FORCE=1).')
+  console.error('✖ Les contenus de départ remplacent tous les contenus : refusé en production (forcer avec SEED_FORCE=1).')
   process.exit(1)
 }
 
@@ -131,7 +131,7 @@ const firstDay = addDays(today, -1)
 const gridEnd = parisDateTime(addDays(firstDay, 8), '00:00')
 const slots = Array.from({ length: 8 }, (_, i) => {
   const day = addDays(firstDay, i)
-  return daySlots(i, weekday(day)).map((s) => ({ ...s, start: parisDateTime(day, s.time) }))
+  return daySlots().map((s) => ({ ...s, start: parisDateTime(day, s.time) }))
 }).flat()
 
 const schedule = slots.map((s, i) => {
@@ -146,7 +146,7 @@ log(`${schedule.length} créneaux de grille créés (${firstDay} → ${addDays(f
 // ---------------------------------------------------------------------------------------------
 // 4. Vidéos et replays
 // ---------------------------------------------------------------------------------------------
-// « Vidéos » et « Replays » : aucune démonstration, ils se remplissent avec la chaîne YouTube du client
+// « Vidéos » et « Replays » : aucun exemple, ils se remplissent avec la chaîne YouTube du client
 // (fiche « Chaîne YouTube » de l'administration, import automatique)
 
 // ---------------------------------------------------------------------------------------------
@@ -221,10 +221,10 @@ for (const [i, w] of WEBCAMS.entries()) {
   })
 }
 
-// Aucune publicité active : l'emplacement affiche « Espace partenaire ». Un exemple inactif sert de modèle.
+// Aucune publicité active : l'emplacement affiche « Devenir partenaire ». Un exemple inactif sert de modèle.
 await payload.create({
   collection: 'ads',
-  data: { _status: 'published', name: 'Exemple de campagne (inactive)', placement: 'home-leaderboard', image: mediaId('t-matin-a'), link: '/agenda', active: false },
+  data: { _status: 'published', name: 'Exemple de campagne (inactive, à dupliquer pour une vraie publicité)', placement: 'home-leaderboard', image: mediaId('t-matin-a'), link: '/agenda', active: false },
   overrideAccess: true,
   context,
 })
@@ -256,12 +256,8 @@ await payload.create({
 // ---------------------------------------------------------------------------------------------
 // 8. Réglages du site
 // ---------------------------------------------------------------------------------------------
-const prime = PROGRAMS.find((p) => p.key === primeOf(1))
 const primeAt = parisDateTime(today, '20:45')
-// Titre sur deux lignes (la seconde en doré) : « La Vallée » / « blanche »
-const primeWords = (prime?.title ?? 'Ce soir').split(' ')
-const primeLine1 = primeWords.slice(0, Math.ceil(primeWords.length / 2)).join(' ')
-const primeLine2 = primeWords.slice(Math.ceil(primeWords.length / 2)).join(' ')
+const EDIT_SLIDES = 'Accueil et direct › Carrousel'
 
 await payload.updateGlobal({
   slug: 'settings',
@@ -276,7 +272,7 @@ await payload.updateGlobal({
         ],
         titleLine1: 'Le direct,',
         titleLine2: 'au cœur des Alpes',
-        description: 'L’info, la météo, les documentaires et les sorties de la Haute-Savoie, en continu sur Swatter TV. Rejoignez le direct en un clic.',
+        description: `Texte d’exemple à personnaliser (${EDIT_SLIDES}) : présentez votre chaîne en une ou deux phrases.`,
         image: mediaId('hero-crepuscule'),
         navLabel: 'En direct',
         primaryLabel: 'Regarder le direct',
@@ -287,12 +283,12 @@ await payload.updateGlobal({
       {
         kind: 'custom',
         badges: [
-          { label: labelOf(PROGRAM_GENRES, prime?.genre) || 'Ce soir', style: 'gold' },
+          { label: 'Exemple', style: 'gold' },
           { label: `Ce soir · ${formatTime(primeAt)}`, style: 'glass' },
         ],
-        titleLine1: primeLine1,
-        titleLine2: primeLine2 || null,
-        description: prime?.synopsis ?? null,
+        titleLine1: 'Votre émission',
+        titleLine2: 'de ce soir',
+        description: `Diapositive d’exemple (${EDIT_SLIDES}) : mettez en avant le programme de la soirée avec son titre, une image et ce texte.`,
         image: mediaId('hero-nuit'),
         navLabel: 'Ce soir',
         primaryLabel: `Ce soir à ${formatTime(primeAt)}`,
@@ -306,9 +302,9 @@ await payload.updateGlobal({
           { label: 'Sortie du week-end', style: 'gold' },
           { label: capitalize(formatDayLong(weekendPickDate)), style: 'glass' },
         ],
-        titleLine1: 'La Démontagnée,',
-        titleLine2: 'le grand retour',
-        description: 'Cloches, chars et produits locaux : les troupeaux quittent les alpages et défilent dans les rues de Bourg-Saint-Maurice dès 10 h 30.',
+        titleLine1: 'Votre sortie',
+        titleLine2: 'du week-end',
+        description: `Diapositive d’exemple (${EDIT_SLIDES}) : annoncez l’événement à ne pas manquer. Le bouton mène à sa fiche dans l’agenda.`,
         image: mediaId('hero-matin'),
         navLabel: 'Ce week-end',
         primaryLabel: 'Voir le programme',
@@ -322,18 +318,16 @@ await payload.updateGlobal({
     livePoster: mediaId('hero-crepuscule'),
     flashAuto: true,
     flashItems: [
-      { label: 'Annemasse', text: 'Nouvelle série de coups de feu dans l’agglomération, un homme interpellé', href: articleLinks.get(ARTICLES[0].title) },
-      { label: 'Ligue 2', text: 'Le FC Annecy reçoit l’AS Nancy Lorraine pour se rapprocher du top 5', href: articleLinks.get(ARTICLES[1].title) },
-      { label: 'Grenoble', text: 'Préavis de grève des agents de la MTAG', href: articleLinks.get(ARTICLES[3].title) },
-      { label: 'La Talaudière', text: 'Une maison du répit a ouvert ses portes', href: articleLinks.get(ARTICLES[6].title) },
+      { label: 'Exemple', text: 'Remplacez ce message dans Accueil et direct › Flash info', href: articleLinks.get(ARTICLES[0].title) },
+      { label: 'Exemple', text: 'Le flash se complète aussi tout seul avec vos derniers articles', href: '/info' },
     ],
     rating: 4.5,
     viewsCount: 995349,
-    tagline: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie et en Auvergne-Rhône-Alpes.',
+    tagline: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.',
     contact: {
       email: 'contact@swatter-tv.fr',
       phone: '',
-      address: '36 rue de la Chaumière, 74300 Thyez\nHaute-Savoie · Auvergne-Rhône-Alpes',
+      address: '36 rue de la Chaumière, 74300 Thyez\nHaute-Savoie',
     },
     // Réseaux sociaux : à renseigner par le client (aucune adresse inventée).
     socials: { facebook: '', instagram: '', youtube: '', tiktok: '' },
@@ -367,7 +361,7 @@ for (const collection of [...WIPE].reverse()) {
   recap[collection] = (await payload.count({ collection, overrideAccess: true })).totalDocs
 }
 const users = (await payload.count({ collection: 'users', overrideAccess: true })).totalDocs
-console.log('\n✔ Jeu de démonstration créé :')
+console.log('\n✔ Contenus de départ créés (titres « Exemple » à remplacer) :')
 console.table(recap)
 console.log(`  Utilisateurs conservés : ${users}${users === 0 ? ' (créez un administrateur : npm run payload run src/scripts/init-db.ts)' : ''}`)
 console.log(`  Grille : ${firstDay} 00:00 → ${addDays(firstDay, 8)} 00:00 (heure de Paris) · Sortie du week-end : ${formatDayLong(weekendPickDate)}`)

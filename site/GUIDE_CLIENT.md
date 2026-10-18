@@ -34,6 +34,7 @@ toujours disponible dans l’administration : lien **Aide**, en haut du tableau 
 17. [Les images et la médiathèque](#17-les-images-et-la-médiathèque)
 18. [Le référencement Google (facultatif)](#18-le-référencement-google-facultatif)
 19. [Réservé aux administrateurs : comptes, redirections](#19-réservé-aux-administrateurs--comptes-redirections)
+20. [Les messages reçus (« Proposer une info »)](#20-les-messages-reçus--proposer-une-info-)
 
 ---
 
@@ -51,16 +52,36 @@ Quelques informations ne pouvaient pas être inventées : merci de les renseigne
 
 Une fois une page complétée, cliquez sur **Publier les modifications** pour la mettre en ligne.
 
-Si votre site contient encore des contenus d’exemple (vidéos, articles, événements de démonstration), supprimez-les ou
-remplacez-les par les vôtres avant l’ouverture.
+**Les contenus « Exemple ».** Pour que vous voyiez où va quoi, le site a été livré avec quelques contenus de départ
+dont le titre commence par « Exemple » ou finit par « (exemple) ». Remplacez-les par les vôtres (ou supprimez-les)
+avant l’ouverture :
+
+| Où | Contenus d’exemple |
+|---|---|
+| **L’Info** | 3 articles « Exemple — … » |
+| **Agenda** | 3 événements « Exemple — … », dont la sortie du week-end |
+| **Émissions** et **Programme TV** | 4 émissions « (exemple) » et une grille type répétée chaque jour : remplacez-les par vos émissions et votre vraie grille (voir partie 8) |
+| **Webcams** | 2 webcams « (exemple) » qui affichent une simple photo : collez l’adresse de vos vraies webcams |
+| **Accueil et direct** › **Carrousel** | les textes des 3 diapositives (« Texte d’exemple… », « Votre émission de ce soir », « Votre sortie du week-end ») |
+| **Accueil et direct** › **Le direct** | la vidéo d’exemple du direct : remplacez-la par votre flux (YouTube, Twitch, lien de diffusion…) |
+| **Accueil et direct** › **Flash info** | les 2 messages « Exemple » |
+| **Accueil et direct** › **Chaîne et contact** | la **Note affichée** et le **Compteur de vues** de l’accueil |
+| **Publicités** | « Exemple de campagne » (inactive) : un modèle à dupliquer pour votre première publicité |
+
+Les rubriques **Vidéos** et **Replays** sont vides au départ : elles se remplissent avec votre chaîne YouTube (partie 4).
 
 ## 2. Se connecter
 
-1. Ouvrez **https://www.swatter-tv.fr/admin** (ajoutez cette adresse à vos favoris).
+1. Ouvrez **https://www.swatter-tv.fr/admin** (ajoutez cette adresse à vos favoris : le site n’affiche pas de bouton
+   de connexion, pour ne pas encombrer l’en-tête des visiteurs).
 2. Saisissez votre **E-mail** et votre **Mot de passe**, puis cliquez sur **Se connecter**.
 
 - Après 5 essais erronés, le compte est bloqué 10 minutes : patientez, puis réessayez.
-- Mot de passe perdu : cliquez sur **Mot de passe oublié ?** sur la page de connexion, un lien vous est envoyé par e-mail (si l’envoi d’e-mails a été configuré par votre prestataire) ; sinon, demandez à un administrateur de vous en définir un nouveau.
+- **Mot de passe oublié** : sur la page de connexion, cliquez sur **Mot de passe oublié ?**, saisissez votre e-mail et
+  validez. Vous recevez un e-mail « Swatter TV — choisir un nouveau mot de passe » : cliquez sur le bouton **Choisir un
+  nouveau mot de passe** (le lien est valable une heure), saisissez le nouveau mot de passe deux fois, et vous voilà
+  connecté. Rien reçu ? Regardez dans les indésirables, ou demandez à un administrateur de vous définir un nouveau mot
+  de passe (**Utilisateurs** › votre compte).
 - Votre compte : cliquez sur le rond en haut à droite. Vous pouvez y **Changer le mot de passe** et renseigner votre **Prénom et nom** (le prénom sert à vous saluer sur le tableau de bord).
 - Pensez à vous déconnecter (**Se déconnecter**, en bas du menu) sur un ordinateur partagé.
 
@@ -157,7 +178,10 @@ navigateur, par exemple `https://www.youtube.com/@votre-chaine`), puis cliquez s
   image : chacune qui n’y est pas encore est ajoutée, qu’elle soit nouvelle ou non. Cela se fait toutes les heures, et
   aussitôt avec **Importer maintenant** ; **Dernier import** indique quand il a eu lieu et ce qu’il a donné (ou l’erreur,
   par exemple une adresse mal recopiée).
-- **Afficher dans « Vidéos »** et **Afficher dans « Replays »** : les deux rubriques où les vidéos sont ajoutées.
+- **Où va chaque vidéo** : les **Shorts** et les vidéos courtes vont dans **Vidéos** ; les vidéos longues (vos émissions)
+  vont dans **Replays**. La limite se règle avec **Durée à partir de laquelle une vidéo va dans « Replays »** (20 minutes
+  par défaut). Un replay est rattaché tout seul à son émission quand son titre commence par le nom de l’émission (par
+  exemple « Le journal — 14 octobre » pour l’émission « Le journal ») ; sinon, choisissez l’émission dans sa fiche.
 - **Les vidéos importées sont…** : **En ligne aussitôt**, ou **En brouillon (à publier soi-même)** pour les relire avant.
 - **Catégorie donnée aux vidéos importées** (rubrique « Vidéos ») : modifiable ensuite vidéo par vidéo.
 - Une vidéo importée se modifie comme les autres (titre, catégorie, **Vidéo du jour**, **Top 10**, émission d’un replay…).
@@ -209,8 +233,8 @@ cookies) : sinon, le lecteur l’invite à modifier son choix.
 2. **Image** : la photo principale, en largeur (format paysage), d’au moins 1200 pixels de large.
 3. **Texte de l’article** : l’éditeur fonctionne comme un traitement de texte (intertitres, gras, listes, liens,
    citations). Sélectionnez un mot pour faire apparaître la barre de mise en forme ; tapez « / » pour insérer un bloc.
-4. **Département** (obligatoire : il range l’article dans la bonne rubrique, par exemple « /info/haute-savoie »),
-   **Commune** et **Rubrique** (Sport, Faits divers, Société…).
+4. **Commune** et **Rubrique** (Sport, Faits divers, Société…). L’info couvre la Haute-Savoie : pas de département à
+   choisir.
 5. À droite : **Date de publication**. Une date à venir programme la mise en ligne : une fois publié, l’article
    apparaîtra tout seul à cette date.
 6. Vérifiez l’aperçu, puis **Publier les modifications**.
@@ -438,3 +462,20 @@ pas être une adresse qui existe déjà sur le site.
 
 Une question, un souci ? Notez la page concernée et, si possible, faites une capture d’écran : votre prestataire
 technique pourra ainsi vous répondre plus vite.
+
+## 20. Les messages reçus (« Proposer une info »)
+
+Le bouton doré **Proposer une info**, en haut du site (et dans le pied de page), ouvre un formulaire où les visiteurs
+vous proposent une info, une demande de publicité ou une autre demande, avec leur nom, leur e-mail, la commune et un
+lien vers leurs photos ou leur vidéo. L’emplacement publicitaire vide (« Devenir partenaire ») y mène aussi, avec
+« Publicité, partenariat » déjà choisi.
+
+- **Chaque message vous est envoyé par e-mail** à l’adresse **Contact** › **E-mail** de **Accueil et direct** › onglet
+  **Chaîne et contact** (à défaut : contact@swatter-tv.fr). Cliquez simplement sur **Répondre** dans votre messagerie
+  pour écrire à la personne.
+- **Tous les messages sont aussi gardés dans l’administration** : **Messages reçus** (rubrique **Également** du menu),
+  même si l’e-mail n’a pas pu partir. Le tableau de bord indique combien restent à traiter ; cochez **Traité** dans un
+  message une fois qu’il est pris en charge.
+- Les envois automatiques (robots) sont filtrés, et une même personne ne peut pas envoyer plus de 5 messages par quart
+  d’heure.
+
