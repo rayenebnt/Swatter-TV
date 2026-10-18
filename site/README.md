@@ -93,7 +93,9 @@ npm run dev
   l’agenda et la météo.
 - Après un `git pull`, si le serveur ou `npm run seed` restent bloqués sur une question en anglais (« Is … column
   created or renamed from another column? », « Accept warnings? »), ou si l’administration ne montre pas les nouveaux
-  contenus : arrêtez le serveur (Ctrl+C), lancez **`npm run reinit`**, puis `npm run dev`.
+  contenus : arrêtez le serveur (Ctrl+C), lancez **`npm run maj-base`** (garde tous vos contenus), puis `npm run dev`.
+  `npm run reinit` repart de zéro (contenus « Exemple », comptes conservés) : seulement si vous voulez tout effacer.
+  Quand un champ disparaît du code, ajoutez sa colonne à la liste `OBSOLETE` de `src/scripts/maj-base.ts`.
 - Site : <http://localhost:3000> · administration : <http://localhost:3000/admin>.
 
 ## Commandes
@@ -106,6 +108,7 @@ npm run dev
 | `npm run typecheck` | vérification TypeScript (`tsc --noEmit`) |
 | `npm run lint` | ESLint sur tout le projet |
 | `npm run seed` | contenus de départ « Exemple » (voir ci-dessus) |
+| `npm run maj-base` | **après un `git pull` qui change la structure des données** : met la base locale à jour **sans rien effacer** (retire les colonnes supprimées du code, qui feraient poser une question à drizzle, puis ajoute les nouvelles). Arrêtez `npm run dev` avant. Refusé en production (migrations) |
 | `npm run reinit` | **après un `git pull` qui change la structure des données** : remet la base locale à neuf sans aucune question (garde les comptes et leurs mots de passe, vide la médiathèque, recharge les contenus « Exemple »). Arrêtez `npm run dev` avant. Refusé en production |
 | `npm run import` | import manuel de la météo et des vidéos de la chaîne YouTube (même traitement que la tâche planifiée) |
 | `npm run payload run src/scripts/init-db.ts` | tables + premier administrateur |
