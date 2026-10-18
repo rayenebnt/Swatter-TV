@@ -2,19 +2,29 @@
 
 export type NavItem = { href: string; label: string; live?: boolean }
 
-/** Navigation principale (en-tête). */
-export const MAIN_NAV: NavItem[] = [
+/**
+ * Rubriques dans l'ordre de la page d'accueil, de haut en bas : le direct (carrousel), les vidéos (Top 10, vidéos du
+ * jour), l'info et la météo, le programme TV, l'agenda, les webcams, le replay. `drawerOnly` : menu mobile seulement.
+ */
+const SECTIONS: (NavItem & { drawerOnly?: boolean })[] = [
   { href: '/', label: 'Accueil' },
   { href: '/direct', label: 'Le Direct', live: true },
+  { href: '/videos', label: 'Vidéos' },
   { href: '/info', label: 'L’Info' },
   { href: '/meteo', label: 'La Météo' },
-  { href: '/agenda', label: 'Agenda' },
   { href: '/programme-tv', label: 'Programme TV' },
+  { href: '/agenda', label: 'Agenda' },
+  { href: '/webcams', label: 'Webcams', drawerOnly: true },
   { href: '/replay', label: 'Le Replay' },
 ]
 
-/** Menu mobile : navigation principale + vidéos et webcams. */
-export const DRAWER_NAV: NavItem[] = [...MAIN_NAV, { href: '/videos', label: 'Vidéos' }, { href: '/webcams', label: 'Webcams' }]
+const item = ({ href, label, live }: NavItem): NavItem => ({ href, label, ...(live ? { live } : {}) })
+
+/** Navigation principale (en-tête). */
+export const MAIN_NAV: NavItem[] = SECTIONS.filter((s) => !s.drawerOnly).map(item)
+
+/** Menu mobile : toutes les rubriques. */
+export const DRAWER_NAV: NavItem[] = SECTIONS.map(item)
 
 /** Rubrique active : correspondance par préfixe (« /info/savoie/… » → « /info »), sauf pour l'accueil. */
 export function isActive(pathname: string | null, href: string): boolean {

@@ -1,6 +1,5 @@
 import type { AdminViewServerProps } from 'payload'
-import { Gutter } from '@payloadcms/ui'
-import Link from 'next/link'
+import { Gutter, Link } from '@payloadcms/ui'
 import { dayLabel, tvDay } from '@/components/programme/model'
 import { formatDayLong, formatTime, timeAgo } from '@/lib/format'
 import { rangeSearch } from '@/lib/schedule-week'

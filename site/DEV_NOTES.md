@@ -235,8 +235,12 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   de lecteur intégré ; le champ refuse le reste à la publication. Le lecteur Twitch exige le domaine de la page dans
   `parent` (ajouté côté navigateur, avec celui de `NEXT_PUBLIC_SITE_URL`) et un site en **HTTPS** : il ne s'affiche pas
   sur http://localhost (comportement de Twitch). Consentement « contenus externes » comme YouTube.
-- **Lenteur en développement** : `npm run dev` compile chaque écran de l'administration à la première visite (plusieurs
-  secondes) et reste 5 à 10 fois plus lent qu'en production. Mesurer les temps de réponse avec `npm run build && npm start`
+- **Lenteur en développement** : `npm run dev` compile chaque écran à la première visite (plusieurs secondes) et reste
+  3 à 5 fois plus lent qu'en production. `scripts/dev.mjs` précharge les rubriques et l'administration au démarrage ; le
+  cache de Turbopack (`.next/dev`) garde les compilations d'un démarrage à l'autre. Retour visuel immédiat au clic :
+  dans l'administration, les liens sur mesure utilisent le `Link` de `@payloadcms/ui` (barre de progression de Payload)
+  et le menu allume la rubrique cliquée aussitôt ; sur le site, `NavProgress` affiche une barre dorée si la page
+  suivante tarde plus de 150 ms. Mesurer les temps de réponse avec `npm run build && npm start`
   (en production : 0,2 à 0,4 s par clic dans l'administration).
 - Tests : `tests/e2e/admin.spec.ts` (brouillon invisible des visiteurs, aperçu, aperçu en direct, identifiants `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`, par défaut ceux du poste de
   développement ; ignorés si la connexion échoue).

@@ -94,7 +94,8 @@ npm run dev
 
 | Commande | Effet |
 |---|---|
-| `npm run dev` | serveur de développement (rechargement à chaud) |
+| `npm run dev` | serveur de développement (rechargement à chaud) ; précharge ensuite chaque rubrique et l’administration (`scripts/dev.mjs`) pour que les premiers clics ne paient pas la compilation (`npm run dev:brut` : sans préchargement) |
+| `npm run rapide` | build de production puis serveur de production en local : la vraie vitesse du site (0,1 à 0,4 s par clic), à utiliser pour juger des temps de réponse |
 | `npm run build` puis `npm run start` | build de production puis serveur de production (environ 4 Go de mémoire pour le build) |
 | `npm run typecheck` | vérification TypeScript (`tsc --noEmit`) |
 | `npm run lint` | ESLint sur tout le projet |

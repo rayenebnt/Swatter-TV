@@ -81,8 +81,8 @@ Le **menu** s’ouvre avec le bouton ☰ en haut à gauche (il reste ouvert sur 
 
 - **Tableau de bord**, tout en haut, pour revenir à l’accueil de l’administration ;
 - **Les rubriques du site** : **Accueil et direct** (carrousel, direct, flash info, coordonnées de la chaîne),
-  **L’Info**, **La Météo**, **Agenda**, **Programme TV** (avec, juste en dessous, **Émissions**), **Le Replay**,
-  **Vidéos** (avec, juste en dessous, **Chaîne YouTube**), **Webcams** ;
+  **Vidéos** (avec, juste en dessous, **Chaîne YouTube**), **L’Info**, **La Météo**, **Programme TV** (avec, juste en
+  dessous, **Émissions**), **Agenda**, **Webcams**, **Le Replay** ;
 - **Également** : **Publicités**, **Pages (pied de page)**, **Médiathèque** ;
 - en bas : **Voir le site** (dans un nouvel onglet) et **Aide** (ce guide).
 

@@ -5,7 +5,9 @@
   "description": "Site de Swatter TV & Info — web TV locale (Haute-Savoie / Auvergne-Rhône-Alpes)",
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:brut": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "rapide": "npm run build && npm run start",
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=6000\" next build",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",

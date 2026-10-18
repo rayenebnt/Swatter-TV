@@ -8,6 +8,7 @@ import '@/styles/globals.css'
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
+import { NavProgress } from '@/components/layout/NavProgress'
 import { TabBar } from '@/components/layout/TabBar'
 import { PreviewMode } from '@/components/preview/PreviewMode'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
@@ -37,6 +38,7 @@ export default function FrontendLayout({ children }: { children: ReactNode }) {
     <html lang="fr" className={`${outfit.variable} ${inter.variable} no-js`}>
       <body>
         <IconSprite />
+        <NavProgress />
         <a className="skip-link" href="#contenu">
           Aller au contenu
         </a>
