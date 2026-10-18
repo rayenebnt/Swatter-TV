@@ -410,6 +410,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"auto_update" boolean DEFAULT true,
   	"bulletin" varchar,
+  	"bulletin_day" varchar,
   	"forecast" jsonb,
   	"updated_at" timestamp(3) with time zone,
   	"created_at" timestamp(3) with time zone

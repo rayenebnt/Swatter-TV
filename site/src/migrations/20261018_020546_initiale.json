@@ -4708,6 +4708,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "bulletin_day": {
+          "name": "bulletin_day",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "forecast": {
           "name": "forecast",
           "type": "jsonb",
@@ -4925,6 +4931,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "28043d6b-9f77-4b1d-8b5e-1c8ba7d30437",
+  "id": "30ee1fca-c733-4262-9ec4-d421343b5669",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

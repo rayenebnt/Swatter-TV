@@ -45,7 +45,8 @@ export const getMeteo = cache(async (): Promise<MeteoData | null> => {
   const forecast = readForecast(meteo?.forecast)
   if (!forecast) return null
   const today = parisDay()
-  const manual = meteo?.bulletin?.trim()
+  // Bulletin saisi à la main : seulement le jour où il a été écrit
+  const manual = meteo?.bulletinDay === today ? meteo?.bulletin?.trim() : undefined
   const days = forecast.days
     .filter((d) => d.date >= today)
     .map((d) => withLabels(manual && d.date === today ? { ...d, bulletin: manual } : d))

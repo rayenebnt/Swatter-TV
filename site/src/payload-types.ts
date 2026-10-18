@@ -1213,9 +1213,13 @@ export interface Meteo {
   id: number;
   autoUpdate?: boolean | null;
   /**
-   * Remplace le texte généré automatiquement pour aujourd’hui.
+   * Remplace le texte généré automatiquement, aujourd’hui seulement : dès le lendemain, le texte automatique reprend.
    */
   bulletin?: string | null;
+  /**
+   * Rempli automatiquement (AAAA-MM-JJ).
+   */
+  bulletinDay?: string | null;
   forecast?:
     | {
         [k: string]: unknown;
@@ -1305,6 +1309,7 @@ export interface SettingsSelect<T extends boolean = true> {
 export interface MeteoSelect<T extends boolean = true> {
   autoUpdate?: T;
   bulletin?: T;
+  bulletinDay?: T;
   forecast?: T;
   updatedAt?: T;
   createdAt?: T;

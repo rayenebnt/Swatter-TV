@@ -255,8 +255,9 @@ accessible à l’adresse `/son-adresse` (champ **Adresse (slug)**).
 cochée. **Dernière mise à jour** indique l’heure du dernier passage.
 
 Pour écrire vous-même le texte du jour, remplissez **Bulletin du jour (facultatif)** : il remplace le texte généré
-automatiquement pour aujourd’hui. Videz-le le lendemain. Les **Prévisions (données automatiques)** ne se modifient pas
-à la main.
+automatiquement, **aujourd’hui seulement**. Dès le lendemain, le site reprend tout seul le texte automatique : inutile de
+vider le champ (le **Jour du bulletin** indique la date à laquelle il a été écrit). Les **Prévisions (données
+automatiques)** ne se modifient pas à la main.
 
 ## 18. Le référencement (bloc SEO)
 
