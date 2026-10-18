@@ -17,7 +17,7 @@ src/
   components/ui/          primitives partagées (Icon, Rail, RailArrows, Seg, SectionHead, PageHeader, MediaImage, JsonLd, Effects)
   components/<rubrique>/  composants de chaque rubrique
   lib/                    helpers (payload, safe, media, format, video, site, departments, categories, queries/)
-  lib/import/             imports automatiques (RSS, météo)
+  lib/import/             imports automatiques (météo, chaîne YouTube)
   styles/                 globals.css + un fichier par rubrique
   scripts/                scripts Payload (init-db, seed, import)
 ```
@@ -61,7 +61,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `info/InfoSection` | info de l'accueil (contient `MeteoWidget variant="aside"`) |
 | `programme/TvGridSection({variant: 'home' \| 'full', day?})` | grille TV (`day` = AAAA-MM-JJ, page /programme-tv) |
 | `agenda/AgendaSection`, `webcams/WebcamsSection({limit})` | agenda, webcams |
-| `lib/import/rss.ts → importRss(payload)`, `lib/import/meteo.ts → importMeteo(payload)` | imports (appelés par `GET /api/cron/import`) |
+| `lib/import/meteo.ts → importMeteo(payload)`, `lib/import/youtube.ts → importYoutube(payload)` | imports (appelés par `GET /api/cron/import`) |
 | `lib/search.ts → search(payload, q, limit)` | recherche (appelée par `GET /api/search?q=`) |
 | `seo/SiteJsonLd` | données structurées du site (monté dans le layout) |
 
@@ -89,7 +89,6 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `/` | accueil |
 | `/direct` | le direct |
 | `/info`, `/info/[departement]`, `/info/[departement]/[slug]` | l'info, par département, article |
-| `/info/rss.xml` | flux RSS sortant (articles de la rédaction) |
 | `/meteo` | la météo |
 | `/agenda`, `/agenda/[slug]` | agenda, événement |
 | `/programme-tv` | programme TV |
@@ -143,7 +142,7 @@ npm run seed           # données de démonstration
   la casse ou les accents passent par `[...slug]` (la correspondance de `next.config.ts` est insensible à la casse et bouclerait).
 - **Recherche** : « webcam(s) », « caméra »… désignent la rubrique : ces mots (et les petits mots autour) sont retirés de la
   requête des webcams (`WEBCAM_WORDS` dans `src/lib/search.ts`), « webcams » seul les donne toutes. `ILIKE` sans index, suffisant à cette échelle ; pour de gros volumes, ajouter un index trigramme (pg_trgm).
-  `SearchHit.image` peut être une URL distante (articles RSS) : l'afficher avec `unoptimized`.
+  `SearchHit.image` peut être une URL distante : l'afficher avec `unoptimized`.
 - **Pages qui lisent `searchParams`** (filtres, pagination) : pas de `generateStaticParams` sur la même route. En production,
   une page prégénérée qui lit `searchParams` lève `DYNAMIC_SERVER_USAGE` (erreur 500), alors que tout fonctionne en développement.
   Toujours vérifier les pages avec `npm run build && npm start`.
@@ -187,7 +186,7 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
 - **Menu** : menu sur mesure, **dans l'ordre du menu du site** (`menu.ts`, rendu par `NavLinks.tsx` en `beforeNavLinks`) ;
   le menu automatique de Payload est vidé (`admin.group: false` sur toutes les collections et tous les globals, plugin
   `simpleDocuments`). Une nouvelle collection doit donc être ajoutée à `menu.ts`. La section « Administration » (comptes,
-  flux RSS, redirections) n'est affichée qu'aux administrateurs ; ces collections gardent `admin.hidden: hiddenForEditors`
+  redirections) n'est affichée qu'aux administrateurs ; ces collections gardent `admin.hidden: hiddenForEditors`
   (l'API garde ses propres règles d'accès). Liens sans préchargement (`prefetch={false}`) : le préchargement de dizaines de
   vues de l'administration ralentissait la navigation.
 - **Aperçu en direct** (`admin.livePreview`, config) : ouvert d'office sur les fiches à brouillons et sur « Accueil et

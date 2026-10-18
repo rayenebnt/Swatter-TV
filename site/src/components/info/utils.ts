@@ -52,30 +52,13 @@ export function imageSource(url: string): { src: string; unoptimized: boolean } 
   return { src, unoptimized: !LOCAL.test(src) }
 }
 
-/** Adresse http(s) absolue valide (image externe d'un import RSS, lien vers la source) ou null. */
-export function httpUrl(url?: string | null): string | null {
-  const u = url?.trim()
-  if (!u || !/^https?:\/\/[^\s"'<>]+$/i.test(u)) return null
-  try {
-    // Rejette aussi les adresses que la regex accepte mais que new URL refuse (port invalide…)
-    return new URL(u).hostname ? u : null
-  } catch {
-    return null
-  }
-}
-
-/** Adresse d'image externe valide (import RSS) ou null. */
-export const externalImage = httpUrl
-
-/** Image d'un article : média Payload, sinon image externe (RSS), sinon visuel de repli. */
-export function articleImage(a: { id: number; image?: MediaRef; imageUrl?: string | null }, size: MediaSize): ImageData {
+/** Image d'un article : média Payload, sinon visuel de repli. */
+export function articleImage(a: { id: number; image?: MediaRef }, size: MediaSize): ImageData {
   const url = mediaUrl(a.image, size)
   if (url) {
     const { width, height } = mediaSize(a.image, size)
     return { ...imageSource(url), alt: mediaAlt(a.image), width, height, position: mediaFocal(a.image) }
   }
-  const external = externalImage(a.imageUrl)
-  if (external) return { src: external, unoptimized: true, alt: '', width: 1600, height: 900 }
   return { src: fallbackVisual(a.id), unoptimized: false, alt: '', width: 960, height: 540 }
 }
 
@@ -130,7 +113,7 @@ function someNode(nodes: unknown, test: (n: LexicalNode) => boolean): boolean {
   return Array.isArray(nodes) && nodes.some((n) => isNode(n) && (test(n) || someNode(n.children, test)))
 }
 
-/** Vrai si l'article a un texte propre (autre chose que des paragraphes vides) ; faux pour une reprise RSS brute. */
+/** Vrai si l'article a un texte propre (autre chose que des paragraphes vides). */
 export function hasOwnContent(content: Article['content']): boolean {
   return someNode(content?.root?.children, (n) => (typeof n.text === 'string' && n.text.trim() !== '') || (typeof n.type === 'string' && MEDIA_NODES.has(n.type)))
 }
@@ -155,12 +138,10 @@ export function truncate(text: string, max: number): string {
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s\u00a0,;:.!?\-–—(«"'’]+$/u, '')}…`
 }
 
-/** Image de partage d'un article (JPEG 1200 × 630) : image SEO, puis image de l'article, image externe (RSS) ou visuel de repli. */
-export function articleShareImage(a: { id: number; title: string; image?: MediaRef; imageUrl?: string | null; meta?: { image?: MediaRef } | null }): OgImage {
+/** Image de partage d'un article (JPEG 1200 × 630) : image SEO, puis image de l'article, ou visuel de repli. */
+export function articleShareImage(a: { id: number; title: string; image?: MediaRef; meta?: { image?: MediaRef } | null }): OgImage {
   const seo = a.meta?.image
   const media = typeof seo === 'object' && seo ? seo : typeof a.image === 'object' && a.image ? a.image : null
   if (media) return ogImage(media, fallbackVisual(a.id), mediaAlt(media, a.title))
-  const external = externalImage(a.imageUrl)
-  if (external) return { url: external, width: 1600, height: 900, alt: a.title }
   return ogImage(null, fallbackVisual(a.id), a.title)
 }

@@ -152,17 +152,6 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
               value={featuredValue(data.infoOfDay, 'Aucun article publié', 'le dernier article publié')}
               href={data.infoOfDay?.picked ? edit('articles', data.infoOfDay.id) : collection('articles')}
             />
-            {data.rss.activeFeeds > 0 && (
-              <StatusRow
-                icon="rss"
-                label="Import de l’info"
-                tone={data.rss.failingFeeds ? 'warn' : 'ok'}
-                value={`${data.rss.importedToday} article${data.rss.importedToday > 1 ? 's' : ''} importé${data.rss.importedToday > 1 ? 's' : ''} en 24 h${
-                  data.rss.failingFeeds ? ` · ${data.rss.failingFeeds} flux en erreur` : ''
-                }`}
-                href={collection('articles')}
-              />
-            )}
             <StatusRow
               icon="weather"
               label="Météo"

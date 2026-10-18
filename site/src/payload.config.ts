@@ -18,7 +18,6 @@ import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Programs } from './collections/Programs'
 import { Replays } from './collections/Replays'
-import { RssFeeds } from './collections/RssFeeds'
 import { Schedule } from './collections/Schedule'
 import { Users } from './collections/Users'
 import { Videos } from './collections/Videos'
@@ -29,7 +28,6 @@ import { Settings } from './globals/Settings'
 import { Youtube } from './globals/Youtube'
 import { deleteEmptyDrafts } from './lib/drafts-cleanup'
 import { importMeteo } from './lib/import/meteo'
-import { importRss } from './lib/import/rss'
 import { importYoutube } from './lib/import/youtube'
 import { DRAFT_COLLECTIONS, publicationAware } from './lib/publication'
 import { previewPath, previewUrl } from './lib/preview'
@@ -255,7 +253,7 @@ export default buildConfig({
     },
   },
   // Le menu de l'administration suit l'ordre du site : voir src/components/admin/menu.ts
-  collections: [Videos, Articles, Events, Replays, Schedule, Programs, Webcams, Ads, Pages, Media, RssFeeds, Users],
+  collections: [Videos, Articles, Events, Replays, Schedule, Programs, Webcams, Ads, Pages, Media, Users],
   globals: [Settings, Meteo, Youtube],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -295,8 +293,7 @@ export default buildConfig({
         if (!sameSecret(secret, process.env.CRON_SECRET)) {
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
-        const [rss, meteo, youtube, drafts] = await Promise.all([
-          importRss(req.payload).catch((e: unknown) => ({ created: 0, skipped: 0, errors: [String(e)] })),
+        const [meteo, youtube, drafts] = await Promise.all([
           importMeteo(req.payload).catch((e: unknown) => ({ ok: false, error: String(e) })),
           // nouvelles vidéos de la chaîne YouTube (global « youtube »)
           importYoutube(req.payload).catch((e: unknown) => ({ ok: false, created: 0, skipped: 0, total: 0, error: String(e) })),
@@ -306,7 +303,7 @@ export default buildConfig({
             (e: unknown) => ({ deleted: 0, error: String(e) }),
           ),
         ])
-        if (rss.created > 0 || youtube.created > 0 || ('ok' in meteo && meteo.ok)) {
+        if (youtube.created > 0 || ('ok' in meteo && meteo.ok)) {
           try {
             const { revalidatePath } = await import('next/cache')
             revalidatePath('/', 'layout')
@@ -314,7 +311,7 @@ export default buildConfig({
             // hors runtime Next.js
           }
         }
-        return Response.json({ rss, meteo, youtube, drafts })
+        return Response.json({ meteo, youtube, drafts })
       },
     },
     {

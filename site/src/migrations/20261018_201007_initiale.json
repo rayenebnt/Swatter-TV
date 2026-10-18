@@ -786,12 +786,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "image_url": {
-          "name": "image_url",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "department": {
           "name": "department",
           "type": "enum_articles_department",
@@ -825,34 +819,8 @@
           "notNull": false,
           "default": false
         },
-        "source": {
-          "name": "source",
-          "type": "enum_articles_source",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'manual'"
-        },
-        "source_name": {
-          "name": "source_name",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "source_url": {
-          "name": "source_url",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "slug": {
           "name": "slug",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "guid": {
-          "name": "guid",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -949,21 +917,6 @@
           "columns": [
             {
               "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "articles_guid_idx": {
-          "name": "articles_guid_idx",
-          "columns": [
-            {
-              "expression": "guid",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1109,12 +1062,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "version_image_url": {
-          "name": "version_image_url",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "version_department": {
           "name": "version_department",
           "type": "enum__articles_v_version_department",
@@ -1148,34 +1095,8 @@
           "notNull": false,
           "default": false
         },
-        "version_source": {
-          "name": "version_source",
-          "type": "enum__articles_v_version_source",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'manual'"
-        },
-        "version_source_name": {
-          "name": "version_source_name",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "version_source_url": {
-          "name": "version_source_url",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "version_slug": {
           "name": "version_slug",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "version_guid": {
-          "name": "version_guid",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -1311,21 +1232,6 @@
           "columns": [
             {
               "expression": "version_slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "_articles_v_version_version_guid_idx": {
-          "name": "_articles_v_version_version_guid_idx",
-          "columns": [
-            {
-              "expression": "version_guid",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -5962,121 +5868,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.rss_feeds": {
-      "name": "rss_feeds",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "department": {
-          "name": "department",
-          "type": "enum_rss_feeds_department",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'haute-savoie'"
-        },
-        "city": {
-          "name": "city",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kicker": {
-          "name": "kicker",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "active": {
-          "name": "active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": true
-        },
-        "last_fetched_at": {
-          "name": "last_fetched_at",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_error": {
-          "name": "last_error",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "rss_feeds_updated_at_idx": {
-          "name": "rss_feeds_updated_at_idx",
-          "columns": [
-            {
-              "expression": "updated_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "rss_feeds_created_at_idx": {
-          "name": "rss_feeds_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.users_sessions": {
       "name": "users_sessions",
       "schema": "",
@@ -6893,12 +6684,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "rss_feeds_id": {
-          "name": "rss_feeds_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "users_id": {
           "name": "users_id",
           "type": "integer",
@@ -7108,21 +6893,6 @@
           "method": "btree",
           "with": {}
         },
-        "payload_locked_documents_rels_rss_feeds_id_idx": {
-          "name": "payload_locked_documents_rels_rss_feeds_id_idx",
-          "columns": [
-            {
-              "expression": "rss_feeds_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "payload_locked_documents_rels_users_id_idx": {
           "name": "payload_locked_documents_rels_users_id_idx",
           "columns": [
@@ -7291,19 +7061,6 @@
           "tableTo": "media",
           "columnsFrom": [
             "media_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "payload_locked_documents_rels_rss_feeds_fk": {
-          "name": "payload_locked_documents_rels_rss_feeds_fk",
-          "tableFrom": "payload_locked_documents_rels",
-          "tableTo": "rss_feeds",
-          "columnsFrom": [
-            "rss_feeds_id"
           ],
           "columnsTo": [
             "id"
@@ -9368,14 +9125,6 @@
         "allier"
       ]
     },
-    "public.enum_articles_source": {
-      "name": "enum_articles_source",
-      "schema": "public",
-      "values": [
-        "manual",
-        "rss"
-      ]
-    },
     "public.enum_articles_status": {
       "name": "enum_articles_status",
       "schema": "public",
@@ -9400,14 +9149,6 @@
         "puy-de-dome",
         "cantal",
         "allier"
-      ]
-    },
-    "public.enum__articles_v_version_source": {
-      "name": "enum__articles_v_version_source",
-      "schema": "public",
-      "values": [
-        "manual",
-        "rss"
       ]
     },
     "public.enum__articles_v_version_status": {
@@ -9660,24 +9401,6 @@
         "published"
       ]
     },
-    "public.enum_rss_feeds_department": {
-      "name": "enum_rss_feeds_department",
-      "schema": "public",
-      "values": [
-        "haute-savoie",
-        "savoie",
-        "ain",
-        "isere",
-        "rhone",
-        "loire",
-        "haute-loire",
-        "drome",
-        "ardeche",
-        "puy-de-dome",
-        "cantal",
-        "allier"
-      ]
-    },
     "public.enum_users_role": {
       "name": "enum_users_role",
       "schema": "public",
@@ -9816,6 +9539,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "16ed5f14-6f45-4147-a53b-9491aed82096",
+  "id": "73ef677f-a208-46ab-a578-235730c83bd2",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

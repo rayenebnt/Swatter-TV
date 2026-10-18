@@ -17,7 +17,6 @@ export type DashboardData = {
   emptyDays: string[]
   ads: number
   meteo: { auto: boolean; updatedAt: string | null }
-  rss: { activeFeeds: number; failingFeeds: number; importedToday: number }
   /** vidéos et replays sans image (image YouTube introuvable à l'enregistrement) */
   missingImages: { videos: number; replays: number }
   recent: RecentItem[]
@@ -26,7 +25,6 @@ export type DashboardData = {
 export type RecentItem = { collection: RecentCollection; id: number; title: string; updatedAt: string; draft: boolean }
 export type RecentCollection = 'videos' | 'articles' | 'events' | 'replays'
 
-const DAY_MS = 24 * 60 * 60 * 1000
 
 /** Une requête en échec n'empêche pas le tableau de bord de s'afficher : la case concernée reste vide. */
 async function attempt<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
@@ -88,8 +86,6 @@ async function recent(payload: Payload): Promise<RecentItem[]> {
       const { docs } = await payload.find({
         collection,
         draft: true,
-        // les articles importés automatiquement (RSS) ne sont pas des modifications de l'équipe
-        where: collection === 'articles' ? { source: { not_equals: 'rss' } } : undefined,
         sort: '-updatedAt',
         limit: 6,
         depth: 0,
@@ -106,9 +102,8 @@ async function recent(payload: Payload): Promise<RecentItem[]> {
 }
 
 export async function getDashboardData(payload: Payload): Promise<DashboardData> {
-  const since = new Date(Date.now() - DAY_MS).toISOString()
   const noImage: Where = { and: [LIVE, { thumbnail: { exists: false } }] }
-  const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, feeds, importedToday, videosNoImage, replaysNoImage, recentItems] = await Promise.all([
+  const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, videosNoImage, replaysNoImage, recentItems] = await Promise.all([
     attempt(() => payload.findGlobal({ slug: 'settings', depth: 0 }), null),
     attempt(() => payload.findGlobal({ slug: 'meteo', depth: 0 }), null),
     attempt(() => featured(payload, 'videos', 'isVideoOfDay'), null),
@@ -116,12 +111,6 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     attempt(() => weekendPick(payload), null),
     attempt(() => emptyDays(payload), [] as string[]),
     attempt(async () => (await payload.count({ collection: 'ads', where: { and: [LIVE, runningAdsWhere()] } })).totalDocs, 0),
-    attempt(
-      async () =>
-        (await payload.find({ collection: 'rss-feeds', where: { active: { equals: true } }, depth: 0, pagination: false, select: { lastError: true } })).docs,
-      [] as { lastError?: string | null }[],
-    ),
-    attempt(async () => (await payload.count({ collection: 'articles', where: { and: [{ source: { equals: 'rss' } }, { createdAt: { greater_than_equal: since } }] } })).totalDocs, 0),
     attempt(async () => (await payload.count({ collection: 'videos', where: noImage })).totalDocs, 0),
     attempt(async () => (await payload.count({ collection: 'replays', where: noImage })).totalDocs, 0),
     attempt(() => recent(payload), [] as RecentItem[]),
@@ -151,7 +140,6 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     ads,
     // heure de l'import, lue dans les prévisions (la date de modification de la fiche change aussi avec un bulletin)
     meteo: { auto: meteo?.autoUpdate !== false, updatedAt: (meteo?.forecast as { updatedAt?: string } | null | undefined)?.updatedAt ?? null },
-    rss: { activeFeeds: feeds.length, failingFeeds: feeds.filter((f) => f.lastError).length, importedToday },
     missingImages: { videos: videosNoImage, replays: replaysNoImage },
     recent: recentItems,
   }

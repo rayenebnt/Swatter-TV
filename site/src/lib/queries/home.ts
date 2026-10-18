@@ -73,7 +73,7 @@ export const getWeekendEvent = cache(
 
 /* ----- Info du jour et flash info ----- */
 
-export type HomeArticle = Pick<Article, 'id' | 'title' | 'slug' | 'department' | 'city' | 'kicker' | 'image' | 'imageUrl' | 'publishedAt' | 'isInfoOfDay'>
+export type HomeArticle = Pick<Article, 'id' | 'title' | 'slug' | 'department' | 'city' | 'kicker' | 'image' | 'publishedAt' | 'isInfoOfDay'>
 
 /** Info du jour la plus récente ; à défaut, le dernier article publié. */
 export const getInfoOfDay = cache(
@@ -90,7 +90,7 @@ export const getInfoOfDay = cache(
             limit: 1,
             depth: 1,
             pagination: false,
-            select: { title: true, slug: true, department: true, city: true, kicker: true, image: true, imageUrl: true, publishedAt: true, isInfoOfDay: true },
+            select: { title: true, slug: true, department: true, city: true, kicker: true, image: true, publishedAt: true, isInfoOfDay: true },
           })
         const picked = await find({ and: [published, { isInfoOfDay: { equals: true } }] })
         const doc = picked.docs[0] ?? (await find(published)).docs[0]

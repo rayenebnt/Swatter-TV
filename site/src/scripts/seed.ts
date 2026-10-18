@@ -67,7 +67,7 @@ async function inBatches<T, R>(items: T[], size: number, fn: (item: T, i: number
 // ---------------------------------------------------------------------------------------------
 // 1. Nettoyage (jamais la collection users)
 // ---------------------------------------------------------------------------------------------
-const WIPE: CollectionSlug[] = ['redirects', 'schedule', 'replays', 'videos', 'articles', 'events', 'webcams', 'ads', 'pages', 'programs', 'rss-feeds', 'media']
+const WIPE: CollectionSlug[] = ['redirects', 'schedule', 'replays', 'videos', 'articles', 'events', 'webcams', 'ads', 'pages', 'programs', 'media']
 
 // Les réglages référencent des médias (carrousel, direct) : on les détache avant de vider la médiathèque.
 await payload.updateGlobal({
@@ -169,9 +169,6 @@ for (const a of ARTICLES) {
       kicker: a.kicker,
       publishedAt: new Date(now.getTime() - a.ageMinutes * 60_000).toISOString(),
       isInfoOfDay: Boolean(a.isInfoOfDay),
-      ...(a.rss
-        ? { source: 'rss' as const, sourceName: 'Agence régionale (démonstration)', sourceUrl: `https://example.org/actualites/${slug}`, guid: `demo-${slug}` }
-        : { source: 'manual' as const }),
     },
     overrideAccess: true,
     context,
@@ -213,7 +210,7 @@ for (const e of EVENTS) {
 log(`${EVENTS.length} événements créés.`)
 
 // ---------------------------------------------------------------------------------------------
-// 7. Webcams, publicité, pages, flux RSS, redirection
+// 7. Webcams, publicité, pages, redirection
 // ---------------------------------------------------------------------------------------------
 for (const [i, w] of WEBCAMS.entries()) {
   await payload.create({
@@ -248,13 +245,6 @@ for (const p of PAGES) {
     context,
   })
 }
-
-await payload.create({
-  collection: 'rss-feeds',
-  data: { name: 'Exemple de flux (inactif)', url: 'https://example.org/rss.xml', department: 'haute-savoie', kicker: 'Actualité', active: false },
-  overrideAccess: true,
-  context,
-})
 
 await payload.create({
   collection: 'redirects',

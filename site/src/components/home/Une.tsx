@@ -107,7 +107,7 @@ function InfoTile({ article }: { article: HomeArticle }) {
     <article className="tile b-info" data-reveal style={delay(2)}>
       <MediaImage
         media={article.image}
-        fallbackSrc={article.imageUrl || '/visuels/t-nuages-a.webp'}
+        fallbackSrc="/visuels/t-nuages-a.webp"
         size="card"
         fill
         sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1100px) 50vw, 340px"

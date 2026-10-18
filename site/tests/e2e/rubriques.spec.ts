@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test'
-import { XMLParser, XMLValidator } from 'fast-xml-parser'
 import { expectPlayer, firstDoc, linksMatching, settle, watchErrors } from './helpers'
 
 // Un test par rubrique : le contenu attendu est bien là (jeu de démonstration : npm run seed).
@@ -36,24 +35,6 @@ test('info : liste, département et article', async ({ page }) => {
   await expect(page.locator('h1')).toHaveCount(1)
   await expect(page.locator('main time').first()).toBeAttached()
   expect(errors, errors.join('\n')).toEqual([])
-})
-
-test('info : le flux RSS est un XML valide', async ({ request }) => {
-  const response = await request.get('/info/rss.xml')
-  expect(response.status()).toBe(200)
-  expect(response.headers()['content-type']).toMatch(/xml/)
-  const xml = await response.text()
-  expect(XMLValidator.validate(xml)).toBe(true)
-  type Item = { title?: string; link?: string; guid?: unknown; pubDate?: string }
-  const feed = new XMLParser().parse(xml) as { rss?: { channel?: { title?: string; item?: Item | Item[] } } }
-  expect(feed.rss?.channel?.title).toBeTruthy()
-  const items = [feed.rss?.channel?.item ?? []].flat()
-  expect(items.length, 'articles dans le flux').toBeGreaterThan(0)
-  for (const item of items) {
-    expect(item.title).toBeTruthy()
-    expect(item.link).toMatch(/^https?:\/\/[^/]+\/info\/[a-z-]+\/[a-z0-9-]+$/)
-    expect(new Date(item.pubDate ?? '').getTime(), `date de « ${item.title} »`).not.toBeNaN()
-  }
 })
 
 test('météo : prévisions de la Haute-Savoie seulement', async ({ page }) => {

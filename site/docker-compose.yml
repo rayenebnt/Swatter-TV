@@ -107,7 +107,7 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  # Tâche planifiée horaire : imports RSS et météo (GET /api/cron/import, secret transmis dans l'en-tête Authorization).
+  # Tâche planifiée horaire : météo et chaîne YouTube (GET /api/cron/import, secret transmis dans l'en-tête Authorization).
   # Premier passage dès que le site est prêt, puis toutes les heures ; les échecs sont visibles dans « docker compose logs cron ».
   cron:
     image: curlimages/curl:8.10.1
@@ -119,7 +119,7 @@ services:
     command:
       - |
         while true; do
-          echo "$$(date -u '+%F %T') import RSS + météo"
+          echo "$$(date -u '+%F %T') import météo + YouTube"
           curl -fsS --max-time 300 -H "Authorization: Bearer $$CRON_SECRET" http://app:3000/api/cron/import || echo "échec de l'import"
           echo
           sleep 3600

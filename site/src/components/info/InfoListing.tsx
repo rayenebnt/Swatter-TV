@@ -68,7 +68,7 @@ export async function loadListing(dept: DepartmentSlug | null, page: number): Pr
   return { featured, list, departments: DEPARTMENTS.map((d) => d.value).filter((v) => withInfo.includes(v) || v === dept) }
 }
 
-/** Métadonnées d'une page de liste : titre, description, adresse canonique (avec ?page=), flux RSS, image de l'article à la une. */
+/** Métadonnées d'une page de liste : titre, description, adresse canonique (avec ?page=), image de l'article à la une. */
 export async function listingMetadata(dept: DepartmentSlug | null, page: number): Promise<Metadata> {
   const { title, description } = texts(dept)
   const fullTitle = page > 1 ? `${title} (page ${page})` : title
@@ -77,7 +77,7 @@ export async function listingMetadata(dept: DepartmentSlug | null, page: number)
   return {
     title: fullTitle,
     description,
-    alternates: { canonical: url, types: { 'application/rss+xml': [{ url: '/info/rss.xml', title: 'L’Info — Swatter TV' }] } },
+    alternates: { canonical: url },
     openGraph: {
       type: 'website',
       locale: 'fr_FR',
@@ -106,14 +106,7 @@ export function InfoListing({ dept, page, data }: { dept: DepartmentSlug | null;
 
   return (
     <>
-      <PageHeader eyebrow={t.eyebrow} title={t.h1} description={t.lede} crumbs={crumbs}>
-        <div className="info-head__tools">
-          <a className="btn btn--ghost btn--sm" href="/info/rss.xml" type="application/rss+xml">
-            <Icon name="rss" />
-            Flux RSS
-          </a>
-        </div>
-      </PageHeader>
+      <PageHeader eyebrow={t.eyebrow} title={t.h1} description={t.lede} crumbs={crumbs} />
 
       <div className="container">
         <DeptLinks links={links} />

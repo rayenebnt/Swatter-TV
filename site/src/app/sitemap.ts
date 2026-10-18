@@ -1,6 +1,5 @@
 import type { MetadataRoute } from 'next'
 import type { Where } from 'payload'
-import { hasOwnContent } from '@/components/info/utils'
 import { parisDateTime, parisDay } from '@/lib/format'
 import { getPayloadClient } from '@/lib/payload'
 import { safe } from '@/lib/safe'
@@ -22,7 +21,7 @@ const latest = (docs: { updatedAt: string }[]) => docs.reduce<string | null>((ma
 const withSlug = <T extends Dated>(docs: T[]) => docs.filter((d) => d.slug)
 
 /**
- * Plan du site : adresses fixes, pages éditoriales, articles (hors reprises RSS sans texte propre, en noindex),
+ * Plan du site : adresses fixes, pages éditoriales, articles,
  * départements de l'info, vidéos, replays et événements à venir. Sans base (build), seules les adresses fixes sortent.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -31,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const nowIso = now.toISOString()
   const published: Where = { publishedAt: { less_than_equal: nowIso } }
 
-  const [pages, ownArticles, rssArticles, videos, replays, events] = payload
+  const [pages, allArticles, videos, replays, events] = payload
     ? await Promise.all([
         safe(async () => (await payload.find({ collection: 'pages', limit: MAX, depth: 0, pagination: false, sort: 'slug', select: { slug: true, updatedAt: true } })).docs, [], 'sitemap (pages)'),
         safe(
@@ -39,7 +38,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             (
               await payload.find({
                 collection: 'articles',
-                where: { and: [published, { or: [{ source: { not_equals: 'rss' } }, { source: { exists: false } }] }] },
+                where: published,
                 limit: MAX,
                 depth: 0,
                 pagination: false,
@@ -49,23 +48,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             ).docs,
           [],
           'sitemap (articles)',
-        ),
-        // Reprises RSS : seules celles qui ont un texte propre sont indexables
-        safe(
-          async () =>
-            (
-              await payload.find({
-                collection: 'articles',
-                where: { and: [published, { source: { equals: 'rss' } }] },
-                limit: MAX,
-                depth: 0,
-                pagination: false,
-                sort: '-publishedAt',
-                select: { slug: true, department: true, updatedAt: true, content: true },
-              })
-            ).docs,
-          [],
-          'sitemap (articles RSS)',
         ),
         safe(
           async () =>
@@ -97,15 +79,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           'sitemap (agenda)',
         ),
       ])
-    : [[], [], [], [], [], []]
+    : [[], [], [], [], []]
 
-  // Départements qui ont au moins un article publié (toutes sources), avec la date de leur article le plus récent
+  // Départements qui ont au moins un article publié, avec la date de leur article le plus récent
   const departments = new Map<string, string>()
-  for (const a of [...ownArticles, ...rssArticles]) {
+  for (const a of allArticles) {
     const prev = departments.get(a.department)
     if (!prev || a.updatedAt > prev) departments.set(a.department, a.updatedAt)
   }
-  const articles = withSlug([...ownArticles, ...rssArticles.filter((a) => hasOwnContent(a.content))])
+  const articles = withSlug(allArticles)
   const lastInfo = latest(articles)
   const lastVideo = latest(videos)
   const lastReplay = latest(replays)

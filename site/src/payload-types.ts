@@ -77,7 +77,6 @@ export interface Config {
     ads: Ad;
     pages: Page;
     media: Media;
-    'rss-feeds': RssFeed;
     users: User;
     redirects: Redirect;
     'payload-kv': PayloadKv;
@@ -97,7 +96,6 @@ export interface Config {
     ads: AdsSelect<false> | AdsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
-    'rss-feeds': RssFeedsSelect<false> | RssFeedsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -285,7 +283,7 @@ export interface Media {
   };
 }
 /**
- * Les articles écrits par l’équipe, et ceux importés automatiquement depuis les flux d’information (RSS).
+ * Les articles de l’info, écrits par l’équipe.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "articles".
@@ -316,7 +314,6 @@ export interface Article {
     };
     [k: string]: unknown;
   } | null;
-  imageUrl?: string | null;
   department:
     | 'haute-savoie'
     | 'savoie'
@@ -340,14 +337,10 @@ export interface Article {
    * Affichée dans « À la une ». Si plusieurs articles sont cochés, le plus récent l’emporte.
    */
   isInfoOfDay?: boolean | null;
-  source?: ('manual' | 'rss') | null;
-  sourceName?: string | null;
-  sourceUrl?: string | null;
   /**
    * Se remplit toute seule à partir du titre à l’enregistrement. Inutile d’y toucher.
    */
   slug?: string | null;
-  guid?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -625,37 +618,6 @@ export interface Page {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Les articles de ces flux sont importés automatiquement dans « L’Info », toutes les heures.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "rss-feeds".
- */
-export interface RssFeed {
-  id: number;
-  name: string;
-  url: string;
-  department:
-    | 'haute-savoie'
-    | 'savoie'
-    | 'ain'
-    | 'isere'
-    | 'rhone'
-    | 'loire'
-    | 'haute-loire'
-    | 'drome'
-    | 'ardeche'
-    | 'puy-de-dome'
-    | 'cantal'
-    | 'allier';
-  city?: string | null;
-  kicker?: string | null;
-  active?: boolean | null;
-  lastFetchedAt?: string | null;
-  lastError?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * Les personnes qui peuvent se connecter. Un éditeur publie les contenus ; un administrateur gère aussi les comptes et les réglages techniques.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -790,10 +752,6 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
-        relationTo: 'rss-feeds';
-        value: number | RssFeed;
-      } | null)
-    | ({
         relationTo: 'users';
         value: number | User;
       } | null)
@@ -887,17 +845,12 @@ export interface ArticlesSelect<T extends boolean = true> {
   excerpt?: T;
   image?: T;
   content?: T;
-  imageUrl?: T;
   department?: T;
   city?: T;
   kicker?: T;
   publishedAt?: T;
   isInfoOfDay?: T;
-  source?: T;
-  sourceName?: T;
-  sourceUrl?: T;
   slug?: T;
-  guid?: T;
   meta?:
     | T
     | {
@@ -1139,22 +1092,6 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "rss-feeds_select".
- */
-export interface RssFeedsSelect<T extends boolean = true> {
-  name?: T;
-  url?: T;
-  department?: T;
-  city?: T;
-  kicker?: T;
-  active?: T;
-  lastFetchedAt?: T;
-  lastError?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

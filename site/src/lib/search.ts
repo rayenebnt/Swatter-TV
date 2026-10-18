@@ -211,7 +211,7 @@ async function searchArticles(c: Ctx): Promise<Ranked[]> {
           limit: c.take,
           depth: 1,
           pagination: false,
-          select: { title: true, slug: true, department: true, city: true, kicker: true, excerpt: true, image: true, imageUrl: true, publishedAt: true },
+          select: { title: true, slug: true, department: true, city: true, kicker: true, excerpt: true, image: true, publishedAt: true },
         })
         .then((r) => r.docs),
     (a) => [a.title, a.excerpt, a.city, a.kicker],
@@ -226,8 +226,7 @@ async function searchArticles(c: Ctx): Promise<Ranked[]> {
       title: a.title,
       subtitle: line(a.city || departmentLabel(a.department), formatDate(a.publishedAt)),
       href: articleUrl(a),
-      // Image importée par RSS : adresse distante (http/https uniquement)
-      image: mediaUrl(a.image, 'thumb') ?? (a.imageUrl && /^https?:\/\//.test(a.imageUrl) ? a.imageUrl : null),
+      image: mediaUrl(a.image, 'thumb'),
     },
   }))
 }

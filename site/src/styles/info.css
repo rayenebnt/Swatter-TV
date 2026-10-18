@@ -46,7 +46,6 @@
 }
 
 /* ----- Pages Info : outils de l'en-tête, filtres en liens, à la une, grille, pagination ----- */
-.info-head__tools { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
 .info-depts { margin-top: 28px; }
 .info-depts a[aria-current='page'] { background: var(--gold-grad); color: var(--on-gold); font-weight: 600; box-shadow: 0 8px 22px -10px rgba(217, 170, 69, .8); }
 .lead--page { margin-top: 0; }
@@ -84,10 +83,6 @@
 .art__media img { object-fit: cover; }
 .art__figure figcaption { margin-top: 10px; color: var(--muted); font-size: 13px; }
 .art__body { margin-top: 32px; }
-.art__extract { margin-top: 32px; padding: 24px; border: 1px dashed var(--line-2); border-radius: var(--r-lg); color: var(--ink-2); }
-.art__extract .btn { margin-top: 16px; }
-.art__source { margin-top: 32px; padding: 14px 18px; border-left: 3px solid var(--gold); border-radius: 0 12px 12px 0; background: rgba(217, 170, 69, .09); color: var(--ink-2); font-size: 14.5px; }
-.art__source a { color: var(--gold-light); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .art__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
 .art__aside { position: sticky; top: 100px; min-width: 0; }
 .art__aside .live-list { margin-top: 0; }

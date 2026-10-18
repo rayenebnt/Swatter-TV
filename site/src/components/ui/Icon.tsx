@@ -18,7 +18,6 @@ const SPRITE = `<defs>
   <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
-  <symbol id="i-rss" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2" fill="currentColor"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></g></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></g></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></g></symbol>
@@ -36,7 +35,7 @@ const SPRITE = `<defs>
   <symbol id="i-yt" viewBox="0 0 24 24"><path d="M21.6 7.2a2.6 2.6 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4a2.6 2.6 0 0 0-1.8 1.8A27 27 0 0 0 2 12a27 27 0 0 0 .4 4.8 2.6 2.6 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.6 2.6 0 0 0 1.8-1.8A27 27 0 0 0 22 12a27 27 0 0 0-.4-4.8zM10 15V9l5.2 3z" fill="currentColor"/></symbol>
   <symbol id="i-tt" viewBox="0 0 24 24"><path d="M16.5 3c.3 2.2 1.7 3.7 4 3.9v3.2a7.4 7.4 0 0 1-4-1.2v6.3a5.7 5.7 0 1 1-5.7-5.7l.9.1v3.3a2.5 2.5 0 1 0 1.6 2.3V3z" fill="currentColor"/></symbol>`
 
-export type IconName = 'play' | 'search' | 'user' | 'arrow' | 'left' | 'right' | 'menu' | 'x' | 'rss' | 'pin' | 'clock' | 'mail' | 'shield' | 'home' | 'tv' | 'news' | 'replay' | 'cal' | 'star' | 'expand' | 'now' | 'fb' | 'ig' | 'yt' | 'tt'
+export type IconName = 'play' | 'search' | 'user' | 'arrow' | 'left' | 'right' | 'menu' | 'x' | 'pin' | 'clock' | 'mail' | 'shield' | 'home' | 'tv' | 'news' | 'replay' | 'cal' | 'star' | 'expand' | 'now' | 'fb' | 'ig' | 'yt' | 'tt'
 
 export function IconSprite() {
   return <svg className="icon-sprite" aria-hidden="true" focusable="false" dangerouslySetInnerHTML={{ __html: SPRITE }} />

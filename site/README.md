@@ -58,7 +58,7 @@ cp .env.example .env
 |---|---|---|
 | `DATABASE_URI` | oui | connexion PostgreSQL, ex. `postgres://swatter:motdepasse@127.0.0.1:5432/swatter` |
 | `PAYLOAD_SECRET` | oui | chaîne aléatoire longue (`openssl rand -hex 32`) : signe les sessions de l’administration |
-| `NEXT_PUBLIC_SITE_URL` | oui | adresse publique sans `/` final ; **`http://localhost:3000` en local** (URL canoniques, flux RSS, Open Graph, adresse du serveur Payload) |
+| `NEXT_PUBLIC_SITE_URL` | oui | adresse publique sans `/` final ; **`http://localhost:3000` en local** (URL canoniques, Open Graph, adresse du serveur Payload) |
 | `CRON_SECRET` | oui en production | secret de la tâche planifiée `GET /api/cron/import` (`openssl rand -hex 16`) |
 | `NEXT_PUBLIC_BUNNY_LIBRARY_ID` | non | bibliothèque Bunny Stream (vidéos de type « Bunny Stream ») |
 | `YOUTUBE_API_KEY` | non | clé de l’API YouTube Data v3 : l’import de la chaîne reprend **toutes** ses vidéos (et leur durée) ; sans clé, il lit le flux RSS public de la chaîne, limité à ses 15 dernières vidéos |
@@ -100,7 +100,7 @@ npm run dev
 | `npm run typecheck` | vérification TypeScript (`tsc --noEmit`) |
 | `npm run lint` | ESLint sur tout le projet |
 | `npm run seed` | jeu de démonstration (voir ci-dessus) |
-| `npm run import` | import manuel des flux RSS et de la météo (même traitement que la tâche planifiée) |
+| `npm run import` | import manuel de la météo et des vidéos de la chaîne YouTube (même traitement que la tâche planifiée) |
 | `npm run payload run src/scripts/init-db.ts` | tables + premier administrateur |
 | `npm run payload run src/scripts/publish-existing.ts` | une seule fois, sur une base de développement remplie avant l’arrivée des brouillons : publie les contenus existants (sinon invisibles sur le site) |
 | `npm run generate:types` | régénère `src/payload-types.ts` après une modification des collections ou des globals |
@@ -114,11 +114,11 @@ npm run dev
 ```
 src/
   app/(frontend)/       pages publiques (accueil, direct, info, météo, agenda, programme TV, replay, vidéos, webcams,
-                        recherche, pages éditoriales et redirections dans [...slug], 404, flux info/rss.xml)
+                        recherche, pages éditoriales et redirections dans [...slug], 404)
   app/(payload)/        administration et API Payload (fichiers générés) + custom.scss (habillage de l’administration)
   app/robots.ts, sitemap.ts
   collections/ globals/ modèle de données (vidéos, replays, articles, agenda, webcams, publicités, pages, émissions,
-                        grille, médiathèque, flux RSS, utilisateurs ; réglages du site, météo)
+                        grille, médiathèque, utilisateurs ; réglages du site, météo, chaîne YouTube)
   components/<rubrique>/ composants de chaque rubrique ; components/ui/ primitives partagées ; components/admin/ écrans
                         de l’administration (tableau de bord, aide, outils de la grille, logo)
   lib/                  accès aux données (queries/), dates en heure de Paris (format.ts), liens (urls.ts), imports (import/)
@@ -226,16 +226,15 @@ Autres commandes ponctuelles : `docker compose run --rm tools npm run payload mi
 `GET /api/cron/import`, protégée par `CRON_SECRET` (de préférence dans l’en-tête `Authorization: Bearer <secret>`, à défaut
 `?secret=<secret>`, qui risque de finir dans les journaux d’accès) :
 
-1. importe dans « L’Info » les articles des flux RSS actifs (collection « Flux RSS », sans doublon) ;
-2. met à jour les prévisions météo depuis Open-Meteo, si « Mise à jour automatique » est cochée dans le global « Météo »
+1. met à jour les prévisions météo depuis Open-Meteo, si « Mise à jour automatique » est cochée dans le global « Météo »
    (sinon l’étape est simplement ignorée) ;
-3. met dans « Vidéos » et « Replays » les dernières vidéos de la chaîne YouTube renseignée dans l’administration
+2. met dans « Vidéos » et « Replays » les dernières vidéos de la chaîne YouTube renseignée dans l’administration
    (global « Chaîne YouTube », voir `src/lib/import/youtube.ts`) : celles qui manquent sont ajoutées ;
-4. supprime les fiches ouvertes avec « Ajouter » puis abandonnées sans titre depuis plus de 24 h (brouillons jamais
+3. supprime les fiches ouvertes avec « Ajouter » puis abandonnées sans titre depuis plus de 24 h (brouillons jamais
    publiés) ;
-5. régénère les pages du site si quelque chose a changé.
+4. régénère les pages du site si quelque chose a changé.
 
-La réponse JSON détaille le résultat (`rss.created`, `rss.errors`, `meteo.ok`, `drafts.deleted`…). Avec Docker Compose, le service `cron`
+La réponse JSON détaille le résultat (`meteo.ok`, `youtube.videos`, `drafts.deleted`…). Avec Docker Compose, le service `cron`
 s’en charge. Sur un serveur sans Docker, une ligne de crontab suffit :
 
 ```
@@ -292,7 +291,7 @@ Deux projets : `bureau` (1440 × 900) et `mobile` (390 × 844, tactile). Les fic
 - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement horizontal,
   aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL canonique et JSON-LD
   valides ; administration et API joignables ; tâche planifiée refusée sans secret ;
-- `rubriques.spec.ts` : contenu de chaque rubrique (accueil complet, info et flux RSS, météo, programme TV, agenda,
+- `rubriques.spec.ts` : contenu de chaque rubrique (accueil complet, info, météo, programme TV, agenda,
   webcams, vidéos, replay, direct, recherche, page éditoriale et redirections) ;
 - `interactions.spec.ts` : recherche au clavier, bandeau cookies, menu mobile, lien d’évitement ;
 - `admin.spec.ts` (bureau) : tableau de bord, page d’aide, outil de la grille des programmes, recopie de semaine refusée

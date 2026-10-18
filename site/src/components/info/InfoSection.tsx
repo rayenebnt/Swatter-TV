@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { MeteoWidget } from '@/components/meteo/MeteoWidget'
 import { Icon } from '@/components/ui/Icon'
 import { SectionHead } from '@/components/ui/SectionHead'
@@ -31,10 +32,9 @@ export async function InfoSection() {
   return (
     <section className="section container" id="info" aria-labelledby="info-title">
       <SectionHead eyebrow="7j/7 · 24h/24" title="L’Info en Auvergne-Rhône-Alpes" titleId="info-title" subtitle="Le flux d’actualité de toute la région, département par département.">
-        <a className="btn btn--ghost btn--sm" href="/info/rss.xml" type="application/rss+xml">
-          <Icon name="rss" />
-          Flux RSS
-        </a>
+        <Link className="link-more" href="/info">
+          Toute l’info <Icon name="arrow" />
+        </Link>
       </SectionHead>
       <div className="info-grid">
         <InfoFeed items={items} />

@@ -47,7 +47,6 @@ export const MENU: MenuSection[] = [
     adminOnly: true,
     items: [
       { label: 'Utilisateurs', path: '/collections/users', icon: 'users' },
-      { label: 'Flux RSS', path: '/collections/rss-feeds', icon: 'rss' },
       { label: 'Redirections', path: '/collections/redirects', icon: 'redirect' },
     ],
   },

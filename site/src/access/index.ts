@@ -5,7 +5,7 @@ export const anyone: Access = () => true
 export const authenticated: Access = ({ req }) => Boolean(req.user)
 export const isAdmin: Access = ({ req }) => (req.user as { role?: string } | null)?.role === 'admin'
 export const isAdminField: FieldAccess = ({ req }) => (req.user as { role?: string } | null)?.role === 'admin'
-/** Rubriques techniques (comptes, flux RSS, redirections) : masquées dans le menu des éditeurs (admin.hidden). */
+/** Rubriques techniques (comptes, redirections) : masquées dans le menu des éditeurs (admin.hidden). */
 export const hiddenForEditors = ({ user }: { user?: unknown }) => (user as { role?: string } | null | undefined)?.role !== 'admin'
 
 /**

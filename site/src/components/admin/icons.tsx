@@ -15,7 +15,6 @@ export type IconName =
   | 'live'
   | 'star'
   | 'flash'
-  | 'rss'
   | 'external'
   | 'help'
   | 'dashboard'
@@ -102,12 +101,6 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   star: <path d="m12 3.5 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.65l5.9-.85z" />,
   flash: <path d="M13 2.5 4.5 13.5H11l-1 8 8.5-11H12z" />,
-  rss: (
-    <>
-      <path d="M5 11a8 8 0 0 1 8 8M5 5a14 14 0 0 1 14 14" />
-      <circle cx="5.5" cy="18.5" r="1.5" />
-    </>
-  ),
   external: (
     <>
       <path d="M14 4h6v6M20 4l-9 9" />

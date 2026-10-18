@@ -1,4 +1,4 @@
-// L'Info : requêtes des articles (section de l'accueil, pages Info, fiches article, flux RSS sortant).
+// L'Info : requêtes des articles (section de l'accueil, pages Info, fiches article).
 import { cache } from 'react'
 import type { Where } from 'payload'
 import type { Article } from '@/payload-types'
@@ -10,10 +10,10 @@ const HOUR_MS = 60 * 60 * 1000
 /** Ordre des listes : du plus récent au plus ancien (l'identifiant départage les dates égales, pour une pagination stable). */
 const SORT = ['-publishedAt', '-id']
 
-/** Champs utiles aux listes (cartes, fil « En continu », flux RSS sortant). */
+/** Champs utiles aux listes (cartes, fil « En continu »). */
 export type ArticleListItem = Pick<
   Article,
-  'id' | 'title' | 'slug' | 'excerpt' | 'department' | 'city' | 'kicker' | 'image' | 'imageUrl' | 'publishedAt' | 'updatedAt' | 'isInfoOfDay' | 'source'
+  'id' | 'title' | 'slug' | 'excerpt' | 'department' | 'city' | 'kicker' | 'image' | 'publishedAt' | 'updatedAt' | 'isInfoOfDay'
 >
 
 const LIST_SELECT = {
@@ -24,11 +24,9 @@ const LIST_SELECT = {
   city: true,
   kicker: true,
   image: true,
-  imageUrl: true,
   publishedAt: true,
   updatedAt: true,
   isInfoOfDay: true,
-  source: true,
 } as const
 
 export type ArticlesPage = { docs: ArticleListItem[]; totalDocs: number; totalPages: number; page: number }
@@ -135,24 +133,3 @@ export const getDepartmentsWithArticles = cache(
       'départements de l’info',
     ),
 )
-
-/** Articles de la rédaction (hors reprises de flux RSS) : flux RSS sortant du site. */
-export async function getOwnArticles(limit = 30, department: DepartmentSlug | null = null): Promise<ArticleListItem[]> {
-  return safe(
-    async () => {
-      const payload = await getPayloadClient()
-      const res = await payload.find({
-        collection: 'articles',
-        where: published(department, { or: [{ source: { equals: 'manual' } }, { source: { exists: false } }] }),
-        sort: SORT,
-        limit,
-        depth: 1,
-        pagination: false,
-        select: LIST_SELECT,
-      })
-      return res.docs
-    },
-    [],
-    'flux RSS du site',
-  )
-}

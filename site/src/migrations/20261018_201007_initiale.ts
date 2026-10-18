@@ -9,10 +9,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum__videos_v_version_category" AS ENUM('divertissement', 'series-realite', 'series', 'cinema', 'documentaire', 'nature', 'sport', 'info', 'magazine');
   CREATE TYPE "public"."enum__videos_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_articles_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
-  CREATE TYPE "public"."enum_articles_source" AS ENUM('manual', 'rss');
   CREATE TYPE "public"."enum_articles_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__articles_v_version_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
-  CREATE TYPE "public"."enum__articles_v_version_source" AS ENUM('manual', 'rss');
   CREATE TYPE "public"."enum__articles_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_events_category" AS ENUM('terroir', 'musique', 'sport', 'famille', 'culture', 'fete', 'marche', 'autre');
   CREATE TYPE "public"."enum_events_status" AS ENUM('draft', 'published');
@@ -40,7 +38,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_pages_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__pages_v_version_footer_group" AS ENUM('chaine', 'swatter');
   CREATE TYPE "public"."enum__pages_v_version_status" AS ENUM('draft', 'published');
-  CREATE TYPE "public"."enum_rss_feeds_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
   CREATE TYPE "public"."enum_users_role" AS ENUM('admin', 'editeur');
   CREATE TYPE "public"."enum_redirects_to_type" AS ENUM('reference', 'custom');
   CREATE TYPE "public"."enum_settings_hero_slides_badges_style" AS ENUM('live', 'gold', 'glass');
@@ -116,17 +113,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"excerpt" varchar,
   	"image_id" integer,
   	"content" jsonb,
-  	"image_url" varchar,
   	"department" "enum_articles_department" DEFAULT 'haute-savoie',
   	"city" varchar,
   	"kicker" varchar,
   	"published_at" timestamp(3) with time zone,
   	"is_info_of_day" boolean DEFAULT false,
-  	"source" "enum_articles_source" DEFAULT 'manual',
-  	"source_name" varchar,
-  	"source_url" varchar,
   	"slug" varchar,
-  	"guid" varchar,
   	"meta_title" varchar,
   	"meta_description" varchar,
   	"meta_image_id" integer,
@@ -142,17 +134,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_excerpt" varchar,
   	"version_image_id" integer,
   	"version_content" jsonb,
-  	"version_image_url" varchar,
   	"version_department" "enum__articles_v_version_department" DEFAULT 'haute-savoie',
   	"version_city" varchar,
   	"version_kicker" varchar,
   	"version_published_at" timestamp(3) with time zone,
   	"version_is_info_of_day" boolean DEFAULT false,
-  	"version_source" "enum__articles_v_version_source" DEFAULT 'manual',
-  	"version_source_name" varchar,
-  	"version_source_url" varchar,
   	"version_slug" varchar,
-  	"version_guid" varchar,
   	"version_meta_title" varchar,
   	"version_meta_description" varchar,
   	"version_meta_image_id" integer,
@@ -498,20 +485,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"sizes_og_filename" varchar
   );
   
-  CREATE TABLE "rss_feeds" (
-  	"id" serial PRIMARY KEY NOT NULL,
-  	"name" varchar NOT NULL,
-  	"url" varchar NOT NULL,
-  	"department" "enum_rss_feeds_department" DEFAULT 'haute-savoie' NOT NULL,
-  	"city" varchar,
-  	"kicker" varchar,
-  	"active" boolean DEFAULT true,
-  	"last_fetched_at" timestamp(3) with time zone,
-  	"last_error" varchar,
-  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
-  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
-  );
-  
   CREATE TABLE "users_sessions" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
@@ -585,7 +558,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"ads_id" integer,
   	"pages_id" integer,
   	"media_id" integer,
-  	"rss_feeds_id" integer,
   	"users_id" integer,
   	"redirects_id" integer
   );
@@ -851,7 +823,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_ads_fk" FOREIGN KEY ("ads_id") REFERENCES "public"."ads"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_pages_fk" FOREIGN KEY ("pages_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_media_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_rss_feeds_fk" FOREIGN KEY ("rss_feeds_id") REFERENCES "public"."rss_feeds"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_redirects_fk" FOREIGN KEY ("redirects_id") REFERENCES "public"."redirects"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_preferences"("id") ON DELETE cascade ON UPDATE no action;
@@ -893,7 +864,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "articles_department_idx" ON "articles" USING btree ("department");
   CREATE INDEX "articles_published_at_idx" ON "articles" USING btree ("published_at");
   CREATE UNIQUE INDEX "articles_slug_idx" ON "articles" USING btree ("slug");
-  CREATE UNIQUE INDEX "articles_guid_idx" ON "articles" USING btree ("guid");
   CREATE INDEX "articles_meta_meta_image_idx" ON "articles" USING btree ("meta_image_id");
   CREATE INDEX "articles_updated_at_idx" ON "articles" USING btree ("updated_at");
   CREATE INDEX "articles_created_at_idx" ON "articles" USING btree ("created_at");
@@ -903,7 +873,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_articles_v_version_version_department_idx" ON "_articles_v" USING btree ("version_department");
   CREATE INDEX "_articles_v_version_version_published_at_idx" ON "_articles_v" USING btree ("version_published_at");
   CREATE INDEX "_articles_v_version_version_slug_idx" ON "_articles_v" USING btree ("version_slug");
-  CREATE INDEX "_articles_v_version_version_guid_idx" ON "_articles_v" USING btree ("version_guid");
   CREATE INDEX "_articles_v_version_meta_version_meta_image_idx" ON "_articles_v" USING btree ("version_meta_image_id");
   CREATE INDEX "_articles_v_version_version_updated_at_idx" ON "_articles_v" USING btree ("version_updated_at");
   CREATE INDEX "_articles_v_version_version_created_at_idx" ON "_articles_v" USING btree ("version_created_at");
@@ -1043,8 +1012,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "media_sizes_poster_sizes_poster_filename_idx" ON "media" USING btree ("sizes_poster_filename");
   CREATE INDEX "media_sizes_hero_sizes_hero_filename_idx" ON "media" USING btree ("sizes_hero_filename");
   CREATE INDEX "media_sizes_og_sizes_og_filename_idx" ON "media" USING btree ("sizes_og_filename");
-  CREATE INDEX "rss_feeds_updated_at_idx" ON "rss_feeds" USING btree ("updated_at");
-  CREATE INDEX "rss_feeds_created_at_idx" ON "rss_feeds" USING btree ("created_at");
   CREATE INDEX "users_sessions_order_idx" ON "users_sessions" USING btree ("_order");
   CREATE INDEX "users_sessions_parent_id_idx" ON "users_sessions" USING btree ("_parent_id");
   CREATE INDEX "users_updated_at_idx" ON "users" USING btree ("updated_at");
@@ -1078,7 +1045,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_ads_id_idx" ON "payload_locked_documents_rels" USING btree ("ads_id");
   CREATE INDEX "payload_locked_documents_rels_pages_id_idx" ON "payload_locked_documents_rels" USING btree ("pages_id");
   CREATE INDEX "payload_locked_documents_rels_media_id_idx" ON "payload_locked_documents_rels" USING btree ("media_id");
-  CREATE INDEX "payload_locked_documents_rels_rss_feeds_id_idx" ON "payload_locked_documents_rels" USING btree ("rss_feeds_id");
   CREATE INDEX "payload_locked_documents_rels_users_id_idx" ON "payload_locked_documents_rels" USING btree ("users_id");
   CREATE INDEX "payload_locked_documents_rels_redirects_id_idx" ON "payload_locked_documents_rels" USING btree ("redirects_id");
   CREATE INDEX "payload_preferences_key_idx" ON "payload_preferences" USING btree ("key");
@@ -1145,7 +1111,6 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "pages" CASCADE;
   DROP TABLE "_pages_v" CASCADE;
   DROP TABLE "media" CASCADE;
-  DROP TABLE "rss_feeds" CASCADE;
   DROP TABLE "users_sessions" CASCADE;
   DROP TABLE "users" CASCADE;
   DROP TABLE "redirects" CASCADE;
@@ -1174,10 +1139,8 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum__videos_v_version_category";
   DROP TYPE "public"."enum__videos_v_version_status";
   DROP TYPE "public"."enum_articles_department";
-  DROP TYPE "public"."enum_articles_source";
   DROP TYPE "public"."enum_articles_status";
   DROP TYPE "public"."enum__articles_v_version_department";
-  DROP TYPE "public"."enum__articles_v_version_source";
   DROP TYPE "public"."enum__articles_v_version_status";
   DROP TYPE "public"."enum_events_category";
   DROP TYPE "public"."enum_events_status";
@@ -1205,7 +1168,6 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_pages_status";
   DROP TYPE "public"."enum__pages_v_version_footer_group";
   DROP TYPE "public"."enum__pages_v_version_status";
-  DROP TYPE "public"."enum_rss_feeds_department";
   DROP TYPE "public"."enum_users_role";
   DROP TYPE "public"."enum_redirects_to_type";
   DROP TYPE "public"."enum_settings_hero_slides_badges_style";

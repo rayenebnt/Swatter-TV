@@ -33,7 +33,7 @@ toujours disponible dans l’administration : lien **Aide**, en haut du tableau 
 16. [La météo](#16-la-météo)
 17. [Les images et la médiathèque](#17-les-images-et-la-médiathèque)
 18. [Le référencement Google (facultatif)](#18-le-référencement-google-facultatif)
-19. [Réservé aux administrateurs : comptes, flux RSS, redirections](#19-réservé-aux-administrateurs--comptes-flux-rss-redirections)
+19. [Réservé aux administrateurs : comptes, redirections](#19-réservé-aux-administrateurs--comptes-redirections)
 
 ---
 
@@ -217,10 +217,6 @@ cookies) : sinon, le lecteur l’invite à modifier son choix.
 
 **Info du jour** : cochez **Info du jour** (à droite) pour placer l’article dans « À la une ». Comme pour la vidéo du
 jour, la plus récente des infos cochées l’emporte, et à défaut le dernier article publié est mis en avant.
-
-Les articles importés automatiquement depuis d’autres sites (partie 19) affichent à droite leur **Origine** « Importé
-(flux RSS) », leur **Source** et le **Lien de l’article d’origine** ; vous pouvez les corriger ou les supprimer comme les
-autres.
 
 ## 7. Annoncer un événement et la sortie du week-end
 
@@ -413,27 +409,19 @@ Pour l’ajuster, cliquez sur le bloc pour le déplier :
 - **Image** : l’image de partage (à défaut, l’image principale du contenu est utilisée) ;
 - **Aperçu** : la présentation probable dans les résultats de recherche.
 
-## 19. Réservé aux administrateurs : comptes, flux RSS, redirections
+## 19. Réservé aux administrateurs : comptes, redirections
 
 La rubrique **Administration** du menu n’apparaît qu’aux administrateurs.
 
 **Administration › Utilisateurs** : **Ajouter**, puis **E-mail**, **Prénom et nom**, mot de passe et **Rôle** :
 
-- **Administrateur** : tout, y compris créer et supprimer des comptes, changer les rôles, gérer les flux RSS et les
+- **Administrateur** : tout, y compris créer et supprimer des comptes, changer les rôles, gérer les
   redirections ;
 - **Éditeur** : tous les contenus et les réglages du site (accueil, direct, flash info, météo…), sans la rubrique
   **Administration** ; il peut modifier son propre compte.
 
 Un compte par personne, jamais de mot de passe partagé ; supprimez les comptes des personnes qui quittent l’équipe.
 Gardez au moins deux administrateurs.
-
-**Administration › Flux RSS (import de l’info)** : pour importer l’actualité d’autres sites. Créez un flux avec son
-**Nom**, l’**Adresse du flux RSS**, le **Département** de rangement et, si besoin, une **Commune par défaut** et une
-**Rubrique par défaut**. Cochez **Actif**. Toutes les heures, les nouveaux articles du flux sont ajoutés à « L’Info »
-(sans doublon). **Dernier import** et **Dernière erreur** indiquent si tout se passe bien ; le tableau de bord résume
-l’import des dernières 24 heures. Vérifiez que vous avez le droit de reprendre ces contenus. Dans l’autre sens, le site
-publie son propre flux, avec les articles de la rédaction, à l’adresse **https://www.swatter-tv.fr/info/rss.xml** (à
-donner aux partenaires et aux agrégateurs).
 
 **Administration › Redirections** : pour qu’une ancienne adresse mène à la bonne page (après un changement d’adresse, ou
 pour une adresse imprimée sur un flyer).

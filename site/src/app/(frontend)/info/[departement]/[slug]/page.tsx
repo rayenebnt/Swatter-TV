@@ -6,7 +6,7 @@ import { ArticleCard } from '@/components/info/ArticleCard'
 import { LiveItem } from '@/components/info/LiveItem'
 import { inPlace, ofPlace } from '@/components/info/places'
 import { RelativeTime } from '@/components/info/RelativeTime'
-import { articleImage, articleShareImage, externalImage, frenchSpaces, fullDateTime, hasOwnContent, httpUrl, plainText, toTeaser, truncate } from '@/components/info/utils'
+import { articleImage, articleShareImage, frenchSpaces, fullDateTime, hasOwnContent, plainText, toTeaser, truncate } from '@/components/info/utils'
 import { AdSlot } from '@/components/layout/AdSlot'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
@@ -37,9 +37,6 @@ const FIGURE_SIZES = '(max-width: 1100px) calc(100vw - 32px), 880px'
 const asMedia = (m: Article['image']): Media | null => (typeof m === 'object' && m !== null ? m : null)
 const iso = (d: string) => new Date(d).toISOString()
 
-/** Reprise RSS sans texte propre : page non indexée (le contenu appartient à la source). */
-const isBareImport = (a: Article) => a.source === 'rss' && !hasOwnContent(a.content)
-
 /** Description : champ SEO, sinon chapô, sinon début du texte, sinon phrase générique. */
 function describe(a: Article): string {
   const text = a.meta?.description?.trim() || a.excerpt?.trim() || plainText(a.content) || `${a.title} : l’info ${inPlace(a.department)} avec Swatter TV.`
@@ -69,7 +66,6 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: title ? { absolute: title } : article.title,
     description,
     alternates: { canonical: url },
-    ...(isBareImport(article) ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       type: 'article',
       locale: 'fr_FR',
@@ -106,11 +102,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
     .map((a) => toTeaser(a, { image: false, thumb: true, excerpt: false }))
 
   const media = asMedia(article.image ?? null)
-  const external = media ? null : externalImage(article.imageUrl)
   const own = hasOwnContent(article.content)
-  const rss = article.source === 'rss'
-  const sourceName = article.sourceName?.trim() || null
-  const sourceUrl = httpUrl(article.sourceUrl)
   const kicker = article.kicker?.trim() || label
   const city = article.city?.trim()
   const published = iso(article.publishedAt)
@@ -162,52 +154,19 @@ export default async function ArticlePage({ params }: { params: Params }) {
                       <Link href={departmentUrl(dept)}>{label}</Link>
                     </span>
                   </li>
-                  {rss && sourceName && (
-                    <li>
-                      <Icon name="news" />
-                      <span>Source&nbsp;: {sourceName}</span>
-                    </li>
-                  )}
                 </ul>
               </header>
 
-              {(media || external) && (
+              {media && (
                 <figure className="art__figure">
                   <div className="art__media">
-                    <MediaImage media={media} size="hero" fill priority sizes={FIGURE_SIZES} fallbackSrc={external} alt={media ? undefined : ''} />
+                    <MediaImage media={media} size="hero" fill priority sizes={FIGURE_SIZES} />
                   </div>
                   {media?.credit?.trim() && <figcaption>© {media.credit.trim()}</figcaption>}
                 </figure>
               )}
 
               {own && <RichText data={article.content} className="art__body" />}
-
-              {rss && !own && sourceUrl && (
-                <div className="art__extract">
-                  <p>
-                    Cette info est un extrait{sourceName ? ` de ${sourceName}` : ''}. Retrouvez l’article complet sur le site de la source.
-                  </p>
-                  <a className="btn btn--gold btn--sm" href={sourceUrl} target="_blank" rel="noopener">
-                    Lire l’article complet
-                    <Icon name="arrow" />
-                    <span className="sr-only"> (nouvel onglet)</span>
-                  </a>
-                </div>
-              )}
-
-              {rss && (sourceName || sourceUrl) && (
-                <p className="art__source">
-                  Source&nbsp;:{' '}
-                  {sourceUrl ? (
-                    <a href={sourceUrl} target="_blank" rel="noopener">
-                      {sourceName ?? new URL(sourceUrl).hostname}
-                      <span className="sr-only"> (nouvel onglet)</span>
-                    </a>
-                  ) : (
-                    sourceName
-                  )}
-                </p>
-              )}
 
               <div className="art__actions">
                 <Link className="btn btn--ghost btn--sm" href={departmentUrl(dept)}>
@@ -282,7 +241,6 @@ export default async function ArticlePage({ params }: { params: Params }) {
               name: city ? `${city}, ${label}` : label,
               address: { '@type': 'PostalAddress', ...(city ? { addressLocality: city } : {}), addressRegion: label, addressCountry: 'FR' },
             },
-            ...(rss && sourceUrl ? { isBasedOn: sourceUrl } : {}),
           },
           {
             '@context': 'https://schema.org',

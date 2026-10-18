@@ -13,8 +13,6 @@ export type SeedArticle = {
   /** Ancienneté de la publication, en minutes. */
   ageMinutes: number
   isInfoOfDay?: boolean
-  /** Article importé d'un flux RSS (démonstration). */
-  rss?: boolean
 }
 
 export const ARTICLES: SeedArticle[] = [
@@ -58,7 +56,6 @@ export const ARTICLES: SeedArticle[] = [
     kicker: 'Sport',
     image: 'info-foot-annonay',
     ageMinutes: 230,
-    rss: true,
     excerpt: 'Week-end réussi pour les clubs drômois et ardéchois : quatre d’entre eux poursuivent l’aventure en Coupe de France.',
     body: [
       'Le cinquième tour de la Coupe de France a souri aux clubs de Drôme et d’Ardèche. Quatre équipes ont validé leur billet pour le tour suivant, dont deux formations de niveau régional qui ont créé la surprise face à des adversaires mieux classés.',
@@ -89,7 +86,6 @@ export const ARTICLES: SeedArticle[] = [
     kicker: 'Montagne',
     image: 'info-station',
     ageMinutes: 315,
-    rss: true,
     excerpt: 'Habitants, commerçants et skieurs se sont rassemblés pour demander un délai avant toute décision sur l’avenir du domaine.',
     body: [
       'Ils étaient plusieurs centaines, skis à la main, à s’être rassemblés au pied des pistes. Habitants, commerçants et moniteurs demandent un moratoire sur la fermeture annoncée des remontées mécaniques de la station.',
@@ -104,7 +100,6 @@ export const ARTICLES: SeedArticle[] = [
     kicker: 'Sport',
     image: 'info-foot-loire',
     ageMinutes: 350,
-    rss: true,
     excerpt: 'Qualifications, éliminations et exploits : le tour d’horizon des clubs ligériens et altiligériens engagés ce week-end.',
     body: [
       'Les clubs de la Loire et de Haute-Loire étaient nombreux à disputer le cinquième tour de la Coupe de France ce week-end. Plusieurs formations amateurs ont tenu tête à des équipes de divisions supérieures.',
@@ -271,7 +266,6 @@ export const ARTICLES: SeedArticle[] = [
     kicker: 'Montagne',
     image: 't-nuages-b',
     ageMinutes: 50 * 60,
-    rss: true,
     excerpt: 'Contrôles des remontées, préparation des pistes et recrutement des saisonniers : la station se prépare à accueillir ses premiers skieurs.',
     body: [
       'À plus de 2 300 mètres d’altitude, la station de Val Thorens se prépare à ouvrir parmi les premières des Alpes. Les équipes techniques enchaînent les contrôles des remontées mécaniques.',

@@ -23,7 +23,7 @@ export function MediaImage({
   priority?: boolean
   className?: string
   /** `priority` : image principale de la page (préchargée) */
-  /** URL utilisée si le média est absent (ex. image externe importée par RSS) */
+  /** URL utilisée si le média est absent (visuel de repli) */
   fallbackSrc?: string | null
 }) {
   const src = mediaUrl(media, size) || fallbackSrc
