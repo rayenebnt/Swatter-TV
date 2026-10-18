@@ -13,7 +13,7 @@ const eslintConfig = [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^(_|ignore)' }],
     },
   },
-  { ignores: ['.next/', 'node_modules/', 'media/', 'test-results/', 'playwright-report/', 'src/payload-types.ts', 'src/app/(payload)/', 'public/'] },
+  { ignores: ['.next/', 'node_modules/', 'media/', 'test-results/', 'playwright-report/', 'src/payload-types.ts', 'src/migrations/', 'src/app/(payload)/', 'public/'] },
 ]
 
 export default eslintConfig

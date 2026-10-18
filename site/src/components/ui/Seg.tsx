@@ -50,7 +50,9 @@ export function Seg({
     onChange(v)
     const root = ref.current
     if (root && root.scrollWidth > root.clientWidth + 2) {
-      root.scrollTo({ left: el.offsetLeft - (root.clientWidth - el.offsetWidth) / 2, behavior: 'smooth' })
+      // Défilement doux, sauf si l'internaute limite les animations
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      root.scrollTo({ left: el.offsetLeft - (root.clientWidth - el.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' })
     }
   }
 

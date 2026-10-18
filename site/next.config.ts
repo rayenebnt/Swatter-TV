@@ -11,11 +11,9 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     localPatterns: [{ pathname: '/api/media/file/**' }, { pathname: '/visuels/**' }],
-    remotePatterns: [
-      { protocol: 'https', hostname: 'i.ytimg.com' },
-      { protocol: 'https', hostname: '**.b-cdn.net' },
-      { protocol: 'https', hostname: '**.amazonaws.com' },
-    ],
+    // Seul hôte distant optimisé : les miniatures YouTube. Les médias (dossier local ou S3) passent par /api/media/file ;
+    // les images des articles importés par RSS sont affichées sans optimiseur (unoptimized).
+    remotePatterns: [{ protocol: 'https', hostname: 'i.ytimg.com' }],
   },
   // Anciennes adresses du site, redirigées de façon permanente (308). La correspondance ignore la casse
   // (experimental.caseSensitiveRoutes vaut false) : « /L-info » couvre aussi /L-Info et /l-info ; la barre oblique finale

@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { anyone, authenticated } from '@/access'
+import { airedOrAuthenticated, authenticated } from '@/access'
 import { slugField } from '@/fields/slug'
 import { videoSourceField } from '@/fields/videoSource'
 import { revalidateHooks } from '@/hooks/revalidate'
@@ -8,7 +8,7 @@ export const Replays: CollectionConfig = {
   slug: 'replays',
   labels: { singular: 'Replay', plural: 'Replays' },
   admin: { useAsTitle: 'title', group: 'Contenus', defaultColumns: ['title', 'program', 'broadcastAt'] },
-  access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
+  access: { read: airedOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
   defaultSort: '-broadcastAt',
   hooks: revalidateHooks,
   fields: [

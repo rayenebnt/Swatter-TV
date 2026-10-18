@@ -1,0 +1,4 @@
+/* Page d'erreur (app/(frontend)/error.tsx) : classes .nf de pages.css, plus ce complément */
+
+/* Le titre reçoit le focus à l'affichage (lecteurs d'écran) : pas d'anneau sur cet élément non interactif */
+.error__title:focus { outline: none; }

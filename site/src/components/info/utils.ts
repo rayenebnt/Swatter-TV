@@ -55,7 +55,13 @@ export function imageSource(url: string): { src: string; unoptimized: boolean } 
 /** Adresse http(s) absolue valide (image externe d'un import RSS, lien vers la source) ou null. */
 export function httpUrl(url?: string | null): string | null {
   const u = url?.trim()
-  return u && /^https?:\/\/[^\s"'<>]+$/i.test(u) ? u : null
+  if (!u || !/^https?:\/\/[^\s"'<>]+$/i.test(u)) return null
+  try {
+    // Rejette aussi les adresses que la regex accepte mais que new URL refuse (port invalide…)
+    return new URL(u).hostname ? u : null
+  } catch {
+    return null
+  }
 }
 
 /** Adresse d'image externe valide (import RSS) ou null. */

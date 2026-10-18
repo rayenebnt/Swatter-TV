@@ -171,7 +171,7 @@ async function searchReplays(c: Ctx): Promise<Ranked[]> {
       c.payload
         .find({
           collection: 'replays',
-          where,
+          where: both(where, { broadcastAt: { less_than_equal: iso(c.now) } }),
           sort: '-broadcastAt',
           limit: c.take,
           depth: 1,

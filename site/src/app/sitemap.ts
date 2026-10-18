@@ -72,7 +72,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           [],
           'sitemap (vidéos)',
         ),
-        safe(async () => (await payload.find({ collection: 'replays', limit: MAX, depth: 0, pagination: false, sort: '-broadcastAt', select: { slug: true, updatedAt: true } })).docs, [], 'sitemap (replays)'),
+        safe(async () => (await payload.find({ collection: 'replays', where: { broadcastAt: { less_than_equal: nowIso } }, limit: MAX, depth: 0, pagination: false, sort: '-broadcastAt', select: { slug: true, updatedAt: true } })).docs, [], 'sitemap (replays)'),
         // Événements à venir : pas encore terminés (sans date de fin : commençant aujourd'hui ou plus tard)
         safe(
           async () =>

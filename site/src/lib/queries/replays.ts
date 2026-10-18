@@ -23,9 +23,14 @@ const LIST_SELECT = {
 /** Émission liée, si elle est chargée. */
 export const programOf = (r: Pick<Replay, 'program'>): Program | null => (typeof r.program === 'object' && r.program ? r.program : null)
 
+/** Replays déjà diffusés (date de diffusion passée), avec un filtre facultatif : un replay daté dans le futur n'apparaît qu'à sa date. */
+const aired = (where?: Where): Where => ({
+  and: [{ broadcastAt: { less_than_equal: new Date().toISOString() } }, ...(where ? [where] : [])],
+})
+
 async function findReplays(where: Where | undefined, limit: number): Promise<ReplayListItem[]> {
   const payload = await getPayloadClient()
-  const res = await payload.find({ collection: 'replays', where, sort: '-broadcastAt', limit, depth: 1, pagination: false, select: LIST_SELECT })
+  const res = await payload.find({ collection: 'replays', where: aired(where), sort: '-broadcastAt', limit, depth: 1, pagination: false, select: LIST_SELECT })
   return res.docs
 }
 
@@ -41,7 +46,7 @@ export async function getReplaysPage({ programId, page = 1, limit = 24 }: { prog
       const payload = await getPayloadClient()
       const res = await payload.find({
         collection: 'replays',
-        where: programId ? { program: { equals: programId } } : undefined,
+        where: aired(programId ? { program: { equals: programId } } : undefined),
         sort: '-broadcastAt',
         limit,
         page,
@@ -60,7 +65,7 @@ export const getReplayPrograms = cache(async (): Promise<Program[]> =>
   safe(
     async () => {
       const payload = await getPayloadClient()
-      const distinct = await payload.findDistinct({ collection: 'replays', field: 'program', depth: 0 })
+      const distinct = await payload.findDistinct({ collection: 'replays', field: 'program', depth: 0, where: aired() })
       const ids = distinct.values
         .map((v) => {
           const p: unknown = v.program
@@ -81,7 +86,7 @@ export const getReplayBySlug = cache(async (slug: string): Promise<Replay | null
   safe(
     async () => {
       const payload = await getPayloadClient()
-      const res = await payload.find({ collection: 'replays', where: { slug: { equals: slug } }, depth: 1, limit: 1, pagination: false })
+      const res = await payload.find({ collection: 'replays', where: aired({ slug: { equals: slug } }), depth: 1, limit: 1, pagination: false })
       return res.docs[0] ?? null
     },
     null,
