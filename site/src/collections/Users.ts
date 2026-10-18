@@ -19,7 +19,12 @@ export const Users: CollectionConfig = {
   access: {
     read: authenticated,
     create: isAdmin,
-    update: ({ req, id }) => (req.user as { role?: string } | null)?.role === 'admin' || req.user?.id === id,
+    // Administrateur : tous les comptes ; éditeur : le sien seulement (contrainte valable aussi pour une modification
+    // groupée, où `id` est absent) ; anonyme : refus
+    update: ({ req }) => {
+      if (!req.user) return false
+      return (req.user as { role?: string }).role === 'admin' || { id: { equals: req.user.id } }
+    },
     delete: isAdmin,
     admin: ({ req }) => Boolean(req.user),
   },

@@ -74,11 +74,13 @@ export function SearchOverlay() {
 
   const term = cleanQuery(query)
   const searching = term.length >= 2
-  const hits = searching ? cache[term] : undefined
+  // Clés propres seulement : « constructor » ou « __proto__ » liraient sinon le prototype de l'objet
+  const fromCache = (key: string) => (Object.hasOwn(cache, key) ? cache[key] : undefined)
+  const hits = searching ? fromCache(term) : undefined
   const cached = hits !== undefined
   const error = searching && !cached && failed === term
   const loading = searching && !cached && !error
-  const visible = hits ?? (loading ? cache[shown] : undefined) ?? []
+  const visible = hits ?? (loading ? fromCache(shown) : undefined) ?? []
   const words = queryWords(term)
   const noResult = cached && hits.length === 0
 
