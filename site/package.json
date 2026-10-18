@@ -18,6 +18,7 @@
     "seed": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed.ts",
     "reinit": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/reinit.ts",
     "maj-base": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/maj-base.ts",
+    "exemples": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/exemples.ts",
     "import": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/import.ts",
     "test:e2e": "playwright test"
   },

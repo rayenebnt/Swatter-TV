@@ -24,6 +24,7 @@ import { MEDIA } from './seed/media'
 import { demoForecast } from './seed/meteo'
 import { PAGES, WEBCAMS } from './seed/pages'
 import { daySlots, PROGRAMS } from './seed/programs'
+import { EXAMPLE_REPLAY } from './seed/replay'
 
 if (process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== '1') {
   console.error('✖ Les contenus de départ remplacent tous les contenus : refusé en production (forcer avec SEED_FORCE=1).')
@@ -153,14 +154,13 @@ await payload.create({
   collection: 'replays',
   data: {
     _status: 'published',
-    title: 'Exemple — Un replay à remplacer',
-    program: programId('documentaire'),
-    source: upload('direct-mont-blanc'),
-    thumbnail: mediaId('hero-crepuscule'),
+    title: EXAMPLE_REPLAY.title,
+    program: programId(EXAMPLE_REPLAY.program),
+    source: upload(EXAMPLE_REPLAY.clip),
+    thumbnail: mediaId(EXAMPLE_REPLAY.image),
     broadcastAt: parisDateTime(addDays(today, -1), '20:45').toISOString(),
-    duration: '52 min',
-    description:
-      'Replay d’exemple : les vidéos longues de votre chaîne YouTube arrivent ici toutes seules (fiche « Chaîne YouTube »). Vous pouvez aussi ajouter un replay à la main (Replays › Ajouter). Supprimez cet exemple avant l’ouverture.',
+    duration: EXAMPLE_REPLAY.duration,
+    description: EXAMPLE_REPLAY.description,
   },
   overrideAccess: true,
   context,

@@ -109,6 +109,7 @@ npm run dev
 | `npm run lint` | ESLint sur tout le projet |
 | `npm run seed` | contenus de départ « Exemple » (voir ci-dessus) |
 | `npm run maj-base` | **après un `git pull` qui change la structure des données** : met la base locale à jour **sans rien effacer** (retire les colonnes supprimées du code, qui feraient poser une question à drizzle, puis ajoute les nouvelles). Arrêtez `npm run dev` avant. Refusé en production (migrations) |
+| `npm run exemples` | ajoute les contenus d’exemple qui manquent **sans rien supprimer** (pour l’instant : le replay d’exemple, si « Replays » est vide) |
 | `npm run reinit` | **après un `git pull` qui change la structure des données** : remet la base locale à neuf sans aucune question (garde les comptes et leurs mots de passe, vide la médiathèque, recharge les contenus « Exemple »). Arrêtez `npm run dev` avant. Refusé en production |
 | `npm run import` | import manuel de la météo et des vidéos de la chaîne YouTube (même traitement que la tâche planifiée) |
 | `npm run payload run src/scripts/init-db.ts` | tables + premier administrateur |
