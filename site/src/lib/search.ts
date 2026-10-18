@@ -314,29 +314,39 @@ async function searchPrograms(c: Ctx): Promise<Ranked[]> {
   }))
 }
 
+/** Mots qui désignent les webcams elles-mêmes (sans accents) : « webcam Chamonix » → la webcam de Chamonix, « webcams » → toutes. */
+const WEBCAM_WORDS = new Set(['webcam', 'webcams', 'cam', 'cams', 'camera', 'cameras'])
+/** Petits mots ignorés à côté de « webcam » (« les webcams », « webcam du lac ») */
+const FILLERS = new Set(['le', 'la', 'les', 'l', 'de', 'des', 'du', 'd', 'a', 'au', 'aux', 'en', 'sur', 'voir'])
+
 async function searchWebcams(c: Ctx): Promise<Ranked[]> {
-  const docs = await collect(
-    c,
-    'webcams',
-    ['name', 'place'],
-    (where) =>
-      c.payload
-        .find({
-          collection: 'webcams',
-          where: both(where, { or: [{ active: { equals: true } }, { active: { exists: false } }] }),
-          sort: 'order',
-          limit: c.take,
-          depth: 1,
-          pagination: false,
-          select: { name: true, slug: true, place: true, image: true },
-        })
-        .then((r) => r.docs),
-    (w) => [w.name, w.place],
-  )
-  return docs.map((w) => ({
-    tier: tierOf(w.name, c),
-    strict: c.strict.has(w),
-    key: c.now,
+  // « webcam » n'est écrit ni dans le nom ni dans le lieu : ce mot est retiré de la requête des webcams
+  if (!c.words.some((w) => WEBCAM_WORDS.has(w))) return findWebcams(c)
+  const keep = c.words.map((w) => !WEBCAM_WORDS.has(w) && !FILLERS.has(w))
+  const words = c.words.filter((_, i) => keep[i])
+  // « webcams » seul : toutes les webcams
+  if (!words.length) return findWebcams({ ...c, words: [], terms: [], phrase: '' }, true)
+  return findWebcams({ ...c, words, terms: c.terms.filter((_, i) => keep[i]), phrase: words.join(' ') }, true)
+}
+
+/** `named` : la requête parlait de webcams (toutes les webcams trouvées passent alors en tête, comme un titre exact). */
+async function findWebcams(c: Ctx, named = false): Promise<Ranked[]> {
+  const where: Where = { or: [{ active: { equals: true } }, { active: { exists: false } }] }
+  const select = { name: true, slug: true, place: true, image: true } as const
+  const docs = c.words.length
+    ? await collect(
+        c,
+        'webcams',
+        ['name', 'place'],
+        (text) => c.payload.find({ collection: 'webcams', where: both(text, where), sort: 'order', limit: c.take, depth: 1, pagination: false, select }).then((r) => r.docs),
+        (w) => [w.name, w.place],
+      )
+    : await safe(() => c.payload.find({ collection: 'webcams', where, sort: 'order', limit: c.take, depth: 1, pagination: false, select }).then((r) => r.docs), [], 'recherche (webcams)')
+  return docs.map((w, i) => ({
+    tier: named ? 0 : tierOf(w.name, c),
+    strict: named || c.strict.has(w),
+    // ordre d'affichage de la page Webcams quand toutes sont demandées
+    key: named ? c.now + (docs.length - i) : c.now,
     hit: { type: 'webcam', typeLabel: 'Webcam', title: w.name, subtitle: w.place || 'Webcam en images', href: webcamUrl(w), image: mediaUrl(w.image, 'thumb') },
   }))
 }

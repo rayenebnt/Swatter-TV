@@ -159,6 +159,19 @@ test('recherche : résultats, absence de résultat et API', async ({ page, reque
   expect(((await api.json()) as { hits: unknown[] }).hits.length).toBeGreaterThan(0)
 })
 
+test('recherche : « webcam » trouve les webcams, « webcam chamonix » celle de Chamonix', async ({ request }) => {
+  type Hit = { type: string; title: string; href: string }
+  const hits = async (q: string) => ((await (await request.get(`/api/search?q=${encodeURIComponent(q)}`)).json()) as { hits: Hit[] }).hits
+  const { totalDocs } = (await (await request.get('/api/webcams?limit=1&depth=0')).json()) as { totalDocs: number }
+  test.skip(!totalDocs, 'aucune webcam (lancez npm run seed)')
+  const all = await hits('webcams')
+  expect(all.length).toBeGreaterThan(0)
+  expect(all.every((h) => h.type === 'webcam' && h.href.startsWith('/webcams'))).toBe(true)
+  expect((await hits('les webcams')).length).toBe(all.length)
+  const named = await hits(`webcam ${all[0].title}`)
+  expect(named[0]?.title).toBe(all[0].title)
+})
+
 test('page éditoriale et redirections', async ({ page, request }) => {
   const doc = await firstDoc(request, 'pages', '&where[slug][equals]=mentions-legales')
   test.skip(!doc?.slug, 'page « mentions-legales » absente (lancez npm run seed)')

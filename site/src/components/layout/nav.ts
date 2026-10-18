@@ -14,7 +14,7 @@ const SECTIONS: (NavItem & { drawerOnly?: boolean })[] = [
   { href: '/meteo', label: 'La Météo' },
   { href: '/programme-tv', label: 'Programme TV' },
   { href: '/agenda', label: 'Agenda' },
-  { href: '/webcams', label: 'Webcams', drawerOnly: true },
+  { href: '/webcams', label: 'Webcams' },
   { href: '/replay', label: 'Le Replay' },
 ]
 
