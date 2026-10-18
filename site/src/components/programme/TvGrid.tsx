@@ -64,14 +64,13 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
     setPicked(null)
   }
   const [opened, setOpened] = useState<{ day: string; id: number } | null>(null)
-  const [dismissedHash, setDismissedHash] = useState('')
   const [focusId, setFocusId] = useState<number | null>(null)
 
   const has = (key: string) => data.days.some((d) => d.key === key)
   // Jour civil réel, après montage (page mise en cache la veille, onglet resté ouvert après minuit)
   const today = now === null ? data.today : tvDay(new Date(now))
   // Émission demandée par l'adresse (/programme-tv#slug, voir programUrl) : sa prochaine diffusion
-  const linked = hash && hash !== dismissedHash && now !== null ? findAiring(data, hash, now) : null
+  const linked = hash && now !== null ? findAiring(data, hash, now) : null
   const dayKey = picked ?? linked?.day ?? (initialDay === data.today && has(today) ? today : initialDay)
   const day = data.days.find((d) => d.key === dayKey) ?? data.days[0]
   const open = opened ?? (linked ? { day: linked.day, id: linked.slot.id } : null)
@@ -110,8 +109,13 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
       // Ouvert depuis l'adresse : on reste sur ce jour et le focus revient au bloc de l'émission
       const { day: linkedDay, slot } = linked
       setPicked(linkedDay)
-      setDismissedHash(hash)
       if (variant === 'full' && linkedDay !== initialDay) router.replace(programmeDayUrl(linkedDay, data.today), { scroll: false })
+      else {
+        // Fiche fermée : l'ancre quitte l'adresse (replaceState n'émet pas « hashchange », on le signale), pour qu'un
+        // nouveau lien vers la même émission (recherche, page Direct) la rouvre
+        history.replaceState(history.state, '', window.location.pathname + window.location.search)
+        window.dispatchEvent(new HashChangeEvent('hashchange'))
+      }
       requestAnimationFrame(() => scrollerRef.current?.querySelector<HTMLElement>(`[data-id="${slot.id}"]`)?.focus())
     }
     setOpened(null)

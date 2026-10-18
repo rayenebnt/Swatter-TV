@@ -144,3 +144,11 @@ npm run seed           # données de démonstration
 - **Pages qui lisent `searchParams`** (filtres, pagination) : pas de `generateStaticParams` sur la même route. En production,
   une page prégénérée qui lit `searchParams` lève `DYNAMIC_SERVER_USAGE` (erreur 500), alors que tout fonctionne en développement.
   Toujours vérifier les pages avec `npm run build && npm start`.
+- **Panne de la base** : `safe()` relance les erreurs de connexion hors build (Next garde alors la dernière version en
+  cache des pages ISR, et la page d'erreur `(frontend)/error.tsx` s'affiche pour une page jamais mise en cache).
+  Les requêtes de la mise en page commune (réglages, pied de page) passent `{ outage: 'fallback' }` pour que l'en-tête et le
+  pied de page restent affichés. `src/app/global-error.tsx` est la page de dernier recours.
+- **Fiche d'émission par ancre** (`/programme-tv#slug`) : à la fermeture, l'ancre est retirée de l'adresse (un nouveau lien
+  vers la même émission la rouvre).
+- **Contenus programmés** : articles, vidéos (date de publication) et replays (date de diffusion) dans le futur restent
+  invisibles sur le site et dans l'API publique ; l'équipe connectée les voit dans l'administration.
