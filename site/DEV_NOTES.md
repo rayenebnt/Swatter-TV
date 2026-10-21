@@ -202,6 +202,8 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   `(frontend)`, dont l'adresse est suffixée) : reprendre `images: (await parent).openGraph?.images ?? []` ou fournir une image.
 - **Redirections** : les anciennes adresses sont dans `next.config.ts` (`redirects()`) ; les variantes qui ne diffèrent que par
   la casse ou les accents passent par `[...slug]` (la correspondance de `next.config.ts` est insensible à la casse et bouclerait).
+  Limite connue : ces variantes perdent leurs paramètres (`/Agenda?quand=week-end` → `/agenda`), car la page attrape-tout
+  ne lit pas `searchParams` pour rester en cache ; les redirections de `next.config.ts`, elles, les gardent.
 - **Recherche** : « webcam(s) », « caméra »… désignent la rubrique : ces mots (et les petits mots autour) sont retirés de la
   requête des webcams (`WEBCAM_WORDS` dans `src/lib/search.ts`), « webcams » seul les donne toutes. `ILIKE` sans index, suffisant à cette échelle ; pour de gros volumes, ajouter un index trigramme (pg_trgm).
   `SearchHit.image` peut être une URL distante : l'afficher avec `unoptimized`.

@@ -351,7 +351,7 @@ archive du dossier `media/`. Avec S3 / R2, activez le versionnage du bucket ou s
 
 ```bash
 npm run test:complet                 # tout, avant une livraison (environ 10 minutes)
-npm run test:complet -- --rapide     # TypeScript, ESLint, tests unitaires et d’intégration (environ 1 minute)
+npm run test:complet -- --rapide     # TypeScript, ESLint, tests unitaires et d’intégration (environ 3 minutes)
 npm run test:complet -- --e2e        # seulement les tests de bout en bout
 npm run test:complet -- --garder     # laisse le site de test ouvert à la fin (http://localhost:3100), Ctrl+C pour l’arrêter
 ```
@@ -373,7 +373,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 |---|---|
 | `npm test` | tests unitaires et d’intégration |
 | `npm run test:unit` | tests unitaires : logique pure, sans base (quelques secondes) |
-| `npm run test:integration` | tests d’intégration : Payload complet sur la base `swatter_tests`, recréée à chaque lancement (environ 15 secondes) |
+| `npm run test:integration` | tests d’intégration : Payload complet sur la base `swatter_tests`, recréée à chaque lancement (environ 2 min 30) |
 | `npm run test:e2e` | tests de bout en bout contre un serveur déjà démarré (voir plus bas) |
 | `npx vitest` | tests unitaires et d’intégration relancés à chaque modification, pendant le développement |
 
@@ -399,7 +399,8 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - API de l’espace membres (inscription, connexion et blocage, sessions, mot de passe oublié, historique, « Ma liste »,
     export, suppression), formulaire de contact, recherche, tâche planifiée, imports, recopie de la grille, export de la
     lettre d’info.
-- **Tests de bout en bout** (`tests/e2e/`, projets `bureau` 1440 × 900 et `mobile` 390 × 844, tactile) :
+- **Tests de bout en bout** (`tests/e2e/`, 143 tests, environ 6 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
+  390 × 844, tactile ; ceux qui ne dépendent pas de l’écran, comme le référencement et l’administration, une seule fois) :
   - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
     horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
     canonique et JSON-LD valides ; administration et API joignables ; tâche planifiée refusée sans secret ;
