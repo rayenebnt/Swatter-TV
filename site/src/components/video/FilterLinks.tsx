@@ -7,8 +7,7 @@ export type FilterLink = { href: string; label: string; current: boolean }
 
 /**
  * Filtres sous forme de liens (adresses partageables) avec le style du contrôle segmenté.
- * Barre défilante (mobile) : le filtre actif est ramené au centre après chaque navigation. Liens sans préchargement : Next 16 réutiliserait la tête de page préchargée (titre, canonique) d'une autre adresse de la
- * même page.
+ * Barre défilante (mobile) : le filtre actif est ramené au centre après chaque navigation.
  */
 export function FilterLinks({ label, links }: { label: string; links: FilterLink[] }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -26,7 +25,7 @@ export function FilterLinks({ label, links }: { label: string; links: FilterLink
     <nav className="vfilters" aria-label={label} data-reveal>
       <div ref={ref} className="seg seg--links seg--bleed">
         {links.map((l) => (
-          <Link key={l.href} href={l.href} aria-current={l.current ? 'page' : undefined} scroll={false} prefetch={false}>
+          <Link key={l.href} href={l.href} aria-current={l.current ? 'page' : undefined} scroll={false}>
             {l.label}
           </Link>
         ))}

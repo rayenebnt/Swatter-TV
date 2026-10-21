@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { CSSProperties } from 'react'
 import { AdSlot } from '@/components/layout/AdSlot'
 import { DeptFilter } from '@/components/ui/DeptFilter'
+import { DocumentTitle } from '@/components/ui/DocumentTitle'
 import { Icon } from '@/components/ui/Icon'
 import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
@@ -68,10 +69,16 @@ export async function loadListing(dept: DepartmentSlug | null, page: number): Pr
   return { featured, list, departments: DEPARTMENTS.map((d) => d.value).filter((v) => withInfo.includes(v) || v === dept) }
 }
 
+/** Titre d'une page de liste (sans le nom du site), avec le numéro de page au-delà de la première. */
+const listingTitle = (dept: DepartmentSlug | null, page: number) => {
+  const { title } = texts(dept)
+  return page > 1 ? `${title} (page ${page})` : title
+}
+
 /** Métadonnées d'une page de liste : titre, description, adresse canonique (avec ?page=), image de l'article à la une. */
 export async function listingMetadata(dept: DepartmentSlug | null, page: number): Promise<Metadata> {
-  const { title, description } = texts(dept)
-  const fullTitle = page > 1 ? `${title} (page ${page})` : title
+  const { description } = texts(dept)
+  const fullTitle = listingTitle(dept, page)
   const url = listHref(dept, page)
   const featured = await getFeaturedArticle(dept)
   return {
@@ -106,6 +113,7 @@ export function InfoListing({ dept, page, data }: { dept: DepartmentSlug | null;
 
   return (
     <>
+      <DocumentTitle title={listingTitle(dept, page)} />
       <PageHeader eyebrow={t.eyebrow} title={t.h1} description={t.lede} crumbs={crumbs} />
 
       <div className="container">

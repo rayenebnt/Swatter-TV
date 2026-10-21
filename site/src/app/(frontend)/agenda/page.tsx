@@ -10,6 +10,7 @@ import { AdSlot } from '@/components/layout/AdSlot'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { DeptFilter } from '@/components/ui/DeptFilter'
+import { DocumentTitle } from '@/components/ui/DocumentTitle'
 import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { EVENT_CATEGORIES } from '@/lib/categories'
@@ -130,7 +131,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
   ])
   if (page > 1 && page > list.totalPages) notFound()
 
-  const { cat, place } = texts(filters)
+  const { cat, place, title } = texts(filters)
   const feature = highlights?.feature ?? null
   const crumbs: Crumb[] = [{ label: 'Agenda', href: '/agenda' }]
   if (department) crumbs.push(cat ? { label: departmentLabel(department), href: agendaUrl({ department }) } : { label: departmentLabel(department) })
@@ -144,6 +145,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
 
   return (
     <>
+      <DocumentTitle title={title} />
       <PageHeader
         eyebrow="Sortir dans la région"
         title={`${cat ? `Agenda «\u00a0${cat}\u00a0»` : 'Agenda'}${place ? ` ${place}` : ''}`}

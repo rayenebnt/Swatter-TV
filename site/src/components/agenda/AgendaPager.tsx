@@ -1,11 +1,7 @@
 import Link from 'next/link'
 import { Icon } from '@/components/ui/Icon'
 
-/**
- * Pagination précédent / suivant de la page Agenda (liens, rendu serveur).
- * Liens sans préchargement : Next 16 réutiliserait la tête de page préchargée (titre, canonique) d'une autre adresse de la
- * même page.
- */
+/** Pagination précédent / suivant de la page Agenda (liens, rendu serveur). */
 export function AgendaPager({ page, totalPages, hrefFor }: { page: number; totalPages: number; hrefFor: (page: number) => string }) {
   if (totalPages <= 1) return null
   const prev = page > 1 ? hrefFor(page - 1) : null
@@ -13,7 +9,7 @@ export function AgendaPager({ page, totalPages, hrefFor }: { page: number; total
   return (
     <nav className="agenda-pager" aria-label="Pages de l’agenda">
       {prev ? (
-        <Link className="btn btn--ghost btn--sm" href={prev} rel="prev" prefetch={false}>
+        <Link className="btn btn--ghost btn--sm" href={prev} rel="prev">
           <Icon name="left" />
           Précédent
         </Link>
@@ -27,7 +23,7 @@ export function AgendaPager({ page, totalPages, hrefFor }: { page: number; total
         Page {page} sur {totalPages}
       </p>
       {next ? (
-        <Link className="btn btn--ghost btn--sm" href={next} rel="next" prefetch={false}>
+        <Link className="btn btn--ghost btn--sm" href={next} rel="next">
           Suivant
           <Icon name="right" />
         </Link>

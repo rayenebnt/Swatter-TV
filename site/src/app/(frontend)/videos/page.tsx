@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react'
 import { AdSlot } from '@/components/layout/AdSlot'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
+import { DocumentTitle } from '@/components/ui/DocumentTitle'
 import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { FilterLinks } from '@/components/video/FilterLinks'
@@ -63,12 +64,13 @@ export default async function VideosPage({ searchParams }: { searchParams: Searc
   if (page > 1 && page > list.totalPages) notFound()
 
   const now = renderNow()
-  const { label, description } = texts(category, page)
+  const { label, title, description } = texts(category, page)
   const withTop = !category && page === 1
   const crumbs: Crumb[] = [{ label: 'Vidéos', href: '/videos' }, ...(label ? [{ label }] : [])]
 
   return (
     <>
+      <DocumentTitle title={title} />
       <PageHeader eyebrow={label ? 'Vidéos' : 'À voir maintenant'} title={label ?? 'Les vidéos'} description={description} crumbs={crumbs} />
 
       {withTop && (

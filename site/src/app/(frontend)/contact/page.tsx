@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { ContactForm } from '@/components/contact/ContactForm'
 import { Icon } from '@/components/ui/Icon'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { ogImage } from '@/lib/og'
 import { getSettings } from '@/lib/queries/settings'
 import { SITE_NAME } from '@/lib/site'
 import '@/styles/contact.css'
@@ -16,8 +17,8 @@ export const metadata: Metadata = {
   title: 'Proposer une info, nous contacter',
   description: DESCRIPTION,
   alternates: { canonical: '/contact' },
-  // image de partage : celle du site (opengraph-image)
-  openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url: '/contact' },
+  // une page qui définit openGraph n'hérite plus de l'image de partage du site (opengraph-image) : la sienne, explicite
+  openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url: '/contact', images: [ogImage(null, '/visuels/hero-matin.webp')] },
 }
 
 /** Page « Proposer une info » : formulaire (envoyé par e-mail à la rédaction) et coordonnées de la chaîne. */

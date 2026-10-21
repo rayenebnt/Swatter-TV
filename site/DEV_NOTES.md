@@ -166,9 +166,12 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   le contenu de `not-found.tsx` dans les données de la page : il s'affiche avec le JavaScript (visiteurs, Google), pas sans.
   C'est le comportement de Next 16.3 lui-même (vérifié sur une application minimale) ; `global-not-found` (expérimental)
   ne servirait qu'aux adresses qu'aucune route ne reconnaît, or `[...slug]` les reconnaît toutes.
-- **Liens d'une page vers elle-même** avec d'autres paramètres (filtres par département ou catégorie, pages suivantes) :
-  `prefetch={false}`. Préchargés, Next 16 réutilise la tête de page (titre de l'onglet, canonique) d'une autre adresse de
-  la même page.
+- **Titre d'onglet des pages à paramètres** (filtres, pages suivantes, jour du programme : agenda, info, vidéos, replay,
+  programme TV) : Next 16 ne garde qu'une tête de page par chemin dans son cache de navigation, si bien qu'après un clic
+  sur un filtre le titre resterait celui de la première adresse préchargée (le HTML du serveur, lui, est juste). Ces pages
+  rendent `<DocumentTitle title={…} />` (`components/ui/DocumentTitle.tsx`) avec le même titre que generateMetadata (sans
+  le nom du site, ajouté par `pageTitle()` de `lib/site.ts`, aussi modèle de la mise en page). Désactiver le préchargement
+  des liens ne suffit pas : le menu précharge aussi ces pages.
 - **Images** : `mediaUrl()` renvoie un **chemin local** (`/api/media/file/…`) pour que next/image optimise les fichiers
   (AVIF/WebP, srcset). Pour une URL absolue (JSON-LD, flux) : `absoluteUrl(mediaUrl(doc.image, 'card'))`
   (`absoluteUrl` laisse intactes les URL déjà absolues). `mediaFocal()` ne renvoie rien pour le centre par défaut (50 % 50 %) :

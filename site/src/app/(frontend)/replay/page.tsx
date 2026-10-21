@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react'
 import { AdSlot } from '@/components/layout/AdSlot'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
+import { DocumentTitle } from '@/components/ui/DocumentTitle'
 import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { FilterLinks } from '@/components/video/FilterLinks'
@@ -35,10 +36,12 @@ async function resolveParams(sp: Record<string, string | string[] | undefined>):
   return { program: (slug && programs.find((x) => x.slug === slug)) || null, programs, page: Number.isInteger(p) && p > 1 ? p : 1 }
 }
 
+/** Titre de la page (sans le nom du site) : l'émission choisie, et le numéro de page au-delà de la première. */
+const listTitle = (program: Program | null, page: number) => `${program ? `${program.title} en replay` : 'Le Replay'}${page > 1 ? ` (page ${page})` : ''}`
+
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
   const { program, page } = await resolveParams(await searchParams)
-  const suffix = page > 1 ? ` (page ${page})` : ''
-  const title = `${program ? `${program.title} en replay` : 'Le Replay'}${suffix}`
+  const title = listTitle(program, page)
   const description = (program ? program.meta?.description || program.synopsis || `Tous les épisodes de «\u00a0${program.title}\u00a0» à revoir sur Swatter TV.` : INTRO).slice(0, 200)
   const imageMedia = program ? (program.meta?.image && typeof program.meta.image === 'object' ? program.meta.image : program.image) : null
   const url = replayListUrl(program?.slug, page)
@@ -60,6 +63,7 @@ export default async function ReplayPage({ searchParams }: { searchParams: Searc
 
   return (
     <>
+      <DocumentTitle title={listTitle(program, page)} />
       <PageHeader
         eyebrow={program ? 'Replay' : 'Voir ou revoir'}
         title={program ? program.title : 'Le Replay'}
