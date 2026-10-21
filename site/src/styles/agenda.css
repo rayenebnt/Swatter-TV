@@ -40,6 +40,7 @@
 .event .kicker { font-size: 11px; }
 
 /* ----- Page Agenda : filtres ----- */
+.agenda-depts { margin-top: 28px; }
 .agenda-filters { display: flex; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 34px; }
 /* La barre ne dépasse jamais son conteneur : elle défile (sinon les derniers filtres seraient rognés) */
 .agenda-filters > nav { min-width: 0; max-width: 100%; }

@@ -1532,6 +1532,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "department": {
+          "name": "department",
+          "type": "enum_events_department",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'haute-savoie'"
+        },
         "place": {
           "name": "place",
           "type": "varchar",
@@ -1624,6 +1632,21 @@
           "columns": [
             {
               "expression": "start_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "events_department_idx": {
+          "name": "events_department_idx",
+          "columns": [
+            {
+              "expression": "department",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1893,6 +1916,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version_department": {
+          "name": "version_department",
+          "type": "enum__events_v_version_department",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'haute-savoie'"
+        },
         "version_place": {
           "name": "version_place",
           "type": "varchar",
@@ -2024,6 +2055,21 @@
           "columns": [
             {
               "expression": "version_start_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "_events_v_version_version_department_idx": {
+          "name": "_events_v_version_version_department_idx",
+          "columns": [
+            {
+              "expression": "version_department",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -4008,6 +4054,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "department": {
+          "name": "department",
+          "type": "enum_webcams_department",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'haute-savoie'"
+        },
         "provider": {
           "name": "provider",
           "type": "enum_webcams_provider",
@@ -4078,6 +4132,21 @@
         }
       },
       "indexes": {
+        "webcams_department_idx": {
+          "name": "webcams_department_idx",
+          "columns": [
+            {
+              "expression": "department",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "webcams_image_idx": {
           "name": "webcams_image_idx",
           "columns": [
@@ -4203,6 +4272,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version_department": {
+          "name": "version_department",
+          "type": "enum__webcams_v_version_department",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'haute-savoie'"
+        },
         "version_provider": {
           "name": "version_provider",
           "type": "enum__webcams_v_version_provider",
@@ -4302,6 +4379,21 @@
           "columns": [
             {
               "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "_webcams_v_version_version_department_idx": {
+          "name": "_webcams_v_version_version_department_idx",
+          "columns": [
+            {
+              "expression": "version_department",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -7991,7 +8083,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false,
-          "default": "'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.'"
+          "default": "'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.'"
         },
         "contact_email": {
           "name": "contact_email",
@@ -8602,7 +8694,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false,
-          "default": "'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.'"
+          "default": "'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.'"
         },
         "version_contact_email": {
           "name": "version_contact_email",
@@ -9307,6 +9399,24 @@
         "published"
       ]
     },
+    "public.enum_events_department": {
+      "name": "enum_events_department",
+      "schema": "public",
+      "values": [
+        "haute-savoie",
+        "savoie",
+        "ain",
+        "isere",
+        "rhone",
+        "loire",
+        "haute-loire",
+        "drome",
+        "ardeche",
+        "puy-de-dome",
+        "cantal",
+        "allier"
+      ]
+    },
     "public.enum_events_category": {
       "name": "enum_events_category",
       "schema": "public",
@@ -9327,6 +9437,24 @@
       "values": [
         "draft",
         "published"
+      ]
+    },
+    "public.enum__events_v_version_department": {
+      "name": "enum__events_v_version_department",
+      "schema": "public",
+      "values": [
+        "haute-savoie",
+        "savoie",
+        "ain",
+        "isere",
+        "rhone",
+        "loire",
+        "haute-loire",
+        "drome",
+        "ardeche",
+        "puy-de-dome",
+        "cantal",
+        "allier"
       ]
     },
     "public.enum__events_v_version_category": {
@@ -9449,6 +9577,24 @@
         "published"
       ]
     },
+    "public.enum_webcams_department": {
+      "name": "enum_webcams_department",
+      "schema": "public",
+      "values": [
+        "haute-savoie",
+        "savoie",
+        "ain",
+        "isere",
+        "rhone",
+        "loire",
+        "haute-loire",
+        "drome",
+        "ardeche",
+        "puy-de-dome",
+        "cantal",
+        "allier"
+      ]
+    },
     "public.enum_webcams_provider": {
       "name": "enum_webcams_provider",
       "schema": "public",
@@ -9465,6 +9611,24 @@
       "values": [
         "draft",
         "published"
+      ]
+    },
+    "public.enum__webcams_v_version_department": {
+      "name": "enum__webcams_v_version_department",
+      "schema": "public",
+      "values": [
+        "haute-savoie",
+        "savoie",
+        "ain",
+        "isere",
+        "rhone",
+        "loire",
+        "haute-loire",
+        "drome",
+        "ardeche",
+        "puy-de-dome",
+        "cantal",
+        "allier"
       ]
     },
     "public.enum__webcams_v_version_provider": {
@@ -9696,6 +9860,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "83ad9cf2-0739-45b3-ba5e-a985a01e3005",
+  "id": "f2e4fb30-c13b-4b77-a733-f6a8696a9ceb",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

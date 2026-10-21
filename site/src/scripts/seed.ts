@@ -210,6 +210,7 @@ for (const e of EVENTS) {
       startDate: startDate.toISOString(),
       endDate: e.end ? parisDateTime(relDay(e.end), e.end.time).toISOString() : null,
       city: e.city,
+      department: e.department,
       place: e.place,
       category: e.category,
       poster: mediaId(e.poster),
@@ -233,7 +234,7 @@ log(`${EVENTS.length} événements créés.`)
 for (const [i, w] of WEBCAMS.entries()) {
   await payload.create({
     collection: 'webcams',
-    data: { _status: 'published', name: w.name, place: w.place, provider: w.provider, embedUrl: `/visuels/${w.image}.webp`, image: mediaId(w.image), temperature: w.temperature, order: i + 1, active: true },
+    data: { _status: 'published', name: w.name, place: w.place, department: w.department, provider: w.provider, embedUrl: `/visuels/${w.image}.webp`, image: mediaId(w.image), temperature: w.temperature, order: i + 1, active: true },
     overrideAccess: true,
     context,
   })

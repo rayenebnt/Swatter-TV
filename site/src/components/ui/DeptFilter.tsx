@@ -7,15 +7,16 @@ import { useSegFade } from './useSegFade'
 export type DeptLink = { href: string; label: string; current: boolean }
 
 /**
- * Filtres des pages Info : un lien par département (adresses partageables), au style du contrôle segmenté.
- * Composant client pour le seul confort de défilement (fondu des bords, lien actif amené en vue).
+ * Filtre par département (Info, Agenda, Webcams, Météo) : « Toute la région » puis un lien par département (adresses
+ * partageables), au style du contrôle segmenté. Composant client pour le seul confort de défilement (fondu des bords,
+ * lien actif amené en vue). Rien à afficher sans au moins deux choix.
  */
-export function DeptLinks({ links }: { links: DeptLink[] }) {
+export function DeptFilter({ links, label, className }: { links: DeptLink[]; label: string; className?: string }) {
   const ref = useRef<HTMLElement>(null)
   useSegFade(ref, links.length)
   if (links.length < 2) return null
   return (
-    <nav ref={ref} className="info-filters info-depts" aria-label="L’info par département" data-reveal>
+    <nav ref={ref} className={className ? `dept-filter ${className}` : 'dept-filter'} aria-label={label} data-reveal>
       <div className="seg seg--bleed">
         {links.map((l) => (
           <Link key={l.href} href={l.href} aria-current={l.current ? 'page' : undefined} scroll={false}>

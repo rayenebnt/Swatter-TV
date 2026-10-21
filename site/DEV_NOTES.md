@@ -89,6 +89,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `/` | accueil |
 | `/direct` | le direct |
 | `/info`, `/info/[departement]`, `/info/[departement]/[slug]` | l'info de toute la région, par département (12 départements d'Auvergne-Rhône-Alpes, `src/lib/departments.ts` ; un autre est en 404), article |
+| `/meteo/[departement]`, `/webcams/[departement]`, `/agenda?departement=` | météo (ville du département), webcams et agenda d'un département |
 | `/contact` | formulaire « Proposer une info » (`?sujet=publicite` présélectionne la publicité) |
 | `/meteo` | la météo |
 | `/agenda`, `/agenda/[slug]` | agenda, événement |
@@ -133,7 +134,9 @@ npm run seed           # contenus de départ « Exemple » (efface les contenus)
   échappe au rognage et élargit la page.
 - **Import météo** : `importMeteo()` renvoie `{ ok: false, skipped: true }` quand la mise à jour automatique est désactivée
   (ce n'est pas une erreur). En production, lancer `npm run import` une fois puis brancher la tâche planifiée `GET /api/cron/import`.
-  Villes suivies : `METEO_CITIES` (`src/lib/meteo.ts`), réparties dans Auvergne-Rhône-Alpes, la première (Annecy) étant la ville principale ;
+  Villes suivies : `METEO_CITIES` (`src/lib/meteo.ts`), une par département (`department`), la première (Annecy) étant la
+  ville principale ; chaque jour garde le détail de la ville principale et, dans `views`, celui des autres villes (pages
+  `/meteo/[departement]`, `getMeteo(dept)` dans `src/components/meteo/data.ts`) ;
   une prévision enregistrée n'affiche que ces villes (les autres sont ignorées jusqu'au prochain import).
 - **Ne jamais faire varier le `className` d'un élément `[data-reveal]`** dans un composant client : React réécrit `class`
   et efface `is-in`, l'élément redevient invisible. Utiliser un attribut `data-*` ou un élément enfant.
@@ -175,7 +178,9 @@ npm run seed           # contenus de départ « Exemple » (efface les contenus)
   n'accepte que des chemins internes. `PreviewMode` (mise en page du site) : dans l'iframe de l'aperçu en direct,
   `RefreshRouteOnSave` rafraîchit la page à chaque enregistrement automatique ; dans un onglet, bandeau « Aperçu ».
   Requêtes par adresse (`src/lib/queries`) : en aperçu, pas de filtre de date (un contenu programmé se prévisualise).
-- **Zone couverte** : toute la région Auvergne-Rhône-Alpes (info par département, météo de six villes de la région).
+- **Zone couverte** : toute la région Auvergne-Rhône-Alpes. Info, agenda et webcams portent un champ « Département »
+  (`src/fields/department.ts`) et proposent un filtre par département (`src/components/ui/DeptFilter.tsx`, tournures
+  « en Isère / dans le Rhône » dans `src/lib/places.ts`) ; la météo suit une ville par département.
   Une restriction à la seule Haute-Savoie a été essayée puis abandonnée à la demande du client : les adresses
   `/info/<département>` restent celles d'origine.
 - **Formulaire de contact** : `POST /api/contact` (payload.config.ts) → champ piège `website` et délai minimal de 3 s

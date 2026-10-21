@@ -1,5 +1,6 @@
 // Météo : types de temps, codes WMO d'Open-Meteo, villes suivies et helpers partagés par les composants et l'import.
-import { isForecast, type Forecast, type ForecastCity, type ForecastDay, type WeatherKind } from './meteo-types'
+import type { DepartmentSlug } from './departments'
+import { isForecast, type CityView, type Forecast, type ForecastCity, type ForecastDay, type WeatherKind } from './meteo-types'
 
 /** Libellé court de chaque type de temps (icônes, villes). */
 export const KIND_LABEL: Record<WeatherKind, string> = {
@@ -73,24 +74,36 @@ export function formatTemp(t: number): string {
   return `${v < 0 ? '−' : ''}${Math.abs(v)}°`
 }
 
-export type MeteoCity = { name: string; latitude: number; longitude: number }
+export type MeteoCity = { name: string; department: DepartmentSlug; latitude: number; longitude: number }
 
 /**
- * Villes suivies en Auvergne-Rhône-Alpes, dans l'ordre d'affichage ; la première est la ville principale (Annecy, près
- * de la chaîne). Pays de Savoie, métropole lyonnaise, Isère, Auvergne et massif du Mont-Blanc.
+ * Villes suivies : une par département d'Auvergne-Rhône-Alpes (pages Météo par département), dans l'ordre d'affichage.
+ * La première est la ville principale (Annecy, près de la chaîne) ; les suivantes, des plus grandes aux plus petites
+ * (l'accueil n'en montre que quelques-unes).
  */
 export const METEO_CITIES: readonly MeteoCity[] = [
-  { name: 'Annecy', latitude: 45.899, longitude: 6.129 },
-  { name: 'Lyon', latitude: 45.764, longitude: 4.835 },
-  { name: 'Grenoble', latitude: 45.188, longitude: 5.724 },
-  { name: 'Clermont-Ferrand', latitude: 45.778, longitude: 3.087 },
-  { name: 'Chambéry', latitude: 45.564, longitude: 5.917 },
-  { name: 'Chamonix', latitude: 45.924, longitude: 6.869 },
+  { name: 'Annecy', department: 'haute-savoie', latitude: 45.899, longitude: 6.129 },
+  { name: 'Lyon', department: 'rhone', latitude: 45.764, longitude: 4.835 },
+  { name: 'Grenoble', department: 'isere', latitude: 45.188, longitude: 5.724 },
+  { name: 'Clermont-Ferrand', department: 'puy-de-dome', latitude: 45.778, longitude: 3.087 },
+  { name: 'Saint-Étienne', department: 'loire', latitude: 45.434, longitude: 4.39 },
+  { name: 'Chambéry', department: 'savoie', latitude: 45.564, longitude: 5.917 },
+  { name: 'Valence', department: 'drome', latitude: 44.933, longitude: 4.892 },
+  { name: 'Bourg-en-Bresse', department: 'ain', latitude: 46.205, longitude: 5.226 },
+  { name: 'Le Puy-en-Velay', department: 'haute-loire', latitude: 45.043, longitude: 3.885 },
+  { name: 'Aurillac', department: 'cantal', latitude: 44.926, longitude: 2.44 },
+  { name: 'Moulins', department: 'allier', latitude: 46.566, longitude: 3.333 },
+  { name: 'Privas', department: 'ardeche', latitude: 44.735, longitude: 4.599 },
 ]
 
 export const METEO_REGION = 'Auvergne-Rhône-Alpes'
 
-/** « Annecy, Lyon, … et Chamonix » */
+/** Ville suivie d'un département (une par département). */
+export const meteoCityOf = (dept: DepartmentSlug): MeteoCity => METEO_CITIES.find((c) => c.department === dept) ?? METEO_CITIES[0]
+/** Page Météo de toute la région ou d'un département. */
+export const meteoHref = (dept: DepartmentSlug | null) => (dept ? `/meteo/${dept}` : '/meteo')
+
+/** « Annecy, Lyon, … et Privas » */
 export const METEO_CITY_LIST = `${METEO_CITIES.slice(0, -1)
   .map((c) => c.name)
   .join(', ')} et ${METEO_CITIES[METEO_CITIES.length - 1].name}`
@@ -121,11 +134,11 @@ function readCity(v: unknown): ForecastCity | null {
   return { name, kind: c.kind, label: text(c.label) || KIND_LABEL[c.kind], min, max }
 }
 
-function readDay(v: unknown): ForecastDay | null {
+/** Prévisions détaillées d'une ville (jour principal ou entrée de `views`), ou null. */
+function readView(v: unknown): CityView | null {
   const d = obj(v)
   const m = obj(d?.main)
-  const date = text(d?.date)
-  if (!d || !m || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !isWeatherKind(m.kind)) return null
+  if (!d || !m || !isWeatherKind(m.kind)) return null
   const now = int(m.now)
   const min = int(m.min)
   const max = int(m.max)
@@ -142,15 +155,28 @@ function readDay(v: unknown): ForecastDay | null {
     return o && temp !== null && isPartLabel(o.label) && isWeatherKind(o.kind) ? [{ label: o.label, kind: o.kind, temp }] : []
   })
   return {
-    date,
     main: { city: text(m.city) || METEO_CITIES[0].name, kind: m.kind, label: text(m.label) || KIND_LABEL[m.kind], now, min, max },
     hours,
     parts,
+    bulletin: text(d.bulletin),
+  }
+}
+
+function readDay(v: unknown): ForecastDay | null {
+  const d = obj(v)
+  const date = text(d?.date)
+  const view = readView(v)
+  if (!d || !view || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
+  return {
+    date,
+    ...view,
     // seulement les villes suivies (une prévision enregistrée avant un changement de liste n'en montre pas d'autres)
     cities: list(d.cities)
       .map(readCity)
       .filter((c): c is ForecastCity => c !== null && FOLLOWED.has(c.name)),
-    bulletin: text(d.bulletin),
+    views: list(d.views)
+      .map(readView)
+      .filter((c): c is CityView => c !== null && FOLLOWED.has(c.main.city)),
   }
 }
 

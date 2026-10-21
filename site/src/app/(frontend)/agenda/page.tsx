@@ -9,15 +9,18 @@ import { AGENDA_VISUAL, agendaUrl, categoryFilterLabel, dateLabel, monthLabel } 
 import { AdSlot } from '@/components/layout/AdSlot'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
+import { DeptFilter } from '@/components/ui/DeptFilter'
 import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { EVENT_CATEGORIES } from '@/lib/categories'
+import { departmentLabel, isDepartment, type DepartmentSlug } from '@/lib/departments'
 import { parisDay } from '@/lib/format'
 import {
   EVENT_PERIODS,
   getAgendaHighlights,
   getAgendaPage,
   getUpcomingCategories,
+  getUpcomingDepartments,
   isEventCategory,
   isEventPeriod,
   parisDayStart,
@@ -26,6 +29,7 @@ import {
   type EventListItem,
   type EventPeriod,
 } from '@/lib/queries/events'
+import { inPlace } from '@/lib/places'
 import { absoluteUrl, SITE_NAME } from '@/lib/site'
 import { eventUrl } from '@/lib/urls'
 import '@/styles/agenda.css'
@@ -34,18 +38,28 @@ import { ogImage } from '@/lib/og'
 export const revalidate = 60
 
 const PER_PAGE = 24
-const INTRO = 'Toute l’offre culturelle, touristique et sportive en Auvergne-Rhône-Alpes\u00a0: fêtes, marchés, concerts, expositions et sorties en famille.'
+/** « Toute l'offre … en Auvergne-Rhône-Alpes » (ou dans le département choisi) */
+const intro = (department: DepartmentSlug | null) =>
+  `Toute l’offre culturelle, touristique et sportive ${inPlace(department)}\u00a0: fêtes, marchés, concerts, expositions et sorties en famille.`
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 
-/** ?categorie= et ?quand= (ignorés si inconnus), ?page= (1 par défaut). */
-function parseParams(sp: Record<string, string | string[] | undefined>): { category: EventCategory | null; period: EventPeriod | null; page: number } {
+type Filters = { category: EventCategory | null; period: EventPeriod | null; department: DepartmentSlug | null; page: number }
+
+/** ?categorie=, ?quand= et ?departement= (ignorés si inconnus), ?page= (1 par défaut). */
+function parseParams(sp: Record<string, string | string[] | undefined>): Filters {
   const c = first(sp.categorie)
   const q = first(sp.quand)
+  const d = first(sp.departement)
   const p = Number(first(sp.page))
-  return { category: isEventCategory(c) ? c : null, period: isEventPeriod(q) ? q : null, page: Number.isInteger(p) && p > 1 ? p : 1 }
+  return {
+    category: isEventCategory(c) ? c : null,
+    period: isEventPeriod(q) ? q : null,
+    department: d && isDepartment(d) ? d : null,
+    page: Number.isInteger(p) && p > 1 ? p : 1,
+  }
 }
 
 const periodLabel = (period: EventPeriod) => EVENT_PERIODS.find((p) => p.value === period)?.label ?? ''
@@ -57,26 +71,30 @@ function periodDates(period: EventPeriod, now: Date): string {
   return label.charAt(0).toLowerCase() + label.slice(1)
 }
 
-function texts(category: EventCategory | null, period: EventPeriod | null, page: number) {
+function texts({ category, period, department, page }: Filters) {
   const cat = category ? categoryFilterLabel(category) : null
   const when = period ? periodLabel(period).toLowerCase() : null
   const suffix = page > 1 ? ` (page ${page})` : ''
   const quoted = cat && `«\u00a0${cat}\u00a0»`
   const parts = [quoted, when].filter(Boolean)
+  // « en Isère », « dans le Rhône »… ; toute la région sans département
+  const place = inPlace(department)
   return {
     cat,
-    title: `${parts.length ? `Agenda ${parts.join(', ')}` : 'Agenda des sorties en Auvergne-Rhône-Alpes'}${suffix}`,
-    description: parts.length
-      ? `Les sorties ${parts.join(' ')} en Auvergne-Rhône-Alpes\u00a0: dates, lieux et programmes, avec Swatter TV.`
-      : `${INTRO} Dates, lieux et programmes avec Swatter TV.`,
+    place: department ? place : null,
+    title: `${parts.length ? `Agenda ${parts.join(', ')} ${place}` : `Agenda des sorties ${place}`}${suffix}`,
+    description: parts.length || department
+      ? `Les sorties ${[...parts, place].join(' ')}\u00a0: dates, lieux et programmes, avec Swatter TV.`
+      : `${intro(null)} Dates, lieux et programmes avec Swatter TV.`,
   }
 }
 
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
-  const { category, period, page } = parseParams(await searchParams)
-  const { title, description } = texts(category, period, page)
+  const filters = parseParams(await searchParams)
+  const { category, period, department, page } = filters
+  const { title, description } = texts(filters)
   // Les filtres de période changent chaque jour : l'adresse de référence ne les garde pas
-  const canonical = period ? agendaUrl({ category }) : agendaUrl({ category, page })
+  const canonical = period ? agendaUrl({ category, department }) : agendaUrl({ category, department, page })
   return {
     title,
     description,
@@ -99,20 +117,26 @@ function byMonth(events: EventListItem[], now: Date) {
 }
 
 export default async function AgendaPage({ searchParams }: { searchParams: SearchParams }) {
-  const { category, period, page } = parseParams(await searchParams)
+  const filters = parseParams(await searchParams)
+  const { category, period, department, page } = filters
   const now = new Date()
-  const filtered = Boolean(category || period)
+  const filtered = Boolean(category || period || department)
   const withFeature = !filtered && page === 1
-  const [list, categories, highlights] = await Promise.all([
-    getAgendaPage({ category, period, page, limit: PER_PAGE, now }),
-    getUpcomingCategories(now),
+  const [list, categories, departments, highlights] = await Promise.all([
+    getAgendaPage({ category, period, department, page, limit: PER_PAGE, now }),
+    getUpcomingCategories(now, department),
+    getUpcomingDepartments(now),
     withFeature ? getAgendaHighlights(0) : Promise.resolve(null),
   ])
   if (page > 1 && page > list.totalPages) notFound()
 
-  const { cat } = texts(category, period, page)
+  const { cat, place } = texts(filters)
   const feature = highlights?.feature ?? null
-  const crumbs: Crumb[] = [{ label: 'Agenda', href: '/agenda' }, ...(cat ? [{ label: cat }] : [])]
+  const crumbs: Crumb[] = [{ label: 'Agenda', href: '/agenda' }]
+  if (department) crumbs.push(cat ? { label: departmentLabel(department), href: agendaUrl({ department }) } : { label: departmentLabel(department) })
+  if (cat) crumbs.push({ label: cat })
+  // Le département demandé reste proposé (actif) même sans événement à venir
+  const shownDepartments = department && !departments.includes(department) ? [...departments, department] : departments
   const groups = byMonth(list.docs, now)
   const count = list.totalDocs
   // La catégorie demandée reste proposée (active) même sans événement à venir
@@ -120,7 +144,22 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
 
   return (
     <>
-      <PageHeader eyebrow="Sortir dans la région" title={cat ? `Agenda «\u00a0${cat}\u00a0»` : 'Agenda'} description={INTRO} crumbs={crumbs} />
+      <PageHeader
+        eyebrow="Sortir dans la région"
+        title={`${cat ? `Agenda «\u00a0${cat}\u00a0»` : 'Agenda'}${place ? ` ${place}` : ''}`}
+        description={intro(department)}
+        crumbs={crumbs}
+      />
+      <div className="container">
+        <DeptFilter
+          label="L’agenda par département"
+          className="agenda-depts"
+          links={[
+            { href: agendaUrl({ category, period }), label: 'Toute la région', current: !department },
+            ...shownDepartments.map((d) => ({ href: agendaUrl({ category, period, department: d }), label: departmentLabel(d), current: d === department })),
+          ]}
+        />
+      </div>
 
       {feature && (
         <>
@@ -140,15 +179,15 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
           <AgendaFilterBar
             label="Filtrer par période"
             links={[
-              { href: agendaUrl({ category }), label: 'Toutes les dates', current: !period },
-              ...EVENT_PERIODS.map((p) => ({ href: agendaUrl({ category, period: p.value }), label: p.label, current: p.value === period })),
+              { href: agendaUrl({ category, department }), label: 'Toutes les dates', current: !period },
+              ...EVENT_PERIODS.map((p) => ({ href: agendaUrl({ category, department, period: p.value }), label: p.label, current: p.value === period })),
             ]}
           />
           <AgendaFilterBar
             label="Filtrer par catégorie"
             links={[
-              { href: agendaUrl({ period }), label: 'Toutes les catégories', current: !category },
-              ...shownCategories.map((c) => ({ href: agendaUrl({ category: c, period }), label: categoryFilterLabel(c), current: c === category })),
+              { href: agendaUrl({ period, department }), label: 'Toutes les catégories', current: !category },
+              ...shownCategories.map((c) => ({ href: agendaUrl({ category: c, period, department }), label: categoryFilterLabel(c), current: c === category })),
             ]}
           />
         </div>
@@ -181,7 +220,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
               <b>{filtered ? 'Aucun événement ne correspond à ces critères' : 'Aucun événement à venir pour le moment'}</b>
               {filtered ? (
                 <>
-                  Essayez une autre période ou une autre catégorie, ou <Link href="/agenda">consultez tout l’agenda</Link>.
+                  Essayez une autre période, une autre catégorie ou un autre département, ou <Link href="/agenda">consultez tout l’agenda</Link>.
                 </>
               ) : (
                 'Revenez bientôt pour découvrir les prochaines sorties de la région.'
@@ -189,7 +228,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
             </p>
           </div>
         )}
-        <AgendaPager page={page} totalPages={list.totalPages} hrefFor={(p) => agendaUrl({ category, period, page: p })} />
+        <AgendaPager page={page} totalPages={list.totalPages} hrefFor={(p) => agendaUrl({ category, period, department, page: p })} />
       </section>
 
       {!feature && (

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Icon } from '@/components/ui/Icon'
+import type { DepartmentSlug } from '@/lib/departments'
 import { isOpenMeteo } from '@/lib/meteo'
 import { getMeteo, updatedLabel } from './data'
 import { MeteoPanel } from './MeteoPanel'
@@ -39,8 +40,8 @@ function MeteoEmpty() {
  * - 'aside' : colonne compacte de l'accueil (maquette #meteo) ; rien sans prévision (l'info prend alors toute la largeur) ;
  * - 'full' : version large de la page /meteo (cartes des jours, grille des villes, grande courbe) ; état vide sinon.
  */
-export async function MeteoWidget({ variant = 'aside' }: { variant?: 'aside' | 'full' }) {
-  const data = await getMeteo()
+export async function MeteoWidget({ variant = 'aside', dept = null }: { variant?: 'aside' | 'full'; dept?: DepartmentSlug | null }) {
+  const data = await getMeteo(dept)
   if (!data) return variant === 'full' ? <MeteoEmpty /> : null
 
   const updated = updatedLabel(data.updatedAt, data.today)

@@ -3,7 +3,8 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 import { Seg } from '@/components/ui/Seg'
 import { parisDay } from '@/lib/format'
-import { addDays, formatTemp } from '@/lib/meteo'
+import Link from 'next/link'
+import { addDays, formatTemp, METEO_CITIES, meteoHref } from '@/lib/meteo'
 import { CountUp } from './CountUp'
 import type { MeteoDay } from './data'
 import { MeteoChart, type ChartVariant } from './MeteoChart'
@@ -11,6 +12,10 @@ import { usePauseOffscreen } from './usePauseOffscreen'
 import { WeatherIcon } from './WeatherIcon'
 
 const noSubscribe = () => () => {}
+/** Autres villes listées dans la colonne météo de l'accueil. */
+const ASIDE_CITIES = 5
+/** Page Météo du département d'une ville suivie. */
+const cityHref = (name: string) => meteoHref(METEO_CITIES.find((c) => c.name === name)?.department ?? null)
 
 /** Noms d'un jour : onglet compact, carte de la version large, titre accessible du panneau. */
 function dayNames(d: MeteoDay, today: string, tomorrow: string) {
@@ -67,8 +72,8 @@ function DayView({
   const bulletin = day.bulletin ? <p className="bulletin">{day.bulletin}</p> : null
 
   if (variant === 'aside') {
-    // la ville principale est déjà en tête : liste des autres villes, maximale seulement (maquette)
-    const cities = day.cities.filter((c) => c.name !== main.city)
+    // la ville principale est déjà en tête : quelques autres villes (les plus grandes), maximale seulement (maquette)
+    const cities = day.cities.filter((c) => c.name !== main.city).slice(0, ASIDE_CITIES)
     return (
       <div className="meteo-panel">
         {now}
@@ -106,6 +111,8 @@ function DayView({
           <ul className="city-grid">
             {day.cities.map((c) => (
               <li className="city-card" key={c.name}>
+                {/* la carte mène aux prévisions détaillées du département de la ville */}
+                <Link className="stretched" href={cityHref(c.name)} aria-current={c.name === main.city ? 'page' : undefined} aria-label={`Météo détaillée à ${c.name}`} />
                 <WeatherIcon kind={c.kind} decorative />
                 <span className="city-card__txt">
                   <b>{c.name}</b>

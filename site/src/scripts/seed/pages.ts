@@ -1,4 +1,5 @@
 // Pages éditoriales (à compléter : voir les « [à compléter] ») et webcams d'exemple.
+import type { DepartmentSlug } from '@/lib/departments'
 import type { Page, Webcam } from '@/payload-types'
 
 export type SeedPage = {
@@ -126,7 +127,7 @@ export type SeedWebcam = {
 }
 
 /** Webcams d'exemple (type « image rafraîchie » pointant vers un visuel du site) : à remplacer par les vraies webcams. */
-export const WEBCAMS: (SeedWebcam & { provider: Webcam['provider'] })[] = [
-  { name: 'Lac d’Annecy (exemple)', place: 'Lieu à préciser', image: 't-ete-a', temperature: '', provider: 'image' },
-  { name: 'Station de ski (exemple)', place: 'Lieu à préciser', image: 't-hiver-a', temperature: '', provider: 'image' },
+export const WEBCAMS: (SeedWebcam & { provider: Webcam['provider']; department: DepartmentSlug })[] = [
+  { name: 'Lac d’Annecy (exemple)', place: 'Lieu à préciser', department: 'haute-savoie', image: 't-ete-a', temperature: '', provider: 'image' },
+  { name: 'Station de ski (exemple)', place: 'Lieu à préciser', department: 'savoie', image: 't-hiver-a', temperature: '', provider: 'image' },
 ]

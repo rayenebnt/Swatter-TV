@@ -248,13 +248,15 @@ jour, la plus récente des infos cochées l’emporte, et à défaut le dernier 
 **Tableau de bord › Ajouter une sortie** (ou **Agenda › Ajouter**)
 
 1. **Titre**, **Début** (jour et heure) et, si l’événement dure plusieurs jours, **Fin (facultatif)**.
-2. **Commune** (obligatoire), **Lieu** (salle, place…) et **Catégorie** (Terroir, Musique, Sport, Famille, Culture,
-   Fête, Marché, Autre) : elle sert aux filtres de la page Agenda.
-3. **Affiche ou photo** et **Présentation**.
-4. **Programme de la journée (facultatif)** : cliquez sur **Ajouter Moment** pour chaque horaire, puis remplissez
+2. **Commune** (obligatoire) et **Département** : les visiteurs peuvent filtrer l’agenda par département (« Toute la
+   région », « Isère »…).
+3. **Lieu** (salle, place…) et **Catégorie** (Terroir, Musique, Sport, Famille, Culture, Fête, Marché, Autre) : elle
+   sert aux filtres de la page Agenda.
+4. **Affiche ou photo** et **Présentation**.
+5. **Programme de la journée (facultatif)** : cliquez sur **Ajouter Moment** pour chaque horaire, puis remplissez
    **Horaire** (`10h30` ou « Toute la journée ») et **Description**.
-5. **Lien externe** : billetterie, office de tourisme…
-6. Vérifiez l’aperçu, puis **Publier les modifications**.
+6. **Lien externe** : billetterie, office de tourisme…
+7. Vérifiez l’aperçu, puis **Publier les modifications**.
 
 Les événements passés disparaissent d’eux-mêmes de l’agenda. **Sortie du week-end** : cochez la case (à droite) sur
 l’événement à mettre en avant dans « À la une » et sur l’accueil ; c’est le prochain événement coché qui est affiché
@@ -305,7 +307,9 @@ peut être filtrée par émission. Le même titre peut servir tous les jours («
 
 **Webcams › Ajouter**
 
-1. **Nom** (« Lac du Bourget ») et **Lieu précis** (« Port d’Aix-les-Bains »).
+1. **Nom** (« Lac du Bourget »), **Lieu précis** (« Port d’Aix-les-Bains ») et **Département** : la page Webcams
+   propose un filtre par département (« Toute la région », « Savoie »…), qui ne montre que les départements ayant une
+   webcam.
 2. **Type de flux**, puis **Lien du flux** (fourni par le service de la webcam, bouton « Intégrer » ou « Partager ») :
    - **Lecteur à intégrer (lien iframe : Windy, Skaping, ViewSurf…)** : le lien « intégrer » fourni par le service ;
    - **Flux vidéo HLS (.m3u8)** : l’adresse du flux ;
@@ -388,14 +392,17 @@ l’adresse `/son-adresse` (champ **Adresse web (automatique)**) une fois publi�
 
 ## 16. La météo
 
-**La Météo** : les prévisions d’Auvergne-Rhône-Alpes (Annecy, Lyon, Grenoble, Clermont-Ferrand, Chambéry, Chamonix) arrivent
-**automatiquement toutes les heures** grâce à Open-Meteo, tant que **Mise à jour automatique (toutes les heures)** est
-cochée : ce sont les prévisions actuelles, pas des exemples. Le site affiche sous la météo l’heure de la dernière mise à
+**La Météo** : les prévisions d’Auvergne-Rhône-Alpes arrivent **automatiquement toutes les heures** grâce à
+Open-Meteo, tant que **Mise à jour automatique (toutes les heures)** est cochée : ce sont les prévisions actuelles, pas
+des exemples. Il y a une ville par département : Annecy (Haute-Savoie, la ville mise en avant sur l’accueil), Lyon,
+Grenoble, Clermont-Ferrand, Saint-Étienne, Chambéry, Valence, Bourg-en-Bresse, Le Puy-en-Velay, Aurillac, Moulins et
+Privas. La page Météo propose un filtre par département : « Isère » montre les prévisions détaillées de Grenoble
+(courbe heure par heure, matin, après-midi, soirée et bulletin) ; cliquer sur une ville fait de même. Le site affiche sous la météo l’heure de la dernière mise à
 jour (« Mis à jour à 14:05 ») et la source (Open-Meteo). **Dernière mise à jour automatique** indique l’heure du dernier passage ; le tableau de bord vous prévient si
 les prévisions n’ont pas été mises à jour depuis plus de 3 heures.
 
 Pour écrire vous-même le texte du jour, remplissez **Bulletin du jour (facultatif)** : il remplace le texte généré
-automatiquement, **aujourd’hui seulement**, une fois publié avec **Publier les modifications** (l’aperçu le montre
+automatiquement de toute la région (la page Météo sans département et l’accueil), **aujourd’hui seulement**, une fois publié avec **Publier les modifications** (l’aperçu le montre
 avant). Dès le lendemain, le site reprend tout seul le texte automatique : inutile de
 vider le champ.
 

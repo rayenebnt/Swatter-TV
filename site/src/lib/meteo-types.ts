@@ -11,16 +11,23 @@ export type ForecastCity = {
   max: number
 }
 
-export type ForecastDay = {
-  /** Jour au format AAAA-MM-JJ (heure de Paris). */
-  date: string
+/** Prévisions détaillées d'une ville pour un jour : temps actuel, courbe horaire, tranches, bulletin. */
+export type CityView = {
   main: { city: string; kind: WeatherKind; label: string; now: number; min: number; max: number }
   /** Températures de 6 h à minuit (pas de 2 ou 3 h). */
   hours: { hour: number; temp: number; kind: WeatherKind }[]
   parts: { label: 'Matin' | 'Après-midi' | 'Soirée'; kind: WeatherKind; temp: number }[]
-  cities: ForecastCity[]
-  /** Texte généré automatiquement (remplacé par le bulletin saisi pour aujourd'hui s'il existe). */
+  /** Texte généré automatiquement (pour la ville principale : remplacé par le bulletin saisi pour aujourd'hui s'il existe). */
   bulletin: string
+}
+
+/** Un jour : la ville principale en détail (vue de toute la région), toutes les villes en résumé, les autres en détail. */
+export type ForecastDay = CityView & {
+  /** Jour au format AAAA-MM-JJ (heure de Paris). */
+  date: string
+  cities: ForecastCity[]
+  /** Prévisions détaillées des autres villes suivies (pages Météo par département). */
+  views?: CityView[]
 }
 
 export type Forecast = {

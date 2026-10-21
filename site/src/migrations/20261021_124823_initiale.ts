@@ -12,8 +12,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_articles_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__articles_v_version_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
   CREATE TYPE "public"."enum__articles_v_version_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum_events_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
   CREATE TYPE "public"."enum_events_category" AS ENUM('terroir', 'musique', 'sport', 'famille', 'culture', 'fete', 'marche', 'autre');
   CREATE TYPE "public"."enum_events_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum__events_v_version_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
   CREATE TYPE "public"."enum__events_v_version_category" AS ENUM('terroir', 'musique', 'sport', 'famille', 'culture', 'fete', 'marche', 'autre');
   CREATE TYPE "public"."enum__events_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_replays_source_provider" AS ENUM('youtube', 'bunny', 'url', 'upload');
@@ -26,8 +28,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_programs_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__programs_v_version_genre" AS ENUM('info', 'meteo', 'documentaire', 'magazine', 'agenda', 'divertissement', 'sport', 'serie', 'cinema');
   CREATE TYPE "public"."enum__programs_v_version_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum_webcams_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
   CREATE TYPE "public"."enum_webcams_provider" AS ENUM('iframe', 'hls', 'youtube', 'image');
   CREATE TYPE "public"."enum_webcams_status" AS ENUM('draft', 'published');
+  CREATE TYPE "public"."enum__webcams_v_version_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
   CREATE TYPE "public"."enum__webcams_v_version_provider" AS ENUM('iframe', 'hls', 'youtube', 'image');
   CREATE TYPE "public"."enum__webcams_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_ads_placement" AS ENUM('home-leaderboard', 'inner-leaderboard');
@@ -167,6 +171,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"start_date" timestamp(3) with time zone,
   	"end_date" timestamp(3) with time zone,
   	"city" varchar,
+  	"department" "enum_events_department" DEFAULT 'haute-savoie',
   	"place" varchar,
   	"category" "enum_events_category" DEFAULT 'autre',
   	"poster_id" integer,
@@ -198,6 +203,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_start_date" timestamp(3) with time zone,
   	"version_end_date" timestamp(3) with time zone,
   	"version_city" varchar,
+  	"version_department" "enum__events_v_version_department" DEFAULT 'haute-savoie',
   	"version_place" varchar,
   	"version_category" "enum__events_v_version_category" DEFAULT 'autre',
   	"version_poster_id" integer,
@@ -336,6 +342,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"name" varchar,
   	"place" varchar,
+  	"department" "enum_webcams_department" DEFAULT 'haute-savoie',
   	"provider" "enum_webcams_provider" DEFAULT 'iframe',
   	"embed_url" varchar,
   	"image_id" integer,
@@ -353,6 +360,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"parent_id" integer,
   	"version_name" varchar,
   	"version_place" varchar,
+  	"version_department" "enum__webcams_v_version_department" DEFAULT 'haute-savoie',
   	"version_provider" "enum__webcams_v_version_provider" DEFAULT 'iframe',
   	"version_embed_url" varchar,
   	"version_image_id" integer,
@@ -649,7 +657,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"flash_auto" boolean DEFAULT true,
   	"rating" numeric DEFAULT 4.5,
   	"views_count" numeric DEFAULT 0,
-  	"tagline" varchar DEFAULT 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.',
+  	"tagline" varchar DEFAULT 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.',
   	"contact_email" varchar DEFAULT 'contact@swatter-tv.fr',
   	"contact_phone" varchar DEFAULT 'Uniquement par mail',
   	"contact_address" varchar DEFAULT '36 rue de la Chaumière, 74300 Thyez
@@ -713,7 +721,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_flash_auto" boolean DEFAULT true,
   	"version_rating" numeric DEFAULT 4.5,
   	"version_views_count" numeric DEFAULT 0,
-  	"version_tagline" varchar DEFAULT 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.',
+  	"version_tagline" varchar DEFAULT 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.',
   	"version_contact_email" varchar DEFAULT 'contact@swatter-tv.fr',
   	"version_contact_phone" varchar DEFAULT 'Uniquement par mail',
   	"version_contact_address" varchar DEFAULT '36 rue de la Chaumière, 74300 Thyez
@@ -901,6 +909,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "events_program_order_idx" ON "events_program" USING btree ("_order");
   CREATE INDEX "events_program_parent_id_idx" ON "events_program" USING btree ("_parent_id");
   CREATE INDEX "events_start_date_idx" ON "events" USING btree ("start_date");
+  CREATE INDEX "events_department_idx" ON "events" USING btree ("department");
   CREATE INDEX "events_poster_idx" ON "events" USING btree ("poster_id");
   CREATE UNIQUE INDEX "events_slug_idx" ON "events" USING btree ("slug");
   CREATE INDEX "events_meta_meta_image_idx" ON "events" USING btree ("meta_image_id");
@@ -911,6 +920,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_events_v_version_program_parent_id_idx" ON "_events_v_version_program" USING btree ("_parent_id");
   CREATE INDEX "_events_v_parent_idx" ON "_events_v" USING btree ("parent_id");
   CREATE INDEX "_events_v_version_version_start_date_idx" ON "_events_v" USING btree ("version_start_date");
+  CREATE INDEX "_events_v_version_version_department_idx" ON "_events_v" USING btree ("version_department");
   CREATE INDEX "_events_v_version_version_poster_idx" ON "_events_v" USING btree ("version_poster_id");
   CREATE INDEX "_events_v_version_version_slug_idx" ON "_events_v" USING btree ("version_slug");
   CREATE INDEX "_events_v_version_meta_version_meta_image_idx" ON "_events_v" USING btree ("version_meta_image_id");
@@ -976,12 +986,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_programs_v_updated_at_idx" ON "_programs_v" USING btree ("updated_at");
   CREATE INDEX "_programs_v_latest_idx" ON "_programs_v" USING btree ("latest");
   CREATE INDEX "_programs_v_autosave_idx" ON "_programs_v" USING btree ("autosave");
+  CREATE INDEX "webcams_department_idx" ON "webcams" USING btree ("department");
   CREATE INDEX "webcams_image_idx" ON "webcams" USING btree ("image_id");
   CREATE UNIQUE INDEX "webcams_slug_idx" ON "webcams" USING btree ("slug");
   CREATE INDEX "webcams_updated_at_idx" ON "webcams" USING btree ("updated_at");
   CREATE INDEX "webcams_created_at_idx" ON "webcams" USING btree ("created_at");
   CREATE INDEX "webcams__status_idx" ON "webcams" USING btree ("_status");
   CREATE INDEX "_webcams_v_parent_idx" ON "_webcams_v" USING btree ("parent_id");
+  CREATE INDEX "_webcams_v_version_version_department_idx" ON "_webcams_v" USING btree ("version_department");
   CREATE INDEX "_webcams_v_version_version_image_idx" ON "_webcams_v" USING btree ("version_image_id");
   CREATE INDEX "_webcams_v_version_version_slug_idx" ON "_webcams_v" USING btree ("version_slug");
   CREATE INDEX "_webcams_v_version_version_updated_at_idx" ON "_webcams_v" USING btree ("version_updated_at");
@@ -1163,8 +1175,10 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_articles_status";
   DROP TYPE "public"."enum__articles_v_version_department";
   DROP TYPE "public"."enum__articles_v_version_status";
+  DROP TYPE "public"."enum_events_department";
   DROP TYPE "public"."enum_events_category";
   DROP TYPE "public"."enum_events_status";
+  DROP TYPE "public"."enum__events_v_version_department";
   DROP TYPE "public"."enum__events_v_version_category";
   DROP TYPE "public"."enum__events_v_version_status";
   DROP TYPE "public"."enum_replays_source_provider";
@@ -1177,8 +1191,10 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_programs_status";
   DROP TYPE "public"."enum__programs_v_version_genre";
   DROP TYPE "public"."enum__programs_v_version_status";
+  DROP TYPE "public"."enum_webcams_department";
   DROP TYPE "public"."enum_webcams_provider";
   DROP TYPE "public"."enum_webcams_status";
+  DROP TYPE "public"."enum__webcams_v_version_department";
   DROP TYPE "public"."enum__webcams_v_version_provider";
   DROP TYPE "public"."enum__webcams_v_version_status";
   DROP TYPE "public"."enum_ads_placement";

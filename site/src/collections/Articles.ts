@@ -1,10 +1,10 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, publishedOrAuthenticated } from '@/access'
 import { dateTimePicker } from '@/fields/date'
+import { departmentField } from '@/fields/department'
 import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
-import { DEPARTMENTS } from '@/lib/departments'
 import { articleUrl } from '@/lib/urls'
 
 export const Articles: CollectionConfig = {
@@ -29,7 +29,7 @@ export const Articles: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'department', label: 'Département', type: 'select', required: true, options: DEPARTMENTS.map(({ value, label }) => ({ value, label })), defaultValue: 'haute-savoie', index: true },
+        departmentField('Range l’article dans la page de son département (par exemple « /info/isere »).'),
         { name: 'city', label: 'Commune', type: 'text' },
         { name: 'kicker', label: 'Rubrique', type: 'text', admin: { placeholder: 'Sport, Faits divers, Société…' } },
       ],

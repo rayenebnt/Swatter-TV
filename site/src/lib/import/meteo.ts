@@ -5,7 +5,7 @@ import https from 'node:https'
 import type { Payload } from 'payload'
 import { formatDayLong, parisDateTime, parisDay } from '@/lib/format'
 import { addDays, KIND_LABEL, METEO_CITIES, METEO_REGION, OPEN_METEO_SOURCE, PART_LABELS, wmoKind, wmoLabel } from '@/lib/meteo'
-import type { Forecast, ForecastCity, ForecastDay, WeatherKind } from '@/lib/meteo-types'
+import type { CityView, Forecast, ForecastCity, ForecastDay, WeatherKind } from '@/lib/meteo-types'
 
 // OPEN_METEO_URL : autre adresse (tests sans accès à internet)
 const API = process.env.OPEN_METEO_URL || 'https://api.open-meteo.com/v1/forecast'
@@ -20,10 +20,7 @@ const PARTS: { label: (typeof PART_LABELS)[number]; from: number; to: number; te
   { label: 'Après-midi', from: 12, to: 17, temp: 'max' },
   { label: 'Soirée', from: 18, to: 23, temp: 'mean' },
 ]
-const MOUNTAIN = 'Chamonix'
-const LAKE = 'Thonon-les-Bains'
-
-/** Adresse de l'appel unique : six points, heure de Paris. */
+/** Adresse de l'appel unique : un point par ville suivie, heure de Paris. */
 export function meteoRequestUrl(): string {
   const params = new URLSearchParams({
     latitude: METEO_CITIES.map((c) => c.latitude).join(','),
@@ -175,8 +172,8 @@ const fill = (template: string, values: Record<string, string>) => template.repl
 /** Journée homogène ({when} = « ce samedi »). */
 const UNIFORM: Record<WeatherKind, string[]> = {
   sun: [
-    '{when}, grand soleil sur la région du matin au soir.',
-    'Le soleil s’impose {when} sur toute la région, avec un ciel limpide au-dessus des massifs.',
+    '{when}, grand soleil du matin au soir.',
+    'Le soleil s’impose {when}, avec un ciel limpide toute la journée.',
     'Une journée radieuse s’annonce {when}, sans le moindre nuage à l’horizon.',
   ],
   partly: [
@@ -184,11 +181,11 @@ const UNIFORM: Record<WeatherKind, string[]> = {
     'Le ciel hésite {when} entre passages nuageux et belles éclaircies.',
     '{when}, le soleil joue à cache-cache avec les nuages.',
   ],
-  cloud: ['{when}, le ciel reste gris et chargé sur l’ensemble de la région.', 'Les nuages dominent {when} du matin au soir sur toute la région.'],
-  rain: ['{when}, la pluie s’installe pour la journée : prévoyez le parapluie.', 'Journée maussade et pluvieuse {when} sur toute la région.'],
-  snow: ['{when}, la neige tombe sur la région, jusque dans les vallées.', 'Place à la neige {when}, y compris à basse altitude : prudence sur les routes.'],
+  cloud: ['{when}, le ciel reste gris et chargé toute la journée.', 'Les nuages dominent {when} du matin au soir.'],
+  rain: ['{when}, la pluie s’installe pour la journée : prévoyez le parapluie.', 'Journée maussade et pluvieuse {when}.'],
+  snow: ['{when}, la neige tombe toute la journée, jusque dans les vallées.', 'Place à la neige {when}, y compris à basse altitude : prudence sur les routes.'],
   fog: ['{when}, le brouillard s’accroche aux vallées et peine à se dissiper.', 'Grisaille et brouillard persistent {when} dans les vallées.'],
-  storm: ['{when}, temps lourd et orageux sur la région : restez vigilants.', 'Des orages pourront éclater {when} à tout moment de la journée.'],
+  storm: ['{when}, temps lourd et orageux : restez vigilants.', 'Des orages pourront éclater {when} à tout moment de la journée.'],
 }
 const NOUN: Record<WeatherKind, string> = {
   sun: 'du soleil',
@@ -235,8 +232,8 @@ function skySentence([m, a, s]: WeatherKind[], when: string, seed: number): stri
   return cap(fill(template, { when }))
 }
 
-/** Deuxième phrase : les températures de la ville principale et leur évolution par rapport à la veille. */
-function tempSentence(day: ForecastDay, previous: ForecastDay | undefined, seed: number): string {
+/** Deuxième phrase : les températures de la ville du bulletin et leur évolution par rapport à la veille. */
+function tempSentence(day: ForecastDay, previous: CityView | undefined, seed: number): string {
   const { city, min, max } = day.main
   const delta = previous ? max - previous.main.max : 0
   const trend =
@@ -271,16 +268,12 @@ function tempSentence(day: ForecastDay, previous: ForecastDay | undefined, seed:
 function regionalNotes(day: ForecastDay, seed: number): string[] {
   const { main, cities } = day
   const notes: string[] = []
-  const mountain = cities.find((c) => c.name === MOUNTAIN)
-  if (mountain?.kind === 'snow' && main.kind !== 'snow') {
-    notes.push(pick(['En montagne, la neige fait son retour sur le massif du Mont-Blanc.', `Les flocons blanchiront les sommets, notamment autour de ${MOUNTAIN}.`], seed, 2))
+  const snowy = cities.filter((c) => c.kind === 'snow' && c.name !== main.city).slice(0, 3)
+  if (snowy.length && main.kind !== 'snow') {
+    notes.push(pick([`La neige fait son retour ${atPlaces(snowy.map((c) => c.name))}.`, `Des flocons sont attendus ${atPlaces(snowy.map((c) => c.name))}.`], seed, 2))
   }
-  const stormy = cities.filter((c) => c.kind === 'storm' && c.name !== main.city)
+  const stormy = cities.filter((c) => c.kind === 'storm' && c.name !== main.city).slice(0, 3)
   if (stormy.length && main.kind !== 'storm') notes.push(`Des orages sont possibles ${atPlaces(stormy.map((c) => c.name))}.`)
-  const lake = cities.find((c) => c.name === LAKE)
-  if (lake && (lake.kind === 'rain' || lake.kind === 'snow') && !isWet(main.kind)) {
-    notes.push(pick(['Quelques averses sont possibles sur le Chablais et les bords du Léman.', 'Le Chablais et les rives du Léman n’échapperont pas à quelques gouttes.'], seed, 3))
-  }
   const coldest = cities.reduce<ForecastCity | null>((low, c) => (!low || c.min < low.min ? c : low), null)
   if (coldest && coldest.min <= 0) {
     notes.push(pick([`Gelées au petit matin à ${coldest.name} (${deg(coldest.min)}).`, `Il gèlera au lever du jour à ${coldest.name}, avec ${deg(coldest.min)}.`], seed, 4))
@@ -293,7 +286,7 @@ function regionalNotes(day: ForecastDay, seed: number): string[] {
 }
 
 /** Bulletin en français naturel, sans « aujourd'hui » ni « demain » (il reste juste si l'import a pris du retard). */
-function writeBulletin(day: ForecastDay, previous: ForecastDay | undefined): string {
+function writeBulletin(day: ForecastDay, previous: CityView | undefined): string {
   const seed = seedOf(day.date)
   const weekday = formatDayLong(parisDateTime(day.date, '12:00')).split(' ')[0]
   const kinds = day.parts.length === 3 ? day.parts.map((p) => p.kind) : [day.main.kind, day.main.kind, day.main.kind]
@@ -302,18 +295,41 @@ function writeBulletin(day: ForecastDay, previous: ForecastDay | undefined): str
 
 // ----- Transformation complète -----
 
+/** Prévisions détaillées d'une ville pour un jour (sans bulletin). Aujourd'hui : température actuelle, sinon la maximale. */
+function cityDetail(point: Point, city: ForecastCity, date: string, today: string): Omit<CityView, 'bulletin'> {
+  const hours = CHART_HOURS.flatMap((hour) => {
+    const r = point.hourly.get(hourKey(hour === 0 ? addDays(date, 1) : date, hour))
+    return r ? [{ hour, temp: Math.round(r.temp), kind: wmoKind(r.code) }] : []
+  })
+  const parts = PARTS.flatMap((p) => {
+    const readings = range(p.from, p.to).flatMap((h) => point.hourly.get(hourKey(date, h)) ?? [])
+    if (!readings.length) return []
+    const temps = readings.map((r) => r.temp)
+    const temp = p.temp === 'min' ? Math.min(...temps) : p.temp === 'max' ? Math.max(...temps) : temps.reduce((a, b) => a + b, 0) / temps.length
+    return [{ label: p.label, kind: summarize(readings.map((r) => r.code), 2).kind, temp: Math.round(temp) }]
+  })
+  // min / max élargis si besoin par la température actuelle, pour rester cohérents
+  let { min, max } = city
+  let now = max
+  if (date === today && point.current) {
+    now = Math.round(point.current.temp)
+    min = Math.min(min, now)
+    max = Math.max(max, now)
+  }
+  return { main: { city: city.name, kind: city.kind, label: describeDay(parts, city), now, min, max }, hours, parts }
+}
+
 /**
- * Transforme les réponses d'Open-Meteo (une par ville de METEO_CITIES, dans le même ordre) en prévisions
- * sur cinq jours à partir du jour de `now` (heure de Paris). Fonction pure ; lève une erreur si la réponse est inexploitable.
+ * Transforme les réponses d'Open-Meteo (une par ville de METEO_CITIES, dans le même ordre) en prévisions détaillées
+ * de chaque ville sur cinq jours à partir du jour de `now` (heure de Paris). Fonction pure ; lève une erreur si la réponse est inexploitable.
  */
 export function buildForecast(responses: readonly unknown[], now: Date): Forecast {
   if (responses.length !== METEO_CITIES.length) {
     throw new Error(`Open-Meteo a renvoyé ${responses.length} point(s) au lieu de ${METEO_CITIES.length}`)
   }
   const points = METEO_CITIES.map((city, i) => readPoint(responses[i], city.name))
-  const main = points[0]
   const today = parisDay(now)
-  const dates = [...main.daily.keys()].filter((d) => d >= today).sort().slice(0, DAYS)
+  const dates = [...points[0].daily.keys()].filter((d) => d >= today).sort().slice(0, DAYS)
 
   const days: ForecastDay[] = []
   for (const date of dates) {
@@ -324,41 +340,21 @@ export function buildForecast(responses: readonly unknown[], now: Date): Forecas
       const sky = codes.length >= 8 ? summarize(codes, 3) : { kind: wmoKind(d.code), label: wmoLabel(d.code) }
       return [{ name: city.name, ...sky, min: Math.round(d.min), max: Math.round(d.max) }]
     })
-    const first = cities[0]
-    if (!first || first.name !== METEO_CITIES[0].name) continue
+    if (cities[0]?.name !== METEO_CITIES[0].name) continue
 
-    const hours = CHART_HOURS.flatMap((hour) => {
-      const r = main.hourly.get(hourKey(hour === 0 ? addDays(date, 1) : date, hour))
-      return r ? [{ hour, temp: Math.round(r.temp), kind: wmoKind(r.code) }] : []
+    // Détail de chaque ville (courbe, tranches, temps actuel) ; ses min / max élargis valent aussi pour la liste des villes
+    const details = cities.map((c, i) => {
+      const view = cityDetail(points[METEO_CITIES.findIndex((m) => m.name === c.name)], c, date, today)
+      cities[i] = { ...c, min: view.main.min, max: view.main.max }
+      return view
     })
-    const parts = PARTS.flatMap((p) => {
-      const readings = range(p.from, p.to).flatMap((h) => main.hourly.get(hourKey(date, h)) ?? [])
-      if (!readings.length) return []
-      const temps = readings.map((r) => r.temp)
-      const temp = p.temp === 'min' ? Math.min(...temps) : p.temp === 'max' ? Math.max(...temps) : temps.reduce((a, b) => a + b, 0) / temps.length
-      return [{ label: p.label, kind: summarize(readings.map((r) => r.code), 2).kind, temp: Math.round(temp) }]
-    })
-
-    // Aujourd'hui : température actuelle (min / max élargis si besoin, pour rester cohérents) ; ensuite : la maximale.
-    let { min, max } = first
-    let current = max
-    if (date === today && main.current) {
-      current = Math.round(main.current.temp)
-      min = Math.min(min, current)
-      max = Math.max(max, current)
-      cities[0] = { ...first, min, max }
+    const previous = days.at(-1)
+    const withBulletin = (view: Omit<CityView, 'bulletin'>): CityView => {
+      const before = view.main.city === previous?.main.city ? previous : previous?.views?.find((v) => v.main.city === view.main.city)
+      return { ...view, bulletin: writeBulletin({ date, ...view, cities, bulletin: '' }, before) }
     }
-
-    const day: ForecastDay = {
-      date,
-      main: { city: first.name, kind: first.kind, label: describeDay(parts, first), now: current, min, max },
-      hours,
-      parts,
-      cities,
-      bulletin: '',
-    }
-    day.bulletin = writeBulletin(day, days.at(-1))
-    days.push(day)
+    const [main, ...others] = details
+    days.push({ date, ...withBulletin(main), cities, views: others.map(withBulletin) })
   }
 
   if (!days.length) throw new Error('Open-Meteo : aucune journée exploitable à partir d’aujourd’hui')

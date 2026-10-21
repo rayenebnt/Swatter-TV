@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, publishedStatusOrAuthenticated } from '@/access'
 import { dateTimePicker } from '@/fields/date'
+import { departmentField } from '@/fields/department'
 import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
@@ -12,7 +13,7 @@ export const Events: CollectionConfig = {
   labels: { singular: 'Événement', plural: 'Agenda' },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'startDate', 'city', 'isWeekendPick'],
+    defaultColumns: ['title', 'startDate', 'city', 'department', 'isWeekendPick'],
     description: 'Les sorties et événements de la région. Ils disparaissent tout seuls de l’agenda une fois passés.',
     preview: (doc) => (doc.slug ? eventUrl(doc as { slug: string }) : null),
   },
@@ -34,6 +35,12 @@ export const Events: CollectionConfig = {
       type: 'row',
       fields: [
         { name: 'city', label: 'Commune', type: 'text', required: true },
+        departmentField('Les visiteurs peuvent filtrer l’agenda par département.'),
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
         { name: 'place', label: 'Lieu', type: 'text', admin: { placeholder: 'Salle des fêtes, place du marché…' } },
         { name: 'category', label: 'Catégorie', type: 'select', options: [...EVENT_CATEGORIES], defaultValue: 'autre' },
       ],

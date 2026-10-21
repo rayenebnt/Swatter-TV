@@ -3,6 +3,7 @@ import type { Where } from 'payload'
 import { cache } from 'react'
 import type { Event } from '@/payload-types'
 import { EVENT_CATEGORIES } from '../categories'
+import { DEPARTMENTS, type DepartmentSlug } from '../departments'
 import { parisDateTime, parisDay } from '../format'
 import { getPayloadClient } from '../payload'
 import { safe } from '../safe'
@@ -10,7 +11,7 @@ import { safe } from '../safe'
 export type EventCategory = NonNullable<Event['category']>
 
 /** Champs utiles aux cartes (sans présentation, programme ni SEO). */
-export type EventListItem = Pick<Event, 'id' | 'title' | 'slug' | 'startDate' | 'endDate' | 'city' | 'place' | 'category' | 'poster' | 'isWeekendPick'>
+export type EventListItem = Pick<Event, 'id' | 'title' | 'slug' | 'startDate' | 'endDate' | 'city' | 'department' | 'place' | 'category' | 'poster' | 'isWeekendPick'>
 /** Événement mis en avant : avec sa présentation et son programme. */
 export type EventFeatureItem = EventListItem & Pick<Event, 'description' | 'program'>
 
@@ -22,6 +23,7 @@ const LIST_SELECT = {
   startDate: true,
   endDate: true,
   city: true,
+  department: true,
   place: true,
   category: true,
   poster: true,
@@ -146,16 +148,18 @@ export const getAgendaHighlights = cache(
     ),
 )
 
-/** Page de l'agenda : événements à venir, filtrés par catégorie et par période. */
+/** Page de l'agenda : événements à venir, filtrés par catégorie, par période et par département. */
 export async function getAgendaPage({
   category,
   period,
+  department,
   page = 1,
   limit = 24,
   now = new Date(),
 }: {
   category?: EventCategory | null
   period?: EventPeriod | null
+  department?: DepartmentSlug | null
   page?: number
   limit?: number
   now?: Date
@@ -165,6 +169,7 @@ export async function getAgendaPage({
       const and: Where[] = [upcomingWhere(now)]
       if (category) and.push({ category: { equals: category } })
       if (period) and.push(periodWhere(period, now))
+      if (department) and.push({ department: { equals: department } })
       const payload = await getPayloadClient()
       const res = await payload.find({ collection: 'events', where: { and }, sort: 'startDate', page, limit, depth: 1, select: LIST_SELECT })
       return { docs: res.docs, page: res.page ?? page, totalPages: res.totalPages, totalDocs: res.totalDocs }
@@ -174,17 +179,35 @@ export async function getAgendaPage({
   )
 }
 
-/** Catégories représentées parmi les événements à venir (filtres utiles uniquement), dans l'ordre de l'administration. */
-export async function getUpcomingCategories(now = new Date()): Promise<EventCategory[]> {
+/**
+ * Catégories représentées parmi les événements à venir (du département choisi, s'il y en a un) : filtres utiles uniquement,
+ * dans l'ordre de l'administration.
+ */
+export async function getUpcomingCategories(now = new Date(), department: DepartmentSlug | null = null): Promise<EventCategory[]> {
   return safe(
     async () => {
       const payload = await getPayloadClient()
-      const res = await payload.find({ collection: 'events', where: upcomingWhere(now), limit: 500, depth: 0, pagination: false, select: { category: true } })
+      const where: Where = department ? { and: [upcomingWhere(now), { department: { equals: department } }] } : upcomingWhere(now)
+      const res = await payload.find({ collection: 'events', where, limit: 500, depth: 0, pagination: false, select: { category: true } })
       const present = new Set(res.docs.map((d) => d.category))
       return EVENT_CATEGORIES.map((c) => c.value).filter((c) => present.has(c))
     },
     [],
     'catégories de l’agenda',
+  )
+}
+
+/** Départements représentés parmi les événements à venir (filtres utiles uniquement), dans l'ordre de la liste. */
+export async function getUpcomingDepartments(now = new Date()): Promise<DepartmentSlug[]> {
+  return safe(
+    async () => {
+      const payload = await getPayloadClient()
+      const res = await payload.find({ collection: 'events', where: upcomingWhere(now), limit: 500, depth: 0, pagination: false, select: { department: true } })
+      const present = new Set(res.docs.map((d) => d.department))
+      return DEPARTMENTS.map((d) => d.value).filter((d) => present.has(d))
+    },
+    [],
+    'départements de l’agenda',
   )
 }
 

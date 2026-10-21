@@ -1,6 +1,7 @@
 // Outils de l'agenda (rendu serveur) : libellés de dates en heure de Paris, adresses des listes, visuels de repli.
 import type { Event } from '@/payload-types'
 import { EVENT_CATEGORIES, labelOf } from '@/lib/categories'
+import type { DepartmentSlug } from '@/lib/departments'
 import { dateChip, formatDate, formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
 import type { EventCategory, EventPeriod } from '@/lib/queries/events'
 
@@ -145,8 +146,14 @@ export function httpUrl(url?: string | null): string | null {
 /* ----- Adresses ----- */
 
 /** Liste de l'agenda : ?categorie=, ?quand= et ?page=. */
-export function agendaUrl({ category, period, page = 1 }: { category?: EventCategory | null; period?: EventPeriod | null; page?: number } = {}): string {
+export function agendaUrl({
+  category,
+  period,
+  department,
+  page = 1,
+}: { category?: EventCategory | null; period?: EventPeriod | null; department?: DepartmentSlug | null; page?: number } = {}): string {
   const q = new URLSearchParams()
+  if (department) q.set('departement', department)
   if (category) q.set('categorie', category)
   if (period) q.set('quand', period)
   if (page > 1) q.set('page', String(page))

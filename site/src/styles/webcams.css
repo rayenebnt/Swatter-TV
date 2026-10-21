@@ -41,6 +41,7 @@
 .wcp__msg { position: absolute; z-index: 2; left: 50%; bottom: 16px; transform: translateX(-50%); padding: 7px 13px; border-radius: 10px; background: rgba(4, 10, 22, .8); border: 1px solid var(--line-2); color: var(--ink-2); font-size: 13px; white-space: nowrap; }
 
 /* ----- Page Webcams ----- */
+.cams-depts { margin-top: 28px; }
 .camp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .camp:hover { transform: none; }
 .camp:target { border-color: rgba(217, 170, 69, .6); box-shadow: 0 0 0 1px rgba(217, 170, 69, .3), 0 30px 60px -30px rgba(0, 0, 0, .9); }

@@ -1,4 +1,5 @@
 // Agenda par défaut : quelques modèles marqués « Exemple » (dates relatives au jour du lancement du script).
+import type { DepartmentSlug } from '@/lib/departments'
 import type { Event } from '@/payload-types'
 
 /** Jour relatif : `from` = 'saturday' (samedi qui vient) ou 'today', plus `days` jours. */
@@ -7,6 +8,7 @@ export type RelDay = { from: 'saturday' | 'today'; days: number }
 export type SeedEvent = {
   title: string
   city: string
+  department: DepartmentSlug
   place?: string
   category: NonNullable<Event['category']>
   poster: string
@@ -24,6 +26,7 @@ export const EVENTS: SeedEvent[] = [
   {
     title: 'Exemple — Votre sortie du week-end',
     city: 'Annecy',
+    department: 'haute-savoie',
     place: 'Lieu à préciser',
     category: 'fete',
     poster: 'hero-matin',
@@ -40,7 +43,8 @@ export const EVENTS: SeedEvent[] = [
   },
   {
     title: 'Exemple — Un marché ou une fête de village',
-    city: 'Thônes',
+    city: 'Lyon',
+    department: 'rhone',
     place: 'Lieu à préciser',
     category: 'marche',
     poster: 't-ete-b',
@@ -50,7 +54,8 @@ export const EVENTS: SeedEvent[] = [
   },
   {
     title: 'Exemple — Une soirée à annoncer',
-    city: 'Cluses',
+    city: 'Grenoble',
+    department: 'isere',
     place: 'Lieu à préciser',
     category: 'musique',
     poster: 't-nuit-b',

@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, publishedStatusOrAuthenticated } from '@/access'
+import { departmentField } from '@/fields/department'
 import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
@@ -9,7 +10,7 @@ export const Webcams: CollectionConfig = {
   labels: { singular: 'Webcam', plural: 'Webcams' },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'place', 'active', 'order'],
+    defaultColumns: ['name', 'place', 'department', 'active', 'order'],
     description: 'Les vues en direct de la page « Webcams ». Décochez « Active » pour masquer une webcam sans la supprimer.',
   },
   access: { read: publishedStatusOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
@@ -25,6 +26,7 @@ export const Webcams: CollectionConfig = {
         { name: 'place', label: 'Lieu précis', type: 'text', admin: { placeholder: 'Port d’Aix-les-Bains' } },
       ],
     },
+    departmentField('Les visiteurs peuvent filtrer les webcams par département.'),
     {
       name: 'provider',
       label: 'Type de flux',

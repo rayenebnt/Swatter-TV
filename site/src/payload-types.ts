@@ -316,6 +316,9 @@ export interface Article {
     };
     [k: string]: unknown;
   } | null;
+  /**
+   * Range l’article dans la page de son département (par exemple « /info/isere »).
+   */
   department:
     | 'haute-savoie'
     | 'savoie'
@@ -370,6 +373,22 @@ export interface Event {
    */
   endDate?: string | null;
   city: string;
+  /**
+   * Les visiteurs peuvent filtrer l’agenda par département.
+   */
+  department:
+    | 'haute-savoie'
+    | 'savoie'
+    | 'ain'
+    | 'isere'
+    | 'rhone'
+    | 'loire'
+    | 'haute-loire'
+    | 'drome'
+    | 'ardeche'
+    | 'puy-de-dome'
+    | 'cantal'
+    | 'allier';
   place?: string | null;
   category?: ('terroir' | 'musique' | 'sport' | 'famille' | 'culture' | 'fete' | 'marche' | 'autre') | null;
   poster?: (number | null) | Media;
@@ -522,6 +541,22 @@ export interface Webcam {
   id: number;
   name: string;
   place?: string | null;
+  /**
+   * Les visiteurs peuvent filtrer les webcams par département.
+   */
+  department:
+    | 'haute-savoie'
+    | 'savoie'
+    | 'ain'
+    | 'isere'
+    | 'rhone'
+    | 'loire'
+    | 'haute-loire'
+    | 'drome'
+    | 'ardeche'
+    | 'puy-de-dome'
+    | 'cantal'
+    | 'allier';
   provider: 'iframe' | 'hls' | 'youtube' | 'image';
   /**
    * Fourni par le service de la webcam (bouton « Intégrer » ou « Partager »).
@@ -903,6 +938,7 @@ export interface EventsSelect<T extends boolean = true> {
   startDate?: T;
   endDate?: T;
   city?: T;
+  department?: T;
   place?: T;
   category?: T;
   poster?: T;
@@ -1003,6 +1039,7 @@ export interface ProgramsSelect<T extends boolean = true> {
 export interface WebcamsSelect<T extends boolean = true> {
   name?: T;
   place?: T;
+  department?: T;
   provider?: T;
   embedUrl?: T;
   image?: T;

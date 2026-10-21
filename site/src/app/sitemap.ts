@@ -3,6 +3,8 @@ import type { Where } from 'payload'
 import { parisDateTime, parisDay } from '@/lib/format'
 import { getPayloadClient } from '@/lib/payload'
 import { safe } from '@/lib/safe'
+import { DEPARTMENTS } from '@/lib/departments'
+import { meteoHref } from '@/lib/meteo'
 import { absoluteUrl } from '@/lib/site'
 import { articleUrl, departmentUrl, eventUrl, pageUrl, replayUrl, videoUrl } from '@/lib/urls'
 
@@ -22,7 +24,7 @@ const withSlug = <T extends Dated>(docs: T[]) => docs.filter((d) => d.slug)
 
 /**
  * Plan du site : adresses fixes, pages éditoriales, articles,
- * départements de l'info, vidéos, replays et événements à venir. Sans base (build), seules les adresses fixes sortent.
+ * départements de l'info, de la météo et des webcams, vidéos, replays et événements à venir. Sans base (build), seules les adresses fixes sortent.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const payload = await safe(() => getPayloadClient(), null, 'sitemap')
@@ -30,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const nowIso = now.toISOString()
   const published: Where = { publishedAt: { less_than_equal: nowIso } }
 
-  const [pages, allArticles, videos, replays, events] = payload
+  const [pages, allArticles, videos, replays, events, webcams] = payload
     ? await Promise.all([
         safe(async () => (await payload.find({ collection: 'pages', limit: MAX, depth: 0, pagination: false, sort: 'slug', select: { slug: true, updatedAt: true } })).docs, [], 'sitemap (pages)'),
         safe(
@@ -78,8 +80,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           [],
           'sitemap (agenda)',
         ),
+        // départements qui ont au moins une webcam active
+        safe(
+          async () =>
+            (await payload.find({ collection: 'webcams', where: { active: { not_equals: false } }, limit: MAX, depth: 0, pagination: false, select: { department: true, updatedAt: true } }))
+              .docs,
+          [],
+          'sitemap (webcams)',
+        ),
       ])
-    : [[], [], [], [], []]
+    : [[], [], [], [], [], []]
 
   // Départements qui ont au moins un article publié, avec la date de leur article le plus récent
   const departments = new Map<string, string>()
@@ -100,11 +110,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/info', lastInfo),
     ...[...departments].map(([dept, date]) => entry(departmentUrl(dept), date)),
     entry('/meteo'),
+    ...DEPARTMENTS.map((d) => entry(meteoHref(d.value))),
     entry('/agenda', lastEvent),
     entry('/programme-tv'),
     entry('/replay', lastReplay),
     entry('/videos', lastVideo),
     entry('/webcams'),
+    ...DEPARTMENTS.filter((d) => webcams.some((w) => w.department === d.value)).map((d) => entry(`/webcams/${d.value}`)),
     ...withSlug(pages).map((p) => entry(pageUrl(p), p.updatedAt)),
     ...articles.map((a) => entry(articleUrl(a), a.updatedAt)),
     ...withSlug(videos).map((v) => entry(videoUrl(v), v.updatedAt)),

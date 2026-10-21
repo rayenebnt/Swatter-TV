@@ -42,7 +42,7 @@ test('info : toute la région, pages par département et article', async ({ page
   expect(errors, errors.join('\n')).toEqual([])
 })
 
-test('météo : prévisions d’Auvergne-Rhône-Alpes', async ({ page }) => {
+test('météo : prévisions d’Auvergne-Rhône-Alpes, une ville par département', async ({ page }) => {
   const errors = watchErrors(page)
   await page.goto('/meteo')
   await settle(page)
@@ -51,7 +51,16 @@ test('météo : prévisions d’Auvergne-Rhône-Alpes', async ({ page }) => {
   await expect(main).toContainText(/-?\d+\s?°/)
   await expect(main.getByRole('heading', { name: 'Dans la région' })).toBeVisible()
   const cities = main.locator('.city-card__txt b')
-  await expect(cities).toHaveText(['Annecy', 'Lyon', 'Grenoble', 'Clermont-Ferrand', 'Chambéry', 'Chamonix'])
+  await expect(cities).toHaveText(['Annecy', 'Lyon', 'Grenoble', 'Clermont-Ferrand', 'Saint-Étienne', 'Chambéry', 'Valence', 'Bourg-en-Bresse', 'Le Puy-en-Velay', 'Aurillac', 'Moulins', 'Privas'])
+  await expect(main.locator('.now__city').first()).toHaveText('Annecy')
+  // filtre par département (les 12) puis carte d'une ville : prévisions détaillées de son département
+  await expect(page.getByRole('navigation', { name: 'La météo par département' }).getByRole('link')).toHaveCount(13)
+  await main.locator('.city-card', { hasText: 'Grenoble' }).click()
+  await page.waitForURL(/\/meteo\/isere$/)
+  await expect(page.locator('h1')).toContainText('en Isère')
+  await expect(page.locator('main .now__city').first()).toHaveText('Grenoble')
+  await expect(page.locator('main .chart').first()).toBeAttached()
+  expect((await page.request.get('/meteo/paris')).status(), 'département hors région').toBe(404)
   expect(errors, errors.join('\n')).toEqual([])
 })
 
@@ -69,6 +78,25 @@ test('programme TV : grille du jour et autre jour', async ({ page }) => {
   expect(errors, errors.join('\n')).toEqual([])
 })
 
+test('agenda : filtre par département', async ({ page, request }) => {
+  const { docs } = (await (await request.get('/api/events?limit=50&depth=0&where[endDate][greater_than_equal]=' + new Date().toISOString())).json()) as { docs: { title: string; department: string }[] }
+  test.skip(!docs.length, 'aucun événement à venir (lancez npm run seed)')
+  const errors = watchErrors(page)
+  const dept = docs[0].department
+  await page.goto('/agenda')
+  const filter = page.getByRole('navigation', { name: 'L’agenda par département' })
+  await expect(filter.getByRole('link', { name: 'Toute la région' })).toHaveAttribute('aria-current', 'page')
+  await page.goto(`/agenda?departement=${dept}`)
+  await settle(page)
+  await expect(filter.locator('[aria-current="page"]')).not.toHaveText('Toute la région')
+  for (const e of docs) {
+    const card = page.locator('main').getByText(e.title, { exact: true })
+    if (e.department === dept) await expect(card.first(), e.title).toBeAttached()
+    else await expect(card, e.title).toHaveCount(0)
+  }
+  expect(errors, errors.join('\n')).toEqual([])
+})
+
 test('agenda : événements et fiche', async ({ page }) => {
   const errors = watchErrors(page)
   await page.goto('/agenda')
@@ -78,6 +106,23 @@ test('agenda : événements et fiche', async ({ page }) => {
   expect(response?.status()).toBe(200)
   await settle(page)
   await expect(page.locator('h1')).toHaveCount(1)
+  expect(errors, errors.join('\n')).toEqual([])
+})
+
+test('webcams : une page par département', async ({ page, request }) => {
+  const { docs } = (await (await request.get('/api/webcams?where[active][equals]=true&limit=50&depth=0')).json()) as { docs: { name: string; department: string }[] }
+  test.skip(new Set(docs.map((d) => d.department)).size < 2, 'webcams de moins de deux départements (lancez npm run seed)')
+  const errors = watchErrors(page)
+  const dept = docs[0].department
+  await page.goto('/webcams')
+  await page.getByRole('navigation', { name: 'Les webcams par département' }).locator(`a[href="/webcams/${dept}"]`).click()
+  await page.waitForURL(new RegExp(`/webcams/${dept}$`))
+  await settle(page)
+  for (const w of docs) {
+    if (w.department === dept) await expect(page.locator('main'), w.name).toContainText(w.name)
+    else await expect(page.locator('main'), w.name).not.toContainText(w.name)
+  }
+  expect((await page.request.get('/webcams/paris')).status(), 'département hors région').toBe(404)
   expect(errors, errors.join('\n')).toEqual([])
 })
 

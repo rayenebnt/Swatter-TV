@@ -1,4 +1,4 @@
-// L'Info : noms des départements dans une phrase (« L'info en Haute-Savoie », « Toute l'actualité de l'Isère »).
+// Noms des départements dans une phrase (Info, Agenda, Webcams, Météo) (« L'info en Haute-Savoie », « Toute l'actualité de l'Isère »).
 import type { DepartmentSlug } from '@/lib/departments'
 
 const PHRASES: Record<DepartmentSlug, { in: string; of: string }> = {

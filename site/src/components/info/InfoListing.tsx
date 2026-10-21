@@ -2,19 +2,19 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
 import { AdSlot } from '@/components/layout/AdSlot'
+import { DeptFilter } from '@/components/ui/DeptFilter'
 import { Icon } from '@/components/ui/Icon'
 import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { DEPARTMENTS, departmentLabel, type DepartmentSlug } from '@/lib/departments'
 import { ogImage } from '@/lib/og'
+import { inPlace, ofPlace } from '@/lib/places'
 import { getArticlesPage, getDepartmentsWithArticles, getFeaturedArticle, type ArticleListItem, type ArticlesPage } from '@/lib/queries/articles'
 import { SITE_NAME } from '@/lib/site'
 import { departmentUrl } from '@/lib/urls'
 import { ArticleCard } from './ArticleCard'
-import { DeptLinks } from './DeptLinks'
 import { InfoPager } from './InfoPager'
 import { LeadCard } from './LeadCard'
-import { inPlace, ofPlace } from './places'
 import { RelativeTime } from './RelativeTime'
 import { articleShareImage, toTeaser } from './utils'
 import '@/styles/info.css'
@@ -109,7 +109,7 @@ export function InfoListing({ dept, page, data }: { dept: DepartmentSlug | null;
       <PageHeader eyebrow={t.eyebrow} title={t.h1} description={t.lede} crumbs={crumbs} />
 
       <div className="container">
-        <DeptLinks links={links} />
+        <DeptFilter links={links} label="L’info par département" className="info-filters info-depts" />
       </div>
 
       {lead && (

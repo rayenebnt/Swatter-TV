@@ -1,94 +1,11 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
-import { AdSlot } from '@/components/layout/AdSlot'
-import { getMeteo } from '@/components/meteo/data'
-import { MeteoWidget } from '@/components/meteo/MeteoWidget'
-import { JsonLd } from '@/components/ui/JsonLd'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { METEO_CITIES, METEO_CITY_LIST } from '@/lib/meteo'
-import { absoluteUrl, SITE_NAME, SITE_URL } from '@/lib/site'
-import { ogImage } from '@/lib/og'
+import { MeteoListing, meteoMetadata } from '@/components/meteo/MeteoListing'
 
 // Page régénérée au plus toutes les 60 s (et après chaque import des prévisions).
 export const revalidate = 60
 
-const TITLE = 'La météo en Auvergne-Rhône-Alpes'
-const DESCRIPTION = `Prévisions météo à cinq jours en Auvergne-Rhône-Alpes (${METEO_CITY_LIST}) : températures heure par heure, tendances du matin au soir et bulletin du jour.`
-const SHARE_IMAGE = '/visuels/t-nuages-a.webp'
+export const metadata = meteoMetadata(null)
 
-// Le global « meteo » n'a pas de champs SEO : titre, description et visuel de partage fixes.
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: TITLE,
-    description: DESCRIPTION,
-    alternates: { canonical: '/meteo' },
-    openGraph: {
-      type: 'website',
-      locale: 'fr_FR',
-      siteName: SITE_NAME,
-      url: '/meteo',
-      title: `${TITLE} — ${SITE_NAME}`,
-      description: DESCRIPTION,
-      images: [ogImage(null, SHARE_IMAGE, 'Ciel nuageux au-dessus des montagnes')],
-    },
-  }
-}
-
-/** Page Météo : prévisions détaillées (version large du widget) et présentation de la rubrique. */
-export default async function MeteoPage() {
-  const data = await getMeteo()
-
-  return (
-    <>
-      <PageHeader
-        eyebrow="Prévisions à 5 jours"
-        title="La Météo"
-        description="Le temps qu’il fera dans toute la région Auvergne-Rhône-Alpes, des Pays de Savoie à l’Auvergne, de Lyon au massif du Mont-Blanc."
-        crumbs={[{ label: 'La Météo' }]}
-      />
-
-      <div className="container section--tight">
-        <MeteoWidget variant="full" />
-      </div>
-
-      <div className="container">
-        <AdSlot placement="inner-leaderboard" />
-      </div>
-
-      <section className="container section meteo-seo" aria-labelledby="meteo-seo-title">
-        <div className="prose">
-          <h2 id="meteo-seo-title">La météo des Pays de Savoie et de toute la région</h2>
-          <p>
-            Lac d’Annecy, massif du Mont-Blanc, métropole lyonnaise, Isère ou Auvergne&nbsp;: Swatter TV vous donne chaque jour le temps
-            qu’il fera partout en Auvergne-Rhône-Alpes. Les prévisions couvrent cinq jours, avec l’évolution des
-            températures heure par heure, la tendance du matin, de l’après-midi et de la soirée, et les minimales et maximales à{' '}
-            {METEO_CITY_LIST}.
-          </p>
-          <p>
-            Actualisées automatiquement tout au long de la journée et accompagnées d’un bulletin détaillé, elles vous aident à préparer
-            une sortie en montagne, un trajet ou un week-end. Avant de partir, jetez aussi un œil aux images en direct de nos{' '}
-            <Link href="/webcams">webcams</Link>, et retrouvez la météo à l’antenne sur <Link href="/direct">le direct de Swatter TV</Link>.
-          </p>
-        </div>
-      </section>
-
-      <JsonLd
-        data={{
-          '@context': 'https://schema.org',
-          '@type': 'WebPage',
-          name: TITLE,
-          description: DESCRIPTION,
-          url: absoluteUrl('/meteo'),
-          inLanguage: 'fr-FR',
-          ...(data?.updatedAt ? { dateModified: data.updatedAt } : {}),
-          isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
-          about: METEO_CITIES.map((c) => ({
-            '@type': 'City',
-            name: c.name,
-            geo: { '@type': 'GeoCoordinates', latitude: c.latitude, longitude: c.longitude },
-          })),
-        }}
-      />
-    </>
-  )
+/** Page Météo de toute la région : prévisions détaillées (version large du widget) et présentation de la rubrique. */
+export default function MeteoPage() {
+  return <MeteoListing dept={null} />
 }

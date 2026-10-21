@@ -4,9 +4,9 @@ import type { Webcam } from '@/payload-types'
 import { getPayloadClient } from '../payload'
 import { safe } from '../safe'
 
-export type WebcamItem = Pick<Webcam, 'id' | 'name' | 'place' | 'slug' | 'provider' | 'embedUrl' | 'image' | 'temperature'>
+export type WebcamItem = Pick<Webcam, 'id' | 'name' | 'place' | 'department' | 'slug' | 'provider' | 'embedUrl' | 'image' | 'temperature'>
 
-const SELECT = { name: true, place: true, slug: true, provider: true, embedUrl: true, image: true, temperature: true } as const
+const SELECT = { name: true, place: true, department: true, slug: true, provider: true, embedUrl: true, image: true, temperature: true } as const
 
 /** Webcams actives, dans l'ordre choisi dans l'administration (toutes si `limit` est omis). */
 export const getActiveWebcams = cache(
