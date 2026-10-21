@@ -193,8 +193,14 @@ partie « Espace membres » ; côté équipe : GUIDE_CLIENT.md, partie 21.
   modifient quelque chose doivent venir du site (en-tête `Origin`, à défaut `Sec-Fetch-Site`). `GET /api/membres/lettre-info.csv` : export des
   membres qui acceptent les e-mails, réservé aux administrateurs connectés à `/admin`.
 - **Mots de passe** : scrypt (N = 16384, r = 8, p = 1, sel aléatoire), comparaison en temps constant ; liens de
-  confirmation (48 h) et de nouveau mot de passe (1 h) : seule l’empreinte SHA-256 du jeton est enregistrée. Compte
-  bloqué 15 minutes après 5 mots de passe erronés.
+  confirmation (48 h) et de nouveau mot de passe (1 h) : seule l’empreinte SHA-256 du jeton est enregistrée, et le lien
+  de nouveau mot de passe ne sert qu’une fois (consommé en une seule requête). Le lien de confirmation ne confirme rien à
+  lui seul (les antivirus de messagerie ouvrent les liens) : le membre saisit ensuite son mot de passe. Compte bloqué
+  15 minutes après 5 mots de passe erronés, essais comptés en base avant la vérification (une rafale d’essais simultanés
+  ne contourne pas le blocage) ; une adresse sans compte répond de la même façon.
+- **Rien ne révèle si une adresse est inscrite** : inscription, mot de passe oublié et renvoi de la confirmation
+  répondent tout de suite (`{ ok: true }`) et font leur travail après la réponse (`after()` de Next.js), avec le même
+  délai quelle que soit l’adresse.
 - **Limites par adresse IP** (mémoire du processus : suffisant pour un serveur unique, approximatif sur Vercel où
   plusieurs instances coexistent) : inscriptions, connexions, demandes d’e-mail (confirmation, mot de passe oublié),
   changements de mot de passe et suppressions de compte. `MEMBER_RATE_FACTOR=10` les

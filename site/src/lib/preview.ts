@@ -82,9 +82,21 @@ export function previewPath(collection: string | undefined, global: string | und
   return previewFocus(collection, global, data).path
 }
 
-/** Seules les adresses internes au site sont acceptées (pas de redirection vers un autre site). */
+/**
+ * Seules les adresses internes au site sont acceptées (pas de redirection vers un autre site). Caractères de contrôle et
+ * barre oblique inverse refusés : le navigateur les retire ou les convertit, et « /\t/autre-site » deviendrait
+ * « //autre-site ».
+ */
 export function safePath(value: string | null | undefined): string {
-  return value && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\') ? value : '/'
+   
+  if (!value || !value.startsWith('/') || value.startsWith('//') || /[\u0000-\u001f\u007f\\]/.test(value)) return '/'
+  // chemin normalisé et encodé en ASCII (il finit dans l'en-tête Location de la redirection)
+  try {
+    const url = new URL(value, 'http://site.invalid')
+    return url.origin === 'http://site.invalid' ? `${url.pathname}${url.search}${url.hash}` : '/'
+  } catch {
+    return '/'
+  }
 }
 
 /**

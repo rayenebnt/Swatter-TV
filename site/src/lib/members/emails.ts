@@ -29,7 +29,9 @@ export function verifyEmail(firstName: string, token: string): Mail {
   return {
     ...layout(
       firstName,
-      ['Bienvenue sur Swatter TV ! Pour activer votre espace (historique de vos vidéos, « Ma liste », votre météo et l’info de votre département), confirmez votre adresse e-mail.'],
+      [
+        'Bienvenue sur Swatter TV ! Pour activer votre espace (historique de vos vidéos, « Ma liste », votre météo et l’info de votre département), confirmez votre adresse e-mail : cliquez sur le bouton ci-dessous, puis saisissez le mot de passe choisi lors de votre inscription.',
+      ],
       { label: 'Confirmer mon adresse', href },
       'Ce lien est valable 48 heures. Vous n’avez pas créé de compte ? Ignorez simplement cet e-mail : aucun compte ne sera activé.',
     ),

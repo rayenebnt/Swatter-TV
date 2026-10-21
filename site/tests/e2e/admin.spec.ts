@@ -28,6 +28,23 @@ async function login(page: Page, account: { email: string; password: string }) {
 /** Requêtes d'un visiteur anonyme (sans les cookies de connexion des autres requêtes du test). */
 const visitor = () => apiRequest.newContext({ baseURL: test.info().project.use.baseURL })
 
+/**
+ * Membre créé par une inscription : l'API répond avant d'enregistrer le compte (la durée de sa réponse ne révèle pas si
+ * l'adresse est déjà inscrite), d'où l'attente. Son empreinte de mot de passe n'est jamais renvoyée, même aux administrateurs.
+ */
+async function createdMember(request: APIRequestContext, headers: Record<string, string>, email: string): Promise<number> {
+  let found: { id: number; passwordHash?: string } | undefined
+  await expect
+    .poll(async () => {
+      const res = await request.get(`/api/members?where[email][equals]=${encodeURIComponent(email)}&depth=0`, { headers })
+      found = ((await res.json()) as { docs: { id: number; passwordHash?: string }[] }).docs[0]
+      return Boolean(found)
+    }, { message: `membre ${email} créé` })
+    .toBe(true)
+  expect(found?.passwordHash).toBeUndefined()
+  return found!.id
+}
+
 async function adminHeaders(request: APIRequestContext) {
   const res = await request.post('/api/users/login', { data: ADMIN })
   const { token } = (await res.json()) as { token: string }
@@ -397,6 +414,36 @@ test.describe('administration', () => {
     }
   })
 
+  test('membres : 5 mauvais mots de passe bloquent le compte, même envoyés tous en même temps', async ({ request }) => {
+    const headers = await adminHeaders(request)
+    const email = `e2e-verrou-${Date.now()}@example.com`
+    const guest = await visitor()
+    const login = (password: string) => guest.post('/api/compte/connexion', { headers: { origin: SITE }, data: { email, password } })
+    await guest.post('/api/compte/inscription', {
+      headers: { origin: SITE },
+      data: { firstName: 'Dominique', email, password: 'mot-de-passe-e2e', consent: true, website: '', elapsed: 5000 },
+    })
+    const memberId = await createdMember(request, headers, email)
+    try {
+      expect((await request.patch(`/api/members/${memberId}`, { headers, data: { verified: true } })).ok()).toBe(true)
+      // rafale de 8 essais faux : tous comptés, le compte est bloqué
+      const burst = await Promise.all(Array.from({ length: 8 }, (_, i) => login(`faux-mot-de-passe-${i}`)))
+      expect(burst.map((r) => r.status()).sort()).toEqual([401, 401, 401, 401, 401, 429, 429, 429])
+      // même le bon mot de passe est refusé pendant le blocage
+      const blocked = await login('mot-de-passe-e2e')
+      expect(blocked.status()).toBe(429)
+      expect(((await blocked.json()) as { code?: string }).code).toBe('locked')
+      // une adresse sans compte se comporte de la même façon (rien ne révèle si elle est inscrite)
+      const nobody = `e2e-personne-${Date.now()}@example.com`
+      const unknown: number[] = []
+      for (let i = 0; i < 6; i++) unknown.push((await guest.post('/api/compte/connexion', { headers: { origin: SITE }, data: { email: nobody, password: 'faux' } })).status())
+      expect(unknown).toEqual([401, 401, 401, 401, 401, 429])
+    } finally {
+      await request.delete(`/api/members/${memberId}`, { headers }).catch(() => undefined)
+      await guest.dispose()
+    }
+  })
+
   test('membres : parcours complet d’un membre confirmé, et sa gestion dans « Membres du site »', async ({ page, request, browser }) => {
     test.setTimeout(180_000)
     const headers = await adminHeaders(request)
@@ -414,10 +461,7 @@ test.describe('administration', () => {
       data: { firstName: 'Camille', email, password, department: 'haute-savoie', newsletter: true, consent: true, website: '', elapsed: 5000 },
     })
     expect(await signup.json()).toEqual({ ok: true })
-    const found = (await (await request.get(`/api/members?where[email][equals]=${encodeURIComponent(email)}&depth=0`, { headers })).json()) as { docs: { id: number; passwordHash?: string }[] }
-    const memberId = found.docs[0]?.id
-    expect(memberId, 'membre créé').toBeTruthy()
-    expect(found.docs[0].passwordHash, 'empreinte du mot de passe jamais renvoyée, même aux administrateurs').toBeUndefined()
+    const memberId = await createdMember(request, headers, email)
     expect((await request.patch(`/api/members/${memberId}`, { headers, data: { verified: true } })).ok()).toBe(true)
 
     try {
@@ -471,10 +515,12 @@ test.describe('administration', () => {
       expect(text).toContain(email)
       expect(text).not.toMatch(/passwordHash|scrypt\$|TokenHash|sessionVersion/)
 
-      // administration : export CSV des membres qui acceptent les e-mails, fiche du membre
+      // administration : export CSV des membres qui acceptent les e-mails (une formule saisie dans le nom reste du texte
+      // dans Excel), fiche du membre
+      expect((await page.request.patch('/api/compte/profil', { headers: { origin: SITE }, data: { lastName: '=1+1' } })).ok()).toBe(true)
       const csv = await request.get('/api/membres/lettre-info.csv', { headers })
       expect(csv.ok()).toBe(true)
-      expect(await csv.text()).toContain(email)
+      expect(await csv.text()).toContain(`Camille;'=1+1;${email};`)
       const admin = await browser.newPage()
       await login(admin, ADMIN)
       await admin.goto(`/admin/collections/members?search=${encodeURIComponent(email)}`)

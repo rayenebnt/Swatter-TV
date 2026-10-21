@@ -64,7 +64,7 @@ export function PasswordForm({ email }: { email: string }) {
     ) : null
 
   return (
-    <form ref={form} className="contact-form space-form" onSubmit={submit} noValidate>
+    <form ref={form} className="contact-form space-form" method="post" onSubmit={submit} noValidate>
       {/* identifiant du compte pour les gestionnaires de mots de passe (non modifiable ici) */}
       <input type="text" name="username" autoComplete="username" value={email} readOnly hidden />
       <div className="contact-field">

@@ -6,9 +6,12 @@ import { cache } from 'react'
 import type { Member } from '@/payload-types'
 import { SITE_URL } from '@/lib/site'
 import { readSession, signSession } from './crypto'
-import { HINT_COOKIE, SESSION_COOKIE, type MemberProfile } from './shared'
+import { CONFIRM_COOKIE, HINT_COOKIE, SESSION_COOKIE, type MemberProfile } from './shared'
 
 const secure = SITE_URL.startsWith('https://')
+
+/** Lectures internes d'un membre : sans les compteurs de sa fiche d'administration (historique, liste). */
+export const NO_COUNTS = { memberCounts: false }
 
 function cookie(name: string, value: string, expires: Date | null, httpOnly: boolean): string {
   const parts = [`${name}=${value}`, 'Path=/', 'SameSite=Lax']
@@ -28,7 +31,14 @@ export function sessionCookies(member: Pick<Member, 'id' | 'sessionVersion'>): s
 /** En-têtes Set-Cookie qui effacent la session. */
 export const clearCookies = (): string[] => [cookie(SESSION_COOKIE, '', null, true), cookie(HINT_COOKIE, '', null, false)]
 
-function cookieValue(header: string | null, name: string): string | null {
+/**
+ * Jeton du lien de confirmation, gardé une heure dans un cookie httpOnly par /compte/verifier : la confirmation se fait
+ * ensuite à la connexion, avec le mot de passe choisi à l'inscription (le jeton ne reste pas dans l'adresse de la page).
+ */
+export const confirmCookie = (token: string): string => cookie(CONFIRM_COOKIE, encodeURIComponent(token), new Date(Date.now() + 60 * 60 * 1000), true)
+export const clearConfirmCookie = (): string => cookie(CONFIRM_COOKIE, '', null, true)
+
+export function cookieValue(header: string | null, name: string): string | null {
   for (const part of (header ?? '').split(';')) {
     const [k, ...v] = part.trim().split('=')
     if (k === name) return v.join('=')
@@ -44,7 +54,7 @@ async function memberOf(payload: Payload, token: string | null): Promise<Member 
   const claims = readSession(token)
   if (!claims) return null
   const member = await payload
-    .findByID({ collection: 'members', id: claims.m, depth: 0, overrideAccess: true, showHiddenFields: true, disableErrors: true })
+    .findByID({ collection: 'members', id: claims.m, depth: 0, overrideAccess: true, showHiddenFields: true, disableErrors: true, context: NO_COUNTS })
     .catch(() => null)
   if (!member || member.blocked || !member.verified || (Number(member.sessionVersion) || 0) !== claims.s) return null
   return member

@@ -81,7 +81,7 @@ export function ResendConfirmation({
     )
   }
   return (
-    <form className="auth-resend auth-resend--form" onSubmit={submit} noValidate>
+    <form className="auth-resend auth-resend--form" method="post" onSubmit={submit} noValidate>
       <div className="contact-field">
         <label htmlFor={`${base}-email`}>Adresse e-mail de votre compte</label>
         <input

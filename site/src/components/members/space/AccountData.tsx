@@ -138,6 +138,7 @@ export function AccountData({ historyCount, favoritesCount }: { historyCount: nu
       {confirming && (
         <form
           className="space-danger contact-form"
+          method="post"
           onSubmit={deleteAccount}
           noValidate
           aria-labelledby={`${id}-danger`}

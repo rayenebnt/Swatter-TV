@@ -70,7 +70,7 @@ export function ProfileForm({ profile, since }: { profile: MemberProfile; since:
     ) : null
 
   return (
-    <form ref={form} className="contact-form space-form" onSubmit={submit} noValidate>
+    <form ref={form} className="contact-form space-form" method="post" onSubmit={submit} noValidate>
       <div className="contact-grid">
         <div className="contact-field">
           <label htmlFor={`${id}-firstName`}>

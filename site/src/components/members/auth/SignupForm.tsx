@@ -137,7 +137,7 @@ export function SignupForm() {
   return (
     <>
       <h2 className="auth-title">Vos informations</h2>
-      <form ref={form} className="contact-form auth-form" onSubmit={submit} noValidate>
+      <form ref={form} className="contact-form auth-form" method="post" onSubmit={submit} noValidate>
         <div className="contact-field">
           <label htmlFor={fieldId(base, 'firstName')}>
             Prénom <span aria-hidden="true">*</span>

@@ -15,20 +15,22 @@ export function clientIp(headers: Headers): string {
 }
 
 /** Vrai si l'action `name` est encore permise pour cette IP (au plus `max` fois par fenêtre) ; l'enregistre alors. */
-export function allow(name: string, headers: Headers, max: number, windowMs: number): boolean {
-  const ip = clientIp(headers)
+export const allow = (name: string, headers: Headers, max: number, windowMs: number): boolean => allowKey(name, clientIp(headers), max, windowMs)
+
+/** Comme `allow`, pour une clé quelconque (adresse e-mail…) au lieu de l'adresse IP. */
+export function allowKey(name: string, key: string, max: number, windowMs: number): boolean {
   const now = Date.now()
   let bucket = buckets.get(name)
   if (!bucket) buckets.set(name, (bucket = new Map()))
-  const recent = (bucket.get(ip) ?? []).filter((t) => now - t < windowMs)
+  const recent = (bucket.get(key) ?? []).filter((t) => now - t < windowMs)
   if (recent.length >= max) {
-    bucket.set(ip, recent)
+    bucket.set(key, recent)
     return false
   }
-  bucket.set(ip, [...recent, now])
+  bucket.set(key, [...recent, now])
   if (bucket.size > 10_000) {
-    // ménage : d'abord les adresses dont la fenêtre est passée, tout en dernier recours
-    for (const [key, hits] of bucket) if (now - hits[hits.length - 1] >= windowMs) bucket.delete(key)
+    // ménage : d'abord les clés dont la fenêtre est passée, tout en dernier recours
+    for (const [k, hits] of bucket) if (now - hits[hits.length - 1] >= windowMs) bucket.delete(k)
     if (bucket.size > 10_000) bucket.clear()
   }
   return true

@@ -509,8 +509,10 @@ d’entrer dans « Mon espace » (pour tester, créez-vous un compte de membre c
 - **Créer un compte** avec leur prénom, leur e-mail et un mot de passe (8 caractères au moins) et, s’ils le souhaitent,
   leur département et leur accord pour recevoir les e-mails de Swatter TV. Ils reçoivent aussitôt un e-mail
   « Swatter TV — confirmez votre adresse e-mail » : le compte ne fonctionne qu’après un clic sur **Confirmer mon
-  adresse** (lien valable 48 heures ; un nouveau lien se demande depuis la page de connexion). Une inscription jamais
-  confirmée est supprimée automatiquement au bout de 7 jours.
+  adresse**, puis la saisie du mot de passe choisi à l’inscription (lien valable 48 heures ; un nouveau lien se demande
+  depuis la page de connexion). Ce mot de passe demandé au moment de confirmer empêche quelqu’un d’inscrire l’adresse
+  d’une autre personne : un simple clic, ou l’analyse automatique du lien par une messagerie, n’active rien. Une
+  inscription jamais confirmée est supprimée automatiquement au bout de 7 jours.
 - **Retrouver les vidéos regardées** : les vidéos et replays qu’ils regardent en étant connectés s’ajoutent à leur
   **Historique** (les 200 derniers) et à la rubrique **Reprendre** de leur espace. Ils peuvent retirer une vidéo, tout
   effacer ou mettre l’historique en pause.
@@ -534,9 +536,10 @@ des données personnelles).
   confirmés.
 - **La fiche d’un membre** (un clic sur sa ligne) montre ses informations, sa **Dernière connexion**, la date à laquelle
   il a accepté les conditions, le nombre de **Vidéos dans son historique** et de **Contenus dans « Ma liste »** (le
-  détail reste privé : seul le membre le voit). La date d’inscription est rappelée en haut de la fiche.
+  détail reste privé : seul le membre le voit, l’équipe n’y a pas accès, même par l’API). La date d’inscription est rappelée en haut de la fiche.
 - À droite de la fiche :
-  - **E-mail confirmé** : cochée quand le membre a cliqué sur le lien reçu. Si un membre ne reçoit pas l’e-mail
+  - **E-mail confirmé** : cochée quand le membre a confirmé son adresse (lien reçu, puis son mot de passe). Si un
+    membre ne reçoit pas l’e-mail
     (indésirables, messagerie d’entreprise trop stricte…), assurez-vous d’abord que l’adresse est bien la sienne (par
     exemple parce qu’il vous écrit depuis cette adresse), puis cochez la case et cliquez sur **Enregistrer** : il peut se
     connecter aussitôt ;
@@ -587,7 +590,8 @@ confirmé**, voir plus haut).
   compte** (effacement immédiat et définitif). La page **Vie privée** du site l’explique aux visiteurs.
 - Si une demande vous arrive par e-mail (accès, correction, suppression, arrêt des e-mails), vérifiez qu’elle vient bien
   de l’adresse du compte, puis faites le nécessaire dans la fiche du membre : corriger une information, décocher
-  **Accepte les e-mails de Swatter TV** ou supprimer le compte. Pour une copie de ses données, invitez-le à utiliser
+  **Accepte les e-mails de Swatter TV** (vous pouvez décocher cette case à sa demande, jamais la cocher à sa place :
+  l’accord ne peut venir que du membre) ou supprimer le compte. Pour une copie de ses données, invitez-le à utiliser
   **Télécharger mes données** dans son espace (après **Mot de passe oublié ?** s’il ne peut plus se connecter).
   Répondez dans le mois qui suit la demande (délai légal).
 - Ne communiquez jamais d’informations sur un membre à un tiers, et gardez les fichiers exportés en lieu sûr.

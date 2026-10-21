@@ -65,9 +65,16 @@ test('membres : le bouton du compte ramène sur la page d’origine après la co
     await expect(page.locator('header').getByRole('link', { name: /Se connecter/ })).toHaveAttribute('href', '/connexion?retour=%2Fagenda')
   }
   // « retour » vers un autre site ou vers l'administration : ignoré (lien « Créer un compte » sans retour)
-  for (const retour of ['//autre-site.example', '/\\autre-site.example', '/admin', 'https://autre-site.example']) {
+  for (const retour of ['//autre-site.example', '/\\autre-site.example', '/\t/autre-site.example', '/admin', '/./admin', '/apercu/quitter', 'https://autre-site.example']) {
     await page.goto(`/connexion?retour=${encodeURIComponent(retour)}`)
     await expect(page.getByRole('link', { name: 'Créer un compte gratuit' })).toHaveAttribute('href', '/inscription')
+  }
+})
+
+test('aperçu : la sortie de l’aperçu ne redirige jamais vers un autre site', async ({ request }) => {
+  for (const chemin of ['//autre-site.example', '/\t/autre-site.example', '/\\autre-site.example', 'https://autre-site.example']) {
+    const res = await request.get(`/apercu/quitter?chemin=${encodeURIComponent(chemin)}`, { maxRedirects: 0 })
+    expect(new URL(res.headers().location ?? '', ORIGIN).origin, chemin).toBe(ORIGIN)
   }
 })
 

@@ -2,10 +2,14 @@ import type { CollectionConfig, FieldHook } from 'payload'
 import { hiddenForEditors, isAdmin } from '@/access'
 import { DEPARTMENTS } from '@/lib/departments'
 
-/** Nombre d'entrées d'un membre (historique ou « Ma liste »), affiché dans sa fiche. */
+/**
+ * Nombre d'entrées d'un membre (historique ou « Ma liste »), affiché dans sa fiche. Pas calculé pour les lectures internes
+ * de l'espace membres (contexte `memberCounts: false`, voir src/lib/members/session.ts) : deux requêtes de moins par appel.
+ */
 const countOf =
   (collection: 'member-history' | 'member-favorites'): FieldHook =>
-  async ({ data, req }) => {
+  async ({ data, req, context }) => {
+    if (context?.memberCounts === false) return undefined
     if (!data?.id) return 0
     return (await req.payload.count({ collection, where: { member: { equals: data.id } }, overrideAccess: true, req })).totalDocs
   }
@@ -36,12 +40,29 @@ export const Members: CollectionConfig = {
   hooks: {
     beforeValidate: [({ data }) => (data?.email && typeof data.email === 'string' ? { ...data, email: data.email.trim().toLowerCase() } : data)],
     beforeChange: [
-      // compte suspendu ou adresse changée : toutes ses sessions sont fermées (nouvelle version de session)
-      ({ data, originalDoc, operation }) => {
+      ({ data, originalDoc, operation, req }) => {
         if (operation !== 'update' || !originalDoc) return data
-        const blocked = data.blocked === true && originalDoc.blocked !== true
-        const email = typeof data.email === 'string' && data.email !== originalDoc.email
-        return blocked || email ? { ...data, sessionVersion: (Number(originalDoc.sessionVersion) || 0) + 1 } : data
+        const next = { ...data }
+        // Choix qui n'appartiennent qu'au membre : une fiche enregistrée depuis l'administration (qui renvoie tous les champs,
+        // tels qu'ils étaient à son ouverture) ne les écrase pas. L'équipe peut seulement retirer l'accord pour les e-mails, à
+        // la demande du membre : jamais le donner à sa place. (L'espace membres écrit, lui, sans passer par ces hooks.)
+        if (req.user) {
+          for (const key of ['historyPaused', 'lastLoginAt', 'consentAt'] as const) next[key] = originalDoc[key]
+          if (next.newsletter === true && originalDoc.newsletter !== true) next.newsletter = originalDoc.newsletter
+        }
+        // compte suspendu ou adresse changée : toutes ses sessions sont fermées (nouvelle version de session) et les liens
+        // encore valables envoyés par e-mail (confirmation, nouveau mot de passe) ne servent plus
+        const blocked = next.blocked === true && originalDoc.blocked !== true
+        const email = typeof next.email === 'string' && next.email !== originalDoc.email
+        if (!blocked && !email) return next
+        return {
+          ...next,
+          sessionVersion: (Number(originalDoc.sessionVersion) || 0) + 1,
+          resetTokenHash: null,
+          resetTokenExpires: null,
+          verifyTokenHash: null,
+          verifyTokenExpires: null,
+        }
       },
     ],
     // compte supprimé : son historique et sa liste avec lui (avant la suppression : ces lignes exigent un membre)
@@ -72,7 +93,13 @@ export const Members: CollectionConfig = {
           options: DEPARTMENTS.map(({ value, label }) => ({ value, label })),
           admin: { description: 'Choisi par le membre : sa météo, son info et ses sorties.' },
         },
-        { name: 'newsletter', label: 'Accepte les e-mails de Swatter TV', type: 'checkbox', defaultValue: false },
+        {
+          name: 'newsletter',
+          label: 'Accepte les e-mails de Swatter TV',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: { description: 'Choix du membre. Vous pouvez décocher la case à sa demande, jamais la cocher à sa place.' },
+        },
       ],
     },
     {
@@ -80,7 +107,10 @@ export const Members: CollectionConfig = {
       label: 'E-mail confirmé',
       type: 'checkbox',
       defaultValue: false,
-      admin: { position: 'sidebar', description: 'Coché quand le membre a cliqué sur le lien reçu par e-mail. Cochez-le vous-même pour confirmer un compte à la main.' },
+      admin: {
+        position: 'sidebar',
+        description: 'Coché quand le membre a confirmé son adresse (lien reçu par e-mail, puis son mot de passe). Cochez-le vous-même pour confirmer un compte à la main.',
+      },
     },
     {
       name: 'blocked',

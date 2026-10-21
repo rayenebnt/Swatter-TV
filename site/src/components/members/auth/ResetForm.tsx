@@ -82,7 +82,7 @@ export function ResetForm({ token }: { token: string }) {
   }
 
   return (
-    <form ref={form} className="contact-form auth-form" onSubmit={submit} noValidate>
+    <form ref={form} className="contact-form auth-form" method="post" onSubmit={submit} noValidate>
       <PasswordField
         base={base}
         name="password"

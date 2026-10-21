@@ -86,7 +86,7 @@ export function ForgotForm({ loginHref }: { loginHref: string }) {
   }
 
   return (
-    <form className="contact-form auth-form" onSubmit={submit} noValidate>
+    <form className="contact-form auth-form" method="post" onSubmit={submit} noValidate>
       <div className="contact-field">
         <label htmlFor={fieldId(base, 'email')}>
           Adresse e-mail de votre compte <span aria-hidden="true">*</span>

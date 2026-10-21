@@ -227,14 +227,33 @@ articles, événements), département préféré (météo, info, sorties), profi
   administrateurs, création impossible par l'API : seul `/api/compte/inscription` crée, par l'API locale ; champs
   techniques `hidden`), `member-history` et `member-favorites` (`src/collections/MemberActivity.ts` ; une ligne unique par
   membre × contenu : `kind` + `itemId`, date `watchedAt` / `savedAt` rafraîchie à chaque lecture ou ajout ; masquées du
-  menu, aucune écriture hors API locale). Supprimer un membre supprime son activité (`beforeDelete`). Réglage :
-  `settings.members.signupOpen`.
+  menu, aucun accès par l'API REST ou GraphQL, même pour les administrateurs : seulement l'API locale avec
+  `overrideAccess`). Supprimer un membre supprime son activité (`beforeDelete`). Réglage : `settings.members.signupOpen`.
+- **Écritures partielles.** L'API des membres écrit avec `payload.db.updateOne()` (fonction `write()` de
+  `endpoints.ts`) : seules les colonnes données changent, `{ $inc: 1 }` incrémente `sessionVersion` en base. Un
+  `payload.update()` réécrirait le document entier tel qu'il a été lu au départ (champs masqués compris) et annulerait
+  une écriture faite entre-temps : un PATCH du profil en boucle pouvait ainsi défaire un changement de mot de passe ou
+  une suspension. Ces écritures ne passent par aucun hook. Dans l'administration (hook `beforeChange`, requêtes avec
+  `req.user`), `historyPaused`, `lastLoginAt` et `consentAt` ne sont jamais modifiés et l'accord `newsletter` peut être
+  retiré mais pas donné : une fiche restée ouverte n'écrase pas les choix faits entre-temps par le membre. Changer
+  l'e-mail ou suspendre un compte invalide aussi les liens envoyés (jetons effacés).
+- **Blocage après 5 erreurs** : `reserveAttempt()` compte l'essai en une seule requête SQL (`update … where lock_until
+  is null or lock_until <= now() returning id`) AVANT de vérifier le mot de passe, à la connexion comme pour le mot de
+  passe actuel demandé par `/mot-de-passe` et `/supprimer`. Adresse sans compte : même réponse (`allowKey()` en mémoire).
+- **Confirmation de l'adresse** : `/compte/verifier?token=…` n'écrit rien ; il garde le jeton une heure dans le cookie
+  httpOnly `sw_confirmation` et ouvre `/connexion?confirmer=1&email=…`. La connexion confirme le compte si ce cookie
+  correspond au jeton en cours ET que le mot de passe est le bon (un tiers qui inscrit l'adresse d'un autre, ou un
+  antivirus qui suit le lien, ne confirme rien). « Mot de passe oublié » confirme aussi l'adresse ; pour un compte
+  jamais confirmé, il remet `newsletter` à faux (l'accord a pu être coché par quelqu'un d'autre).
+- **Réponses sans indice** : inscription, renvoi de confirmation et mot de passe oublié répondent avant de chercher le
+  compte (`later()` : `after()` de Next.js), pour que la durée de la réponse ne dise pas si l'adresse est inscrite. Les
+  tests attendent donc la création du compte (`createdMember()` dans `admin.spec.ts`).
 - **API** (`/api/compte/…`, JSON, erreurs `{ error, code? }` ou `{ errors: { champ: message } }`) :
 
 | Méthode et chemin | Rôle |
 |---|---|
-| `POST /inscription` | compte non confirmé + e-mail de confirmation (48 h) ; réponse identique si l'adresse existe déjà (rien n'est révélé) ; piège `website` et délai `shownAt` ; 403 `closed` si inscriptions fermées |
-| `POST /connexion` | cookies de session ; 401 identifiants ; 403 `unverified` / `blocked` ; 429 `locked` (5 erreurs → 15 min) |
+| `POST /inscription` | compte non confirmé + e-mail de confirmation (48 h), après la réponse ; réponse identique si l'adresse existe déjà (rien n'est révélé) ; piège `website` et durée `elapsed` (≥ 3 s, mesurée par le navigateur) ; 403 `closed` si inscriptions fermées |
+| `POST /connexion` | cookies de session ; confirme le compte avec le cookie `sw_confirmation` ; 401 identifiants ; 403 `unverified` / `blocked` ; 429 `locked` (5 erreurs → 15 min) |
 | `POST /deconnexion` | `{ partout: true }` ferme aussi les autres appareils |
 | `POST /renvoyer-confirmation`, `POST /mot-de-passe-oublie` | toujours `{ ok }` |
 | `POST /nouveau-mot-de-passe` | `{ token, password }` → connecté ; `invalid` si lien expiré ou déjà utilisé |
@@ -246,7 +265,8 @@ articles, événements), département préféré (météo, info, sorties), profi
   Les requêtes qui modifient quelque chose doivent venir du site (`sameOrigin()` : en-tête `Origin`, à défaut
   `Sec-Fetch-Site`), en plus de `SameSite=Lax`. Historique limité à 200 entrées par membre (les plus anciennes sont
   effacées, `HISTORY_MAX`). `GET /api/membres/lettre-info.csv` (administrateurs Payload) : membres confirmés, non
-  suspendus, qui acceptent les e-mails ; CSV `;` avec BOM UTF-8 (Excel).
+  suspendus, qui acceptent les e-mails ; CSV `;` avec BOM UTF-8 (Excel) ; une valeur qui commence par = + - @ est
+  précédée d'une apostrophe (sinon Excel l'exécuterait comme une formule).
 - **Limites par IP** (`rate-limit.ts`, mémoire du processus) : inscription, connexion, renvoi de confirmation, mot de
   passe oublié, nouveau mot de passe, changement de mot de passe, suppression. **`MEMBER_RATE_FACTOR`** les multiplie
   (tests de bout en bout : `10`, toutes les requêtes venant de la même adresse). IP = dernier maillon de
@@ -254,7 +274,7 @@ articles, événements), département préféré (météo, info, sorties), profi
   Le formulaire de contact utilise la même fonction (`allow('contact', …)`, 5 messages par quart d'heure).
 - **E-mails** : `payload.sendEmail` (SMTP du site). Sans `SMTP_HOST` et hors production, `sendMemberEmail()` écrit le
   lien dans le journal (`[swatter] (développement, pas de SMTP) … — lien : …`) : c'est ainsi qu'on confirme un compte en
-  local (ou en cochant « E-mail confirmé » dans l'administration).
+  local (ouvrir le lien, puis saisir le mot de passe), ou en cochant « E-mail confirmé » dans l'administration.
 - **Pages** (`src/app/(frontend)/inscription`, `connexion`, `mot-de-passe-oublie`, `compte/…`) :
   `export const dynamic = 'force-dynamic'`, `robots: { index: false, follow: false }`, hors du plan du site. Chaque page
   de « Mon espace » vérifie elle-même le membre (`getCurrentMember()`) et renvoie vers `/connexion?retour=<chemin>`

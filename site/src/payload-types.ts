@@ -716,9 +716,12 @@ export interface Member {
         | 'allier'
       )
     | null;
+  /**
+   * Choix du membre. Vous pouvez décocher la case à sa demande, jamais la cocher à sa place.
+   */
   newsletter?: boolean | null;
   /**
-   * Coché quand le membre a cliqué sur le lien reçu par e-mail. Cochez-le vous-même pour confirmer un compte à la main.
+   * Coché quand le membre a confirmé son adresse (lien reçu par e-mail, puis son mot de passe). Cochez-le vous-même pour confirmer un compte à la main.
    */
   verified?: boolean | null;
   /**

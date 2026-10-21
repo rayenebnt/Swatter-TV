@@ -21,9 +21,9 @@ export const metadata: Metadata = {
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
 /**
- * Connexion à l'espace membres. ?retour=<chemin> : page où revenir ensuite ; messages après le lien de confirmation
- * reçu par e-mail (?verifie=1&email=…, ?verifie=deja, ?verification=invalide) et après « Se déconnecter de tous les
- * appareils » (?deconnecte=partout).
+ * Connexion à l'espace membres. ?retour=<chemin> : page où revenir ensuite. Lien de confirmation reçu par e-mail
+ * (/compte/verifier) : ?confirmer=1&email=… (dernière étape : le mot de passe confirme le compte), ?verifie=deja,
+ * ?verification=invalide. Après « Se déconnecter de tous les appareils » : ?deconnecte=partout.
  */
 export default async function LoginPage({ searchParams }: { searchParams: SearchParams }) {
   const q = await searchParams
@@ -33,6 +33,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   if (member) redirect(retour)
 
   const verified = firstParam(q.verifie)
+  const confirming = firstParam(q.confirmer) === '1'
   const invalid = firstParam(q.verification) === 'invalide'
   const loggedOutEverywhere = firstParam(q.deconnecte) === 'partout'
   const rawEmail = normalizeEmail(firstParam(q.email))
@@ -48,9 +49,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
       />
       <AuthShell>
         <h2 className="auth-title">Accédez à votre espace</h2>
-        {verified === '1' && (
-          <AuthNotice tone="ok" role="status" title={'Votre adresse est confirmée\u00a0: connectez-vous.'}>
-            <p>Votre compte est prêt. Saisissez votre mot de passe pour ouvrir votre espace.</p>
+        {confirming && (
+          <AuthNotice tone="info" role="status" title={'Dernière étape\u00a0: saisissez votre mot de passe'}>
+            <p>Pour activer votre compte, connectez-vous avec le mot de passe choisi lors de votre inscription.</p>
           </AuthNotice>
         )}
         {verified === 'deja' && (

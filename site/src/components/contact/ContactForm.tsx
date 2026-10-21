@@ -55,9 +55,10 @@ export function ContactForm() {
     fillEmpty(f, 'email', identity.email)
   }, [identity, state])
 
+  // durée mesurée depuis l'affichage d'un formulaire neuf : un nouvel essai juste après un échec n'est pas pris pour un robot
   useEffect(() => {
     shownAt.current = Date.now()
-  }, [state])
+  }, [])
   useEffect(() => {
     if (state === 'sent') done.current?.focus()
   }, [state])
@@ -76,6 +77,9 @@ export function ContactForm() {
     setFailure('')
     if (Object.keys(errs).length) return focusFirstError(errs)
     setState('sending')
+    // envoi très rapide (remplissage automatique) : on attend les 3 s en deçà desquelles le serveur croit à un robot
+    const elapsed = Date.now() - shownAt.current
+    if (elapsed < 3200) await new Promise((resolve) => setTimeout(resolve, 3200 - elapsed))
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
@@ -105,7 +109,14 @@ export function ContactForm() {
           Merci, votre message est bien parti&nbsp;!
         </h2>
         <p>La rédaction de Swatter TV l’a reçu et vous répondra par e-mail si besoin.</p>
-        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setState('idle')}>
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          onClick={() => {
+            shownAt.current = Date.now()
+            setState('idle')
+          }}
+        >
           Envoyer un autre message
         </button>
       </div>
@@ -126,7 +137,7 @@ export function ContactForm() {
     ) : null
 
   return (
-    <form ref={form} className="contact-form" onSubmit={submit} noValidate>
+    <form ref={form} className="contact-form" method="post" onSubmit={submit} noValidate>
       <fieldset className="contact-subjects">
         <legend>Vous souhaitez</legend>
         {CONTACT_SUBJECTS.map((s) => (

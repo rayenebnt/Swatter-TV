@@ -4,6 +4,8 @@ import { DEPARTMENTS, type DepartmentSlug } from '@/lib/departments'
 /** Cookie de session (httpOnly, signé) et cookie témoin lisible par le navigateur (affichage « Mon espace » seulement). */
 export const SESSION_COOKIE = 'sw_membre'
 export const HINT_COOKIE = 'sw_connecte'
+/** Jeton du lien de confirmation, le temps de saisir son mot de passe (httpOnly, une heure). */
+export const CONFIRM_COOKIE = 'sw_confirmation'
 /** Durée d'une session : 30 jours. */
 export const SESSION_DAYS = 30
 export const MIN_PASSWORD = 8
@@ -39,11 +41,19 @@ export type SignupInput = {
 }
 export type FieldErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'password' | 'current' | 'department' | 'consent' | 'token', string>>
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+/**
+ * Adresse e-mail : la règle du champ « email » de Payload (sinon une adresse acceptée ici serait refusée à l'enregistrement),
+ * 254 caractères au plus.
+ */
+const EMAIL = /^(?!.*\.\.)[\w!#$%&'*+/=?^`{|}~-](?:[\w!#$%&'*+/=?^`{|}~.-]*[\w!#$%&'*+/=?^`{|}~-])?@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/i
+/** Texte saisi : sans caractères de contrôle (refusés par PostgreSQL pour le caractère nul), sans espaces autour, tronqué. */
+ 
+const str = (v: unknown, max: number) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max) : '')
 const bool = (v: unknown) => v === true || v === 'on' || v === 'true'
 
-export const normalizeEmail = (v: unknown) => str(v, 200).toLowerCase()
+export const normalizeEmail = (v: unknown) => str(v, 255).toLowerCase()
+/** Adresse acceptée par le champ « email » de Payload (aussi pour le formulaire de contact). */
+export const isEmailAddress = (v: string) => v.length <= 254 && EMAIL.test(v)
 export const isDepartmentValue = (v: unknown): v is DepartmentSlug => DEPARTMENTS.some((d) => d.value === v)
 
 export function checkFirstName(v: unknown): string | undefined {
@@ -52,7 +62,7 @@ export function checkFirstName(v: unknown): string | undefined {
   return undefined
 }
 export function checkEmail(v: unknown): string | undefined {
-  return EMAIL.test(normalizeEmail(v)) ? undefined : 'Indiquez une adresse e-mail valide.'
+  return isEmailAddress(normalizeEmail(v)) ? undefined : 'Indiquez une adresse e-mail valide.'
 }
 export function checkPassword(v: unknown): string | undefined {
   if (typeof v !== 'string' || v.length < MIN_PASSWORD) return `Le mot de passe doit contenir au moins ${MIN_PASSWORD} caractères.`
@@ -103,14 +113,23 @@ export function checkProfile(raw: Record<string, unknown>): { data: Partial<Omit
 }
 
 /**
- * Chemin de retour après connexion : uniquement une adresse interne du site (jamais //autre-site ni l'administration).
- * Caractères de contrôle et barre oblique inverse refusés : le navigateur les retire ou les convertit, et « /\t/site »
- * deviendrait « //site », une adresse extérieure.
+ * Chemin de retour après connexion : uniquement une adresse interne du site (jamais //autre-site, ni l'administration, l'API
+ * ou l'aperçu). Caractères de contrôle et barre oblique inverse refusés : le navigateur les retire ou les convertit, et
+ * « /\t/site » deviendrait « //site », une adresse extérieure. Le chemin est normalisé (« /./admin », « /a/../admin »)
+ * et encodé en ASCII (il finit dans un en-tête Location).
  */
 export function safeReturn(v: unknown, fallback = '/compte'): string {
-  if (typeof v !== 'string' || !v.startsWith('/') || v.startsWith('//') || /[\u0000-\u001f\u007f\\]/.test(v)) return fallback
-  if (/^\/(admin|api|_next)(\/|$|\?)/.test(v)) return fallback
-  return v.slice(0, 300)
+   
+  if (typeof v !== 'string' || v.length > 300 || !v.startsWith('/') || v.startsWith('//') || /[\u0000-\u001f\u007f\\]/.test(v)) return fallback
+  const base = 'http://site.invalid'
+  let url: URL
+  try {
+    url = new URL(v, base)
+  } catch {
+    return fallback
+  }
+  if (url.origin !== base || /^\/(admin|api|_next|apercu)(\/|$)/i.test(url.pathname)) return fallback
+  return `${url.pathname}${url.search}${url.hash}`
 }
 
 /** Pages d'où l'on ne revient pas après connexion (elles renverraient en boucle vers elles-mêmes ou vers /compte). */
