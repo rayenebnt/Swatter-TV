@@ -10,6 +10,7 @@
 // Ports (variables d'environnement) : TEST_PORT 3100 (site), TEST_YOUTUBE_PORT 8766, TEST_METEO_PORT 8771.
 import { spawn } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import net from 'node:net'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { config as loadEnv } from 'dotenv'
@@ -89,12 +90,25 @@ async function step(label, fn, { blocking = false } = {}) {
   return ok
 }
 
-function summary() {
+/** Bilan des étapes ; vrai si quelque chose a échoué ou si le déroulé s'est arrêté avant la fin (`aborted`). */
+function summary(aborted) {
   console.log('\n\x1b[1mBilan\x1b[0m')
   for (const r of results) console.log(`  ${r.ok ? '\x1b[32m✔\x1b[0m' : '\x1b[31m✘\x1b[0m'} ${r.label} (${minutes(r.ms)})`)
   const failed = results.filter((r) => !r.ok).length
-  console.log(failed ? `\n\x1b[31m${failed} étape(s) en échec.\x1b[0m` : `\n\x1b[32mTout est vert\x1b[0m, en ${minutes(Date.now() - started)}.`)
-  return failed
+  if (failed) console.log(`\n\x1b[31m${failed} étape(s) en échec.\x1b[0m`)
+  else if (aborted) console.log('\n\x1b[31mArrêt avant la fin : voir le message ci-dessus.\x1b[0m')
+  else console.log(`\n\x1b[32mTout est vert\x1b[0m, en ${minutes(Date.now() - started)}.`)
+  return failed > 0 || aborted
+}
+
+/** Vrai si personne n'écoute déjà sur ce port (un site de test resté ouvert avec --garder, par exemple). */
+function portFree(port) {
+  return new Promise((resolve) => {
+    const probe = net.createServer()
+    probe.once('error', () => resolve(false))
+    probe.once('listening', () => probe.close(() => resolve(true)))
+    probe.listen(port, '127.0.0.1')
+  })
 }
 
 async function waitFor(url, timeoutMs) {
@@ -115,6 +129,7 @@ async function waitFor(url, timeoutMs) {
 
 let server
 let meteo
+let aborted = false
 const stop = () => {
   server?.kill()
   meteo?.close()
@@ -162,6 +177,10 @@ try {
       TRUSTED_PROXY_HOPS: '',
       NODE_ENV: 'production',
       NODE_OPTIONS: '--no-deprecation',
+    }
+    // un ancien site de test encore ouvert répondrait à la place du nouveau
+    for (const [port, name] of [[PORT, 'TEST_PORT'], [YOUTUBE_PORT, 'TEST_YOUTUBE_PORT'], [METEO_PORT, 'TEST_METEO_PORT']]) {
+      if (!(await portFree(port))) throw new Error(`Le port ${port} est déjà utilisé (site de test resté ouvert ?) : arrêtez ce programme ou changez ${name}.`)
     }
     meteo = await startOpenMeteoMock(METEO_PORT)
 
@@ -216,10 +235,11 @@ try {
     )
   }
 } catch (error) {
+  aborted = true
   console.error(`\n\x1b[31m${error instanceof Error ? error.message : String(error)}\x1b[0m`)
 }
 
-const failed = summary()
+const failed = summary(aborted)
 if (keep && server) {
   console.log(`\nSite de test ouvert : ${SITE} (administration : ${SITE}/admin, admin@swatter-tv.fr / swatter-admin-2026). Ctrl+C pour l'arrêter.`)
 } else {
