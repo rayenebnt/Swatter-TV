@@ -23,7 +23,11 @@
     "webcams": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/webcams.ts",
     "test-email": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/test-email.ts",
     "import": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/import.ts",
-    "test:e2e": "playwright test"
+    "test": "vitest run",
+    "test:unit": "vitest run --project unitaires",
+    "test:integration": "cross-env NODE_OPTIONS=--no-deprecation vitest run --project integration",
+    "test:e2e": "playwright test",
+    "test:complet": "node scripts/test-complet.mjs"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.91.0",
@@ -51,6 +55,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/eslintrc": "^3.2.0",
     "@playwright/test": "1.56.1",
     "@types/node": "22.19.9",
@@ -60,9 +65,14 @@
     "eslint-config-next": "16.3.3",
     "prettier": "^3.4.2",
     "tsx": "4.23.15",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vite": "7.3.7",
+    "vitest": "4.1.11"
   },
   "engines": {
     "node": ">=20.18.1"
+  },
+  "overrides": {
+    "vite": "7.3.7"
   }
 }

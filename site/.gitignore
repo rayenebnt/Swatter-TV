@@ -6,5 +6,8 @@ out/
 media/
 test-results/
 playwright-report/
+# tests automatiques : médias et construction à part (scripts/test-complet.mjs, tests d'intégration)
+.tests/
+.next-test/
 *.tsbuildinfo
 next-env.d.ts

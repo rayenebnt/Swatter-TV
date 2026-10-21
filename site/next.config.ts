@@ -7,6 +7,10 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // NEXT_DIST_DIR : construction à part (tests de bout en bout, scripts/test-complet.mjs), sans toucher à .next ni à
+  // tsconfig.json (Next y ajouterait les types de ce dossier : ils sont déjà dans tsconfig.next-test.json)
+  distDir: process.env.NEXT_DIST_DIR || '.next',
+  typescript: { tsconfigPath: process.env.NEXT_DIST_DIR ? 'tsconfig.next-test.json' : 'tsconfig.json' },
   // Guide d'utilisation affiché par la page « Aide » de l'administration (lu sur le disque à l'exécution)
   outputFileTracingIncludes: { '/admin/\\[\\[\\.\\.\\.segments\\]\\]': ['./GUIDE_CLIENT.md'] },
   poweredByHeader: false,

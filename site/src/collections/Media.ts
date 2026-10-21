@@ -39,7 +39,8 @@ export const Media: CollectionConfig = {
     { name: 'credit', label: 'Crédit photo (facultatif)', type: 'text', admin: { placeholder: '© Swatter TV' } },
   ],
   upload: {
-    staticDir: 'media',
+    // dossier des fichiers envoyés ; MEDIA_DIR : un autre dossier (tests automatiques, pour ne pas toucher à media/)
+    staticDir: process.env.MEDIA_DIR || 'media',
     // Images matricielles et vidéos uniquement (pas de SVG, qui peut contenir du script)
     mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'video/mp4', 'video/webm'],
     focalPoint: true,
