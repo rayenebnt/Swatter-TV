@@ -82,6 +82,18 @@ const write = async (payload: Payload, id: number, data: Record<string, unknown>
   (await payload.db.updateOne({ collection: 'members', id, data: { ...data, updatedAt: new Date().toISOString() } })) as unknown as Member
 
 /**
+ * Écriture partielle conditionnelle, en une seule requête : seulement si la ligne vérifie encore `conditions` (état lu
+ * quelques millisecondes plus tôt). Null si une autre requête l'a changée entre-temps.
+ */
+const writeIf = async (payload: Payload, id: number, conditions: Where[], data: Record<string, unknown>): Promise<Member | null> =>
+  (await payload.db.updateOne({
+    collection: 'members',
+    where: { and: [{ id: { equals: id } }, ...conditions] },
+    data: { ...data, updatedAt: new Date().toISOString() },
+    options: { atomic: true },
+  })) as Member | null
+
+/**
  * Réserve un essai de mot de passe AVANT de le vérifier, en une seule requête : des essais envoyés en même temps sont tous
  * comptés (lire puis réécrire le compteur laisserait passer toute une rafale). Faux si le compte est bloqué ; le 5e essai
  * bloque le compte pour 15 minutes (il est encore vérifié : le bon mot de passe passe et débloque).
@@ -96,6 +108,29 @@ async function reserveAttempt(payload: Payload, id: number): Promise<boolean> {
     returning id`)
   return res.rows.length > 0
 }
+
+/**
+ * Adresses sans compte : essais comptés, et blocage, comme en base pour un vrai compte (reserveAttempt : compteur sans
+ * limite de temps, blocage de 15 minutes au 5e essai), pour que la réponse ne dise pas si l'adresse est inscrite.
+ * Mémoire du processus (un serveur unique).
+ */
+const unknownAttempts = new Map<string, { count: number; lockUntil: number }>()
+function reserveUnknown(email: string): boolean {
+  const now = Date.now()
+  const entry = unknownAttempts.get(email)
+  if (entry && entry.lockUntil > now) return false
+  const count = (entry?.count ?? 0) + 1
+  unknownAttempts.set(email, count >= MAX_ATTEMPTS ? { count: 0, lockUntil: now + LOCK_MS } : { count, lockUntil: 0 })
+  if (unknownAttempts.size > 10_000) unknownAttempts.clear()
+  return true
+}
+
+/**
+ * Mot de passe actuel demandé par une action faite avec une session valide (changement de mot de passe, suppression) :
+ * 5 essais par quart d'heure, compteur propre au membre (les essais de connexion d'un tiers ne bloquent pas ces actions).
+ */
+const allowCurrentPassword = (memberId: number) => allowKey('mot-de-passe-actuel', String(memberId), MAX_ATTEMPTS, LOCK_MS)
+const tooManyCurrent = () => json({ error: 'Trop d’essais : réessayez dans 15 minutes.', code: 'locked' }, 429)
 
 /**
  * Travail fait après l'envoi de la réponse (recherche du compte, écritures, e-mail) : la durée de la réponse ne révèle pas
@@ -200,8 +235,11 @@ export const memberEndpoints: Endpoint[] = [
         }
         // adresse inscrite mais jamais confirmée : la dernière inscription remplace la précédente (nouveau lien). La
         // confirmation demande le mot de passe en vigueur : un tiers qui réinscrit l'adresse ne peut rien en faire.
-        if (existing) await write(payload, existing.id, fields)
-        else await payload.create({ collection: 'members', data: fields, overrideAccess: true, depth: 0 })
+        if (existing) {
+          // seulement s'il n'a été ni confirmé ni suspendu entre-temps
+          const replaced = await writeIf(payload, existing.id, [{ verified: { not_equals: true } }, { blocked: { not_equals: true } }], fields)
+          if (!replaced) return
+        } else await payload.create({ collection: 'members', data: fields, overrideAccess: true, depth: 0 })
         await sendMemberEmail(payload, data.email, verifyEmail(data.firstName, token), `${SITE_URL}/compte/verifier?token=${encodeURIComponent(token)}`)
       })
       return json({ ok: true })
@@ -218,29 +256,45 @@ export const memberEndpoints: Endpoint[] = [
       const email = normalizeEmail(raw.email)
       const password = typeof raw.password === 'string' ? raw.password : ''
       const payload = req.payload
-      const m = email && password ? await findByEmail(payload, email) : null
-      if (!m) {
-        // adresse inconnue : même calcul de mot de passe, et même blocage après 5 essais, que pour un vrai compte (rien ne
-        // révèle si l'adresse est inscrite)
+      if (!email || !password) {
+        // champ vide : même réponse et même durée pour toutes les adresses, sans compter d'essai
         await verifyPassword(password, undefined)
-        if (email && !allowKey('verrou-inconnu', email, MAX_ATTEMPTS, LOCK_MS)) return locked()
+        return json({ error: GENERIC_LOGIN }, 401)
+      }
+      const m = await findByEmail(payload, email)
+      if (!m) {
+        // adresse inconnue : même blocage après 5 essais, et même calcul de mot de passe, que pour un vrai compte (rien ne
+        // révèle si l'adresse est inscrite)
+        if (!reserveUnknown(email)) return locked()
+        await verifyPassword(password, undefined)
         return json({ error: GENERIC_LOGIN }, 401)
       }
       if (!(await reserveAttempt(payload, m.id))) return locked()
       if (!(await verifyPassword(password, m.passwordHash))) return json({ error: GENERIC_LOGIN }, 401)
       if (m.blocked) return json({ error: 'Ce compte a été suspendu. Écrivez-nous si vous pensez qu’il s’agit d’une erreur.', code: 'blocked' }, 403)
-      if (!m.verified) {
+      const now = new Date().toISOString()
+      let updated: Member | null
+      if (m.verified) updated = await write(payload, m.id, { loginAttempts: 0, lockUntil: null, lastLoginAt: now })
+      else {
         // confirmation de l'adresse : lien de l'e-mail (jeton gardé en cookie par /compte/verifier) ET mot de passe choisi à
-        // l'inscription. Un clic seul (ou l'analyse du lien par un antivirus de messagerie) ne confirme rien.
-        const token = decodeURIComponent(cookieValue(req.headers.get('cookie'), CONFIRM_COOKIE) ?? '')
+        // l'inscription. Un clic seul (ou l'analyse du lien par un antivirus de messagerie) ne confirme rien. Écriture
+        // conditionnelle : une réinscription arrivée entre-temps (autre mot de passe, nouveau lien) l'annule.
+        const token = cookieValue(req.headers.get('cookie'), CONFIRM_COOKIE) ?? ''
         const valid = token && m.verifyTokenHash === hashToken(token) && m.verifyTokenExpires && Date.parse(m.verifyTokenExpires) > Date.now()
-        if (!valid) {
+        updated = valid
+          ? await writeIf(payload, m.id, [{ verifyTokenHash: { equals: m.verifyTokenHash } }, { passwordHash: { equals: m.passwordHash } }], {
+              verified: true,
+              loginAttempts: 0,
+              lockUntil: null,
+              lastLoginAt: now,
+            })
+          : null
+        if (!updated) {
           // bon mot de passe : l'essai ne compte pas pour le blocage
           await write(payload, m.id, { loginAttempts: 0, lockUntil: null })
           return json({ error: 'Confirmez d’abord votre adresse e-mail : cliquez sur le lien que nous vous avons envoyé.', code: 'unverified' }, 403)
         }
       }
-      const updated = await write(payload, m.id, { verified: true, loginAttempts: 0, lockUntil: null, lastLoginAt: new Date().toISOString() })
       return json({ ok: true, firstName: m.firstName }, 200, [...sessionCookies(updated), clearConfirmCookie()])
     },
   },
@@ -271,7 +325,9 @@ export const memberEndpoints: Endpoint[] = [
         const m = email ? await findByEmail(payload, email) : null
         if (!m || m.verified || m.blocked) return
         const { token, hash } = newToken()
-        await write(payload, m.id, { verifyTokenHash: hash, verifyTokenExpires: new Date(Date.now() + VERIFY_MS).toISOString() })
+        // rien n'est envoyé si l'adresse a changé (administration) ou si le compte a été confirmé ou suspendu entre-temps
+        const conditions: Where[] = [{ email: { equals: m.email } }, { verified: { not_equals: true } }, { blocked: { not_equals: true } }]
+        if (!(await writeIf(payload, m.id, conditions, { verifyTokenHash: hash, verifyTokenExpires: new Date(Date.now() + VERIFY_MS).toISOString() }))) return
         await sendMemberEmail(payload, m.email, verifyEmail(m.firstName, token), `${SITE_URL}/compte/verifier?token=${encodeURIComponent(token)}`)
       })
       // même réponse, et même durée, que l'adresse soit inscrite ou non
@@ -291,7 +347,9 @@ export const memberEndpoints: Endpoint[] = [
         const m = email ? await findByEmail(payload, email) : null
         if (!m || m.blocked) return
         const { token, hash } = newToken()
-        await write(payload, m.id, { resetTokenHash: hash, resetTokenExpires: new Date(Date.now() + RESET_MS).toISOString() })
+        // rien n'est envoyé si l'adresse a changé (administration) ou si le compte a été suspendu entre-temps
+        const conditions: Where[] = [{ email: { equals: m.email } }, { blocked: { not_equals: true } }]
+        if (!(await writeIf(payload, m.id, conditions, { resetTokenHash: hash, resetTokenExpires: new Date(Date.now() + RESET_MS).toISOString() }))) return
         await sendMemberEmail(payload, m.email, resetEmail(m.firstName, token), `${SITE_URL}/compte/nouveau-mot-de-passe?token=${encodeURIComponent(token)}`)
       })
       // même réponse, et même durée, que l'adresse soit inscrite ou non
@@ -372,16 +430,13 @@ export const memberEndpoints: Endpoint[] = [
       const raw = await readBody(req)
       const pwdError = checkPassword(raw?.password)
       if (pwdError) return json({ errors: { password: pwdError } }, 400)
-      // mot de passe actuel : mêmes essais comptés, et même blocage, qu'à la connexion
-      if (!(await reserveAttempt(req.payload, m.id))) return locked()
+      if (!allowCurrentPassword(m.id)) return tooManyCurrent()
       if (!(await verifyPassword(typeof raw?.current === 'string' ? raw.current : '', m.passwordHash))) {
         return json({ errors: { current: 'Mot de passe actuel incorrect.' } }, 400)
       }
       const updated = await write(req.payload, m.id, {
         passwordHash: await hashPassword(raw?.password as string),
         sessionVersion: { $inc: 1 },
-        loginAttempts: 0,
-        lockUntil: null,
         resetTokenHash: null,
         resetTokenExpires: null,
       })
@@ -417,7 +472,7 @@ export const memberEndpoints: Endpoint[] = [
       const kind = req.searchParams.get('kind')
       const id = idOf(req.searchParams.get('id'))
       // une entrée précise, ou (sans aucun paramètre) tout l'historique : jamais tout effacer sur un paramètre invalide
-      if (req.searchParams.has('kind') || req.searchParams.has('id')) {
+      if ([...req.searchParams.keys()].length) {
         if (!isHistoryKind(kind) || !id) return json({ error: 'Contenu inconnu.' }, 400)
       }
       await req.payload.delete({
@@ -528,14 +583,22 @@ export const memberEndpoints: Endpoint[] = [
       if (m instanceof Response) return m
       if (!allow('suppression', req.headers, 10 * rateFactor(), 15 * MINUTE)) return tooMany('tentatives')
       const raw = await readBody(req)
-      if (!(await reserveAttempt(req.payload, m.id))) return locked()
+      if (!allowCurrentPassword(m.id)) return tooManyCurrent()
       if (!(await verifyPassword(typeof raw?.password === 'string' ? raw.password : '', m.passwordHash))) {
         return json({ errors: { current: 'Mot de passe incorrect.' } }, 400)
       }
-      const remove = () => req.payload.delete({ collection: 'members', id: m.id, overrideAccess: true })
-      // une vidéo lancée dans un autre onglet au même instant ajoute une ligne d'historique entre le ménage et la
-      // suppression (clé étrangère) : un second essai suffit
-      await remove().catch(remove)
+      // sessions fermées d'abord : plus aucun ajout (vidéo lancée dans un autre onglet…) ne peut suivre. Un ajout déjà en
+      // cours peut encore glisser une ligne entre le ménage de l'historique et la suppression (clé étrangère) : nouvel essai.
+      await write(req.payload, m.id, { sessionVersion: { $inc: 1 } })
+      for (let attempt = 1; ; attempt++) {
+        try {
+          await req.payload.delete({ collection: 'members', id: m.id, overrideAccess: true })
+          break
+        } catch (error) {
+          if (attempt >= 3) throw error
+          await new Promise((resolve) => setTimeout(resolve, 150 * attempt))
+        }
+      }
       return json({ ok: true }, 200, clearCookies())
     },
   },

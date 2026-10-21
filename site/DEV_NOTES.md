@@ -237,9 +237,20 @@ articles, événements), département préféré (météo, info, sorties), profi
   `req.user`), `historyPaused`, `lastLoginAt` et `consentAt` ne sont jamais modifiés et l'accord `newsletter` peut être
   retiré mais pas donné : une fiche restée ouverte n'écrase pas les choix faits entre-temps par le membre. Changer
   l'e-mail ou suspendre un compte invalide aussi les liens envoyés (jetons effacés).
-- **Blocage après 5 erreurs** : `reserveAttempt()` compte l'essai en une seule requête SQL (`update … where lock_until
-  is null or lock_until <= now() returning id`) AVANT de vérifier le mot de passe, à la connexion comme pour le mot de
-  passe actuel demandé par `/mot-de-passe` et `/supprimer`. Adresse sans compte : même réponse (`allowKey()` en mémoire).
+- **Blocage après 5 erreurs** : `reserveAttempt()` compte l'essai de connexion en une seule requête SQL (`update … where
+  lock_until is null or lock_until <= now() returning id`) AVANT de vérifier le mot de passe. Adresse sans compte :
+  mêmes règles en mémoire (`reserveUnknown()`), et un mot de passe vide répond 401 sans rien compter, pour que ni le code
+  ni la durée de la réponse ne disent si l'adresse est inscrite. Le mot de passe actuel demandé par `/mot-de-passe` et
+  `/supprimer` a son propre compteur par membre (`allowCurrentPassword()`, 5 par quart d'heure) : les essais de connexion
+  d'un tiers ne bloquent pas ces actions.
+- **Écritures conditionnelles** (`writeIf()` : `update … where id = … and <état lu> returning`) : la confirmation à la
+  connexion n'aboutit que si jeton et mot de passe n'ont pas changé entre-temps (réinscription concurrente), une
+  réinscription ne remplace qu'un compte toujours non confirmé et non suspendu, et les liens « nouveau mot de passe » /
+  confirmation ne sont enregistrés et envoyés que si l'adresse n'a pas changé entre-temps. Suppression du compte :
+  sessions fermées d'abord, puis jusqu'à trois essais (une ligne d'historique ajoutée au même instant bloque la clé
+  étrangère). Restent tolérés : « Ma liste » peut dépasser 500 de quelques lignes sur des ajouts simultanés, et une fiche
+  ouverte dans l'administration puis enregistrée tard peut encore retirer un accord e-mail donné entre-temps (dans le
+  sens sûr : jamais en ajouter un).
 - **Confirmation de l'adresse** : `/compte/verifier?token=…` n'écrit rien ; il garde le jeton une heure dans le cookie
   httpOnly `sw_confirmation` et ouvre `/connexion?confirmer=1&email=…`. La connexion confirme le compte si ce cookie
   correspond au jeton en cours ET que le mot de passe est le bon (un tiers qui inscrit l'adresse d'un autre, ou un

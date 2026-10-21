@@ -35,7 +35,7 @@ export const clearCookies = (): string[] => [cookie(SESSION_COOKIE, '', null, tr
  * Jeton du lien de confirmation, gardé une heure dans un cookie httpOnly par /compte/verifier : la confirmation se fait
  * ensuite à la connexion, avec le mot de passe choisi à l'inscription (le jeton ne reste pas dans l'adresse de la page).
  */
-export const confirmCookie = (token: string): string => cookie(CONFIRM_COOKIE, encodeURIComponent(token), new Date(Date.now() + 60 * 60 * 1000), true)
+export const confirmCookie = (token: string): string => cookie(CONFIRM_COOKIE, token, new Date(Date.now() + 60 * 60 * 1000), true)
 export const clearConfirmCookie = (): string => cookie(CONFIRM_COOKIE, '', null, true)
 
 export function cookieValue(header: string | null, name: string): string | null {

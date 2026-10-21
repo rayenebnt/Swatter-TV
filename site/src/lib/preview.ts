@@ -93,7 +93,8 @@ export function safePath(value: string | null | undefined): string {
   // chemin normalisé et encodé en ASCII (il finit dans l'en-tête Location de la redirection)
   try {
     const url = new URL(value, 'http://site.invalid')
-    return url.origin === 'http://site.invalid' ? `${url.pathname}${url.search}${url.hash}` : '/'
+    // « /.//autre-site » devient « //autre-site » une fois normalisé : une adresse extérieure
+    return url.origin === 'http://site.invalid' && !url.pathname.startsWith('//') ? `${url.pathname}${url.search}${url.hash}` : '/'
   } catch {
     return '/'
   }

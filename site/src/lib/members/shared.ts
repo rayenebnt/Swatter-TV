@@ -128,7 +128,8 @@ export function safeReturn(v: unknown, fallback = '/compte'): string {
   } catch {
     return fallback
   }
-  if (url.origin !== base || /^\/(admin|api|_next|apercu)(\/|$)/i.test(url.pathname)) return fallback
+  // « /.//autre-site » devient « //autre-site » une fois normalisé : une adresse extérieure
+  if (url.origin !== base || url.pathname.startsWith('//') || /^\/(admin|api|_next|apercu)(\/|$)/i.test(url.pathname)) return fallback
   return `${url.pathname}${url.search}${url.hash}`
 }
 

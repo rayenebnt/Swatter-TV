@@ -1,3 +1,5 @@
+import config from '@payload-config'
+import { getPayload } from 'payload'
 import { AccountData } from '@/components/members/space/AccountData'
 import { requireMember, spaceMetadata } from '@/components/members/space/guard'
 import { PasswordForm } from '@/components/members/space/PasswordForm'
@@ -10,13 +12,18 @@ export const dynamic = 'force-dynamic'
 
 export const metadata = spaceMetadata('Mon profil')
 
-const countOf = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
-
 /** Profil du membre : ses informations, son mot de passe et ses données (téléchargement, déconnexion, suppression). */
 export default async function SpaceProfilePage() {
   const member = await requireMember('/compte/profil')
   const profile = toProfile(member)
   const since = formatDate(member.createdAt).replace(/^1 /, '1er ')
+  // nombre de contenus effacés avec le compte (rappelés dans la confirmation de suppression)
+  const payload = await getPayload({ config })
+  const [history, favorites] = await Promise.all(
+    (['member-history', 'member-favorites'] as const).map((collection) =>
+      payload.count({ collection, where: { member: { equals: member.id } }, overrideAccess: true }).then((r) => r.totalDocs, () => null),
+    ),
+  )
   return (
     <div className="container section--tight space-page">
       <SectionHead title="Mon profil" subtitle="Vos informations, votre mot de passe et vos données personnelles." />
@@ -31,7 +38,7 @@ export default async function SpaceProfilePage() {
         </section>
         <section className="space-panel space-panel--wide" aria-labelledby="mes-donnees-titre">
           <h3 id="mes-donnees-titre">Mes données</h3>
-          <AccountData historyCount={countOf(member.historyCount)} favoritesCount={countOf(member.favoritesCount)} />
+          <AccountData historyCount={history} favoritesCount={favorites} />
         </section>
       </div>
     </div>
