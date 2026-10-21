@@ -116,7 +116,46 @@ npm run typecheck      # TypeScript
 npm run lint           # ESLint
 npm run payload run src/scripts/init-db.ts   # tables + premier administrateur
 npm run seed           # contenus de départ « Exemple » (efface les contenus)
+npm run test:unit      # tests unitaires (quelques secondes, sans base)
+npm run test:integration   # tests d'intégration (Payload sur la base <base>_tests, recréée)
+npm run test:complet   # avant une livraison : TypeScript, ESLint, tests unitaires, d'intégration et de bout en bout
 ```
+
+## Tests
+
+Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant une livraison : `npm run test:complet`.
+
+- **Unitaires** (`tests/unit/*.test.ts`, Vitest, environnement node) : logique pure de `src/`, sans base ni réseau ni
+  écriture sur le disque. Dates figées par `vi.useFakeTimers()` puis `vi.setSystemTime()` (heure de Paris, changements
+  d'heure). Une fonction interne à tester est exportée (`export` seulement, sans autre changement).
+- **Intégration** (`tests/integration/*.test.ts`) : Payload complet sur une base dédiée `<base>_tests`, recréée vide à
+  chaque lancement par `global-setup.ts` (schéma par `push` dans un processus à part, puis les comptes ADMIN et EDITOR
+  d'`accounts.ts`). Les fichiers passent l'un après l'autre, avec une seule instance de Payload (`testPayload()`). Outils
+  d'`helpers.ts` :
+  - `api(chemin, { method, body, cookie, token, origin, headers })` appelle l'API REST (`/api…`) par `handleEndpoints` de
+    Payload, sans serveur : authentification, droits, hooks et routes personnalisées comme sur le site ; `apiJson()` lit
+    aussi le corps. L'en-tête `Origin` du site est ajouté aux requêtes qui modifient (`origin: null` pour l'omettre) ;
+  - `CookieJar` suit les cookies comme un navigateur (sessions des membres) ;
+  - `adminToken()`, `editorToken()` (en-tête `Authorization: JWT …`) ; `unique(préfixe)` pour des données uniques.
+
+  Les limites anti-abus de l'espace membres comptent par adresse IP : un en-tête `x-forwarded-for` différent par test.
+  Pas de SMTP : les e-mails ne partent pas, `vi.spyOn(payload, 'sendEmail')` pour les vérifier. Faux services :
+  `startOpenMeteoMock(port)` (`tests/mocks/open-meteo.mjs`) et `startYoutubeMock(port)` (`tests/e2e/youtube-mock.ts`),
+  sur les ports de `vitest.config.ts` (`TEST_METEO_MOCK_PORT`, `TEST_YOUTUBE_MOCK_PORT`). `TEST_DATABASE_NAME` change le
+  nom de la base (deux lancements en même temps). Payload ne ferme pas son pool PostgreSQL à `destroy()` :
+  `closePayload()` (appelé par `setup.ts`) le ferme, avec un délai maximal, sans quoi Vitest ne se termine pas.
+- **Bout en bout** (`tests/e2e/*.spec.ts`, Playwright, projets `bureau` et `mobile`) : contre un site de production.
+  `npm run test:complet` en construit un à part (`.next-test`, port 3100) sur la base `<base>_e2e`, remplie par les
+  migrations, `init-db` et les contenus de départ, avec de faux YouTube et Open-Meteo. Outils de `tests/e2e/helpers.ts` :
+  `watchErrors` (erreurs JavaScript, console, réponses HTTP en erreur), `expectNoHorizontalOverflow`, `expectSeo`,
+  `settle`, `linksMatching`, `expectPlayer`, `firstDoc`. Connexion administrateur par l'API, dans un `describe` en série
+  (les sessions Payload d'un même compte s'écrasent). Accessibilité : `@axe-core/playwright`.
+- **Variables lues par le site pour les tests** : `MEDIA_DIR` (dossier des médias, `media/` par défaut), `NEXT_DIST_DIR`
+  (dossier de construction, `.next` par défaut ; un autre dossier utilise `tsconfig.next-test.json`, pour que la
+  construction ne réécrive pas `tsconfig.json`), `MEMBER_RATE_FACTOR`, `OPEN_METEO_URL`, `YOUTUBE_BASE`,
+  `YOUTUBE_THUMB_BASE`.
+- **Versions** : Vitest 4 et Vite 7 (`overrides` de `package.json`) : Vitest 5 et Vite 8 font échouer `npm install`
+  (« Cannot read properties of null (reading 'edgesOut') »).
 
 ## Notes d'intégration (mises à jour en cours de développement)
 

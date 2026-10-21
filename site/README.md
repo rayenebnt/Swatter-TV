@@ -20,7 +20,7 @@ pour les conventions de code et les contrats entre rubriques, voir **[DEV_NOTES.
 | **Plugins Payload** | SEO (bloc « SEO » des contenus), redirections, stockage S3 facultatif (S3, Cloudflare R2, Scaleway…) |
 | **hls.js** | lecture des flux HLS (direct, webcams) |
 | **Open-Meteo** | prévisions météo (sans clé d’API), importées toutes les heures |
-| **Playwright** | tests de bout en bout (bureau 1440 px et mobile 390 px) |
+| **Vitest** et **Playwright** | tests unitaires, d’intégration (Payload sur une base de test) et de bout en bout (bureau 1440 px et mobile 390 px) |
 
 Styles en CSS natif (jetons de la maquette dans `src/styles/globals.css`, un fichier par rubrique), aucune bibliothèque d’interface.
 
@@ -28,7 +28,8 @@ Styles en CSS natif (jetons de la maquette dans `src/styles/globals.css`, un fic
 
 - **Node.js 22 LTS** (20.18.1 au minimum) et npm ;
 - **PostgreSQL 14 ou plus récent** (16 conseillé, c’est la version de `docker-compose.yml`) ;
-- pour les tests : le navigateur Chromium de Playwright (`npx playwright install --with-deps chromium`).
+- pour les tests : le navigateur Chromium de Playwright (`npx playwright install --with-deps chromium`) et un compte
+  PostgreSQL autorisé à créer des bases (voir « Tests »).
 
 ## Installation locale
 
@@ -125,7 +126,9 @@ npm run dev
 | `npm run generate:importmap` | régénère `src/app/(payload)/admin/importMap.js` après l’ajout d’un composant d’administration |
 | `npm run payload migrate:create <nom>` | crée une migration à partir des changements de schéma |
 | `npm run payload migrate` / `migrate:status` | applique les migrations / affiche leur état |
-| `npm run test:e2e` | tests de bout en bout (voir plus bas) |
+| `npm run test:complet` | **avant une livraison** : TypeScript, ESLint, tests unitaires, d’intégration et de bout en bout, sans toucher à la base de travail (voir « Tests ») |
+| `npm test` | tests unitaires et d’intégration |
+| `npm run test:unit` / `test:integration` / `test:e2e` | un seul niveau de tests (voir « Tests ») |
 
 ## Structure du projet
 
@@ -149,7 +152,10 @@ src/
   styles/               globals.css (jetons et composants communs) + un fichier par rubrique
 seed/assets/            clip vidéo d’exemple du direct (contenus de départ)
 public/visuels/         visuels de repli quand un contenu n’a pas d’image
-tests/e2e/              tests Playwright
+tests/unit/             tests unitaires (Vitest)
+tests/integration/      tests d’intégration : Payload sur une base de test (Vitest)
+tests/e2e/              tests de bout en bout (Playwright) ; tests/mocks/ : faux Open-Meteo
+scripts/test-complet.mjs  npm run test:complet
 ```
 
 Conventions (données côté serveur via `safe()`, ISR, SEO, images, accessibilité, `prefers-reduced-motion`…) :
@@ -335,37 +341,79 @@ archive du dossier `media/`. Avec S3 / R2, activez le versionnage du bucket ou s
   redémarrage du site (`docker compose logs migrate` en cas de doute).
 - **Dépendances** : tous les paquets `payload` et `@payloadcms/*` (dont `@payloadcms/live-preview-react`) doivent garder **exactement la même version** ; mettez-les
   à jour ensemble, avec Next.js et React, après lecture des notes de version. Puis `npm run generate:importmap`,
-  `npm run generate:types`, `npm run typecheck`, `npm run lint`, `npm run build` et les tests de bout en bout ; une
+  `npm run generate:types` puis `npm run test:complet` (TypeScript, ESLint, construction et tous les tests) ; une
   migration est nécessaire si la mise à jour change le schéma (`migrate:create` ne trouve rien sinon).
 - **Système** : reconstruisez régulièrement l’image pour les correctifs de sécurité (`docker compose build --pull`,
   `docker compose pull db`). Un changement de version majeure de PostgreSQL (16 → 17) passe par une sauvegarde puis une
   restauration.
 
-## Tests de bout en bout
+## Tests
 
 ```bash
-npx playwright install --with-deps chromium        # une seule fois
-# Contre un serveur déjà démarré (développement ou production), base remplie par npm run seed :
+npm run test:complet                 # tout, avant une livraison (environ 10 minutes)
+npm run test:complet -- --rapide     # TypeScript, ESLint, tests unitaires et d’intégration (environ 1 minute)
+npm run test:complet -- --e2e        # seulement les tests de bout en bout
+npm run test:complet -- --garder     # laisse le site de test ouvert à la fin (http://localhost:3100), Ctrl+C pour l’arrêter
+```
+
+**Prérequis** : PostgreSQL démarré (`docker start swatter-db`), `npm install`, et une seule fois le navigateur des tests
+(`npx playwright install --with-deps chromium`). Le compte PostgreSQL de `.env` doit pouvoir créer des bases : c’est le
+cas du conteneur Docker ; avec un PostgreSQL installé sur la machine :
+`sudo -u postgres psql -c "ALTER ROLE swatter CREATEDB;"`. Aucun accès à Internet n’est nécessaire.
+
+`test:complet` ne touche ni à la base de travail, ni au dossier `media/`, ni à la construction `.next` : `npm run dev`
+peut rester ouvert. Il travaille sur ses propres bases, recréées à chaque lancement et nommées d’après la base de
+travail (`swatter_tests` pour les tests d’intégration ; `swatter_e2e` pour ceux de bout en bout, remplie par les
+migrations, le premier administrateur et les contenus de départ), ses
+propres médias (`.tests/`), sa propre construction de production (`.next-test/`) et son propre serveur (port 3100,
+`TEST_PORT`), avec de faux YouTube et Open-Meteo. Il affiche un bilan étape par étape et se termine en erreur si une
+étape échoue.
+
+| Commande | Effet |
+|---|---|
+| `npm test` | tests unitaires et d’intégration |
+| `npm run test:unit` | tests unitaires : logique pure, sans base (quelques secondes) |
+| `npm run test:integration` | tests d’intégration : Payload complet sur la base `swatter_tests`, recréée à chaque lancement (environ 15 secondes) |
+| `npm run test:e2e` | tests de bout en bout contre un serveur déjà démarré (voir plus bas) |
+| `npx vitest` | tests unitaires et d’intégration relancés à chaque modification, pendant le développement |
+
+Écrire un test (outils, conventions) : voir [DEV_NOTES.md](DEV_NOTES.md), « Tests ».
+
+### Ce qui est vérifié
+
+- `tests/unit/` : logique pure (adresses des contenus…) ;
+- `tests/integration/` : socle (base de test isolée, comptes et rôles de l’équipe) ;
+- `tests/e2e/` (projets `bureau` 1440 × 900 et `mobile` 390 × 844, tactile) :
+  - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
+    horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
+    canonique et JSON-LD valides ; administration et API joignables ; tâche planifiée refusée sans secret ;
+  - `rubriques.spec.ts` : contenu de chaque rubrique (accueil complet, info, météo, programme TV, agenda, webcams,
+    vidéos, replay, direct, recherche, page éditoriale et redirections) ;
+  - `interactions.spec.ts` : recherche au clavier, bandeau cookies, menu mobile, lien d’évitement ;
+  - `contact.spec.ts` : bouton « Proposer une info », champs vérifiés, robots ignorés ;
+  - `members.spec.ts` : espace membres fermé sans connexion, inscription, mot de passe oublié, retours sûrs après la
+    connexion, pages lisibles sur mobile ;
+  - `admin.spec.ts` (bureau, en série) : tableau de bord, aide, grille et recopie de semaine, Top 10, éditeurs,
+    brouillons et aperçu en direct, direct Twitch, import YouTube (faux YouTube), blocage après 5 mauvais mots de passe,
+    parcours complet d’un membre et sa gestion dans « Membres du site ».
+
+### Tests de bout en bout contre un serveur déjà démarré
+
+```bash
+# Serveur de développement ou de production, base remplie par npm run seed :
 E2E_BASE_URL=http://localhost:3000 npx playwright test
-# Ou build de production puis tests (« npm run start » est lancé automatiquement) :
+# Ou construction de production puis tests (« npm run start » est lancé automatiquement) :
 npm run build && npm run test:e2e
 # Import de la chaîne YouTube, avec un faux YouTube local (tests/e2e/youtube-mock.ts) : serveur lancé avec
 # YOUTUBE_BASE=http://127.0.0.1:8765 YOUTUBE_THUMB_BASE=http://127.0.0.1:8765/vi, puis
 E2E_YOUTUBE_MOCK_PORT=8765 E2E_BASE_URL=http://localhost:3000 npx playwright test
 ```
 
-Deux projets : `bureau` (1440 × 900) et `mobile` (390 × 844, tactile). Les fichiers de `tests/e2e/` :
-
-- `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement horizontal,
-  aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL canonique et JSON-LD
-  valides ; administration et API joignables ; tâche planifiée refusée sans secret ;
-- `rubriques.spec.ts` : contenu de chaque rubrique (accueil complet, info, météo, programme TV, agenda,
-  webcams, vidéos, replay, direct, recherche, page éditoriale et redirections) ;
-- `interactions.spec.ts` : recherche au clavier, bandeau cookies, menu mobile, lien d’évitement ;
-- `admin.spec.ts` (bureau) : tableau de bord, page d’aide, outil de la grille des programmes, recopie de semaine refusée
-  proprement, rubriques techniques masquées aux éditeurs. Identifiants : `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` (par défaut
-  ceux du poste de développement) ; sans compte valide, ces tests sont ignorés.
-
-Les adresses de détail sont lues dans l’API REST : sans données, les tests concernés sont ignorés. Le Chromium de Playwright
-ne décode pas le H.264 : les MP4 de démonstration y apparaissent en « Vidéo indisponible ». Les tests vérifient donc la
-présence du lecteur, pas la lecture. Options utiles : `--project=mobile`, `-g agenda`, `--ui`.
+Ces tests écrivent dans la base du serveur visé (comptes de membres `e2e-…@example.com`, messages, brouillons, qu’ils
+suppriment en partie) : préférez `npm run test:complet -- --e2e`, qui utilise sa propre base. Identifiants de
+l’administration : `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` (par défaut ceux qu’`init-db` crée sans `ADMIN_EMAIL` :
+admin@swatter-tv.fr / swatter-admin-2026) ; sans compte
+valide, les tests de l’administration sont ignorés. Les adresses de détail sont lues dans l’API REST : sans données, les
+tests concernés sont ignorés. Le Chromium de Playwright ne décode pas le H.264 : les MP4 de démonstration y apparaissent
+en « Vidéo indisponible » ; les tests vérifient donc la présence du lecteur, pas la lecture. Options utiles :
+`--project=mobile`, `-g agenda`, `--ui`.
