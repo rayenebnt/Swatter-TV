@@ -361,8 +361,23 @@ describe('une requête en échec n’empêche pas le tableau de bord de s’affi
       messages: null,
       meteo: { auto: true, updatedAt: null },
       missingImages: { videos: 0, replays: 0 },
+      analyticsId: null,
       recent: [],
       members: null,
     })
+  })
+})
+
+describe('mesure d’audience', () => {
+  const analytics = async (settings: Doc) => (await dashboard({}, { settings })).analyticsId
+
+  it('ID de mesure publié : Google Analytics actif (lien vers les statistiques)', async () => {
+    expect(await analytics({ analytics: { measurementId: 'G-AB12CD34EF' } })).toBe('G-AB12CD34EF')
+  })
+
+  it('aucun ID, ou un ID mal formé : aucune mesure annoncée', async () => {
+    for (const settings of [{}, { analytics: null }, { analytics: { measurementId: '' } }, { analytics: { measurementId: 'UA-1234-1' } }]) {
+      expect(await analytics(settings), JSON.stringify(settings)).toBeNull()
+    }
   })
 })

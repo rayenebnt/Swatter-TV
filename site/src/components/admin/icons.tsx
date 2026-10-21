@@ -28,6 +28,7 @@ export type IconName =
   | 'redirect'
   | 'mail'
   | 'download'
+  | 'chart'
 
 const PATHS: Record<IconName, ReactNode> = {
   video: (
@@ -161,6 +162,12 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="m4 7 8 6 8-6" />
+    </>
+  ),
+  chart: (
+    <>
+      <path d="M4 4v16h16" />
+      <path d="M8 16v-4M12 16V8M16 16v-6" />
     </>
   ),
   download: (

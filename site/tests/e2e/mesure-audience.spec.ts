@@ -101,6 +101,14 @@ test('accord retiré depuis « Gestion des cookies » : envoi coupé et cookies 
   expect((await gtagCommands(page)).at(-1)).toEqual(['consent', 'update', { analytics_storage: 'denied' }])
 })
 
+test('tableau de bord : Google Analytics actif, lien « Voir les statistiques » vers Google Analytics', async () => {
+  const res = await admin!.send('GET', '/admin')
+  expect(res.ok()).toBe(true)
+  const html = await res.text()
+  expect(html).toContain(`Google Analytics actif (${ID})`)
+  expect(html).toMatch(/href="https:\/\/analytics\.google\.com\/analytics\/web\/"[^>]*target="_blank"/)
+})
+
 test('choix de plus de 6 mois : expiré, le bandeau revient et Google Analytics n’est pas chargé', async ({ page, context }) => {
   const scripts = await fakeGoogle(context)
   await page.goto('/')

@@ -173,7 +173,9 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   effacés (`clearGaCookies`, nom d'hôte et domaine principal). Pages vues : la première par `config`, les suivantes par
   la mesure améliorée de GA4 (« changements d'historique », active par défaut sur le flux). Le choix des cookies est
   gardé 6 mois (CNIL, page Vie privée). Le test de bout en bout (`mesure-audience.spec.ts`) tourne dans un projet
-  Playwright lancé après les autres : il active l'ID sur tout le site.
+  Playwright lancé après les autres : il active l'ID sur tout le site. Tableau de bord : ligne « Mesure d'audience »
+  (`analyticsId` de dashboard-data) avec le lien « Voir les statistiques » vers analytics.google.com (l'ID de mesure ne
+  permet pas de viser la propriété : Google demande de la choisir).
 - **Pages introuvables** : `notFound()` répond 404, avec le titre et `noindex` dans le HTML du serveur, mais Next 16 envoie
   le contenu de `not-found.tsx` dans les données de la page : il s'affiche avec le JavaScript (visiteurs, Google), pas sans.
   C'est le comportement de Next 16.3 lui-même (vérifié sur une application minimale) ; `global-not-found` (expérimental)

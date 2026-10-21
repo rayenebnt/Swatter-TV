@@ -13,6 +13,8 @@ type Tone = 'ok' | 'warn' | 'off'
 const TYPE_LABELS: Record<RecentCollection, string> = { videos: 'Vidéo', articles: 'Info', events: 'Agenda', replays: 'Replay' }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
+/** Rapports de Google Analytics (le compte Google de la chaîne y choisit la propriété « Swatter TV »). */
+const ANALYTICS_URL = 'https://analytics.google.com/analytics/web/'
 /** Ligne d'état dont la requête a échoué : ni « tout va bien » ni « rien à faire » par défaut. */
 const UNAVAILABLE = 'Information indisponible pour le moment : rechargez la page dans un instant'
 
@@ -242,6 +244,18 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
               }
               href={collection('messages')}
             />
+            <StatusRow
+              icon="chart"
+              label="Mesure d’audience"
+              tone={data.analyticsId ? 'ok' : 'off'}
+              value={
+                data.analyticsId
+                  ? `Google Analytics actif (${data.analyticsId}) : visiteurs qui ont accepté la mesure d’audience`
+                  : 'Aucun ID de mesure : la fréquentation du site n’est pas mesurée (guide, partie 22)'
+              }
+              href={global('settings')}
+              external={data.analyticsId ? { href: ANALYTICS_URL, label: 'Voir les statistiques' } : undefined}
+            />
             {isAdmin && data.members && (
               <StatusRow
                 icon="member"
@@ -308,7 +322,17 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
   )
 }
 
-function StatusRow({ icon, label, value, tone, href }: { icon: IconName; label: string; value: string; tone: Tone; href: string }) {
+type StatusRowProps = {
+  icon: IconName
+  label: string
+  value: string
+  tone: Tone
+  href: string
+  /** lien vers un autre site, sous le texte (ouvert dans un nouvel onglet) */
+  external?: { href: string; label: string }
+}
+
+function StatusRow({ icon, label, value, tone, href, external }: StatusRowProps) {
   const toneLabel = tone === 'ok' ? 'En place' : tone === 'warn' ? 'À vérifier' : 'Inactif'
   return (
     <li className={`sw-status__row sw-status__row--${tone}`}>
@@ -318,6 +342,13 @@ function StatusRow({ icon, label, value, tone, href }: { icon: IconName; label: 
       <span className="sw-status__text">
         <strong>{label}</strong>
         <span>{value}</span>
+        {external && (
+          <a className="sw-status__external" href={external.href} target="_blank" rel="noopener noreferrer">
+            {external.label}
+            <AdminIcon name="external" />
+            <span className="sw-visually-hidden"> (nouvel onglet)</span>
+          </a>
+        )}
       </span>
       <span className="sw-status__tone">{toneLabel}</span>
       <Link prefetch={false} className="sw-status__edit" href={href} aria-label={`Modifier : ${label}`}>

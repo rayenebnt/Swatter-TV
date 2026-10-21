@@ -111,6 +111,10 @@ test.describe('administration', () => {
     }
     await expect(page.getByRole('heading', { name: 'Sur le site en ce moment' })).toBeVisible()
     expect(await page.locator('.sw-status__row').count()).toBeGreaterThanOrEqual(8)
+    // mesure d'audience : sans ID de mesure (contenus de départ), rien n'est mesuré et le lien vers les réglages est proposé
+    const audience = page.locator('.sw-status__row').filter({ hasText: 'Mesure d’audience' })
+    await expect(audience).toContainText('Aucun ID de mesure')
+    await expect(audience.getByRole('link', { name: 'Modifier : Mesure d’audience' })).toHaveAttribute('href', '/admin/globals/settings')
     await expect(page.getByRole('heading', { name: 'Derniers contenus modifiés' })).toBeVisible()
 
     await page.getByRole('link', { name: /Publier une vidéo/ }).click()

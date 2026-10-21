@@ -98,7 +98,8 @@ Après la connexion, le **tableau de bord** rassemble l’essentiel :
   **Mettre un replay en ligne**, **Publier une vidéo** ;
 - **Gérer le site** : **Accueil et direct**, **La Météo**, **Programme TV**, **Webcams**, **Publicités**, **Médiathèque** ;
 - **Sur le site en ce moment** : ce que voient les visiteurs (le direct, la vidéo du jour, l’info du jour, la sortie du
-  week-end, le programme TV, le flash info, les publicités, la météo). Une pastille **À vérifier** signale un oubli, par
+  week-end, le programme TV, le flash info, les publicités, la météo, la mesure d’audience avec le lien **Voir les
+  statistiques** vers Google Analytics). Une pastille **À vérifier** signale un oubli, par
   exemple « Rien de prévu : sam. 24 » pour le programme TV ; le lien **Modifier** mène directement au bon endroit.
   « Information indisponible » : la vérification n’a pas pu se faire à cet instant ; rechargez la page ;
 - **Derniers contenus modifiés** : pour reprendre un contenu en un clic ; la mention **À publier** signale des
@@ -616,6 +617,12 @@ Google Analytics vous montre combien de personnes visitent le site, les pages le
    annoncée sur la page Vie privée) et **Signaux Google** désactivés (le site les désactive de son côté).
 
 Pour arrêter la mesure : videz la case **ID de mesure** et publiez.
+
+**Voir les statistiques** : sur le tableau de bord de l’administration, ligne **Mesure d’audience**, le lien **Voir les
+statistiques** ouvre Google Analytics dans un nouvel onglet (connectez-vous avec le compte Google de la chaîne). Les
+rapports utiles : **Temps réel** (les visiteurs du moment), **Engagement › Pages et écrans** (les pages les plus vues),
+**Acquisition** (d’où viennent les visiteurs), **Utilisateur › Technologie** (ordinateur ou mobile). Pour donner accès
+à un collègue : **Admin › Gestion des accès à la propriété**, rôle « Lecteur ».
 
 **Bon à savoir**
 

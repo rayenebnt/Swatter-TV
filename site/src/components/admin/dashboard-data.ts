@@ -5,6 +5,7 @@ import { runningAdsWhere } from '@/access'
 import { shiftDay, tvDay, tvDayStart } from '@/components/programme/model'
 import { loadItems } from '@/lib/members/items'
 import type { HistoryKind } from '@/lib/members/shared'
+import { isMeasurementId } from '@/lib/analytics'
 import { resolveVideo } from '@/lib/video'
 
 export type Featured = { id: number; title: string; picked: boolean } | null
@@ -25,6 +26,8 @@ export type DashboardData = {
   meteo: { auto: boolean; updatedAt: string | null }
   /** vidéos et replays sans image (image YouTube introuvable à l'enregistrement) */
   missingImages: { videos: number; replays: number }
+  /** ID de mesure de Google Analytics publié (null : aucune mesure d'audience) */
+  analyticsId: string | null
   recent: RecentItem[]
   /** espace membres ; null : aucun compte (le tableau de bord n'en parle pas) */
   members: MembersStats | null
@@ -207,6 +210,7 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     // heure de l'import, lue dans les prévisions (la date de modification de la fiche change aussi avec un bulletin)
     meteo: { auto: meteo?.autoUpdate !== false, updatedAt: (meteo?.forecast as { updatedAt?: string } | null | undefined)?.updatedAt ?? null },
     missingImages: { videos: videosNoImage, replays: replaysNoImage },
+    analyticsId: isMeasurementId(settings?.analytics?.measurementId) ? settings.analytics.measurementId : null,
     recent: recentItems,
     members: members && { ...members, signupOpen: settings?.members?.signupOpen !== false },
   }
