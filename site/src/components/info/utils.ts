@@ -118,11 +118,15 @@ export function hasOwnContent(content: Article['content']): boolean {
   return someNode(content?.root?.children, (n) => (typeof n.text === 'string' && n.text.trim() !== '') || (typeof n.type === 'string' && MEDIA_NODES.has(n.type)))
 }
 
+/** Blocs du contenu riche : jamais collés à leur voisin (« Au marché : Pommes Poires », pas « PommesPoires »). */
+const BLOCK_NODES = new Set(['paragraph', 'heading', 'quote', 'list', 'listitem', 'table', 'tablerow', 'tablecell'])
+
 const nodeText = (n: unknown): string => {
   if (!isNode(n)) return ''
   if (typeof n.text === 'string') return n.text
   if (n.type === 'linebreak') return ' '
-  return Array.isArray(n.children) ? n.children.map(nodeText).join('') : ''
+  const inner = Array.isArray(n.children) ? n.children.map(nodeText).join('') : ''
+  return typeof n.type === 'string' && BLOCK_NODES.has(n.type) ? ` ${inner} ` : inner
 }
 
 /** Texte brut du contenu riche, paragraphes séparés par une espace (description de repli). */
@@ -133,7 +137,8 @@ export function plainText(content: Article['content']): string {
 /** Texte coupé sur un mot, sans ponctuation pendante, terminé par « … ». */
 export function truncate(text: string, max: number): string {
   if (text.length <= max) return text
-  const cut = text.slice(0, max - 1)
+  // sans la moitié d'un émoji (paire de substitution) coupée en fin de texte, qui s'afficherait « � »
+  const cut = text.slice(0, max - 1).replace(/[\ud800-\udbff]$/, '')
   const space = cut.lastIndexOf(' ')
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s\u00a0,;:.!?\-–—(«"'’]+$/u, '')}…`
 }

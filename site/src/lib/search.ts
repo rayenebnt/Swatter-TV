@@ -41,20 +41,20 @@ type Ctx = {
 }
 
 /** Échappe les caractères spéciaux de LIKE (% _ \) ; l'apostrophe (droite ou courbe) devient « _ » (un caractère quelconque). */
-function likeExact(word: string): string {
+export function likeExact(word: string): string {
   let out = ''
   for (const ch of word) out += ch === "'" || ch === '’' ? '_' : /[\\%_]/.test(ch) ? `\\${ch}` : ch
   return out
 }
 
 /** Motif élargi : voyelles et « c » remplacés par « _ » (« meteo » → « m_t__ » trouve « Météo ») ; le filtre final trie ensuite. */
-function likeFuzzy(folded: string): string {
+export function likeFuzzy(folded: string): string {
   let out = ''
   for (const ch of folded) out += /[aeiouc']/.test(ch) ? '_' : /[\\%_]/.test(ch) ? `\\${ch}` : ch
   return out
 }
 
-function buildTerms(q: string): { terms: Term[]; words: string[] } {
+export function buildTerms(q: string): { terms: Term[]; words: string[] } {
   const clean = cleanQuery(q)
   const raw = splitWords(clean.toLowerCase())
   const folded = splitWords(foldText(clean))
@@ -104,13 +104,13 @@ async function collect<T extends { id: number }>(
 }
 
 /** Le mot commence-t-il un mot du texte (début, ou après un caractère qui n'est ni lettre ni chiffre) ? */
-function atWordStart(hay: string, word: string): boolean {
+export function atWordStart(hay: string, word: string): boolean {
   for (let i = hay.indexOf(word); i !== -1; i = hay.indexOf(word, i + 1)) if (i === 0 || !/[\p{L}\p{N}]/u.test(hay[i - 1])) return true
   return false
 }
 
 /** 0 : le titre commence par la requête ; 1 : un mot du titre commence par elle ; 2 : le titre la contient ; 3 : tous les mots sont dans le titre ; 4 : autres champs. */
-function tierOf(title: string, c: Ctx): number {
+export function tierOf(title: string, c: Ctx): number {
   const t = foldText(title)
   if (t.startsWith(c.phrase)) return 0
   let i = t.indexOf(c.phrase)

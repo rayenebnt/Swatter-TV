@@ -3,9 +3,10 @@ const BUILD = () => process.env.NEXT_PHASE === 'phase-production-build'
 /** Base injoignable ou saturée (connexion refusée, coupée, délai dépassé, arrêt du serveur PostgreSQL…). */
 function isConnectionError(error: unknown): boolean {
   const e = error as { code?: string; message?: string; cause?: unknown } | null
-  const codes = ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN', '57P01', '57P02', '57P03', '53300']
+  const codes = ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE', '57P01', '57P02', '57P03', '53300']
   if (e?.code && codes.includes(e.code)) return true
-  if (/ECONNREFUSED|ECONNRESET|ETIMEDOUT|ENOTFOUND|Connection terminated|connection timeout|terminating connection|too many clients/i.test(e?.message ?? '')) return true
+  const pattern = /ECONNREFUSED|ECONNRESET|ETIMEDOUT|ENOTFOUND|EHOSTUNREACH|ENETUNREACH|EPIPE|Connection terminated|connection timeout|terminating connection|too many clients/i
+  if (pattern.test(e?.message ?? '')) return true
   return e?.cause ? isConnectionError(e.cause) : false
 }
 

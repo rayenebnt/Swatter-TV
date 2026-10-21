@@ -16,7 +16,7 @@ export const metadata = spaceMetadata('Mon profil')
 export default async function SpaceProfilePage() {
   const member = await requireMember('/compte/profil')
   const profile = toProfile(member)
-  const since = formatDate(member.createdAt).replace(/^1 /, '1er ')
+  const since = formatDate(member.createdAt)
   // nombre de contenus effacés avec le compte (rappelés dans la confirmation de suppression)
   const payload = await getPayload({ config })
   const [history, favorites] = await Promise.all(

@@ -15,10 +15,12 @@ const toDate = (d: Date | string | number) => (d instanceof Date ? d : new Date(
 
 /** « 20:30 » */
 export const formatTime = (d: Date | string) => fmt({ hour: '2-digit', minute: '2-digit' }).format(toDate(d))
-/** « samedi 17 octobre » */
-export const formatDayLong = (d: Date | string) => fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(toDate(d))
-/** « 17 octobre 2026 » */
-export const formatDate = (d: Date | string) => fmt({ day: 'numeric', month: 'long', year: 'numeric' }).format(toDate(d))
+/** « 1 novembre » → « 1er novembre » : le premier jour du mois s'écrit « 1er » en français (Intl écrit « 1 »). */
+const premier = (s: string) => s.replace(/(^|\s)1(?=\s)/, '$11er')
+/** « samedi 17 octobre », « dimanche 1er novembre » */
+export const formatDayLong = (d: Date | string) => premier(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(toDate(d)))
+/** « 17 octobre 2026 », « 1er novembre 2026 » */
+export const formatDate = (d: Date | string) => premier(fmt({ day: 'numeric', month: 'long', year: 'numeric' }).format(toDate(d)))
 /** { weekday: 'Sam.', day: '17', month: 'Oct.' } pour les pastilles de date */
 export function dateChip(d: Date | string) {
   const date = toDate(d)
@@ -52,8 +54,9 @@ export function parisDateTime(day: string, time = '00:00'): Date {
 export function timeAgo(d: Date | string, now = new Date()): string {
   const diff = Math.max(0, now.getTime() - toDate(d).getTime()) / 60_000
   if (diff < 1) return 'À l’instant'
-  if (diff < 60) return `Il y a ${Math.round(diff)} min`
-  if (diff < 24 * 60) return `Il y a ${Math.round(diff / 60)} h`
+  // arrondi à l'unité inférieure : 59 min 40 s reste « Il y a 59 min », jamais « Il y a 60 min »
+  if (diff < 60) return `Il y a ${Math.floor(diff)} min`
+  if (diff < 24 * 60) return `Il y a ${Math.floor(diff / 60)} h`
   const days = Math.floor(diff / (24 * 60))
   if (days === 1) return 'Hier'
   if (days < 7) return `Il y a ${days} j`

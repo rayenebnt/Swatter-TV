@@ -2,11 +2,10 @@
 // et les chiffres de l'espace membres.
 import type { Payload, Where } from 'payload'
 import { runningAdsWhere } from '@/access'
-import { shiftDay, tvDay } from '@/components/programme/model'
-import { parisDateTime } from '@/lib/format'
+import { shiftDay, tvDay, tvDayStart } from '@/components/programme/model'
 import { loadItems } from '@/lib/members/items'
 import type { HistoryKind } from '@/lib/members/shared'
-import { twitchTarget } from '@/lib/video'
+import { resolveVideo } from '@/lib/video'
 
 export type Featured = { id: number; title: string; picked: boolean } | null
 
@@ -85,8 +84,8 @@ async function emptyDays(payload: Payload): Promise<string[]> {
     where: {
       and: [
         LIVE,
-        { startsAt: { greater_than_equal: parisDateTime(today, '02:00').toISOString() } },
-        { startsAt: { less_than: parisDateTime(shiftDay(today, 7), '02:00').toISOString() } },
+        { startsAt: { greater_than_equal: tvDayStart(today).toISOString() } },
+        { startsAt: { less_than: tvDayStart(shiftDay(today, 7)).toISOString() } },
       ],
     },
     depth: 0,
@@ -190,18 +189,9 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
   ])
 
   const live = settings?.live
-  const liveConfigured = Boolean(
-    live?.provider &&
-      (live.provider === 'youtube'
-        ? live.youtubeUrl
-        : live.provider === 'twitch'
-          ? twitchTarget(live.twitchUrl)
-          : live.provider === 'bunny'
-            ? live.bunnyVideoId
-            : live.provider === 'url'
-              ? live.url
-              : live.file),
-  )
+  // même règle que la page Direct (resolveVideo : un lien de chaîne YouTube n'est pas une vidéo) ; le fichier envoyé n'est
+  // pas chargé ici (depth: 0), sa présence suffit
+  const liveConfigured = Boolean(live?.provider && (live.provider === 'upload' ? live.file : resolveVideo(live)))
 
   return {
     live: { enabled: settings?.liveEnabled !== false, configured: liveConfigured },

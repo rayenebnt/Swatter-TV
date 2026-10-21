@@ -106,7 +106,7 @@ function dominant(codes: number[]): WeatherKind {
  * Temps représentatif d'une période à partir des codes horaires : les précipitations l'emportent dès `wetHours` heures,
  * sinon le temps dominant. (Le code quotidien d'Open-Meteo, le plus « sévère » de la journée, est trop pessimiste.)
  */
-function summarize(codes: number[], wetHours: number): { kind: WeatherKind; label: string } {
+export function summarize(codes: number[], wetHours: number): { kind: WeatherKind; label: string } {
   const wet = codes.filter((c) => isWet(wmoKind(c)))
   const pool = wet.length >= wetHours ? wet : codes
   const kind = dominant(pool)
@@ -138,7 +138,7 @@ const MORNING: Record<WeatherKind, string> = { sun: '', partly: '', cloud: '', f
 const CLEARING: Record<WeatherKind, string> = { sun: 'retour du soleil', partly: 'éclaircies', cloud: 'temps sec', fog: 'temps brumeux', rain: '', snow: '', storm: '' }
 
 /** Libellé principal du jour d'après l'évolution matin / après-midi / soirée (à défaut, le libellé WMO du jour). */
-function describeDay(parts: ForecastDay['parts'], city: ForecastCity): string {
+export function describeDay(parts: ForecastDay['parts'], city: ForecastCity): string {
   const [m, a, s] = parts.map((p) => p.kind)
   if (!m || !a || !s) return city.label
   if (m === 'fog' && a !== 'fog' && !isWet(a)) return AFTER_FOG[a]
@@ -286,7 +286,7 @@ function regionalNotes(day: ForecastDay, seed: number): string[] {
 }
 
 /** Bulletin en français naturel, sans « aujourd'hui » ni « demain » (il reste juste si l'import a pris du retard). */
-function writeBulletin(day: ForecastDay, previous: CityView | undefined): string {
+export function writeBulletin(day: ForecastDay, previous: CityView | undefined): string {
   const seed = seedOf(day.date)
   const weekday = formatDayLong(parisDateTime(day.date, '12:00')).split(' ')[0]
   const kinds = day.parts.length === 3 ? day.parts.map((p) => p.kind) : [day.main.kind, day.main.kind, day.main.kind]

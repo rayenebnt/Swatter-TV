@@ -36,7 +36,7 @@ function withLabels({ views: _views, ...day }: ForecastDay): MeteoDay {
   const chip = dateChip(at)
   const [weekday = '', ...rest] = formatDayLong(at).split(' ')
   // sans les prévisions détaillées des autres villes : inutiles au composant client
-  return { ...day, short: chip.weekday, num: chip.day, weekday: cap(weekday), dayMonth: rest.join(' ').replace(/^1 /, '1er ') }
+  return { ...day, short: chip.weekday, num: chip.day, weekday: cap(weekday), dayMonth: rest.join(' ') }
 }
 
 /**
@@ -89,5 +89,5 @@ export const getMeteo = cache(async (dept: DepartmentSlug | null = null): Promis
 export function updatedLabel(iso: string | null, today: string): string | null {
   if (!iso) return null
   const time = formatTime(iso)
-  return parisDay(iso) === today ? `Mis à jour à ${time}` : `Mis à jour le ${formatDayLong(iso).replace(/ 1 /, ' 1er ')} à ${time}`
+  return parisDay(iso) === today ? `Mis à jour à ${time}` : `Mis à jour le ${formatDayLong(iso)} à ${time}`
 }

@@ -12,9 +12,6 @@ type Row = { kind: FavoriteKind; itemId: number; at: string }
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 /** Accord du participe : « la vidéo regardée », « le replay regardé », « l'article ajouté »… */
 const agree = (kind: FavoriteKind, word: string) => `${word}${kind === 'video' ? 'e' : ''}`
-/** « 1 octobre » → « 1er octobre » */
-const firstOfMonth = (s: string) => s.replace(/(^|\s)1 /, '$11er ')
-
 /**
  * Lignes du membre (et de lui seul : filtre sur son numéro, lecture sans les règles d'accès de l'équipe), les plus
  * récentes d'abord, avec le nombre total de lignes.
@@ -73,11 +70,11 @@ async function entriesOf(
 function watchedAgo(row: Row): string {
   const ago = timeAgo(row.at)
   const done = agree(row.kind, 'Regardé')
-  return /^\d/.test(ago) ? `${done} le ${firstOfMonth(ago)}` : `${done} ${ago.charAt(0).toLowerCase()}${ago.slice(1)}`
+  return /^\d/.test(ago) ? `${done} le ${ago}` : `${done} ${ago.charAt(0).toLowerCase()}${ago.slice(1)}`
 }
 
 const watchedAt = (row: Row) => `${agree(row.kind, 'Regardé')} à ${formatTime(row.at)}`
-const savedOn = (row: Row) => `${agree(row.kind, 'Ajouté')} le ${firstOfMonth(formatDate(row.at))}`
+const savedOn = (row: Row) => `${agree(row.kind, 'Ajouté')} le ${formatDate(row.at)}`
 
 /** Dernières vidéos regardées encore en ligne (tableau de bord : bloc « Reprendre »). */
 export const recentHistory = (member: Member, show: number) => entriesOf(member, 'history', { scan: show * 3, show, note: watchedAgo })
@@ -105,7 +102,7 @@ export async function historyByDay(member: Member): Promise<{ groups: HistoryGro
     const day = parisDay(entry.at)
     let group = groups.at(-1)
     if (!group || group.day !== day) {
-      const long = firstOfMonth(cap(formatDayLong(entry.at)))
+      const long = cap(formatDayLong(entry.at))
       const label = day === today ? 'Aujourd’hui' : day === yesterday ? 'Hier' : day.slice(0, 4) === today.slice(0, 4) ? long : `${long} ${day.slice(0, 4)}`
       group = { day, label, entries: [] }
       groups.push(group)

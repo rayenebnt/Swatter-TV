@@ -1,11 +1,8 @@
 // Semaines et journées de la grille des programmes, partagées par l'outil de l'administration (client) et la recopie (serveur).
 import type { Where } from 'payload'
-import { shiftDay, tvDay } from '@/components/programme/model'
+import { shiftDay, tvDay, tvDayStart } from '@/components/programme/model'
 import { formatDayLong, parisDateTime, parisDay } from './format'
 import { TIMEZONE } from './site'
-
-/** Une journée TV commence à 2 h (la nuit appartient à la veille, comme sur la grille du site). */
-const DAY_CUTOFF = '02:00'
 
 /** Lundi (AAAA-MM-JJ) de la semaine contenant ce jour. */
 export function mondayOf(day: string): string {
@@ -17,9 +14,12 @@ export function mondayOf(day: string): string {
 /** Lundi de la semaine TV en cours. */
 export const currentMonday = (now = new Date()) => mondayOf(tvDay(now))
 
-/** Bornes d'une plage de journées TV : du jour `first` à 2 h au jour `first + days` à 2 h (heure de Paris), en ISO. */
+/**
+ * Bornes d'une plage de journées TV, en ISO : du jour `first` à 2 h au jour `first + days` à 2 h (la nuit appartient à la
+ * veille, comme sur la grille du site), avec la même coupure que `tvDay` les nuits de changement d'heure.
+ */
 function rangeBounds(first: string, days: number): { from: string; to: string } {
-  return { from: parisDateTime(first, DAY_CUTOFF).toISOString(), to: parisDateTime(shiftDay(first, days), DAY_CUTOFF).toISOString() }
+  return { from: tvDayStart(first).toISOString(), to: tvDayStart(shiftDay(first, days)).toISOString() }
 }
 
 /** Filtre des créneaux d'une plage de journées, au format du filtre de la liste de l'administration (« ou » → « et »). */

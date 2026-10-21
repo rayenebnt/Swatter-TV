@@ -20,14 +20,22 @@ export type ResolvedVideo =
   | { kind: 'hls'; src: string }
   | { kind: 'mp4'; src: string }
 
+/**
+ * Identifiant (11 caractères) d'une vidéo YouTube : lien de partage, de lecture, de Short, de direct ou de lecteur intégré
+ * (youtube.com ou youtube-nocookie.com). Une liste de lecture intégrée (embed/videoseries) ou un identifiant trop long : null.
+ */
 export function youtubeId(url: string): string | null {
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/)
+  const m = url.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/(?!videoseries)|shorts\/|live\/))([\w-]{11})(?![\w-])/)
   return m ? m[1] : /^[\w-]{11}$/.test(url) ? url : null
 }
 
 const TWITCH_NAME = /^[a-z0-9_]{3,25}$/i
 /** Pages de twitch.tv qui ne sont pas des chaînes. */
-const TWITCH_PAGES = new Set(['directory', 'downloads', 'p', 'search', 'settings', 'videos'])
+const TWITCH_PAGES = new Set(['directory', 'downloads', 'drops', 'inventory', 'login', 'p', 'search', 'settings', 'signup', 'subscriptions', 'turbo', 'videos', 'wallet'])
+/** Pages d'outils dont le deuxième segment est la chaîne : twitch.tv/popout/<chaîne>/chat, twitch.tv/moderator/<chaîne>. */
+const TWITCH_TOOLS = new Set(['embed', 'moderator', 'popout'])
+/** Domaines de Twitch qui mènent à une chaîne ou à une vidéo (pas clips.twitch.tv, dashboard.twitch.tv…). */
+const TWITCH_HOSTS = new Set(['twitch.tv', 'www.twitch.tv', 'm.twitch.tv', 'player.twitch.tv'])
 
 /**
  * Chaîne ou vidéo Twitch d'après ce qu'on a collé : « https://www.twitch.tv/swattertv », « twitch.tv/swattertv »,
@@ -43,7 +51,7 @@ export function twitchTarget(input: string | null | undefined): TwitchTarget | n
   } catch {
     return null
   }
-  if (!/(^|\.)twitch\.tv$/i.test(url.hostname)) return null
+  if (!TWITCH_HOSTS.has(url.hostname.toLowerCase())) return null
   const channel = url.searchParams.get('channel')
   const video = url.searchParams.get('video')?.replace(/^v/i, '')
   if (url.hostname.toLowerCase() === 'player.twitch.tv') {
@@ -52,7 +60,10 @@ export function twitchTarget(input: string | null | undefined): TwitchTarget | n
   }
   const [first, second] = url.pathname.split('/').filter(Boolean)
   if (first === 'videos') return second && /^\d+$/.test(second) ? { param: 'video', value: `v${second}` } : null
-  return first && TWITCH_NAME.test(first) && !TWITCH_PAGES.has(first.toLowerCase()) ? { param: 'channel', value: first.toLowerCase() } : null
+  const name = first && TWITCH_TOOLS.has(first.toLowerCase()) ? second : first
+  return name && TWITCH_NAME.test(name) && !TWITCH_PAGES.has(name.toLowerCase()) && !TWITCH_TOOLS.has(name.toLowerCase())
+    ? { param: 'channel', value: name.toLowerCase() }
+    : null
 }
 
 /**

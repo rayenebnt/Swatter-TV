@@ -26,7 +26,8 @@ export const foldPath = (path: string) => foldText(path).replace(/\/+$/, '')
 /** Nouvelle adresse d'une ancienne adresse ou d'une variante de casse d'une rubrique ; null sinon. */
 export function legacyTarget(path: string): string | null {
   const folded = foldPath(path)
-  const target = LEGACY[folded] ?? (folded !== path && SECTIONS.has(folded.split('/')[0]) ? `/${folded}` : null)
+  // Object.hasOwn : « /constructor » ou « /__proto__ » ne doivent pas trouver les propriétés héritées de tout objet
+  const target = Object.hasOwn(LEGACY, folded) ? LEGACY[folded] : folded !== path && SECTIONS.has(folded.split('/')[0]) ? `/${folded}` : null
   // Jamais vers l'adresse demandée elle-même (rubrique pas encore en ligne, par exemple)
   return target && target !== `/${path}` ? target : null
 }

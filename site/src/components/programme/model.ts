@@ -51,6 +51,12 @@ export function shiftDay(day: string, n: number): string {
  */
 export const tvDay = (d: Date = new Date()) => parisDay(new Date(d.getTime() - 2 * 60 * 60 * 1000))
 
+/**
+ * Début de la journée TV `day` : minuit à Paris plus deux heures réelles, la définition de `tvDay`. La nuit du passage à
+ * l'heure d'hiver, 2 h sonne deux fois : la journée commence au premier passage (pas au second, que donnerait 2 h à Paris).
+ */
+export const tvDayStart = (day: string) => new Date(parisDateTime(day).getTime() + 2 * 60 * 60 * 1000)
+
 /** Les jours proposés à partir d'aujourd'hui (journée TV en cours). */
 export const programmeDays = (today: string) => Array.from({ length: PROGRAMME_DAYS }, (_, i) => shiftDay(today, i))
 

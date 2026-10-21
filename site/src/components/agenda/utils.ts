@@ -20,8 +20,6 @@ export const AGENDA_VISUAL = '/visuels/t-crepuscule-a.webp'
 export const frenchSpaces = (s: string) => s.replace(/ (?=[:;!?»])/g, '\u00a0').replace(/« /g, '«\u00a0')
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
-/** « dimanche 1 novembre » → « dimanche 1er novembre » */
-const premier = (s: string) => s.replace(/(^|\s)1(?=\s)/, '$11er')
 
 /** Sur-titre d'une carte : la catégorie, ou « Sortie » pour « Autre ». */
 export const eventKicker = (category?: Event['category']) => (category && category !== 'autre' ? labelOf(EVENT_CATEGORIES, category) : 'Sortie')
@@ -54,7 +52,7 @@ export function eventStatus(e: Dates, now: Date): EventStatus {
 
 /** Pastille de date (début) et sa version lisible. */
 export function chipOf(e: Dates) {
-  return { ...dateChip(e.startDate), iso: parisDay(e.startDate), spoken: premier(formatDayLong(e.startDate)) }
+  return { ...dateChip(e.startDate), iso: parisDay(e.startDate), spoken: formatDayLong(e.startDate) }
 }
 
 /** « De 10:30 à 18:00 », « À 20:00 », « Toute la journée » (un seul jour) ; pour plusieurs jours, horaires de début et de fin. */
@@ -75,7 +73,7 @@ export function dateLabel(e: Dates, withYear = false): string {
   const startDay = parisDay(e.startDate)
   const endDay = lastDayOf(e)
   const year = (d: string) => (withYear ? ` ${d.slice(0, 4)}` : '')
-  const long = (d: string) => premier(formatDayLong(parisDateTime(d)))
+  const long = (d: string) => formatDayLong(parisDateTime(d))
   if (endDay <= startDay) return cap(`${long(startDay)}${year(startDay)}`)
   const sameYear = startDay.slice(0, 4) === endDay.slice(0, 4)
   const sameMonth = sameYear && startDay.slice(0, 7) === endDay.slice(0, 7)

@@ -60,6 +60,13 @@ async function copyRange(payload: Payload, req: PayloadRequest, first: string, d
   return { copied: source.docs.length, replaced: existing.totalDocs, target }
 }
 
+/** Jour AAAA-MM-JJ qui existe : « 2026-02-30 », que Date.parse accepte (2 mars), est refusé. */
+function isDay(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const date = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+
 /**
  * POST /api/schedule/copy-week { from: 'AAAA-MM-JJ', days?: 7 | 1, replace?: boolean }
  * days = 7 (par défaut) : la semaine contenant `from` ; days = 1 : la seule journée `from`.
@@ -70,7 +77,7 @@ export const copyWeekEndpoint: Endpoint = {
   handler: async (req) => {
     if (!req.user) return Response.json({ error: 'Connectez-vous pour modifier la grille.' }, { status: 401 })
     const body = ((await req.json?.().catch(() => null)) ?? {}) as { from?: unknown; days?: unknown; replace?: unknown }
-    const from = typeof body.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.from) && !Number.isNaN(Date.parse(body.from)) ? body.from : null
+    const from = isDay(body.from) ? body.from : null
     const days = body.days === 1 ? 1 : body.days === undefined || body.days === 7 ? 7 : null
     if (!from || !days) return Response.json({ error: 'Semaine ou journée manquante ou invalide.' }, { status: 400 })
     try {

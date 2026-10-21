@@ -34,7 +34,10 @@ export const COOKIES_EVENT = 'swatter:cookies'
 /** Durée de validité d'un choix : 13 mois (recommandation CNIL). */
 const MAX_AGE_MS = 395 * 24 * 60 * 60 * 1000
 
-/** Choix de la page en cours quand le stockage est bloqué (navigation privée stricte…). */
+/**
+ * Choix fait sur la page en cours que le stockage a refusé (navigation privée stricte, stockage plein…). Il l'emporte sur
+ * le choix enregistré, plus ancien : un refus ne doit jamais laisser s'appliquer un ancien accord.
+ */
 let memory: ConsentChoice | null = null
 
 function parse(raw: string | null): ConsentChoice | null {
@@ -63,7 +66,7 @@ function readRaw(): string | null {
 
 /** Choix enregistré, ou null (aucun choix, expiré, stockage indisponible, rendu serveur). */
 export function readConsent(): ConsentChoice | null {
-  return parse(readRaw()) ?? memory
+  return memory ?? parse(readRaw())
 }
 
 /** Enregistre un choix et prévient toutes les rubriques (événement « swatter:consent »). */
@@ -71,9 +74,16 @@ export function writeConsent(choice: { audience: boolean; externes: boolean }): 
   const c: ConsentChoice = { v: 1, audience: choice.audience, externes: choice.externes, date: new Date().toISOString() }
   try {
     window.localStorage.setItem(CONSENT_KEY, JSON.stringify(c))
+    memory = null
   } catch {
-    /* stockage bloqué : le choix vaut pour la page en cours */
+    // stockage bloqué ou plein : le choix vaut pour la page en cours, et l'ancien choix enregistré est effacé si possible
+    // (sinon il reviendrait à la page suivante)
     memory = c
+    try {
+      window.localStorage.removeItem(CONSENT_KEY)
+    } catch {
+      /* stockage illisible : rien d'enregistré à effacer */
+    }
   }
   window.dispatchEvent(new CustomEvent<ConsentChoice>(CONSENT_EVENT, { detail: c }))
   return c
@@ -88,7 +98,10 @@ export function openCookieSettings(trigger?: HTMLElement | null) {
 export function onConsentChange(cb: (choice: ConsentChoice | null) => void): () => void {
   const onEvent = (e: Event) => cb((e as CustomEvent<ConsentChoice>).detail ?? readConsent())
   const onStorage = (e: StorageEvent) => {
-    if (e.key === CONSENT_KEY || e.key === null) cb(readConsent())
+    if (e.key !== CONSENT_KEY && e.key !== null) return
+    // choix changé dans un autre onglet : plus récent que celui gardé en mémoire sur cette page
+    memory = null
+    cb(readConsent())
   }
   window.addEventListener(CONSENT_EVENT, onEvent)
   window.addEventListener('storage', onStorage)
@@ -107,7 +120,7 @@ function snapshot(): ConsentChoice | null {
     lastRaw = raw
     lastValue = parse(raw)
   }
-  return lastValue ?? memory
+  return memory ?? lastValue
 }
 const subscribe = (notify: () => void) => onConsentChange(() => notify())
 

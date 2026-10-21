@@ -68,7 +68,14 @@ export function parseChannel(input: string | null | undefined): ChannelRef | nul
     return null
   }
   if (!/(^|\.)youtube\.com$/i.test(url.hostname)) return null
-  const [first, second] = url.pathname.split('/').filter(Boolean).map(decodeURIComponent)
+  let segments: string[]
+  try {
+    segments = url.pathname.split('/').filter(Boolean).map(decodeURIComponent)
+  } catch {
+    // « %E0%A4%A » : adresse mal encodée, refusée comme toute adresse non reconnue (le champ affiche son message)
+    return null
+  }
+  const [first, second] = segments
   if (!first) return null
   if (first === 'channel') return second && CHANNEL_ID.test(second) ? { id: second } : null
   if (HANDLE.test(first)) return { handle: first }
@@ -107,7 +114,8 @@ export async function resolveChannelId(ref: ChannelRef, apiKey?: string): Promis
 
 // ----- Flux RSS public (sans clé) -----
 
-const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_', isArray: (name) => name === 'entry' })
+// parseTagValue: false : un titre « 007 » ou « true » reste du texte ; htmlEntities : « L&#39;été » devient « L'été »
+const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_', isArray: (name) => name === 'entry', parseTagValue: false, htmlEntities: true })
 type Obj = Record<string, unknown>
 const obj = (v: unknown): Obj | null => (typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Obj) : null)
 const text = (v: unknown): string => (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : (obj(v)?.['#text'] as string | undefined) ?? '').trim()
@@ -221,8 +229,8 @@ export async function channelVideos(channelId: string, apiKey = process.env.YOUT
 
 // ----- Import -----
 
-const youtubeIdOf = (url: unknown): string | null => (typeof url === 'string' ? (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/|live\/)([\w-]{11})/)?.[1] ?? null) : null)
-const clip = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s)
+export const youtubeIdOf = (url: unknown): string | null => (typeof url === 'string' ? (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/|live\/)([\w-]{11})/)?.[1] ?? null) : null)
+export const clip = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s)
 const CATEGORIES = new Set<string>(VIDEO_CATEGORIES.map((c) => c.value))
 
 type Target = 'videos' | 'replays'
@@ -242,9 +250,18 @@ async function onSite(payload: Payload, collection: Target): Promise<Set<string>
   return new Set(docs.map((d) => youtubeIdOf(d.source?.youtubeUrl)).filter((id): id is string => Boolean(id)))
 }
 
+const LETTER_OR_DIGIT = /[\p{L}\p{N}]/u
+/** Position du nom dans le titre, en mots entiers (« Le journal » ne figure pas dans « Le journalisme »), ou -1. */
+function wordIndex(title: string, name: string): number {
+  for (let at = title.indexOf(name); at !== -1; at = title.indexOf(name, at + 1)) {
+    if (!LETTER_OR_DIGIT.test(title[at - 1] ?? '') && !LETTER_OR_DIGIT.test(title[at + name.length] ?? '')) return at
+  }
+  return -1
+}
+
 /**
- * Émission d'un replay d'après son titre : celle dont le titre commence le titre de la vidéo (ou y figure), la plus longue
- * l'emportant (« Le journal des Alpes — Soir » → « Le journal des Alpes »). Sans correspondance : aucune émission.
+ * Émission d'un replay d'après son titre : celle dont le nom commence le titre de la vidéo (ou y figure), en mots entiers,
+ * la plus longue l'emportant (« Le journal des Alpes — Soir » → « Le journal des Alpes »). Sans correspondance : aucune émission.
  */
 export function matchProgram(title: string, programs: { id: number; title: string }[]): number | null {
   const t = foldText(title)
@@ -252,7 +269,8 @@ export function matchProgram(title: string, programs: { id: number; title: strin
   for (const p of programs) {
     const name = foldText(p.title).trim()
     if (name.length < 3) continue
-    const score = t.startsWith(name) ? name.length * 2 : t.includes(name) ? name.length : 0
+    const at = wordIndex(t, name)
+    const score = at === 0 ? name.length * 2 : at > 0 ? name.length : 0
     if (score && (!best || score > best.score)) best = { id: p.id, score }
   }
   return best?.id ?? null
@@ -262,9 +280,11 @@ const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`
 
 /** « 3 vidéos dans « Vidéos » et 2 vidéos dans « Replays » (sur 15 vidéos lues sur la chaîne) » */
 export function importSummary(r: Pick<YoutubeImportResult, 'videos' | 'replays' | 'total'>): string {
-  if (!r.videos && !r.replays) return `rien à ajouter : ${plural(r.total, 'vidéo')} de la chaîne, toutes déjà sur le site`
+  if (!r.videos && !r.replays) {
+    return `rien à ajouter : ${plural(r.total, 'vidéo')} de la chaîne, ${r.total > 1 ? 'toutes déjà' : 'déjà'} sur le site`
+  }
   const parts = [r.videos ? `${plural(r.videos, 'vidéo')} dans « Vidéos »` : '', r.replays ? `${plural(r.replays, 'vidéo')} dans « Replays »` : ''].filter(Boolean)
-  return `${parts.join(' et ')} (sur ${plural(r.total, 'vidéo')} lues sur la chaîne)`
+  return `${parts.join(' et ')} (sur ${plural(r.total, 'vidéo')} ${r.total > 1 ? 'lues' : 'lue'} sur la chaîne)`
 }
 
 /**
