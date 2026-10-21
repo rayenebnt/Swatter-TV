@@ -191,7 +191,8 @@ test.describe('programme TV', () => {
     await expect(page.getByRole('dialog', { name: title, exact: true })).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(dialog).toHaveCount(0)
-    await expect(page).toHaveURL(/\/programme-tv$/)
+    // l'ancre quitte l'adresse ; une émission d'un autre jour (la prochaine, après minuit…) a ouvert la grille de ce jour
+    await expect(page).toHaveURL(/\/programme-tv(\?jour=\d{4}-\d{2}-\d{2})?$/)
     // le focus revient sur l'émission dans la grille
     await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '')).toMatch(new RegExp(`^${escapeRegExp(title)}, `))
     expect(errors, errors.join('\n')).toEqual([])
