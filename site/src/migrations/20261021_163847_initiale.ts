@@ -519,7 +519,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"email" varchar NOT NULL,
   	"department" "enum_members_department",
   	"newsletter" boolean DEFAULT false,
-  	"verified" boolean DEFAULT false,
   	"blocked" boolean DEFAULT false,
   	"note" varchar,
   	"history_paused" boolean DEFAULT false,
@@ -529,8 +528,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"session_version" numeric DEFAULT 0,
   	"login_attempts" numeric DEFAULT 0,
   	"lock_until" timestamp(3) with time zone,
-  	"verify_token_hash" varchar,
-  	"verify_token_expires" timestamp(3) with time zone,
   	"reset_token_hash" varchar,
   	"reset_token_expires" timestamp(3) with time zone,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
@@ -1102,7 +1099,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "messages_updated_at_idx" ON "messages" USING btree ("updated_at");
   CREATE INDEX "messages_created_at_idx" ON "messages" USING btree ("created_at");
   CREATE UNIQUE INDEX "members_email_idx" ON "members" USING btree ("email");
-  CREATE INDEX "members_verify_token_hash_idx" ON "members" USING btree ("verify_token_hash");
   CREATE INDEX "members_reset_token_hash_idx" ON "members" USING btree ("reset_token_hash");
   CREATE INDEX "members_updated_at_idx" ON "members" USING btree ("updated_at");
   CREATE INDEX "members_created_at_idx" ON "members" USING btree ("created_at");

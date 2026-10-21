@@ -27,7 +27,6 @@ export const CONTACT_TO = 'contact@swatter-tv.fr'
 
 export const isSubject = (v: unknown): v is ContactSubject => CONTACT_SUBJECTS.some((s) => s.value === v)
 // texte d'une ligne : sans caractères de contrôle (le caractère nul est refusé par PostgreSQL)
- 
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max) : '')
 
 /** Champs nettoyés et erreurs (en français, prêtes à afficher sous chaque champ). */

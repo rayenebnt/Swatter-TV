@@ -18,7 +18,6 @@ import { Media } from './collections/Media'
 import { MemberFavorites, MemberHistory } from './collections/MemberActivity'
 import { Members } from './collections/Members'
 import { memberEndpoints } from './lib/members/endpoints'
-import { purgeUnverifiedMembers } from './lib/members/purge'
 import { allow } from './lib/members/rate-limit'
 import { Messages } from './collections/Messages'
 import { Pages } from './collections/Pages'
@@ -303,17 +302,12 @@ export default buildConfig({
         if (!sameSecret(secret, process.env.CRON_SECRET)) {
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
-        const [meteo, youtube, drafts, members] = await Promise.all([
+        const [meteo, youtube, drafts] = await Promise.all([
           importMeteo(req.payload).catch((e: unknown) => ({ ok: false, error: String(e) })),
           // nouvelles vidéos de la chaîne YouTube (global « youtube »)
           importYoutube(req.payload).catch((e: unknown) => ({ ok: false, created: 0, skipped: 0, total: 0, error: String(e) })),
           // fiches ouvertes avec « Ajouter » puis abandonnées sans titre (voir src/lib/drafts-cleanup.ts)
           deleteEmptyDrafts(req.payload).then(
-            (deleted) => ({ deleted }),
-            (e: unknown) => ({ deleted: 0, error: String(e) }),
-          ),
-          // inscriptions jamais confirmées depuis 7 jours (voir src/lib/members/purge.ts)
-          purgeUnverifiedMembers(req.payload).then(
             (deleted) => ({ deleted }),
             (e: unknown) => ({ deleted: 0, error: String(e) }),
           ),
@@ -326,7 +320,7 @@ export default buildConfig({
             // hors runtime Next.js
           }
         }
-        return Response.json({ meteo, youtube, drafts, members })
+        return Response.json({ meteo, youtube, drafts })
       },
     },
     {

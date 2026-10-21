@@ -22,6 +22,9 @@ if (!uri) {
 const OBSOLETE: [string, string, string][] = [
   ['youtube', 'in_videos', 'ancienne case « Afficher dans Vidéos » de la fiche Chaîne YouTube'],
   ['youtube', 'in_replays', 'ancienne case « Afficher dans Replays » de la fiche Chaîne YouTube'],
+  ['members', 'verified', 'ancienne case « E-mail confirmé » des membres (plus de confirmation par e-mail)'],
+  ['members', 'verify_token_hash', 'ancien jeton du lien de confirmation des membres'],
+  ['members', 'verify_token_expires', 'ancienne expiration du lien de confirmation des membres'],
 ]
 
 const client = new pg.Client({ connectionString: uri })

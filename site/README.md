@@ -65,7 +65,7 @@ cp .env.example .env
 | `YOUTUBE_API_KEY` | non | clé de l’API YouTube Data v3 : l’import de la chaîne reprend **toutes** ses vidéos (et leur durée) ; sans clé, il lit le flux RSS public de la chaîne, limité à ses 15 dernières vidéos |
 | `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | non | médias sur S3 / R2 / Scaleway au lieu du dossier `media/` (activé dès que `S3_BUCKET` est renseigné) |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | oui en production | premier administrateur créé par `src/scripts/init-db.ts` (mot de passe de 12 caractères au moins) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | **oui en production** | envoi des e-mails : « Mot de passe oublié » de l’administration, messages du formulaire « Proposer une info » (vers l’e-mail de contact des réglages, à défaut contact@swatter-tv.fr) et e-mails des membres (confirmation de l’adresse, nouveau mot de passe : sans eux, personne ne peut activer son compte). Sans `SMTP_HOST`, ils sont seulement écrits dans le journal du serveur (les messages restent lisibles dans « Messages reçus » ; hors production, le lien des e-mails des membres y est rappelé en clair pour tester). `SMTP_FROM` : adresse d’expédition autorisée par le serveur SMTP (par défaut contact@swatter-tv.fr) ; port 465 = SSL, sinon STARTTLS |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | **oui en production** | envoi des e-mails : « Mot de passe oublié » de l’administration, messages du formulaire « Proposer une info » (vers l’e-mail de contact des réglages, à défaut contact@swatter-tv.fr) et e-mail « mot de passe oublié » des membres. Sans `SMTP_HOST`, ils sont seulement écrits dans le journal du serveur (les messages restent lisibles dans « Messages reçus » ; hors production, le lien des e-mails des membres y est rappelé en clair pour tester). `SMTP_FROM` : adresse d’expédition autorisée par le serveur SMTP (par défaut contact@swatter-tv.fr) ; port 465 = SSL, sinon STARTTLS |
 | `SEED_FORCE` | non | `1` pour autoriser les contenus de départ (`npm run seed`) quand `NODE_ENV=production` |
 | `TRUSTED_PROXY_HOPS` | non | nombre de reverse proxys en chaîne devant le site (1 par défaut ; 2 derrière un CDN puis Caddy) : sert à lire l’adresse IP du visiteur pour les limites anti-abus |
 | `MEMBER_RATE_FACTOR` | non (tests seulement) | multiplie les limites par adresse IP de l’espace membres (inscriptions, connexions, e-mails…) : `10` pour les tests de bout en bout, qui partent tous de la même adresse. Jamais en production |
@@ -131,7 +131,7 @@ npm run dev
 src/
   app/(frontend)/       pages publiques (accueil, direct, info, météo, agenda, programme TV, replay, vidéos, webcams,
                         recherche, pages éditoriales et redirections dans [...slug], 404) ; espace membres : inscription,
-                        connexion, mot-de-passe-oublie, compte/ (Mon espace, lien de confirmation, nouveau mot de passe)
+                        connexion, mot-de-passe-oublie, compte/ (Mon espace, nouveau mot de passe)
   app/(payload)/        administration et API Payload (fichiers générés) + custom.scss (habillage de l’administration)
   app/robots.ts, sitemap.ts
   collections/ globals/ modèle de données (vidéos, replays, articles, agenda, webcams, publicités, pages, émissions,
@@ -188,28 +188,28 @@ partie « Espace membres » ; côté équipe : GUIDE_CLIENT.md, partie 21.
 - **Collections** : `members` (profil, réglages, empreintes ; lecture et modification réservées aux administrateurs,
   aucune création par l’API), `member-history` et `member-favorites` (une ligne par membre et par contenu, écrites
   uniquement par l’API des membres). Réglage : `settings.members.signupOpen` (« Inscriptions ouvertes »).
-- **API** : `/api/compte/…` (inscription, connexion, déconnexion, confirmation, mot de passe, profil, historique,
+- **API** : `/api/compte/…` (inscription, connexion, déconnexion, mot de passe, profil, historique,
   « Ma liste », export et suppression des données), déclarée dans `src/lib/members/endpoints.ts` ; les requêtes qui
   modifient quelque chose doivent venir du site (en-tête `Origin`, à défaut `Sec-Fetch-Site`). `GET /api/membres/lettre-info.csv` : export des
   membres qui acceptent les e-mails, réservé aux administrateurs connectés à `/admin`.
-- **Mots de passe** : scrypt (N = 16384, r = 8, p = 1, sel aléatoire), comparaison en temps constant ; liens de
-  confirmation (48 h) et de nouveau mot de passe (1 h) : seule l’empreinte SHA-256 du jeton est enregistrée, et le lien
-  de nouveau mot de passe ne sert qu’une fois (consommé en une seule requête). Le lien de confirmation ne confirme rien à
-  lui seul (les antivirus de messagerie ouvrent les liens) : le membre saisit ensuite son mot de passe. Compte bloqué
-  15 minutes après 5 mots de passe erronés, essais comptés en base avant la vérification (une rafale d’essais simultanés
-  ne contourne pas le blocage) ; une adresse sans compte répond de la même façon.
-- **Rien ne révèle si une adresse est inscrite** : inscription, mot de passe oublié et renvoi de la confirmation
-  répondent tout de suite (`{ ok: true }`) et font leur travail après la réponse (`after()` de Next.js), avec le même
-  délai quelle que soit l’adresse.
+- **Inscription** : prénom, e-mail et mot de passe ; le compte est actif aussitôt et le membre connecté (pas d’e-mail de
+  confirmation, choix du client). Conséquence : l’adresse n’est pas vérifiée, et l’inscription signale une adresse déjà
+  inscrite (limitée à 10 essais par heure et par adresse IP).
+- **Mots de passe** : scrypt (N = 16384, r = 8, p = 1, sel aléatoire), comparaison en temps constant ; lien de nouveau
+  mot de passe (1 h) : seule l’empreinte SHA-256 du jeton est enregistrée, et il ne sert qu’une fois (consommé en une
+  seule requête). Compte bloqué 15 minutes après 5 mots de passe erronés, essais comptés en base avant la vérification
+  (une rafale d’essais simultanés ne contourne pas le blocage) ; une adresse sans compte répond de la même façon à la
+  connexion. « Mot de passe oublié » répond tout de suite (`{ ok: true }`) et fait son travail après la réponse
+  (`after()` de Next.js).
 - **Limites par adresse IP** (mémoire du processus : suffisant pour un serveur unique, approximatif sur Vercel où
-  plusieurs instances coexistent) : inscriptions, connexions, demandes d’e-mail (confirmation, mot de passe oublié),
+  plusieurs instances coexistent) : inscriptions, connexions, demandes de nouveau mot de passe,
   changements de mot de passe et suppressions de compte. `MEMBER_RATE_FACTOR=10` les
   relâche pour les tests de bout en bout. L’adresse lue est le **dernier** maillon de `X-Forwarded-For`, celui qu’écrit
   le reverse proxy (Caddy, Traefik/Coolify et Nginx avec `$proxy_add_x_forwarded_for` le font) : le visiteur ne peut
   pas l’inventer. Derrière deux proxys en chaîne (CDN puis Caddy, par exemple), mettre `TRUSTED_PROXY_HOPS=2`. Le
   serveur Node ne doit pas être joignable directement depuis Internet (port 3000 réservé au proxy).
-- **E-mails** : par le SMTP du site (voir les variables). Sans `SMTP_HOST` hors production, le lien de confirmation ou
-  de nouveau mot de passe est écrit dans le journal du serveur (`[swatter] (développement, pas de SMTP) …`) pour tester.
+- **E-mails** : par le SMTP du site (voir les variables). Sans `SMTP_HOST` hors production, le lien de nouveau mot de
+  passe est écrit dans le journal du serveur (`[swatter] (développement, pas de SMTP) …`) pour tester.
 - **Production** : les trois collections et le champ `settings.members` demandent une migration
   (`npm run payload migrate:create espace-membres` si elle n’existe pas encore dans `src/migrations/`). Sur un site déjà
   en ligne, `npm run maj-pages -- vie-privee` publie le texte de la page Vie privée qui décrit l’espace membres (avec
@@ -293,15 +293,14 @@ contenus : jamais une fois le site rempli).
    (global « Chaîne YouTube », voir `src/lib/import/youtube.ts`) : celles qui manquent sont ajoutées ;
 3. supprime les fiches ouvertes avec « Ajouter » puis abandonnées sans titre depuis plus de 24 h (brouillons jamais
    publiés) ;
-4. supprime les inscriptions à l’espace membres jamais confirmées depuis plus de 7 jours (`src/lib/members/purge.ts`) ;
-5. régénère les pages du site si quelque chose a changé.
+4. régénère les pages du site si quelque chose a changé.
 
 Filet de sécurité pour la météo (poste de développement, hébergement sans tâche planifiée) : quand une page affiche des
 prévisions de plus d’une heure, ou celles de démonstration, le site interroge lui-même Open-Meteo en arrière-plan, au plus
 une fois toutes les 10 minutes (`src/lib/meteo-refresh.ts`) ; les pages montrent les nouvelles prévisions à leur
 régénération suivante (moins d’une minute). `OPEN_METEO_URL` remplace l’adresse d’Open-Meteo (tests hors ligne).
 
-La réponse JSON détaille le résultat (`meteo.ok`, `youtube.videos`, `drafts.deleted`, `members.deleted`…). Avec Docker Compose, le service `cron`
+La réponse JSON détaille le résultat (`meteo.ok`, `youtube.videos`, `drafts.deleted`…). Avec Docker Compose, le service `cron`
 s’en charge. Sur un serveur sans Docker, une ligne de crontab suffit :
 
 ```

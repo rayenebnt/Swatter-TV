@@ -103,7 +103,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `/[...slug]` | pages éditoriales (canaux de réception, le groupe, crédits, vie privée, mentions légales) et redirections des anciennes adresses |
 | `/inscription`, `/connexion`, `/mot-de-passe-oublie` | espace membres : créer un compte, se connecter, recevoir un lien de nouveau mot de passe |
 | `/compte`, `/compte/historique`, `/compte/ma-liste`, `/compte/profil` | « Mon espace » (membre connecté, sinon `/connexion?retour=<chemin>`) |
-| `/compte/verifier?token=`, `/compte/nouveau-mot-de-passe?token=` | liens des e-mails des membres (confirmation de l'adresse, nouveau mot de passe) |
+| `/compte/nouveau-mot-de-passe?token=` | lien de l'e-mail « mot de passe oublié » des membres |
 | `/api/compte/…`, `/api/membres/lettre-info.csv` | API des membres ; export CSV de la lettre d'info (administrateurs) |
 | `/admin`, `/api` | administration et API Payload |
 
@@ -236,37 +236,34 @@ articles, événements), département préféré (météo, info, sorties), profi
   une suspension. Ces écritures ne passent par aucun hook. Dans l'administration (hook `beforeChange`, requêtes avec
   `req.user`), `historyPaused`, `lastLoginAt` et `consentAt` ne sont jamais modifiés et l'accord `newsletter` peut être
   retiré mais pas donné : une fiche restée ouverte n'écrase pas les choix faits entre-temps par le membre. Changer
-  l'e-mail ou suspendre un compte invalide aussi les liens envoyés (jetons effacés).
+  l'e-mail ou suspendre un compte invalide aussi un lien « nouveau mot de passe » encore valable.
 - **Blocage après 5 erreurs** : `reserveAttempt()` compte l'essai de connexion en une seule requête SQL (`update … where
   lock_until is null or lock_until <= now() returning id`) AVANT de vérifier le mot de passe. Adresse sans compte :
   mêmes règles en mémoire (`reserveUnknown()`), et un mot de passe vide répond 401 sans rien compter, pour que ni le code
   ni la durée de la réponse ne disent si l'adresse est inscrite. Le mot de passe actuel demandé par `/mot-de-passe` et
   `/supprimer` a son propre compteur par membre (`allowCurrentPassword()`, 5 par quart d'heure) : les essais de connexion
   d'un tiers ne bloquent pas ces actions.
-- **Écritures conditionnelles** (`writeIf()` : `update … where id = … and <état lu> returning`) : la confirmation à la
-  connexion n'aboutit que si jeton et mot de passe n'ont pas changé entre-temps (réinscription concurrente), une
-  réinscription ne remplace qu'un compte toujours non confirmé et non suspendu, et les liens « nouveau mot de passe » /
-  confirmation ne sont enregistrés et envoyés que si l'adresse n'a pas changé entre-temps. Suppression du compte :
+- **Écritures conditionnelles** (`writeIf()` : `update … where id = … and <état lu> returning`) : le lien « nouveau mot
+  de passe » n'est enregistré et envoyé que si l'adresse n'a pas changé entre-temps. Suppression du compte :
   sessions fermées d'abord, puis jusqu'à trois essais (une ligne d'historique ajoutée au même instant bloque la clé
   étrangère). Restent tolérés : « Ma liste » peut dépasser 500 de quelques lignes sur des ajouts simultanés, et une fiche
   ouverte dans l'administration puis enregistrée tard peut encore retirer un accord e-mail donné entre-temps (dans le
   sens sûr : jamais en ajouter un).
-- **Confirmation de l'adresse** : `/compte/verifier?token=…` n'écrit rien ; il garde le jeton une heure dans le cookie
-  httpOnly `sw_confirmation` et ouvre `/connexion?confirmer=1&email=…`. La connexion confirme le compte si ce cookie
-  correspond au jeton en cours ET que le mot de passe est le bon (un tiers qui inscrit l'adresse d'un autre, ou un
-  antivirus qui suit le lien, ne confirme rien). « Mot de passe oublié » confirme aussi l'adresse ; pour un compte
-  jamais confirmé, il remet `newsletter` à faux (l'accord a pu être coché par quelqu'un d'autre).
-- **Réponses sans indice** : inscription, renvoi de confirmation et mot de passe oublié répondent avant de chercher le
-  compte (`later()` : `after()` de Next.js), pour que la durée de la réponse ne dise pas si l'adresse est inscrite. Les
-  tests attendent donc la création du compte (`createdMember()` dans `admin.spec.ts`).
+- **Inscription sans confirmation d'e-mail** (choix du client) : prénom, e-mail et mot de passe ; le compte est créé
+  actif et la réponse pose les cookies de session. L'adresse n'est donc pas vérifiée, et une adresse déjà inscrite est
+  signalée (`code: 'exists'`) : c'est inévitable sans e-mail de confirmation (limite : 10 inscriptions par heure et par
+  IP). Département et accord pour les e-mails se choisissent ensuite dans le profil. Les colonnes de l'ancienne
+  confirmation (`verified`, `verify_token_hash`, `verify_token_expires`) sont retirées par `npm run maj-base`.
+- **Mot de passe oublié** répond avant de chercher le compte (`later()` : `after()` de Next.js), pour que la durée de la
+  réponse ne dise pas si l'adresse est inscrite.
 - **API** (`/api/compte/…`, JSON, erreurs `{ error, code? }` ou `{ errors: { champ: message } }`) :
 
 | Méthode et chemin | Rôle |
 |---|---|
-| `POST /inscription` | compte non confirmé + e-mail de confirmation (48 h), après la réponse ; réponse identique si l'adresse existe déjà (rien n'est révélé) ; piège `website` et durée `elapsed` (≥ 3 s, mesurée par le navigateur) ; 403 `closed` si inscriptions fermées |
-| `POST /connexion` | cookies de session ; confirme le compte avec le cookie `sw_confirmation` ; 401 identifiants ; 403 `unverified` / `blocked` ; 429 `locked` (5 erreurs → 15 min) |
+| `POST /inscription` | `{ firstName, email, password }` → compte actif et cookies de session ; 400 `{ errors }` (champs) ou `code: 'exists'` (adresse déjà inscrite) ; piège `website` et durée `elapsed` (≥ 3 s, mesurée par le navigateur) ; 403 `closed` si inscriptions fermées |
+| `POST /connexion` | cookies de session ; 401 identifiants ; 403 `blocked` ; 429 `locked` (5 erreurs → 15 min) |
 | `POST /deconnexion` | `{ partout: true }` ferme aussi les autres appareils |
-| `POST /renvoyer-confirmation`, `POST /mot-de-passe-oublie` | toujours `{ ok }` |
+| `POST /mot-de-passe-oublie` | toujours `{ ok }` |
 | `POST /nouveau-mot-de-passe` | `{ token, password }` → connecté ; `invalid` si lien expiré ou déjà utilisé |
 | `GET /moi`, `PATCH /profil`, `POST /mot-de-passe` | profil (`MemberProfile`), modification, changement de mot de passe (autres appareils déconnectés) |
 | `POST` / `DELETE /historique` | ajout (contenu public uniquement ; `{ paused: true }` si historique en pause), retrait d'une entrée ou de tout |
@@ -275,17 +272,15 @@ articles, événements), département préféré (météo, info, sorties), profi
 
   Les requêtes qui modifient quelque chose doivent venir du site (`sameOrigin()` : en-tête `Origin`, à défaut
   `Sec-Fetch-Site`), en plus de `SameSite=Lax`. Historique limité à 200 entrées par membre (les plus anciennes sont
-  effacées, `HISTORY_MAX`). `GET /api/membres/lettre-info.csv` (administrateurs Payload) : membres confirmés, non
-  suspendus, qui acceptent les e-mails ; CSV `;` avec BOM UTF-8 (Excel) ; une valeur qui commence par = + - @ est
+  effacées, `HISTORY_MAX`). `GET /api/membres/lettre-info.csv` (administrateurs Payload) : membres non suspendus qui
+  acceptent les e-mails ; CSV `;` avec BOM UTF-8 (Excel) ; une valeur qui commence par = + - @ est
   précédée d'une apostrophe (sinon Excel l'exécuterait comme une formule).
-- **Limites par IP** (`rate-limit.ts`, mémoire du processus) : inscription, connexion, renvoi de confirmation, mot de
-  passe oublié, nouveau mot de passe, changement de mot de passe, suppression. **`MEMBER_RATE_FACTOR`** les multiplie
+- **Limites par IP** (`rate-limit.ts`, mémoire du processus) : inscription, connexion, mot de passe oublié, nouveau mot de passe, changement de mot de passe, suppression. **`MEMBER_RATE_FACTOR`** les multiplie
   (tests de bout en bout : `10`, toutes les requêtes venant de la même adresse). IP = dernier maillon de
   `X-Forwarded-For` (celui du reverse proxy ; `TRUSTED_PROXY_HOPS` s'il y en a plusieurs en chaîne, voir README).
   Le formulaire de contact utilise la même fonction (`allow('contact', …)`, 5 messages par quart d'heure).
 - **E-mails** : `payload.sendEmail` (SMTP du site). Sans `SMTP_HOST` et hors production, `sendMemberEmail()` écrit le
-  lien dans le journal (`[swatter] (développement, pas de SMTP) … — lien : …`) : c'est ainsi qu'on confirme un compte en
-  local (ouvrir le lien, puis saisir le mot de passe), ou en cochant « E-mail confirmé » dans l'administration.
+  lien de nouveau mot de passe dans le journal (`[swatter] (développement, pas de SMTP) … — lien : …`) pour tester.
 - **Pages** (`src/app/(frontend)/inscription`, `connexion`, `mot-de-passe-oublie`, `compte/…`) :
   `export const dynamic = 'force-dynamic'`, `robots: { index: false, follow: false }`, hors du plan du site. Chaque page
   de « Mon espace » vérifie elle-même le membre (`getCurrentMember()`) et renvoie vers `/connexion?retour=<chemin>`
@@ -311,11 +306,11 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
 - **Tableau de bord** (`Dashboard.tsx` + `dashboard-data.ts`, `admin.components.views.dashboard`) : actions courantes,
   état du site (chaque requête échoue sans bloquer la page), derniers contenus modifiés (hors articles importés).
   Espace membres (rien tant qu'aucun compte n'existe) : ligne « Membres du site » réservée aux administrateurs (membres
-  confirmés et non suspendus, inscrits des 7 derniers jours, comptes en attente, inscriptions fermées) et, pour toute
+  non suspendus, inscrits des 7 derniers jours, inscriptions fermées) et, pour toute
   l'équipe, « Les plus regardées par les membres (7 derniers jours) » : lignes de `member-history` dont `watchedAt` a
   moins de 7 jours (20 000 au plus, les plus récentes), comptées par contenu, soit le nombre de membres différents ;
-  titres et liens par `loadItems(…, { publicOnly: false })`. La colonne de droite empile ses blocs avec un style en
-  ligne (à déplacer dans `custom.scss` en `.sw-dash__side` à l'occasion).
+  titres et liens par `loadItems(…, { publicOnly: false })`. La colonne de droite empile ses blocs (`.sw-dash__side`
+  dans `custom.scss`).
 - **Menu** : menu sur mesure, **dans l'ordre du menu du site** (`menu.ts`, rendu par `NavLinks.tsx` en `beforeNavLinks`) ;
   le menu automatique de Payload est vidé (`admin.group: false` sur toutes les collections et tous les globals, plugin
   `simpleDocuments`). Une nouvelle collection doit donc être ajoutée à `menu.ts`. La section « Administration » (membres

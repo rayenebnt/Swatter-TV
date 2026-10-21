@@ -28,10 +28,7 @@ async function login(page: Page, account: { email: string; password: string }) {
 /** Requêtes d'un visiteur anonyme (sans les cookies de connexion des autres requêtes du test). */
 const visitor = () => apiRequest.newContext({ baseURL: test.info().project.use.baseURL })
 
-/**
- * Membre créé par une inscription : l'API répond avant d'enregistrer le compte (la durée de sa réponse ne révèle pas si
- * l'adresse est déjà inscrite), d'où l'attente. Son empreinte de mot de passe n'est jamais renvoyée, même aux administrateurs.
- */
+/** Membre créé par une inscription. Son empreinte de mot de passe n'est jamais renvoyée, même aux administrateurs. */
 async function createdMember(request: APIRequestContext, headers: Record<string, string>, email: string): Promise<number> {
   let found: { id: number; passwordHash?: string } | undefined
   await expect
@@ -421,11 +418,10 @@ test.describe('administration', () => {
     const login = (password: string) => guest.post('/api/compte/connexion', { headers: { origin: SITE }, data: { email, password } })
     await guest.post('/api/compte/inscription', {
       headers: { origin: SITE },
-      data: { firstName: 'Dominique', email, password: 'mot-de-passe-e2e', consent: true, website: '', elapsed: 5000 },
+      data: { firstName: 'Dominique', email, password: 'mot-de-passe-e2e', website: '', elapsed: 5000 },
     })
     const memberId = await createdMember(request, headers, email)
     try {
-      expect((await request.patch(`/api/members/${memberId}`, { headers, data: { verified: true } })).ok()).toBe(true)
       // rafale de 8 essais faux : tous comptés, le compte est bloqué
       const burst = await Promise.all(Array.from({ length: 8 }, (_, i) => login(`faux-mot-de-passe-${i}`)))
       expect(burst.map((r) => r.status()).sort()).toEqual([401, 401, 401, 401, 401, 429, 429, 429])
@@ -444,7 +440,7 @@ test.describe('administration', () => {
     }
   })
 
-  test('membres : parcours complet d’un membre confirmé, et sa gestion dans « Membres du site »', async ({ page, request, browser }) => {
+  test('membres : parcours complet d’un membre, et sa gestion dans « Membres du site »', async ({ page, request, browser }) => {
     test.setTimeout(180_000)
     const headers = await adminHeaders(request)
     const errors = watchErrors(page)
@@ -454,15 +450,11 @@ test.describe('administration', () => {
     const replay = replays.docs[0]
     test.skip(!replay, 'aucun replay publié (npm run seed)')
 
-    // inscription (visiteur), puis confirmation à la main dans l'administration (case « E-mail confirmé »)
+    // inscription d'un visiteur (compte actif aussitôt)
     const guest = await visitor()
-    const signup = await guest.post('/api/compte/inscription', {
-      headers: { origin: SITE },
-      data: { firstName: 'Camille', email, password, department: 'haute-savoie', newsletter: true, consent: true, website: '', elapsed: 5000 },
-    })
-    expect(await signup.json()).toEqual({ ok: true })
+    const signup = await guest.post('/api/compte/inscription', { headers: { origin: SITE }, data: { firstName: 'Camille', email, password, website: '', elapsed: 5000 } })
+    expect(await signup.json()).toMatchObject({ ok: true })
     const memberId = await createdMember(request, headers, email)
-    expect((await request.patch(`/api/members/${memberId}`, { headers, data: { verified: true } })).ok()).toBe(true)
 
     try {
       // connexion depuis la page d'un replay : retour sur cette page
@@ -487,6 +479,8 @@ test.describe('administration', () => {
       const save = page.getByRole('button', { name: /Ajouter à ma liste/ })
       await save.click()
       await expect(page.getByRole('button', { name: /Dans ma liste/ })).toHaveAttribute('aria-pressed', 'true')
+      // le bouton change aussitôt ; l'enregistrement est fait quand le message s'affiche
+      await expect(page.getByRole('status').filter({ hasText: 'Ajouté à votre liste.' })).toBeVisible()
       await page.goto('/compte/ma-liste')
       await expect(page.locator('main').getByRole('link', { name: replay.title }).first()).toBeVisible()
 
@@ -498,10 +492,11 @@ test.describe('administration', () => {
       await page.getByRole('button', { name: /Retirer de l’historique/ }).first().click()
       await expect(page.locator('main').getByRole('link', { name: replay.title })).toHaveCount(0)
 
-      // profil : changement de département, repris par le tableau de bord
+      // profil : département (repris par le tableau de bord) et accord pour les e-mails, choisis après l'inscription
       await page.goto('/compte/profil')
       await page.waitForLoadState('networkidle')
       await page.getByLabel('Mon département').selectOption('rhone')
+      await page.getByRole('checkbox', { name: /Recevoir les actualités/ }).check()
       await page.getByRole('button', { name: 'Enregistrer' }).click()
       await expect(page.getByRole('status').filter({ hasText: 'Vos informations sont enregistrées.' })).toBeVisible()
       await page.goto('/compte')

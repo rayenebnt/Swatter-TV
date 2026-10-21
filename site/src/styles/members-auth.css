@@ -21,22 +21,12 @@
 /* zone cliquable de 40 px de haut sans écarter les champs */
 .auth-forgot a { display: inline-block; padding: 10px 0; margin: -10px 0; color: var(--gold-light); text-decoration: underline; text-underline-offset: 3px; }
 
-/* Liste des départements */
-.contact-field select.auth-select { width: 100%; height: 50px; padding: 0 44px 0 14px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d9aa45' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center / 18px; color: var(--ink); font-size: 16px; appearance: none; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
-.contact-field select.auth-select:focus-visible { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(217, 170, 69, .25); }
-.auth-select option { background: var(--surface); color: var(--ink); }
-
-/* Cases à cocher (actualités, politique de confidentialité) : toute la ligne est cliquable */
-.auth-checks { display: grid; gap: 4px; }
-.auth-checks .contact-consent label { padding: 9px 0; }
-.auth-checks a { color: var(--gold-light); text-decoration: underline; text-underline-offset: 3px; }
-/* .contact-field > label span (contact.css) dore tout le texte de la case : texte normal, astérisque doré */
-.auth-checks .contact-consent label > span { color: inherit; }
-.auth-checks .contact-consent label span[aria-hidden='true'] { color: var(--gold); }
-
 .btn.auth-submit { width: 100%; height: auto; min-height: 50px; padding-block: 12px; white-space: normal; text-align: center; }
 .auth-submit[disabled] { opacity: .7; cursor: progress; }
 .auth-submit-row { display: grid; justify-items: center; gap: 10px; }
+/* « En créant votre compte, vous acceptez la politique de confidentialité » */
+.auth-submit-row .contact-hint { text-align: center; }
+.auth-submit-row .contact-hint a { color: var(--gold-light); text-decoration: underline; text-underline-offset: 3px; }
 
 /* Encadrés de message */
 .auth-note { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid var(--line-2); border-radius: var(--r); background: rgba(255, 255, 255, .04); color: var(--ink-2); font-size: 14.5px; }
@@ -53,15 +43,6 @@
 .auth-note--error .auth-note__icon { color: #ff8a8d; }
 .auth-note--error .auth-note__body > p:first-child { font-weight: 600; }
 
-/* Renvoi de l'e-mail de confirmation */
-.auth-resend { position: relative; display: grid; justify-items: start; gap: 10px; }
-.auth-resend--form { justify-items: stretch; gap: 12px; }
-.auth-resend--form .btn { justify-self: start; }
-.auth-resend .btn { height: auto; min-height: 42px; padding-block: 9px; white-space: normal; text-align: left; }
-.auth-resend .btn[disabled] { opacity: .7; cursor: progress; }
-.auth-live { color: var(--ink); font-size: 14px; }
-/* zone d'annonce vide : présente pour les lecteurs d'écran, sans place dans la mise en page */
-.auth-live:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; }
 
 /* Écrans « regardez votre messagerie » */
 .auth-done { padding: 0; }

@@ -30,12 +30,10 @@ export type DashboardData = {
 }
 
 export type MembersStats = {
-  /** membres à l'adresse confirmée et au compte non suspendu */
-  confirmed: number
+  /** membres au compte non suspendu */
+  active: number
   /** parmi eux, inscrits ces 7 derniers jours */
   newThisWeek: number
-  /** inscrits qui n'ont pas encore cliqué sur le lien de confirmation */
-  pending: number
   signupOpen: boolean
   /** contenus les plus regardés par les membres ces 7 derniers jours (5 au plus) */
   topWatched: TopWatched[]
@@ -163,16 +161,15 @@ async function topWatched(payload: Payload, since: string): Promise<TopWatched[]
 /** Chiffres de l'espace membres (null s'il n'y a encore aucun compte) ; `signupOpen` est lu dans les réglages. */
 async function membersStats(payload: Payload): Promise<Omit<MembersStats, 'signupOpen'> | null> {
   const count = async (where: Where) => (await payload.count({ collection: 'members', where, overrideAccess: true })).totalDocs
-  const active: Where = { and: [{ verified: { equals: true } }, { blocked: { not_equals: true } }] }
+  const notBlocked: Where = { blocked: { not_equals: true } }
   const since = new Date(Date.now() - WEEK_MS).toISOString()
-  const [total, confirmed, newThisWeek, pending, top] = await Promise.all([
+  const [total, active, newThisWeek, top] = await Promise.all([
     count({ id: { exists: true } }),
-    count(active),
-    count({ and: [active, { createdAt: { greater_than_equal: since } }] }),
-    count({ and: [{ verified: { not_equals: true } }, { blocked: { not_equals: true } }] }),
+    count(notBlocked),
+    count({ and: [notBlocked, { createdAt: { greater_than_equal: since } }] }),
     attempt(() => topWatched(payload, since), [] as TopWatched[]),
   ])
-  return total ? { confirmed, newThisWeek, pending, topWatched: top } : null
+  return total ? { active, newThisWeek, topWatched: top } : null
 }
 
 export async function getDashboardData(payload: Payload): Promise<DashboardData> {

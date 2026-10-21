@@ -506,13 +506,10 @@ d’entrer dans « Mon espace » (pour tester, créez-vous un compte de membre c
 
 ### Ce que les visiteurs peuvent faire
 
-- **Créer un compte** avec leur prénom, leur e-mail et un mot de passe (8 caractères au moins) et, s’ils le souhaitent,
-  leur département et leur accord pour recevoir les e-mails de Swatter TV. Ils reçoivent aussitôt un e-mail
-  « Swatter TV — confirmez votre adresse e-mail » : le compte ne fonctionne qu’après un clic sur **Confirmer mon
-  adresse**, puis la saisie du mot de passe choisi à l’inscription (lien valable 48 heures ; un nouveau lien se demande
-  depuis la page de connexion). Ce mot de passe demandé au moment de confirmer empêche quelqu’un d’inscrire l’adresse
-  d’une autre personne : un simple clic, ou l’analyse automatique du lien par une messagerie, n’active rien. Une
-  inscription jamais confirmée est supprimée automatiquement au bout de 7 jours.
+- **Créer un compte** avec seulement leur prénom, leur e-mail et un mot de passe (8 caractères au moins). Le compte
+  fonctionne aussitôt, sans e-mail à confirmer : ils sont connectés et retrouvent la page où ils étaient. Leur
+  département et leur accord pour recevoir les e-mails de Swatter TV se choisissent ensuite dans **Mon profil**. Une
+  adresse qui a déjà un compte est refusée (le visiteur est invité à se connecter).
 - **Retrouver les vidéos regardées** : les vidéos et replays qu’ils regardent en étant connectés s’ajoutent à leur
   **Historique** (les 200 derniers) et à la rubrique **Reprendre** de leur espace. Ils peuvent retirer une vidéo, tout
   effacer ou mettre l’historique en pause.
@@ -530,19 +527,14 @@ d’entrer dans « Mon espace » (pour tester, créez-vous un compte de membre c
 **Administration › Membres du site** est réservé aux administrateurs (les éditeurs ne voient pas les membres : ce sont
 des données personnelles).
 
-- **La liste** montre le prénom, l’e-mail, le département, **E-mail confirmé**, **Accepte les e-mails de Swatter TV**
-  et la date d’inscription (colonne « Créé(e) à »), les derniers inscrits en haut. La barre de recherche retrouve un
-  membre par son e-mail, son prénom ou son nom ; **Filtres** permet par exemple de n’afficher que les comptes non
-  confirmés.
+- **La liste** montre le prénom, l’e-mail, le département, **Accepte les e-mails de Swatter TV**, la dernière
+  connexion et la date d’inscription (colonne « Créé(e) à »), les derniers inscrits en haut. La barre de recherche
+  retrouve un membre par son e-mail, son prénom ou son nom ; **Filtres** permet par exemple de n’afficher que les comptes
+  suspendus.
 - **La fiche d’un membre** (un clic sur sa ligne) montre ses informations, sa **Dernière connexion**, la date à laquelle
   il a accepté les conditions, le nombre de **Vidéos dans son historique** et de **Contenus dans « Ma liste »** (le
   détail reste privé : seul le membre le voit, l’équipe n’y a pas accès, même par l’API). La date d’inscription est rappelée en haut de la fiche.
 - À droite de la fiche :
-  - **E-mail confirmé** : cochée quand le membre a confirmé son adresse (lien reçu, puis son mot de passe). Si un
-    membre ne reçoit pas l’e-mail
-    (indésirables, messagerie d’entreprise trop stricte…), assurez-vous d’abord que l’adresse est bien la sienne (par
-    exemple parce qu’il vous écrit depuis cette adresse), puis cochez la case et cliquez sur **Enregistrer** : il peut se
-    connecter aussitôt ;
   - **Compte suspendu** : le membre ne peut plus se connecter et ses connexions en cours sont fermées, mais son compte
     est conservé ; décochez la case pour le rétablir ;
   - **Note interne (invisible du membre)** : un mémo pour l’équipe (« demande reçue par e-mail le 12/11 »…) ;
@@ -555,16 +547,16 @@ des données personnelles).
 - Il n’y a pas de bouton **Ajouter** : un membre s’inscrit toujours lui-même sur le site, ce qui garantit son accord.
 
 **Exporter la lettre d’info.** Au-dessus de la liste, le bouton **Exporter les inscrits à la lettre d’info (CSV)**
-télécharge la liste des membres qui ont accepté de recevoir vos e-mails (adresse confirmée, compte non suspendu) :
+télécharge la liste des membres qui ont accepté de recevoir vos e-mails (comptes suspendus exclus) :
 prénom, nom, e-mail, département et date d’inscription. Le fichier s’ouvre dans Excel ou LibreOffice, et s’importe dans
 un outil d’envoi de lettres d’information comme Brevo ou Mailjet (séparateur : point-virgule, si l’outil le demande).
 Le site n’envoie pas lui-même de lettre d’information. Exportez une liste fraîche avant chaque envoi (un membre qui a
 décoché la case ou supprimé son compte ne doit plus rien recevoir), ne transmettez pas ce fichier et supprimez-le après
-usage : il contient des données personnelles.
+usage : il contient des données personnelles. Les adresses ne sont pas vérifiées à l’inscription : si une adresse
+revient en erreur, ou si quelqu’un vous dit ne s’être jamais inscrit, supprimez simplement le compte.
 
 **Sur le tableau de bord**, les administrateurs voient la ligne **Membres du site** dans « Sur le site en ce moment » :
-le nombre de membres (comptes confirmés et non suspendus), les inscrits des 7 derniers jours et les comptes en attente de
-confirmation. Toute l’équipe voit le bloc **Les plus regardées par les membres (7 derniers jours)** : les 5 vidéos ou
+le nombre de membres (comptes non suspendus) et les inscrits des 7 derniers jours. Toute l’équipe voit le bloc **Les plus regardées par les membres (7 derniers jours)** : les 5 vidéos ou
 replays regardés par le plus de membres connectés, sans aucun nom (un clic ouvre la page sur le site). Il ne compte que
 les membres connectés dont l’historique n’est pas en pause : c’est une tendance, pas une mesure d’audience complète.
 
@@ -576,12 +568,10 @@ momentanément fermées ; les membres déjà inscrits se connectent normalement.
 
 ### Les e-mails envoyés aux membres
 
-Le site envoie lui-même, par le même service d’envoi d’e-mails (SMTP) que les messages « Proposer une info » et le
-« Mot de passe oublié » de l’administration : l’e-mail de **confirmation de l’adresse**, celui du **mot de passe oublié**,
-et un avertissement quand quelqu’un essaie de créer un compte avec une adresse déjà inscrite. Si un membre ne reçoit
-rien, invitez-le à regarder dans ses indésirables ; si plus personne ne reçoit rien, prévenez votre prestataire
-technique (réglages d’envoi des e-mails). En attendant, vous pouvez confirmer un compte à la main (case **E-mail
-confirmé**, voir plus haut).
+Le site n’envoie aux membres qu’un seul e-mail, celui du **mot de passe oublié**, par le même service d’envoi (SMTP)
+que les messages « Proposer une info » et le « Mot de passe oublié » de l’administration. Si un membre ne le reçoit pas,
+invitez-le à regarder dans ses indésirables ; si plus personne ne reçoit rien, prévenez votre prestataire technique
+(réglages d’envoi des e-mails).
 
 ### Données personnelles (RGPD)
 

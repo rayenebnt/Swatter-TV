@@ -6123,13 +6123,6 @@
           "notNull": false,
           "default": false
         },
-        "verified": {
-          "name": "verified",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
         "blocked": {
           "name": "blocked",
           "type": "boolean",
@@ -6188,18 +6181,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "verify_token_hash": {
-          "name": "verify_token_hash",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "verify_token_expires": {
-          "name": "verify_token_expires",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "reset_token_hash": {
           "name": "reset_token_hash",
           "type": "varchar",
@@ -6239,21 +6220,6 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "members_verify_token_hash_idx": {
-          "name": "members_verify_token_hash_idx",
-          "columns": [
-            {
-              "expression": "verify_token_hash",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -10592,6 +10558,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "a1ef545b-d459-4df9-93b6-75391dbb896b",
+  "id": "1aa022dd-76ae-4db2-a8a1-bdd1a46f9c66",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

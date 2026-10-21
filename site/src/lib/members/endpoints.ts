@@ -7,13 +7,12 @@ import type { Endpoint, Payload, PayloadRequest, Where } from 'payload'
 import type { Member } from '@/payload-types'
 import { departmentLabel } from '@/lib/departments'
 import { hashPassword, hashToken, newToken, verifyPassword } from './crypto'
-import { alreadyRegisteredEmail, resetEmail, sendMemberEmail, verifyEmail } from './emails'
+import { resetEmail, sendMemberEmail } from './emails'
 import { isPublicItem, loadItems } from './items'
 import { allow, allowKey, rateFactor } from './rate-limit'
-import { clearConfirmCookie, clearCookies, cookieValue, memberFromHeaders, NO_COUNTS, sameOrigin, sessionCookies, toProfile } from './session'
+import { clearCookies, memberFromHeaders, NO_COUNTS, sameOrigin, sessionCookies, toProfile } from './session'
 import {
   checkPassword,
-  CONFIRM_COOKIE,
   checkProfile,
   checkSignup,
   isFavoriteKind,
@@ -30,10 +29,10 @@ const MAX_ATTEMPTS = 5
 const LOCK_MS = 15 * MINUTE
 /** Entrées gardées dans l'historique d'un membre (les plus anciennes sont effacées au-delà). */
 export const HISTORY_MAX = 200
-const VERIFY_MS = 48 * HOUR
 const RESET_MS = HOUR
 
 const GENERIC_LOGIN = 'E-mail ou mot de passe incorrect.'
+const EMAIL_TAKEN = 'Un compte existe déjà avec cette adresse : connectez-vous (ou choisissez un nouveau mot de passe si vous l’avez oublié).'
 
 function json(body: unknown, status = 200, cookies: string[] = []): Response {
   const headers = new Headers({ 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
@@ -198,8 +197,8 @@ const csv = (raw: string) => {
 
 export const memberEndpoints: Endpoint[] = [
   {
-    // Inscription : compte créé non confirmé, lien de confirmation envoyé par e-mail. Réponse identique que l'adresse
-    // ait déjà un compte ou non (on ne révèle pas qui est inscrit).
+    // Inscription : prénom, e-mail et mot de passe. Le compte est actif aussitôt et le membre connecté (pas d'e-mail de
+    // confirmation). Une adresse déjà inscrite est signalée : sans confirmation, on ne peut pas faire autrement.
     path: '/compte/inscription',
     method: 'post',
     handler: async (req) => {
@@ -217,32 +216,25 @@ export const memberEndpoints: Endpoint[] = [
       if (!allow('inscription', req.headers, 10 * rateFactor(), HOUR)) return tooMany('inscriptions')
 
       const payload = req.payload
-      later(payload, 'Inscription impossible', async () => {
-        const existing = await findByEmail(payload, data.email)
-        if (existing?.blocked) return
-        if (existing?.verified) return sendMemberEmail(payload, existing.email, alreadyRegisteredEmail(existing.firstName))
-        const { token, hash } = newToken()
-        const fields = {
-          firstName: data.firstName,
-          email: data.email,
-          department: data.department,
-          newsletter: data.newsletter,
-          passwordHash: await hashPassword(data.password),
-          verifyTokenHash: hash,
-          verifyTokenExpires: new Date(Date.now() + VERIFY_MS).toISOString(),
-          consentAt: new Date().toISOString(),
-          verified: false,
-        }
-        // adresse inscrite mais jamais confirmée : la dernière inscription remplace la précédente (nouveau lien). La
-        // confirmation demande le mot de passe en vigueur : un tiers qui réinscrit l'adresse ne peut rien en faire.
-        if (existing) {
-          // seulement s'il n'a été ni confirmé ni suspendu entre-temps
-          const replaced = await writeIf(payload, existing.id, [{ verified: { not_equals: true } }, { blocked: { not_equals: true } }], fields)
-          if (!replaced) return
-        } else await payload.create({ collection: 'members', data: fields, overrideAccess: true, depth: 0 })
-        await sendMemberEmail(payload, data.email, verifyEmail(data.firstName, token), `${SITE_URL}/compte/verifier?token=${encodeURIComponent(token)}`)
-      })
-      return json({ ok: true })
+      const exists = () => json({ errors: { email: EMAIL_TAKEN }, code: 'exists' }, 400)
+      if (await findByEmail(payload, data.email)) return exists()
+      const now = new Date().toISOString()
+      try {
+        const created = await payload.create({
+          collection: 'members',
+          data: { firstName: data.firstName, email: data.email, passwordHash: await hashPassword(data.password), consentAt: now, lastLoginAt: now },
+          overrideAccess: true,
+          showHiddenFields: true,
+          depth: 0,
+          context: NO_COUNTS,
+        })
+        return json({ ok: true, firstName: created.firstName }, 200, sessionCookies(created))
+      } catch (error) {
+        // deux inscriptions simultanées avec la même adresse (index unique)
+        if (await findByEmail(payload, data.email)) return exists()
+        payload.logger.error(`[swatter] Inscription impossible : ${error instanceof Error ? error.message : String(error)}`)
+        return json({ error: 'L’inscription n’a pas abouti. Réessayez dans un instant.' }, 500)
+      }
     },
   },
   {
@@ -263,8 +255,8 @@ export const memberEndpoints: Endpoint[] = [
       }
       const m = await findByEmail(payload, email)
       if (!m) {
-        // adresse inconnue : même blocage après 5 essais, et même calcul de mot de passe, que pour un vrai compte (rien ne
-        // révèle si l'adresse est inscrite)
+        // adresse inconnue : même blocage après 5 essais, et même calcul de mot de passe, que pour un vrai compte (la
+        // connexion ne révèle pas si l'adresse est inscrite)
         if (!reserveUnknown(email)) return locked()
         await verifyPassword(password, undefined)
         return json({ error: GENERIC_LOGIN }, 401)
@@ -272,30 +264,8 @@ export const memberEndpoints: Endpoint[] = [
       if (!(await reserveAttempt(payload, m.id))) return locked()
       if (!(await verifyPassword(password, m.passwordHash))) return json({ error: GENERIC_LOGIN }, 401)
       if (m.blocked) return json({ error: 'Ce compte a été suspendu. Écrivez-nous si vous pensez qu’il s’agit d’une erreur.', code: 'blocked' }, 403)
-      const now = new Date().toISOString()
-      let updated: Member | null
-      if (m.verified) updated = await write(payload, m.id, { loginAttempts: 0, lockUntil: null, lastLoginAt: now })
-      else {
-        // confirmation de l'adresse : lien de l'e-mail (jeton gardé en cookie par /compte/verifier) ET mot de passe choisi à
-        // l'inscription. Un clic seul (ou l'analyse du lien par un antivirus de messagerie) ne confirme rien. Écriture
-        // conditionnelle : une réinscription arrivée entre-temps (autre mot de passe, nouveau lien) l'annule.
-        const token = cookieValue(req.headers.get('cookie'), CONFIRM_COOKIE) ?? ''
-        const valid = token && m.verifyTokenHash === hashToken(token) && m.verifyTokenExpires && Date.parse(m.verifyTokenExpires) > Date.now()
-        updated = valid
-          ? await writeIf(payload, m.id, [{ verifyTokenHash: { equals: m.verifyTokenHash } }, { passwordHash: { equals: m.passwordHash } }], {
-              verified: true,
-              loginAttempts: 0,
-              lockUntil: null,
-              lastLoginAt: now,
-            })
-          : null
-        if (!updated) {
-          // bon mot de passe : l'essai ne compte pas pour le blocage
-          await write(payload, m.id, { loginAttempts: 0, lockUntil: null })
-          return json({ error: 'Confirmez d’abord votre adresse e-mail : cliquez sur le lien que nous vous avons envoyé.', code: 'unverified' }, 403)
-        }
-      }
-      return json({ ok: true, firstName: m.firstName }, 200, [...sessionCookies(updated), clearConfirmCookie()])
+      const updated = await write(payload, m.id, { loginAttempts: 0, lockUntil: null, lastLoginAt: new Date().toISOString() })
+      return json({ ok: true, firstName: m.firstName }, 200, sessionCookies(updated))
     },
   },
   {
@@ -310,28 +280,6 @@ export const memberEndpoints: Endpoint[] = [
         if (m) await write(req.payload, m.id, { sessionVersion: { $inc: 1 } })
       }
       return json({ ok: true }, 200, clearCookies())
-    },
-  },
-  {
-    path: '/compte/renvoyer-confirmation',
-    method: 'post',
-    handler: async (req) => {
-      if (!sameOrigin(req.headers, req.url)) return refused()
-      const raw = await readBody(req)
-      if (!allow('renvoi', req.headers, 5 * rateFactor(), 15 * MINUTE)) return tooMany('demandes')
-      const payload = req.payload
-      const email = normalizeEmail(raw?.email)
-      later(payload, 'Renvoi de la confirmation impossible', async () => {
-        const m = email ? await findByEmail(payload, email) : null
-        if (!m || m.verified || m.blocked) return
-        const { token, hash } = newToken()
-        // rien n'est envoyé si l'adresse a changé (administration) ou si le compte a été confirmé ou suspendu entre-temps
-        const conditions: Where[] = [{ email: { equals: m.email } }, { verified: { not_equals: true } }, { blocked: { not_equals: true } }]
-        if (!(await writeIf(payload, m.id, conditions, { verifyTokenHash: hash, verifyTokenExpires: new Date(Date.now() + VERIFY_MS).toISOString() }))) return
-        await sendMemberEmail(payload, m.email, verifyEmail(m.firstName, token), `${SITE_URL}/compte/verifier?token=${encodeURIComponent(token)}`)
-      })
-      // même réponse, et même durée, que l'adresse soit inscrite ou non
-      return json({ ok: true })
     },
   },
   {
@@ -357,7 +305,7 @@ export const memberEndpoints: Endpoint[] = [
     },
   },
   {
-    // Nouveau mot de passe depuis le lien reçu : il confirme aussi l'adresse, ferme les autres sessions et connecte.
+    // Nouveau mot de passe depuis le lien reçu : il ferme les autres sessions et connecte.
     path: '/compte/nouveau-mot-de-passe',
     method: 'post',
     handler: async (req) => {
@@ -381,12 +329,6 @@ export const memberEndpoints: Endpoint[] = [
       if (m.blocked) return json({ error: 'Ce compte a été suspendu.', code: 'blocked' }, 403)
       const updated = await write(payload, m.id, {
         passwordHash: await hashPassword(raw?.password as string),
-        // le lien prouve l'accès à la boîte : l'adresse est confirmée. Compte jamais confirmé : l'accord pour les e-mails,
-        // coché à l'inscription peut-être par quelqu'un d'autre, n'est pas repris (le membre peut le redonner dans son profil).
-        verified: true,
-        ...(m.verified ? {} : { newsletter: false }),
-        verifyTokenHash: null,
-        verifyTokenExpires: null,
         loginAttempts: 0,
         lockUntil: null,
         lastLoginAt: new Date().toISOString(),
@@ -603,7 +545,7 @@ export const memberEndpoints: Endpoint[] = [
     },
   },
   {
-    // Pour l'équipe (administrateurs) : membres confirmés qui acceptent les e-mails, au format CSV (Excel, Brevo…)
+    // Pour l'équipe (administrateurs) : membres non suspendus qui acceptent les e-mails, au format CSV (Excel, Brevo…)
     path: '/membres/lettre-info.csv',
     method: 'get',
     handler: async (req) => {
@@ -611,7 +553,7 @@ export const memberEndpoints: Endpoint[] = [
       if (user?.collection !== 'users' || user.role !== 'admin') return json({ error: 'Réservé aux administrateurs.' }, 403)
       const res = await req.payload.find({
         collection: 'members',
-        where: { and: [{ newsletter: { equals: true } }, { verified: { equals: true } }, { blocked: { not_equals: true } }] },
+        where: { and: [{ newsletter: { equals: true } }, { blocked: { not_equals: true } }] },
         sort: 'createdAt',
         limit: 50_000,
         depth: 0,

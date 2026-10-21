@@ -31,7 +31,10 @@ const BENEFITS: { icon: IconName; title: string; text: string }[] = [
   { icon: 'shield', title: 'Gratuit, et vos données restent à vous', text: 'Téléchargez-les ou supprimez votre compte quand vous le souhaitez.' },
 ]
 
-/** Inscription à l'espace membres (fermée si l'équipe l'a décidé dans les réglages du site). */
+/**
+ * Inscription à l'espace membres (fermée si l'équipe l'a décidé dans les réglages du site). Le compte est actif aussitôt :
+ * le visiteur est connecté puis renvoyé vers ?retour=<chemin> (sinon « Mon espace »).
+ */
 export default async function SignupPage({ searchParams }: { searchParams: SearchParams }) {
   const retour = authReturn((await searchParams).retour)
   const member = await getCurrentMember().catch(() => null)
@@ -69,8 +72,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
           </>
         }
       >
-        {/* heure du rendu serveur : le délai anti-robot de l'API se mesure avec l'horloge du serveur */}
-        {open ? <SignupForm /> : <SignupClosed />}
+        {open ? <SignupForm retour={retour} /> : <SignupClosed />}
         <AuthSwitch text={'Déjà un compte\u00a0?'} href={loginHref} label="Se connecter" />
       </AuthShell>
     </>

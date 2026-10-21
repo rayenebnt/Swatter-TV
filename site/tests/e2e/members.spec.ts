@@ -1,9 +1,9 @@
 import { expect, test, type APIRequestContext } from '@playwright/test'
 import { expectNoHorizontalOverflow, settle, watchErrors } from './helpers'
 
-// Espace membres, sans compte confirmé : accès refusés, inscription, mot de passe oublié, affichage mobile. Un compte ne
-// s'active que par le lien de l'e-mail ou par l'administration : le parcours complet d'un membre confirmé (connexion,
-// « Ma liste », historique, profil, export, suspension, suppression) est dans admin.spec.ts (connexions administrateur en série).
+// Espace membres : accès refusés, inscription (compte actif et connecté aussitôt), mot de passe oublié, affichage mobile.
+// Le parcours complet d'un membre (connexion, « Ma liste », historique, profil, export, suspension, suppression), qui
+// passe aussi par l'administration, est dans admin.spec.ts (connexions administrateur en série).
 
 const ORIGIN = new URL(process.env.E2E_BASE_URL || 'http://localhost:3000').origin
 const uniqueEmail = (tag: string) => `e2e-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`
@@ -12,7 +12,7 @@ const uniqueEmail = (tag: string) => `e2e-${tag}-${Date.now()}-${Math.random().t
 function signup(request: APIRequestContext, email: string, extra: Record<string, unknown> = {}, origin = ORIGIN) {
   return request.post('/api/compte/inscription', {
     headers: { origin },
-    data: { firstName: 'Test', email, password: 'mot-de-passe-e2e', consent: true, website: '', elapsed: 5000, ...extra },
+    data: { firstName: 'Test', email, password: 'mot-de-passe-e2e', website: '', elapsed: 5000, ...extra },
   })
 }
 
@@ -46,14 +46,18 @@ test('membres : l’API refuse les autres sites, les robots et les champs invali
   const login = await request.post('/api/compte/connexion', { headers: { origin: ORIGIN }, data: { email: robot, password: 'mot-de-passe-e2e' } })
   expect(login.status()).toBe(401)
   // champs vérifiés côté serveur
-  const invalid = await signup(request, 'pas-une-adresse', { firstName: '', password: 'court', consent: false })
+  const invalid = await signup(request, 'pas-une-adresse', { firstName: '', password: 'court' })
   expect(invalid.status()).toBe(400)
   const { errors } = (await invalid.json()) as { errors: Record<string, string> }
-  expect(Object.keys(errors).sort()).toEqual(['consent', 'email', 'firstName', 'password'])
-  // une adresse déjà inscrite ne se devine pas : même réponse
+  expect(Object.keys(errors).sort()).toEqual(['email', 'firstName', 'password'])
+  // compte actif aussitôt (cookies de session) ; une adresse déjà inscrite est refusée
   const twice = uniqueEmail('double')
-  expect(await (await signup(request, twice)).json()).toEqual({ ok: true })
-  expect(await (await signup(request, twice)).json()).toEqual({ ok: true })
+  const first = await signup(request, twice)
+  expect(await first.json()).toMatchObject({ ok: true, firstName: 'Test' })
+  expect(first.headers()['set-cookie']).toContain('sw_membre=')
+  const again = await signup(request, twice)
+  expect(again.status()).toBe(400)
+  expect(((await again.json()) as { code?: string }).code).toBe('exists')
 })
 
 test('membres : le bouton du compte ramène sur la page d’origine après la connexion', async ({ page, isMobile }) => {
@@ -78,12 +82,14 @@ test('aperçu : la sortie de l’aperçu ne redirige jamais vers un autre site',
   }
 })
 
-test('membres : inscription par le formulaire, puis connexion refusée tant que l’adresse n’est pas confirmée', async ({ page }) => {
+test('membres : inscription par le formulaire (prénom, e-mail, mot de passe), compte actif et connecté aussitôt', async ({ page, isMobile }) => {
   const errors = watchErrors(page)
   const email = uniqueEmail('formulaire')
-  await page.goto('/inscription')
+  await page.goto('/inscription?retour=%2Fagenda')
   await settle(page)
   await expect(page.locator('h1')).toHaveText('Créer un compte')
+  // trois champs seulement (plus le champ piège invisible), aucune case à cocher
+  await expect(page.locator('form.auth-form input:not([name="website"])')).toHaveCount(3)
   // champs obligatoires vérifiés avant l'envoi, focus sur le premier en erreur
   await page.getByRole('button', { name: 'Créer mon compte' }).click()
   await expect(page.getByLabel('Prénom')).toHaveAttribute('aria-invalid', 'true')
@@ -91,25 +97,34 @@ test('membres : inscription par le formulaire, puis connexion refusée tant que 
   await page.getByLabel('Prénom').fill('Camille')
   await page.getByRole('textbox', { name: 'E-mail', exact: true }).fill(email)
   await page.locator('input[name="password"]').fill('mot-de-passe-e2e')
-  await page.getByLabel(/Votre département/).selectOption('savoie')
-  await page.getByRole('checkbox', { name: /J’accepte la politique de confidentialité/ }).check()
   await page.getByRole('button', { name: 'Créer mon compte' }).click()
-  await expect(page.getByRole('heading', { name: /confirmez votre adresse/ })).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByRole('status').filter({ hasText: email })).toBeVisible()
+  // retour sur la page d'origine, connecté
+  await page.waitForURL(/\/agenda$/, { timeout: 15_000 })
+  if (isMobile) {
+    await page.getByRole('button', { name: 'Ouvrir le menu' }).first().click()
+    await expect(page.getByRole('dialog', { name: 'Menu' }).getByRole('link', { name: 'Mon espace' })).toHaveAttribute('href', '/compte')
+  } else {
+    await expect(page.locator('header').getByRole('link', { name: 'Mon espace' })).toHaveAttribute('href', '/compte')
+  }
+  await page.goto('/compte')
+  await expect(page.locator('h1')).toContainText(/Bon(jour|soir) Camille/)
 
-  // connexion avant confirmation : message clair et renvoi possible de l'e-mail
+  // déconnecté : la même adresse ne peut pas créer un second compte, et un mauvais mot de passe est refusé
+  await page.context().clearCookies()
+  await page.goto('/inscription')
+  await settle(page)
+  await page.getByLabel('Prénom').fill('Camille')
+  await page.getByRole('textbox', { name: 'E-mail', exact: true }).fill(email)
+  await page.locator('input[name="password"]').fill('autre-mot-de-passe')
+  await page.getByRole('button', { name: 'Créer mon compte' }).click()
+  await expect(page.getByText(/Un compte existe déjà avec cette adresse/)).toBeVisible({ timeout: 15_000 })
   await page.goto('/connexion')
   await settle(page)
   await page.getByRole('textbox', { name: 'E-mail', exact: true }).fill(email)
-  await page.locator('input[name="password"]').fill('mot-de-passe-e2e')
-  await page.getByRole('button', { name: 'Se connecter' }).click()
-  await expect(page.getByRole('alert').filter({ hasText: /Confirmez d’abord/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /Renvoyer/ })).toBeVisible()
-  // mauvais mot de passe : message générique
   await page.locator('input[name="password"]').fill('pas-le-bon-mot-de-passe')
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page.getByRole('alert').filter({ hasText: 'E-mail ou mot de passe incorrect.' })).toBeVisible()
-  expect(errors.filter((e) => !/HTTP (401|403) : \/api\/compte\/connexion/.test(e)), errors.join('\n')).toEqual([])
+  expect(errors.filter((e) => !/HTTP (400|401) : \/api\/compte\/(connexion|inscription)/.test(e)), errors.join('\n')).toEqual([])
 })
 
 test('membres : mot de passe oublié, même réponse que l’adresse ait un compte ou non', async ({ page, request }) => {

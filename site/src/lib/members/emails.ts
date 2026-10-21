@@ -1,4 +1,4 @@
-// Espace membres : e-mails (confirmation de l'adresse, nouveau mot de passe, compte déjà existant).
+// Espace membres : e-mail « nouveau mot de passe » (mot de passe oublié).
 import type { Payload } from 'payload'
 import { SITE_URL } from '@/lib/site'
 
@@ -23,22 +23,6 @@ ${button}
   return { html, text }
 }
 
-/** Lien de confirmation de l'adresse (valable 48 h). */
-export function verifyEmail(firstName: string, token: string): Mail {
-  const href = `${SITE_URL}/compte/verifier?token=${encodeURIComponent(token)}`
-  return {
-    ...layout(
-      firstName,
-      [
-        'Bienvenue sur Swatter TV ! Pour activer votre espace (historique de vos vidéos, « Ma liste », votre météo et l’info de votre département), confirmez votre adresse e-mail : cliquez sur le bouton ci-dessous, puis saisissez le mot de passe choisi lors de votre inscription.',
-      ],
-      { label: 'Confirmer mon adresse', href },
-      'Ce lien est valable 48 heures. Vous n’avez pas créé de compte ? Ignorez simplement cet e-mail : aucun compte ne sera activé.',
-    ),
-    subject: 'Swatter TV — confirmez votre adresse e-mail',
-  }
-}
-
 /** Lien pour choisir un nouveau mot de passe (valable 1 h). */
 export function resetEmail(firstName: string, token: string): Mail {
   const href = `${SITE_URL}/compte/nouveau-mot-de-passe?token=${encodeURIComponent(token)}`
@@ -50,22 +34,6 @@ export function resetEmail(firstName: string, token: string): Mail {
       'Ce lien est valable une heure. Vous n’êtes pas à l’origine de cette demande ? Ignorez cet e-mail : votre mot de passe actuel reste valable.',
     ),
     subject: 'Swatter TV — choisir un nouveau mot de passe',
-  }
-}
-
-/** Inscription avec une adresse qui a déjà un compte confirmé : on prévient le titulaire (sans rien révéler au formulaire). */
-export function alreadyRegisteredEmail(firstName: string): Mail {
-  return {
-    ...layout(
-      firstName,
-      [
-        'Quelqu’un (sans doute vous) vient d’essayer de créer un espace Swatter TV avec votre adresse, qui a déjà un compte.',
-        'Vous pouvez simplement vous connecter, ou choisir un nouveau mot de passe si vous l’avez oublié.',
-      ],
-      { label: 'Me connecter', href: `${SITE_URL}/connexion` },
-      `Mot de passe oublié ? ${SITE_URL}/mot-de-passe-oublie`,
-    ),
-    subject: 'Swatter TV — vous avez déjà un compte',
   }
 }
 

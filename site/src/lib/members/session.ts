@@ -6,7 +6,7 @@ import { cache } from 'react'
 import type { Member } from '@/payload-types'
 import { SITE_URL } from '@/lib/site'
 import { readSession, signSession } from './crypto'
-import { CONFIRM_COOKIE, HINT_COOKIE, SESSION_COOKIE, type MemberProfile } from './shared'
+import { HINT_COOKIE, SESSION_COOKIE, type MemberProfile } from './shared'
 
 const secure = SITE_URL.startsWith('https://')
 
@@ -31,14 +31,7 @@ export function sessionCookies(member: Pick<Member, 'id' | 'sessionVersion'>): s
 /** En-têtes Set-Cookie qui effacent la session. */
 export const clearCookies = (): string[] => [cookie(SESSION_COOKIE, '', null, true), cookie(HINT_COOKIE, '', null, false)]
 
-/**
- * Jeton du lien de confirmation, gardé une heure dans un cookie httpOnly par /compte/verifier : la confirmation se fait
- * ensuite à la connexion, avec le mot de passe choisi à l'inscription (le jeton ne reste pas dans l'adresse de la page).
- */
-export const confirmCookie = (token: string): string => cookie(CONFIRM_COOKIE, token, new Date(Date.now() + 60 * 60 * 1000), true)
-export const clearConfirmCookie = (): string => cookie(CONFIRM_COOKIE, '', null, true)
-
-export function cookieValue(header: string | null, name: string): string | null {
+function cookieValue(header: string | null, name: string): string | null {
   for (const part of (header ?? '').split(';')) {
     const [k, ...v] = part.trim().split('=')
     if (k === name) return v.join('=')
@@ -47,7 +40,7 @@ export function cookieValue(header: string | null, name: string): string | null 
 }
 
 /**
- * Membre d'une session : signature, date, version de session, compte confirmé et non suspendu. Les champs techniques
+ * Membre d'une session : signature, date, version de session, compte non suspendu. Les champs techniques
  * (empreintes, jetons) sont lus pour la vérification : ne jamais renvoyer ce document tel quel au navigateur.
  */
 async function memberOf(payload: Payload, token: string | null): Promise<Member | null> {
@@ -56,7 +49,7 @@ async function memberOf(payload: Payload, token: string | null): Promise<Member 
   const member = await payload
     .findByID({ collection: 'members', id: claims.m, depth: 0, overrideAccess: true, showHiddenFields: true, disableErrors: true, context: NO_COUNTS })
     .catch(() => null)
-  if (!member || member.blocked || !member.verified || (Number(member.sessionVersion) || 0) !== claims.s) return null
+  if (!member || member.blocked || (Number(member.sessionVersion) || 0) !== claims.s) return null
   return member
 }
 

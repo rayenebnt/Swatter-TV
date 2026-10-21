@@ -721,10 +721,6 @@ export interface Member {
    */
   newsletter?: boolean | null;
   /**
-   * Coché quand le membre a confirmé son adresse (lien reçu par e-mail, puis son mot de passe). Cochez-le vous-même pour confirmer un compte à la main.
-   */
-  verified?: boolean | null;
-  /**
    * Le membre ne peut plus se connecter ; ses sessions en cours sont fermées.
    */
   blocked?: boolean | null;
@@ -738,8 +734,6 @@ export interface Member {
   sessionVersion?: number | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
-  verifyTokenHash?: string | null;
-  verifyTokenExpires?: string | null;
   resetTokenHash?: string | null;
   resetTokenExpires?: string | null;
   updatedAt: string;
@@ -1292,7 +1286,6 @@ export interface MembersSelect<T extends boolean = true> {
   email?: T;
   department?: T;
   newsletter?: T;
-  verified?: T;
   blocked?: T;
   note?: T;
   historyPaused?: T;
@@ -1304,8 +1297,6 @@ export interface MembersSelect<T extends boolean = true> {
   sessionVersion?: T;
   loginAttempts?: T;
   lockUntil?: T;
-  verifyTokenHash?: T;
-  verifyTokenExpires?: T;
   resetTokenHash?: T;
   resetTokenExpires?: T;
   updatedAt?: T;

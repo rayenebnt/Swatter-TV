@@ -14,13 +14,12 @@ const TYPE_LABELS: Record<RecentCollection, string> = { videos: 'Vidéo', articl
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
 
-/** « 128 membres, dont 6 inscrits ces 7 derniers jours · 3 comptes en attente de confirmation · Inscriptions fermées » */
+/** « 128 membres, dont 6 inscrits ces 7 derniers jours · Inscriptions fermées » (comptes suspendus non comptés) */
 function membersValue(m: MembersStats): string {
-  const confirmed = m.confirmed
-    ? `${plural(m.confirmed, 'membre', 'membres')}${m.newThisWeek ? `, dont ${plural(m.newThisWeek, 'inscrit', 'inscrits')} ces 7 derniers jours` : ''}`
-    : 'Aucun membre confirmé pour l’instant'
-  const pending = m.pending ? `${plural(m.pending, 'compte', 'comptes')} en attente de confirmation` : null
-  return [confirmed, pending, m.signupOpen ? null : 'Inscriptions fermées'].filter(Boolean).join(' · ')
+  const active = m.active
+    ? `${plural(m.active, 'membre', 'membres')}${m.newThisWeek ? `, dont ${plural(m.newThisWeek, 'inscrit', 'inscrits')} ces 7 derniers jours` : ''}`
+    : 'Aucun membre actif pour l’instant'
+  return [active, m.signupOpen ? null : 'Inscriptions fermées'].filter(Boolean).join(' · ')
 }
 
 /**

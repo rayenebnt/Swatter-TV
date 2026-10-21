@@ -4,8 +4,6 @@ import { DEPARTMENTS, type DepartmentSlug } from '@/lib/departments'
 /** Cookie de session (httpOnly, signé) et cookie témoin lisible par le navigateur (affichage « Mon espace » seulement). */
 export const SESSION_COOKIE = 'sw_membre'
 export const HINT_COOKIE = 'sw_connecte'
-/** Jeton du lien de confirmation, le temps de saisir son mot de passe (httpOnly, une heure). */
-export const CONFIRM_COOKIE = 'sw_confirmation'
 /** Durée d'une session : 30 jours. */
 export const SESSION_DAYS = 30
 export const MIN_PASSWORD = 8
@@ -31,15 +29,13 @@ export type MemberProfile = {
   createdAt: string
 }
 
+/** Inscription : prénom, e-mail et mot de passe (département et e-mails d'actualité se choisissent ensuite dans le profil). */
 export type SignupInput = {
   firstName: string
   email: string
   password: string
-  department: DepartmentSlug | null
-  newsletter: boolean
-  consent: boolean
 }
-export type FieldErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'password' | 'current' | 'department' | 'consent' | 'token', string>>
+export type FieldErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'password' | 'current' | 'department' | 'token', string>>
 
 /**
  * Adresse e-mail : la règle du champ « email » de Payload (sinon une adresse acceptée ici serait refusée à l'enregistrement),
@@ -47,7 +43,6 @@ export type FieldErrors = Partial<Record<'firstName' | 'lastName' | 'email' | 'p
  */
 const EMAIL = /^(?!.*\.\.)[\w!#$%&'*+/=?^`{|}~-](?:[\w!#$%&'*+/=?^`{|}~.-]*[\w!#$%&'*+/=?^`{|}~-])?@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/i
 /** Texte saisi : sans caractères de contrôle (refusés par PostgreSQL pour le caractère nul), sans espaces autour, tronqué. */
- 
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max) : '')
 const bool = (v: unknown) => v === true || v === 'on' || v === 'true'
 
@@ -78,9 +73,6 @@ export function checkSignup(raw: Record<string, unknown>): { data: SignupInput; 
     firstName: str(raw.firstName, 60),
     email: normalizeEmail(raw.email),
     password: typeof raw.password === 'string' ? raw.password : '',
-    department: isDepartmentValue(raw.department) ? raw.department : null,
-    newsletter: bool(raw.newsletter),
-    consent: bool(raw.consent),
   }
   const first = checkFirstName(data.firstName)
   if (first) errors.firstName = first
@@ -88,7 +80,6 @@ export function checkSignup(raw: Record<string, unknown>): { data: SignupInput; 
   if (email) errors.email = email
   const password = checkPassword(data.password)
   if (password) errors.password = password
-  if (!data.consent) errors.consent = 'Merci d’accepter la politique de confidentialité pour créer votre compte.'
   return { data, errors }
 }
 
@@ -134,7 +125,7 @@ export function safeReturn(v: unknown, fallback = '/compte'): string {
 }
 
 /** Pages d'où l'on ne revient pas après connexion (elles renverraient en boucle vers elles-mêmes ou vers /compte). */
-export const isAuthPage = (path: string) => /^\/(connexion|inscription|mot-de-passe-oublie|compte\/nouveau-mot-de-passe|compte\/verifier)(\/|\?|#|$)/.test(path)
+export const isAuthPage = (path: string) => /^\/(connexion|inscription|mot-de-passe-oublie|compte\/nouveau-mot-de-passe)(\/|\?|#|$)/.test(path)
 
 /** Lien « Se connecter » depuis la page `pathname` : on y revient après la connexion (sauf pages de connexion et espace). */
 export function loginHref(pathname: string | null): string {

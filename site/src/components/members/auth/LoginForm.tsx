@@ -1,6 +1,6 @@
 'use client'
 // Formulaire de connexion à l'espace membres (POST /api/compte/connexion) : vérification immédiate, messages selon le
-// refus (identifiants, adresse non confirmée, compte bloqué ou suspendu), puis retour vers la page demandée.
+// refus (identifiants, compte bloqué ou suspendu), puis retour vers la page demandée.
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
@@ -10,11 +10,10 @@ import { checkEmail, normalizeEmail, safeReturn } from '@/lib/members/shared'
 import { AuthNotice } from './AuthShell'
 import { FieldError, fieldAttrs, focusFirstError, frenchSpaces, type Errors } from './Field'
 import { PasswordField } from './PasswordField'
-import { ResendConfirmation } from './ResendConfirmation'
 
-type Failure = { message: string; code?: string; email: string }
+type Failure = { message: string; code?: string }
 
-export function LoginForm({ retour, email = '', forgotHref }: { retour: string; email?: string; forgotHref: string }) {
+export function LoginForm({ retour, forgotHref }: { retour: string; forgotHref: string }) {
   const router = useRouter()
   const [errors, setErrors] = useState<Errors>({})
   const [failure, setFailure] = useState<Failure | null>(null)
@@ -56,7 +55,7 @@ export function LoginForm({ retour, email = '', forgotHref }: { retour: string; 
       setErrors(res.errors)
       focusFirstError(form.current, res.errors)
     }
-    setFailure({ message: frenchSpaces(res.error), code: res.code, email: address })
+    setFailure({ message: frenchSpaces(res.error), code: res.code })
   }
 
   // method="post" : envoyé avant le chargement des scripts, le formulaire ne met pas le mot de passe dans l'adresse
@@ -66,7 +65,7 @@ export function LoginForm({ retour, email = '', forgotHref }: { retour: string; 
         <label htmlFor={`${base}-email`}>
           E-mail <span aria-hidden="true">*</span>
         </label>
-        <input {...fieldAttrs(base, 'email', errors)} type="email" inputMode="email" autoComplete="username" defaultValue={email} required maxLength={200} />
+        <input {...fieldAttrs(base, 'email', errors)} type="email" inputMode="email" autoComplete="username" required maxLength={200} />
         <FieldError base={base} name="email" errors={errors} />
       </div>
 
@@ -78,9 +77,8 @@ export function LoginForm({ retour, email = '', forgotHref }: { retour: string; 
       </div>
 
       {failure && (
-        <AuthNotice tone={failure.code === 'unverified' ? 'warn' : 'error'} icon={failure.code === 'unverified' ? 'mail' : undefined}>
+        <AuthNotice tone="error">
           <p role="alert">{failure.message}</p>
-          {failure.code === 'unverified' && <ResendConfirmation email={failure.email} />}
           {failure.code === 'locked' && (
             <Link href={forgotHref} className="auth-note__link">
               Choisir un nouveau mot de passe

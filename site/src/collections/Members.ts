@@ -28,7 +28,7 @@ export const Members: CollectionConfig = {
   admin: {
     useAsTitle: 'email',
     hidden: hiddenForEditors,
-    defaultColumns: ['firstName', 'email', 'department', 'verified', 'newsletter', 'createdAt'],
+    defaultColumns: ['firstName', 'email', 'department', 'newsletter', 'lastLoginAt', 'createdAt'],
     listSearchableFields: ['email', 'firstName', 'lastName'],
     description:
       'Les visiteurs inscrits sur le site (« Mon espace »). Cochez « Compte suspendu » pour bloquer quelqu’un sans supprimer son compte ; la suppression efface aussi son historique et sa liste.',
@@ -50,8 +50,8 @@ export const Members: CollectionConfig = {
           for (const key of ['historyPaused', 'lastLoginAt', 'consentAt'] as const) next[key] = originalDoc[key]
           if (next.newsletter === true && originalDoc.newsletter !== true) next.newsletter = originalDoc.newsletter
         }
-        // compte suspendu ou adresse changée : toutes ses sessions sont fermées (nouvelle version de session) et les liens
-        // encore valables envoyés par e-mail (confirmation, nouveau mot de passe) ne servent plus
+        // compte suspendu ou adresse changée : toutes ses sessions sont fermées (nouvelle version de session) et un lien
+        // « nouveau mot de passe » encore valable ne sert plus
         const blocked = next.blocked === true && originalDoc.blocked !== true
         const email = typeof next.email === 'string' && next.email !== originalDoc.email
         if (!blocked && !email) return next
@@ -60,8 +60,6 @@ export const Members: CollectionConfig = {
           sessionVersion: (Number(originalDoc.sessionVersion) || 0) + 1,
           resetTokenHash: null,
           resetTokenExpires: null,
-          verifyTokenHash: null,
-          verifyTokenExpires: null,
         }
       },
     ],
@@ -103,16 +101,6 @@ export const Members: CollectionConfig = {
       ],
     },
     {
-      name: 'verified',
-      label: 'E-mail confirmé',
-      type: 'checkbox',
-      defaultValue: false,
-      admin: {
-        position: 'sidebar',
-        description: 'Coché quand le membre a confirmé son adresse (lien reçu par e-mail, puis son mot de passe). Cochez-le vous-même pour confirmer un compte à la main.',
-      },
-    },
-    {
       name: 'blocked',
       label: 'Compte suspendu',
       type: 'checkbox',
@@ -139,8 +127,6 @@ export const Members: CollectionConfig = {
     { name: 'sessionVersion', type: 'number', defaultValue: 0, ...hidden },
     { name: 'loginAttempts', type: 'number', defaultValue: 0, ...hidden },
     { name: 'lockUntil', type: 'date', ...hidden },
-    { name: 'verifyTokenHash', type: 'text', index: true, ...hidden },
-    { name: 'verifyTokenExpires', type: 'date', ...hidden },
     { name: 'resetTokenHash', type: 'text', index: true, ...hidden },
     { name: 'resetTokenExpires', type: 'date', ...hidden },
   ],
