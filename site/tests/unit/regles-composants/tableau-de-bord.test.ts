@@ -157,7 +157,7 @@ describe('programme TV : jours sans émission parmi les 7 prochains (journées T
   it('grille vide : les 7 jours, à partir de la journée TV en cours (avant 2 h, c’est encore la veille)', async () => {
     expect((await dashboard({})).emptyDays).toEqual(['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27'])
     vi.setSystemTime(new Date('2026-10-21T23:30:00.000Z')) // jeudi 22, 1 h 30 à Paris
-    expect((await dashboard({})).emptyDays[0]).toBe('2026-10-21')
+    expect((await dashboard({})).emptyDays?.[0]).toBe('2026-10-21')
   })
 })
 

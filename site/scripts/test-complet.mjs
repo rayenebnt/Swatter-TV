@@ -50,6 +50,11 @@ const withDatabase = (uri, name) => {
 }
 const workName = decodeURIComponent(new URL(workUri).pathname.slice(1))
 const e2eName = process.env.TEST_E2E_DATABASE_NAME || `${workName}_e2e`
+// la base des tests de bout en bout est supprimée puis recréée : jamais la base de travail
+if (e2eName === workName) {
+  console.error(`TEST_E2E_DATABASE_NAME désigne la base de travail (${e2eName}), qui serait effacée : choisissez un autre nom.`)
+  process.exit(1)
+}
 const e2eUri = withDatabase(workUri, e2eName)
 
 async function recreateDatabase(name) {

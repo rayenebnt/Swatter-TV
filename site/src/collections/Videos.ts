@@ -4,6 +4,7 @@ import { dateTimePicker } from '@/fields/date'
 import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { videoSourceField } from '@/fields/videoSource'
+import { recordLiveBefore } from '@/hooks/live-before'
 import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
 import { top10AfterChange, top10AfterDelete } from '@/hooks/top10'
 import { thumbnailUnlessYoutube, youtubeThumbnail } from '@/hooks/youtubeThumbnail'
@@ -25,6 +26,8 @@ export const Videos: CollectionConfig = {
   defaultSort: '-publishedAt',
   hooks: {
     beforeValidate: [youtubeThumbnail],
+    // version en ligne avant l'enregistrement (place du Top 10 libérée, retrait du site) : voir src/hooks/live-before.ts
+    beforeChange: [recordLiveBefore],
     // Top 10 sans doublon (les autres vidéos classées se décalent), puis régénération du site
     afterChange: [top10AfterChange, revalidateAfterChange],
     afterDelete: [top10AfterDelete, revalidateAfterDelete],

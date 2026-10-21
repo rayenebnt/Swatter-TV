@@ -6,6 +6,7 @@ import { after } from 'next/server'
 import type { Endpoint, Payload, PayloadRequest, Where } from 'payload'
 import type { Member } from '@/payload-types'
 import { departmentLabel } from '@/lib/departments'
+import { parisDay } from '@/lib/format'
 import { hashPassword, hashToken, newToken, verifyPassword } from './crypto'
 import { resetEmail, sendMemberEmail } from './emails'
 import { isPublicItem, loadItems } from './items'
@@ -40,7 +41,9 @@ function json(body: unknown, status = 200, cookies: string[] = []): Response {
   return new Response(JSON.stringify(body), { status, headers })
 }
 const refused = () => json({ error: 'Requête refusée.' }, 403)
-const tooMany = (what: string) => json({ error: `Trop de ${what} depuis votre connexion : réessayez dans quelques minutes.` }, 429)
+/** « Trop de tentatives… », « Trop d’inscriptions… » (élision devant une voyelle). */
+const tooMany = (what: string) =>
+  json({ error: `Trop ${/^[aeiouyéèêàâîôû]/i.test(what) ? 'd’' : 'de '}${what} depuis votre connexion : réessayez dans quelques minutes.` }, 429)
 const locked = () =>
   json({ error: 'Trop d’essais : la connexion à ce compte est bloquée pendant 15 minutes. Vous pouvez aussi choisir un nouveau mot de passe.', code: 'locked' }, 429)
 
@@ -564,13 +567,13 @@ export const memberEndpoints: Endpoint[] = [
       const lines = [
         ['Prénom', 'Nom', 'E-mail', 'Département', 'Inscrit le'].join(';'),
         ...res.docs.map((d) =>
-          [d.firstName, d.lastName ?? '', d.email, d.department ? departmentLabel(d.department) : '', d.createdAt.slice(0, 10)].map((v) => csv(String(v))).join(';'),
+          [d.firstName, d.lastName ?? '', d.email, d.department ? departmentLabel(d.department) : '', parisDay(d.createdAt)].map((v) => csv(String(v))).join(';'),
         ),
       ]
       return new Response(`﻿${lines.join('\r\n')}\r\n`, {
         headers: {
           'content-type': 'text/csv; charset=utf-8',
-          'content-disposition': `attachment; filename="membres-lettre-info-${new Date().toISOString().slice(0, 10)}.csv"`,
+          'content-disposition': `attachment; filename="membres-lettre-info-${parisDay()}.csv"`,
           'cache-control': 'no-store',
         },
       })

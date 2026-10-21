@@ -15,7 +15,12 @@ const countOf =
   }
 
 /** Champs techniques (mot de passe, jetons, sessions) : jamais renvoyés par l'API ni montrés dans l'administration. */
-const hidden = { hidden: true } as const
+/**
+ * Champs techniques : jamais renvoyés par l'API, ni écrits par elle (même par un administrateur : une empreinte ou un jeton
+ * choisis permettraient de se connecter à la place du membre). L'espace membres les écrit avec overrideAccess ou
+ * db.updateOne ; le hook beforeChange ci-dessus (suspension, changement d'adresse) passe après ce contrôle.
+ */
+const hidden = { hidden: true, access: { create: () => false, update: () => false } } as const
 
 /**
  * Membres du site : visiteurs inscrits depuis /inscription (historique des vidéos, « Ma liste », préférences).

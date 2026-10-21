@@ -14,10 +14,15 @@ export const databaseName = (uri: string) => decodeURIComponent(new URL(uri).pat
 /** Adresse de la base de travail (fichier .env), à défaut celle du poste de développement. */
 export const workDatabaseUri = () => process.env.DATABASE_URI || 'postgres://swatter:swatter@127.0.0.1:5432/swatter'
 
-/** Base des tests d'intégration (Vitest) : TEST_DATABASE_NAME, sinon « <base de travail>_tests ». */
+/**
+ * Base des tests d'intégration (Vitest) : TEST_DATABASE_NAME, sinon « <base de travail>_tests ». Elle est supprimée puis
+ * recréée à chaque lancement : jamais la base de travail.
+ */
 export function integrationDatabaseUri(): string {
   const work = workDatabaseUri()
-  return withDatabase(work, process.env.TEST_DATABASE_NAME || `${databaseName(work)}_tests`)
+  const name = process.env.TEST_DATABASE_NAME || `${databaseName(work)}_tests`
+  if (name === databaseName(work)) throw new Error(`TEST_DATABASE_NAME désigne la base de travail (${name}), qui serait effacée : choisissez un autre nom.`)
+  return withDatabase(work, name)
 }
 
 /** Dossier des médias envoyés pendant les tests d'intégration (un par base : plusieurs lancements ne se gênent pas). */

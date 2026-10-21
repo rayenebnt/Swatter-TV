@@ -3,6 +3,7 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, GlobalAfterChangeHook } from 'payload'
 import { revalidatePath } from 'next/cache'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { recordLiveBefore } from '@/hooks/live-before'
 import { revalidateAfterChange, revalidateAfterDelete, revalidateGlobal, revalidateHooks } from '@/hooks/revalidate'
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
@@ -33,6 +34,11 @@ const remove = (req: Req, doc: Versioned) =>
   revalidateAfterDelete({ doc, req, id: doc?.id, collection: { slug: 'videos' }, context: req.context } as unknown as Parameters<CollectionAfterDeleteHook>[0])
 
 const revalidated = () => vi.mocked(revalidatePath).mock.calls.length
+/** Avant l'enregistrement de la fiche `id` : version en ligne retenue (hook beforeChange de revalidateHooks). */
+const beforeSave = (req: Req, id: number) =>
+  recordLiveBefore({ collection: { slug: 'videos' }, data: {}, operation: 'update', originalDoc: { id }, req, context: req.context } as unknown as Parameters<
+    typeof recordLiveBefore
+  >[0])
 
 beforeEach(() => {
   vi.mocked(revalidatePath).mockReset()
@@ -77,6 +83,22 @@ describe('collections : la version visible a-t-elle changé ?', () => {
     const req = fakeReq({ id: 5, _status: 'draft' })
     await change(req, { id: 5, _status: 'draft' }, { id: 5, _status: 'published' })
     expect(revalidated()).toBe(1)
+  })
+
+  it('« Retirer du site » d’un contenu qui a des modifications en attente : la version en ligne retenue avant fait foi', async () => {
+    // previousDoc, la dernière version, est le brouillon en attente ; la ligne principale était en ligne avant l'enregistrement
+    const req = fakeReq({ id: 5, _status: 'draft' })
+    req.payload.db.findOne.mockResolvedValueOnce({ id: 5, _status: 'published' })
+    await beforeSave(req, 5)
+    await change(req, { id: 5, _status: 'draft' }, { id: 5, _status: 'draft', title: 'Modification en attente' })
+    expect(revalidated()).toBe(1)
+  })
+
+  it('brouillon enregistré sur un contenu déjà retiré du site : rien', async () => {
+    const req = fakeReq({ id: 5, _status: 'draft' })
+    await beforeSave(req, 5)
+    await change(req, { id: 5, _status: 'draft' }, { id: 5, _status: 'published' })
+    expect(revalidated()).toBe(0)
   })
 
   it('ligne principale introuvable : rien', async () => {
@@ -139,7 +161,7 @@ describe('suppression et globals', () => {
     expect(revalidated()).toBe(2)
   })
 
-  it('revalidateHooks : régénération après enregistrement et après suppression', () => {
-    expect(revalidateHooks).toEqual({ afterChange: [revalidateAfterChange], afterDelete: [revalidateAfterDelete] })
+  it('revalidateHooks : version en ligne retenue avant l’enregistrement, régénération après enregistrement et après suppression', () => {
+    expect(revalidateHooks).toEqual({ beforeChange: [recordLiveBefore], afterChange: [revalidateAfterChange], afterDelete: [revalidateAfterDelete] })
   })
 })

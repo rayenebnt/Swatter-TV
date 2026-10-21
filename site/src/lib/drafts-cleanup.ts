@@ -8,17 +8,20 @@ const KEEP_MS = 24 * 60 * 60 * 1000
 
 /**
  * Supprime les brouillons jamais publiés dont la dernière version n'a toujours pas de titre, modifiés il y a plus de 24 h.
- * Renvoie le nombre de fiches supprimées.
+ * Le titre est le champ affiché de chaque rubrique (`useAsTitle`) : « title », « name » (webcams, publicités) ou « label »
+ * (grille : rempli à l'enregistrement d'après l'heure et l'émission). Renvoie le nombre de fiches supprimées.
  */
 export async function deleteEmptyDrafts(payload: Payload, now = Date.now()): Promise<number> {
   const before = new Date(now - KEEP_MS).toISOString()
   let deleted = 0
   for (const collection of DRAFT_COLLECTIONS) {
+    const titleField = payload.collections[collection].config.admin.useAsTitle
+    if (!titleField || titleField === 'id') continue
     // dernières versions (draft: true) toujours sans titre
     const { docs: untitled } = await payload.find({
       collection,
       draft: true,
-      where: { and: [{ or: [{ title: { exists: false } }, { title: { equals: '' } }] }, { updatedAt: { less_than: before } }] },
+      where: { and: [{ or: [{ [titleField]: { exists: false } }, { [titleField]: { equals: '' } }] }, { updatedAt: { less_than: before } }] },
       pagination: false,
       depth: 0,
       select: {},

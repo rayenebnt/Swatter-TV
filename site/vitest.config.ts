@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { config as loadEnv } from 'dotenv'
 import { defineConfig } from 'vitest/config'
-import { integrationDatabaseUri, integrationMediaDir } from './tests/support/database'
+import { databaseName, integrationDatabaseUri, integrationMediaDir, workDatabaseUri } from './tests/support/database'
 
 /**
  * Tests unitaires (logique pure, sans base ni serveur) et tests d'intégration (Payload sur une base dédiée, recréée à
@@ -39,6 +39,8 @@ export default defineConfig({
           hookTimeout: 180_000,
           env: {
             DATABASE_URI: integrationDatabaseUri(),
+            // nom de la base de travail : socle.test.ts vérifie que les tests ne s'y connectent jamais
+            TEST_WORK_DATABASE_NAME: databaseName(workDatabaseUri()),
             MEDIA_DIR: integrationMediaDir(root),
             NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
             PAYLOAD_SECRET: process.env.PAYLOAD_SECRET || 'secret-des-tests-d-integration',

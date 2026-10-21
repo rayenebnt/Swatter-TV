@@ -1,4 +1,5 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, PayloadRequest } from 'payload'
+import { liveBefore } from './live-before'
 
 /** Nombre de places du Top 10. */
 export const TOP10_SIZE = 10
@@ -53,15 +54,30 @@ async function otherRanked(req: PayloadRequest, id: number | string): Promise<Ra
   return docs.flatMap((d) => (typeof d.top10Rank === 'number' ? [{ id: d.id, rank: d.top10Rank }] : []))
 }
 
+/**
+ * Nouvelle place d'une autre vidéo, sans rien changer d'autre. Si elle a des modifications pas encore publiées, un
+ * enregistrement ordinaire reconstruirait sa version en ligne à partir de ce brouillon, qui la retirerait du site : la place
+ * est alors écrite directement dans la version en ligne, puis dans le brouillon en cours (sinon sa publication remettrait
+ * l'ancienne place).
+ */
+async function setRank(req: PayloadRequest, id: number, rank: number | null) {
+  const context = { [TOP10_REORDER]: true, disableRevalidate: true }
+  const latest = await req.payload.findByID({ collection: 'videos', id, draft: true, depth: 0, req, select: { _status: true }, context, disableErrors: true })
+  if (latest?._status === 'draft') {
+    await req.payload.db.updateOne({ collection: 'videos', id, data: { top10Rank: rank }, req })
+    await req.payload.update({ collection: 'videos', id, draft: true, data: { top10Rank: rank }, depth: 0, req, context })
+  } else {
+    await req.payload.update({ collection: 'videos', id, data: { top10Rank: rank }, depth: 0, req, context })
+  }
+}
+
 async function apply(req: PayloadRequest, changes: Map<number, number | null>) {
   if (!changes.size) return
   // Payload recopie `context` sur la requête partagée (createLocalReq) : sans cette restauration, « disableRevalidate »
   // empêcherait la régénération du site demandée par l'enregistrement principal
   const parentContext = req.context
   try {
-    for (const [id, rank] of changes) {
-      await req.payload.update({ collection: 'videos', id, data: { top10Rank: rank }, depth: 0, req, context: { [TOP10_REORDER]: true, disableRevalidate: true } })
-    }
+    for (const [id, rank] of changes) await setRank(req, id, rank)
   } finally {
     req.context = parentContext
   }
@@ -75,8 +91,12 @@ export const top10AfterChange: CollectionAfterChangeHook = async ({ doc, previou
   // un brouillon ne change pas le classement en ligne : on réordonne à la publication
   if (context?.[TOP10_REORDER] || doc._status === 'draft') return doc
   const rank = typeof doc.top10Rank === 'number' ? doc.top10Rank : null
-  // place libérée : seulement celle d'une version déjà publiée (un brouillon n'occupait aucune place sur le site)
-  const before = operation === 'update' && previousDoc?._status !== 'draft' && typeof previousDoc?.top10Rank === 'number' ? previousDoc.top10Rank : null
+  // place libérée : seulement celle de la version qui était en ligne (un brouillon n'occupait aucune place sur le site).
+  // previousDoc est la dernière version, le plus souvent le brouillon enregistré automatiquement : la version en ligne
+  // retenue avant l'enregistrement fait foi (previousDoc à défaut)
+  const recorded = liveBefore(req.context, 'videos', doc.id)
+  const live = recorded !== undefined ? recorded : previousDoc
+  const before = operation === 'update' && live?._status === 'published' && typeof live.top10Rank === 'number' ? live.top10Rank : null
   const freed = before !== null && before !== rank ? before : null
   if (rank === null && freed === null) return doc
   await apply(req, reorderTop10(await otherRanked(req, doc.id), freed, rank))

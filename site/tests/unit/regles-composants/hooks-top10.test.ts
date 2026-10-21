@@ -2,6 +2,7 @@
 // hooks d'enregistrement et de suppression avec une fausse requête (vidéos classées en mémoire, mises à jour notées).
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, Where } from 'payload'
 import { describe, expect, it, vi } from 'vitest'
+import { recordLiveBefore } from '@/hooks/live-before'
 import { reorderTop10, TOP10_REORDER, TOP10_SIZE, top10AfterChange, top10AfterDelete } from '@/hooks/top10'
 import { matches, sortDocs, type Doc } from './outils'
 
@@ -82,18 +83,44 @@ describe('reorderTop10 : nouvelles places des autres vidéos classées', () => {
   })
 })
 
-/** Fausse requête : les vidéos sont en mémoire ; update applique la place et recopie `context` comme createLocalReq. */
-function fakeReq(videos: Doc[], options: { failOn?: number } = {}) {
+type Mock = ReturnType<typeof vi.fn>
+type FakeReq = { context: Record<string, unknown>; payload: { find: Mock; findByID: Mock; update: Mock; db: { findOne: Mock; updateOne: Mock } } }
+
+/**
+ * Fausse requête : les vidéos sont en mémoire (`top10Rank` : version en ligne ; `latest: 'draft'` : modifications pas
+ * encore publiées, `draftRank` : place dans ce brouillon) ; update recopie `context` comme createLocalReq. `live` : version
+ * en ligne lue par recordLiveBefore avant l'enregistrement de la vidéo.
+ */
+function fakeReq(videos: Doc[], options: { failOn?: number; live?: Record<number, Doc> } = {}) {
   const context: Record<string, unknown> = { origine: 'enregistrement principal' }
-  const req: { context: Record<string, unknown>; payload: Record<string, ReturnType<typeof vi.fn>> } = { context, payload: {} }
-  req.payload.find = vi.fn(async (args: { where: Where; sort: string[] }) => ({ docs: sortDocs(videos.filter((v) => matches(v, args.where)), args.sort) }))
-  req.payload.update = vi.fn(async (args: { id: number; data: { top10Rank: number | null }; context: Record<string, unknown> }) => {
-    req.context = args.context
-    if (args.id === options.failOn) throw new Error('écriture refusée')
-    const video = videos.find((v) => v.id === args.id)
-    if (video) video.top10Rank = args.data.top10Rank
-    return video
-  })
+  const byId = (id: unknown) => videos.find((v) => v.id === id)
+  const req: FakeReq = {
+    context,
+    payload: {
+      find: vi.fn(async (args: { where: Where; sort: string[] }) => ({ docs: sortDocs(videos.filter((v) => matches(v, args.where)), args.sort) })),
+      // dernière version (draft: true) : le brouillon en cours s'il y en a un
+      findByID: vi.fn(async (args: { id: number }) => {
+        const v = byId(args.id)
+        return v ? { id: v.id, _status: v.latest ?? v._status } : null
+      }),
+      update: vi.fn(async (args: { id: number; draft?: boolean; data: { top10Rank: number | null }; context: Record<string, unknown> }) => {
+        req.context = args.context
+        if (args.id === options.failOn) throw new Error('écriture refusée')
+        const video = byId(args.id)
+        if (video) video[args.draft ? 'draftRank' : 'top10Rank'] = args.data.top10Rank
+        return video
+      }),
+      db: {
+        findOne: vi.fn(async (args: { where: { id: { equals: number } } }) => options.live?.[args.where.id.equals] ?? null),
+        // écriture directe de la ligne principale : seulement les colonnes données
+        updateOne: vi.fn(async (args: { id: number; data: { top10Rank: number | null } }) => {
+          const video = byId(args.id)
+          if (video) video.top10Rank = args.data.top10Rank
+          return video
+        }),
+      },
+    },
+  }
   return { req, context }
 }
 const video = (id: number, top10Rank: number | null, updatedAt = '2026-10-01T10:00:00.000Z'): Doc => ({ id, top10Rank, updatedAt, _status: 'published' })
@@ -101,9 +128,14 @@ const rankOf = (videos: Doc[]) => Object.fromEntries(videos.map((v) => [v.id, v.
 
 type ChangeArgs = { doc: Doc; previousDoc?: Doc; operation: 'create' | 'update'; context?: Record<string, unknown> }
 type HookArgs = Parameters<CollectionAfterChangeHook>[0]
-const saved = (req: ReturnType<typeof fakeReq>['req'], { doc, previousDoc = {}, operation, context = {} }: ChangeArgs) =>
+const saved = (req: FakeReq, { doc, previousDoc = {}, operation, context = {} }: ChangeArgs) =>
   top10AfterChange({ doc, previousDoc, operation, req, context, collection: { slug: 'videos' }, data: doc } as unknown as HookArgs)
-const deleted = (req: ReturnType<typeof fakeReq>['req'], doc: Doc, context: Record<string, unknown> = {}) =>
+/** Avant l'enregistrement de la vidéo `id` : version en ligne retenue (hook beforeChange des vidéos). */
+const beforeSave = (req: FakeReq, id: number) =>
+  recordLiveBefore({ collection: { slug: 'videos' }, data: {}, operation: 'update', originalDoc: { id }, req, context: req.context } as unknown as Parameters<
+    typeof recordLiveBefore
+  >[0])
+const deleted = (req: FakeReq, doc: Doc, context: Record<string, unknown> = {}) =>
   top10AfterDelete({ doc, req, context, id: doc.id, collection: { slug: 'videos' } } as unknown as Parameters<CollectionAfterDeleteHook>[0])
 
 describe('top10AfterChange : enregistrement d’une vidéo', () => {
@@ -193,6 +225,36 @@ describe('top10AfterChange : enregistrement d’une vidéo', () => {
     const { req, context } = fakeReq(videos, { failOn: 2 })
     await expect(saved(req, { doc: { id: 9, top10Rank: 1, _status: 'published' }, operation: 'create' })).rejects.toThrow('écriture refusée')
     expect(req.context).toBe(context)
+  })
+
+  it('publication depuis l’administration : la place libérée est celle de la version en ligne, pas celle du brouillon', async () => {
+    // en ligne : 2 (1re), 3 (2e), 4 (3e), 5 (4e) ; 2 passe 3e : previousDoc, le brouillon enregistré automatiquement, porte déjà
+    // la 3e place ; la version en ligne retenue avant l'enregistrement, la 1re
+    const videos = [video(3, 2), video(4, 3), video(5, 4)]
+    const { req } = fakeReq(videos, { live: { 2: { id: 2, _status: 'published', top10Rank: 1 } } })
+    await beforeSave(req, 2)
+    await saved(req, { doc: { id: 2, top10Rank: 3, _status: 'published' }, previousDoc: { id: 2, top10Rank: 3, _status: 'draft' }, operation: 'update' })
+    expect(rankOf(videos)).toEqual({ 3: 1, 4: 2, 5: 4 })
+  })
+
+  it('publication depuis l’administration d’une vidéo retirée du Top 10 : les suivantes remontent', async () => {
+    const videos = [video(1, 1), video(3, 3), video(4, 4)]
+    const { req } = fakeReq(videos, { live: { 2: { id: 2, _status: 'published', top10Rank: 2 } } })
+    await beforeSave(req, 2)
+    await saved(req, { doc: { id: 2, top10Rank: null, _status: 'published' }, previousDoc: { id: 2, top10Rank: null, _status: 'draft' }, operation: 'update' })
+    expect(rankOf(videos)).toEqual({ 1: 1, 3: 2, 4: 3 })
+  })
+
+  it('vidéo décalée qui a des modifications pas encore publiées : sa version en ligne garde son contenu, seule sa place change', async () => {
+    // un enregistrement ordinaire reconstruirait la version en ligne à partir du brouillon (et la retirerait du site)
+    const videos = [video(1, 1), { ...video(2, 2), latest: 'draft', draftRank: 2 }]
+    const { req } = fakeReq(videos)
+    await saved(req, { doc: { id: 9, top10Rank: 2, _status: 'published' }, operation: 'create' })
+    expect(req.payload.db.updateOne).toHaveBeenCalledWith(expect.objectContaining({ collection: 'videos', id: 2, data: { top10Rank: 3 }, req }))
+    // le brouillon prend la même place : sa publication ne remettra pas l'ancienne
+    const updates = req.payload.update.mock.calls.map(([args]) => args as { id: number; draft?: boolean })
+    expect(updates.filter((u) => u.id === 2)).toEqual([expect.objectContaining({ id: 2, draft: true, data: { top10Rank: 3 } })])
+    expect(videos[1]).toMatchObject({ top10Rank: 3, draftRank: 3, _status: 'published' })
   })
 
   it('décalage en cours (context.top10Reorder) : pas de réordonnancement en cascade', async () => {

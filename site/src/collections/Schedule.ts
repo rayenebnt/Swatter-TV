@@ -25,6 +25,7 @@ export const Schedule: CollectionConfig = {
   hooks: {
     ...revalidateHooks,
     beforeChange: [
+      ...revalidateHooks.beforeChange,
       async ({ data, req }) => {
         let title = data.titleOverride as string | undefined
         if (!title && data.program) {

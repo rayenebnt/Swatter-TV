@@ -27,7 +27,7 @@ import { Schedule } from './collections/Schedule'
 import { Users } from './collections/Users'
 import { Videos } from './collections/Videos'
 import { Webcams } from './collections/Webcams'
-import { hiddenForEditors } from './access'
+import { hiddenForEditors, isAdmin } from './access'
 import { Meteo } from './globals/Meteo'
 import { Settings } from './globals/Settings'
 import { Youtube } from './globals/Youtube'
@@ -56,6 +56,9 @@ const plugins: Plugin[] = [
   redirectsPlugin({
     collections: ['pages', 'articles', 'videos', 'replays', 'events'],
     overrides: {
+      // gérées par les administrateurs seulement (guide, partie 19) : l'API aussi, pas seulement le menu. Lecture publique
+      // (réglage du plugin : ce sont d'anciennes adresses du site)
+      access: { read: () => true, create: isAdmin, update: isAdmin, delete: isAdmin },
       admin: {
         hidden: hiddenForEditors,
         description: 'Renvoie une ancienne adresse du site vers une nouvelle (par ex. après avoir changé l’adresse d’un contenu partagé).',

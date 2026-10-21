@@ -56,6 +56,8 @@ export const Users: CollectionConfig = {
       return (req.user as { role?: string }).role === 'admin' || { id: { equals: req.user.id } }
     },
     delete: isAdmin,
+    // débloquer un compte (après 5 mauvais mots de passe) : administrateurs seulement, sinon le blocage serait contournable
+    unlock: isAdmin,
     admin: ({ req }) => Boolean(req.user),
   },
   fields: [
