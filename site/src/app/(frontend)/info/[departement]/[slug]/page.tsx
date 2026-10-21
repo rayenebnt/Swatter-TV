@@ -8,6 +8,7 @@ import { inPlace, ofPlace } from '@/lib/places'
 import { RelativeTime } from '@/components/info/RelativeTime'
 import { articleImage, articleShareImage, frenchSpaces, fullDateTime, hasOwnContent, plainText, toTeaser, truncate } from '@/components/info/utils'
 import { AdSlot } from '@/components/layout/AdSlot'
+import { SaveButton } from '@/components/members/SaveButton'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { MediaImage } from '@/components/ui/MediaImage'
@@ -155,6 +156,8 @@ export default async function ArticlePage({ params }: { params: Params }) {
                     </span>
                   </li>
                 </ul>
+                {/* « Ma liste » de l'espace membres : à lire plus tard */}
+                <SaveButton kind="article" id={article.id} title={article.title} />
               </header>
 
               {media && (

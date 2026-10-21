@@ -67,9 +67,25 @@ async function inBatches<T, R>(items: T[], size: number, fn: (item: T, i: number
 }
 
 // ---------------------------------------------------------------------------------------------
-// 1. Nettoyage (jamais la collection users)
+// 1. Nettoyage (jamais les comptes : ni users, ni members, données personnelles)
 // ---------------------------------------------------------------------------------------------
-const WIPE: CollectionSlug[] = ['redirects', 'schedule', 'replays', 'videos', 'articles', 'events', 'webcams', 'ads', 'pages', 'programs', 'media']
+// L'historique et « Ma liste » des membres désignent des contenus par leur numéro : vidés avec les contenus qu'ils
+// désignent (lignes orphelines sinon) ; les comptes des membres restent.
+const WIPE: CollectionSlug[] = [
+  'member-history',
+  'member-favorites',
+  'redirects',
+  'schedule',
+  'replays',
+  'videos',
+  'articles',
+  'events',
+  'webcams',
+  'ads',
+  'pages',
+  'programs',
+  'media',
+]
 
 // Les réglages référencent des médias (carrousel, direct) : on les détache avant de vider la médiathèque.
 await payload.updateGlobal({

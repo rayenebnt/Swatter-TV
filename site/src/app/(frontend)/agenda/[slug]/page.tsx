@@ -15,6 +15,7 @@ import {
   timeLabel,
 } from '@/components/agenda/utils'
 import { AdSlot } from '@/components/layout/AdSlot'
+import { SaveButton } from '@/components/members/SaveButton'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { MediaImage } from '@/components/ui/MediaImage'
@@ -179,6 +180,8 @@ export default async function EventPage({ params }: { params: Params }) {
                     <Icon name="arrow" />
                   </a>
                 )}
+                {/* « Ma liste » de l'espace membres (même hauteur que les boutons voisins) */}
+                <SaveButton kind="event" id={event.id} title={event.title} size="md" />
                 <Link className="btn btn--ghost" href="/agenda">
                   <Icon name="cal" />
                   Tout l’agenda

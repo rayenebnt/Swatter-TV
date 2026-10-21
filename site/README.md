@@ -2,7 +2,8 @@
 
 Site de **Swatter TV & Info**, web TV régionale d’Auvergne-Rhône-Alpes (siège à Thyez, Haute-Savoie) :
 le direct, les vidéos et le Top 10, le replay, l’info par département, la météo, le programme TV, l’agenda des sorties
-et les webcams, le tout administré par l’équipe de la chaîne depuis `/admin`.
+et les webcams, plus un espace membres pour les visiteurs (« Mon espace » : historique, « Ma liste », département), le
+tout administré par l’équipe de la chaîne depuis `/admin`.
 
 Ce document s’adresse aux développeurs. Pour l’équipe éditoriale, voir **[GUIDE_CLIENT.md](GUIDE_CLIENT.md)** (également
 affiché dans l’administration, page « Aide ») ;
@@ -57,15 +58,17 @@ cp .env.example .env
 | Variable | Obligatoire | Rôle |
 |---|---|---|
 | `DATABASE_URI` | oui | connexion PostgreSQL, ex. `postgres://swatter:motdepasse@127.0.0.1:5432/swatter` |
-| `PAYLOAD_SECRET` | oui | chaîne aléatoire longue (`openssl rand -hex 32`) : signe les sessions de l’administration |
+| `PAYLOAD_SECRET` | oui | chaîne aléatoire longue (`openssl rand -hex 32`) : signe les sessions de l’administration et, par une clé qui en est dérivée, celles des membres (le changer déconnecte tout le monde) |
 | `NEXT_PUBLIC_SITE_URL` | oui | adresse publique sans `/` final ; **`http://localhost:3000` en local** (URL canoniques, Open Graph, adresse du serveur Payload) |
 | `CRON_SECRET` | oui en production | secret de la tâche planifiée `GET /api/cron/import` (`openssl rand -hex 16`) |
 | `NEXT_PUBLIC_BUNNY_LIBRARY_ID` | non | bibliothèque Bunny Stream (vidéos de type « Bunny Stream ») |
 | `YOUTUBE_API_KEY` | non | clé de l’API YouTube Data v3 : l’import de la chaîne reprend **toutes** ses vidéos (et leur durée) ; sans clé, il lit le flux RSS public de la chaîne, limité à ses 15 dernières vidéos |
 | `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | non | médias sur S3 / R2 / Scaleway au lieu du dossier `media/` (activé dès que `S3_BUCKET` est renseigné) |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | oui en production | premier administrateur créé par `src/scripts/init-db.ts` (mot de passe de 12 caractères au moins) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | **oui en production** | envoi des e-mails : « Mot de passe oublié » et messages du formulaire « Proposer une info » (vers l’e-mail de contact des réglages, à défaut contact@swatter-tv.fr). Sans `SMTP_HOST`, ils sont seulement écrits dans le journal du serveur (les messages restent lisibles dans « Messages reçus »). `SMTP_FROM` : adresse d’expédition autorisée par le serveur SMTP (par défaut contact@swatter-tv.fr) ; port 465 = SSL, sinon STARTTLS |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | **oui en production** | envoi des e-mails : « Mot de passe oublié » de l’administration, messages du formulaire « Proposer une info » (vers l’e-mail de contact des réglages, à défaut contact@swatter-tv.fr) et e-mails des membres (confirmation de l’adresse, nouveau mot de passe : sans eux, personne ne peut activer son compte). Sans `SMTP_HOST`, ils sont seulement écrits dans le journal du serveur (les messages restent lisibles dans « Messages reçus » ; hors production, le lien des e-mails des membres y est rappelé en clair pour tester). `SMTP_FROM` : adresse d’expédition autorisée par le serveur SMTP (par défaut contact@swatter-tv.fr) ; port 465 = SSL, sinon STARTTLS |
 | `SEED_FORCE` | non | `1` pour autoriser les contenus de départ (`npm run seed`) quand `NODE_ENV=production` |
+| `TRUSTED_PROXY_HOPS` | non | nombre de reverse proxys en chaîne devant le site (1 par défaut ; 2 derrière un CDN puis Caddy) : sert à lire l’adresse IP du visiteur pour les limites anti-abus |
+| `MEMBER_RATE_FACTOR` | non (tests seulement) | multiplie les limites par adresse IP de l’espace membres (inscriptions, connexions, e-mails…) : `10` pour les tests de bout en bout, qui partent tous de la même adresse. Jamais en production |
 
 Les variables `NEXT_PUBLIC_*` sont figées dans le code au moment du build : les changer impose de reconstruire le site.
 
@@ -84,7 +87,7 @@ npm run dev
   compte depuis `http://localhost:3000/admin` : sur une base vide, ce premier compte devient automatiquement administrateur.
 - `npm run seed` remplit la base avec les contenus de départ, des modèles marqués « Exemple » que le client remplace
   (liste dans GUIDE_CLIENT.md, partie 1) : **il efface d’abord tous les contenus** (jamais les
-  utilisateurs), puis recrée médias, 4 émissions d’exemple et une grille type sur 8 jours à partir d’hier, 3 articles,
+  utilisateurs ni les comptes des membres ; leur historique et « Ma liste », qui désignent des contenus, sont vidés), puis recrée médias, 4 émissions d’exemple et une grille type sur 8 jours à partir d’hier, 3 articles,
   3 événements, 1 replay, 2 webcams, les pages (« [à compléter] »), les réglages et la météo : les prévisions actuelles
   d’Open-Meteo, ou à défaut (pas d’accès à internet) des prévisions de démonstration remplacées dès que le site joint
   Open-Meteo (aucune vidéo : « Vidéos » et « Replays » se remplissent avec la chaîne YouTube du client, fiche « Chaîne
@@ -94,7 +97,8 @@ npm run dev
 - Après un `git pull`, si le serveur ou `npm run seed` restent bloqués sur une question en anglais (« Is … column
   created or renamed from another column? », « Accept warnings? »), ou si l’administration ne montre pas les nouveaux
   contenus : arrêtez le serveur (Ctrl+C), lancez **`npm run maj-base`** (garde tous vos contenus), puis `npm run dev`.
-  `npm run reinit` repart de zéro (contenus « Exemple », comptes conservés) : seulement si vous voulez tout effacer.
+  `npm run reinit` repart de zéro (contenus « Exemple », comptes de l’équipe conservés, membres effacés) : seulement si
+  vous voulez tout effacer.
   Quand un champ disparaît du code, ajoutez sa colonne à la liste `OBSOLETE` de `src/scripts/maj-base.ts`.
 - Site : <http://localhost:3000> · administration : <http://localhost:3000/admin>.
 
@@ -110,8 +114,8 @@ npm run dev
 | `npm run seed` | contenus de départ « Exemple » (voir ci-dessus) |
 | `npm run maj-base` | **après un `git pull` qui change la structure des données** : met la base locale à jour **sans rien effacer** (retire les colonnes supprimées du code, qui feraient poser une question à drizzle, puis ajoute les nouvelles). Arrêtez `npm run dev` avant. Refusé en production (migrations) |
 | `npm run exemples` | ajoute les contenus d’exemple qui manquent **sans rien supprimer** (pour l’instant : le replay d’exemple, si « Replays » est vide) |
-| `npm run maj-pages` | remplace le texte des pages mentions légales, crédits, vie privée et le groupe par celui de `src/scripts/seed/pages.ts`, sans toucher au reste ; l’ancien texte reste dans l’historique de la page. `npm run maj-pages -- mentions-legales` pour une seule page |
-| `npm run reinit` | **après un `git pull` qui change la structure des données** : remet la base locale à neuf sans aucune question (garde les comptes et leurs mots de passe, vide la médiathèque, recharge les contenus « Exemple »). Arrêtez `npm run dev` avant. Refusé en production |
+| `npm run maj-pages` | remplace le texte des pages mentions légales, crédits, vie privée et le groupe par celui de `src/scripts/seed/pages.ts`, sans toucher au reste ; l’ancien texte reste dans l’historique de la page. `npm run maj-pages -- mentions-legales` pour une seule page ; **`npm run maj-pages -- vie-privee`** applique le texte de la page Vie privée qui décrit l’espace membres sur une base existante (sans écraser les autres pages, peut-être déjà complétées par le client) |
+| `npm run reinit` | **après un `git pull` qui change la structure des données** : remet la base locale à neuf sans aucune question (garde les comptes de l’équipe et leurs mots de passe, efface les membres, vide la médiathèque, recharge les contenus « Exemple »). Arrêtez `npm run dev` avant. Refusé en production |
 | `npm run import` | import manuel de la météo et des vidéos de la chaîne YouTube (même traitement que la tâche planifiée) |
 | `npm run payload run src/scripts/init-db.ts` | tables + premier administrateur |
 | `npm run payload run src/scripts/publish-existing.ts` | une seule fois, sur une base de développement remplie avant l’arrivée des brouillons : publie les contenus existants (sinon invisibles sur le site) |
@@ -126,14 +130,17 @@ npm run dev
 ```
 src/
   app/(frontend)/       pages publiques (accueil, direct, info, météo, agenda, programme TV, replay, vidéos, webcams,
-                        recherche, pages éditoriales et redirections dans [...slug], 404)
+                        recherche, pages éditoriales et redirections dans [...slug], 404) ; espace membres : inscription,
+                        connexion, mot-de-passe-oublie, compte/ (Mon espace, lien de confirmation, nouveau mot de passe)
   app/(payload)/        administration et API Payload (fichiers générés) + custom.scss (habillage de l’administration)
   app/robots.ts, sitemap.ts
   collections/ globals/ modèle de données (vidéos, replays, articles, agenda, webcams, publicités, pages, émissions,
-                        grille, médiathèque, utilisateurs ; réglages du site, météo, chaîne YouTube)
+                        grille, médiathèque, utilisateurs, membres et leur activité ; réglages du site, météo, chaîne YouTube)
   components/<rubrique>/ composants de chaque rubrique ; components/ui/ primitives partagées ; components/admin/ écrans
-                        de l’administration (tableau de bord, aide, outils de la grille, logo)
-  lib/                  accès aux données (queries/), dates en heure de Paris (format.ts), liens (urls.ts), imports (import/)
+                        de l’administration (tableau de bord, aide, outils de la grille, export des membres, logo) ;
+                        components/members/ espace membres (formulaires, Mon espace, bouton « Ajouter à ma liste »)
+  lib/                  accès aux données (queries/), dates en heure de Paris (format.ts), liens (urls.ts), imports (import/),
+                        espace membres (members/ : API, sessions, mots de passe, e-mails)
   app/(frontend)/apercu/ mode aperçu (brouillons visibles, réservé aux personnes connectées)
   proxy.ts              grille des programmes de l’administration ouverte sur la semaine en cours
   scripts/              init-db.ts, seed.ts (+ seed/ : contenus de départ), import.ts, publish-existing.ts
@@ -166,6 +173,41 @@ généré, versionnez-le ; au déploiement, `npm run payload migrate` l’appliq
 `migrate`). Sans migration, `payload migrate` se contente d’afficher « No migrations to run » et la base de production reste
 vide. Gardez des bases distinctes pour le développement (schéma poussé) et la production (migrations) : sur une base déjà
 poussée, `payload migrate` demande une confirmation interactive avant d’effacer des données.
+
+## Espace membres (comptes des visiteurs)
+
+Les visiteurs créent un compte sur `/inscription`, se connectent sur `/connexion` et retrouvent sur `/compte` leur
+historique, « Ma liste », leur département et leur profil. Détails et contrat de l’API : **[DEV_NOTES.md](DEV_NOTES.md)**,
+partie « Espace membres » ; côté équipe : GUIDE_CLIENT.md, partie 21.
+
+- **Sessions séparées de l’administration** : les membres ne passent jamais par l’authentification de Payload. Leur
+  session est un cookie signé `sw_membre` (HMAC-SHA-256 avec une clé dérivée de `PAYLOAD_SECRET`, 30 jours, `HttpOnly`,
+  `SameSite=Lax`, `Secure` en HTTPS) accompagné d’un cookie témoin `sw_connecte` lisible par le navigateur (affichage de
+  « Mon espace » sur les pages en cache, aucune valeur sensible). Un membre n’est donc jamais `req.user` et n’a aucun
+  droit dans l’administration ni dans l’API REST de Payload.
+- **Collections** : `members` (profil, réglages, empreintes ; lecture et modification réservées aux administrateurs,
+  aucune création par l’API), `member-history` et `member-favorites` (une ligne par membre et par contenu, écrites
+  uniquement par l’API des membres). Réglage : `settings.members.signupOpen` (« Inscriptions ouvertes »).
+- **API** : `/api/compte/…` (inscription, connexion, déconnexion, confirmation, mot de passe, profil, historique,
+  « Ma liste », export et suppression des données), déclarée dans `src/lib/members/endpoints.ts` ; les requêtes qui
+  modifient quelque chose doivent venir du site (en-tête `Origin`, à défaut `Sec-Fetch-Site`). `GET /api/membres/lettre-info.csv` : export des
+  membres qui acceptent les e-mails, réservé aux administrateurs connectés à `/admin`.
+- **Mots de passe** : scrypt (N = 16384, r = 8, p = 1, sel aléatoire), comparaison en temps constant ; liens de
+  confirmation (48 h) et de nouveau mot de passe (1 h) : seule l’empreinte SHA-256 du jeton est enregistrée. Compte
+  bloqué 15 minutes après 5 mots de passe erronés.
+- **Limites par adresse IP** (mémoire du processus : suffisant pour un serveur unique, approximatif sur Vercel où
+  plusieurs instances coexistent) : inscriptions, connexions, demandes d’e-mail (confirmation, mot de passe oublié),
+  changements de mot de passe et suppressions de compte. `MEMBER_RATE_FACTOR=10` les
+  relâche pour les tests de bout en bout. L’adresse lue est le **dernier** maillon de `X-Forwarded-For`, celui qu’écrit
+  le reverse proxy (Caddy, Traefik/Coolify et Nginx avec `$proxy_add_x_forwarded_for` le font) : le visiteur ne peut
+  pas l’inventer. Derrière deux proxys en chaîne (CDN puis Caddy, par exemple), mettre `TRUSTED_PROXY_HOPS=2`. Le
+  serveur Node ne doit pas être joignable directement depuis Internet (port 3000 réservé au proxy).
+- **E-mails** : par le SMTP du site (voir les variables). Sans `SMTP_HOST` hors production, le lien de confirmation ou
+  de nouveau mot de passe est écrit dans le journal du serveur (`[swatter] (développement, pas de SMTP) …`) pour tester.
+- **Production** : les trois collections et le champ `settings.members` demandent une migration
+  (`npm run payload migrate:create espace-membres` si elle n’existe pas encore dans `src/migrations/`). Sur un site déjà
+  en ligne, `npm run maj-pages -- vie-privee` publie le texte de la page Vie privée qui décrit l’espace membres (avec
+  Docker Compose : `docker compose run --rm tools npm run maj-pages -- vie-privee`).
 
 ## Déploiement recommandé : VPS avec Docker Compose (ou Coolify)
 
@@ -245,14 +287,15 @@ contenus : jamais une fois le site rempli).
    (global « Chaîne YouTube », voir `src/lib/import/youtube.ts`) : celles qui manquent sont ajoutées ;
 3. supprime les fiches ouvertes avec « Ajouter » puis abandonnées sans titre depuis plus de 24 h (brouillons jamais
    publiés) ;
-4. régénère les pages du site si quelque chose a changé.
+4. supprime les inscriptions à l’espace membres jamais confirmées depuis plus de 7 jours (`src/lib/members/purge.ts`) ;
+5. régénère les pages du site si quelque chose a changé.
 
 Filet de sécurité pour la météo (poste de développement, hébergement sans tâche planifiée) : quand une page affiche des
 prévisions de plus d’une heure, ou celles de démonstration, le site interroge lui-même Open-Meteo en arrière-plan, au plus
 une fois toutes les 10 minutes (`src/lib/meteo-refresh.ts`) ; les pages montrent les nouvelles prévisions à leur
 régénération suivante (moins d’une minute). `OPEN_METEO_URL` remplace l’adresse d’Open-Meteo (tests hors ligne).
 
-La réponse JSON détaille le résultat (`meteo.ok`, `youtube.videos`, `drafts.deleted`…). Avec Docker Compose, le service `cron`
+La réponse JSON détaille le résultat (`meteo.ok`, `youtube.videos`, `drafts.deleted`, `members.deleted`…). Avec Docker Compose, le service `cron`
 s’en charge. Sur un serveur sans Docker, une ligne de crontab suffit :
 
 ```

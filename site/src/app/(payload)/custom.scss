@@ -422,6 +422,13 @@ html[data-theme='dark'] {
       grid-template-columns: minmax(0, 1fr);
     }
   }
+
+  // colonne de droite : les blocs s'empilent (la grille __cols n'a que deux colonnes)
+  &__side {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+  }
 }
 
 /* grandes cartes « Publier » : bleu nuit et pastille dorée, comme le site */

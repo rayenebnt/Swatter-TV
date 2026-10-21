@@ -18,6 +18,8 @@ import { Media } from './collections/Media'
 import { MemberFavorites, MemberHistory } from './collections/MemberActivity'
 import { Members } from './collections/Members'
 import { memberEndpoints } from './lib/members/endpoints'
+import { purgeUnverifiedMembers } from './lib/members/purge'
+import { allow } from './lib/members/rate-limit'
 import { Messages } from './collections/Messages'
 import { Pages } from './collections/Pages'
 import { Programs } from './collections/Programs'
@@ -162,18 +164,6 @@ if (process.env.S3_BUCKET) {
   )
 }
 
-/** Formulaire de contact : 5 messages au plus par adresse IP et par quart d'heure (mémoire du serveur). */
-const contactHits = new Map<string, number[]>()
-function allowContact(req: { headers: Headers }): boolean {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'inconnue'
-  const now = Date.now()
-  const recent = (contactHits.get(ip) ?? []).filter((t) => now - t < 15 * 60 * 1000)
-  if (recent.length >= 5) return false
-  contactHits.set(ip, [...recent, now])
-  if (contactHits.size > 5000) contactHits.clear()
-  return true
-}
-
 /** Comparaison du secret de la tâche planifiée en temps constant (refus si aucun secret n'est configuré). */
 function sameSecret(given: string, expected: string | undefined): boolean {
   if (!expected) return false
@@ -313,12 +303,17 @@ export default buildConfig({
         if (!sameSecret(secret, process.env.CRON_SECRET)) {
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
-        const [meteo, youtube, drafts] = await Promise.all([
+        const [meteo, youtube, drafts, members] = await Promise.all([
           importMeteo(req.payload).catch((e: unknown) => ({ ok: false, error: String(e) })),
           // nouvelles vidéos de la chaîne YouTube (global « youtube »)
           importYoutube(req.payload).catch((e: unknown) => ({ ok: false, created: 0, skipped: 0, total: 0, error: String(e) })),
           // fiches ouvertes avec « Ajouter » puis abandonnées sans titre (voir src/lib/drafts-cleanup.ts)
           deleteEmptyDrafts(req.payload).then(
+            (deleted) => ({ deleted }),
+            (e: unknown) => ({ deleted: 0, error: String(e) }),
+          ),
+          // inscriptions jamais confirmées depuis 7 jours (voir src/lib/members/purge.ts)
+          purgeUnverifiedMembers(req.payload).then(
             (deleted) => ({ deleted }),
             (e: unknown) => ({ deleted: 0, error: String(e) }),
           ),
@@ -331,7 +326,7 @@ export default buildConfig({
             // hors runtime Next.js
           }
         }
-        return Response.json({ meteo, youtube, drafts })
+        return Response.json({ meteo, youtube, drafts, members })
       },
     },
     {
@@ -359,14 +354,14 @@ export default buildConfig({
       handler: async (req) => {
         const body = (await req.json?.().catch(() => null)) as Record<string, unknown> | null
         if (!body) return Response.json({ error: 'Requête illisible.' }, { status: 400 })
-        // champ invisible rempli, ou envoi sans passer par le formulaire / moins de 3 s après son affichage : un robot
-        // (réponse polie, rien n'est fait)
-        const shownAt = Number(body.shownAt)
-        if (body.website || !Number.isFinite(shownAt) || Date.now() - shownAt < 3000) return Response.json({ ok: true })
+        // champ invisible rempli, ou envoi sans passer par le formulaire / moins de 3 s après son affichage (durée mesurée
+        // par le navigateur, `elapsed` en ms : indépendante de son horloge) : un robot (réponse polie, rien n'est fait)
+        const elapsed = Number(body.elapsed)
+        if (body.website || !Number.isFinite(elapsed) || elapsed < 3000) return Response.json({ ok: true })
         const { data, errors } = checkContact(body)
         if (Object.keys(errors).length) return Response.json({ errors }, { status: 400 })
         // seuls les messages valides comptent dans la limite (5 par quart d'heure et par adresse IP)
-        if (!allowContact(req)) return Response.json({ error: 'Trop de messages envoyés d’un coup : réessayez dans quelques minutes.' }, { status: 429 })
+        if (!allow('contact', req.headers, 5, 15 * 60 * 1000)) return Response.json({ error: 'Trop de messages envoyés d’un coup : réessayez dans quelques minutes.' }, { status: 429 })
         await sendContact(req.payload, data)
         return Response.json({ ok: true })
       },

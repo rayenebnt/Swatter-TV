@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Icon, Logo } from '@/components/ui/Icon'
+import { useMemberHint } from '@/lib/members/browser'
+import { loginHref } from '@/lib/members/shared'
 import { DRAWER_STATE_EVENT, isActive, OPEN_DRAWER_EVENT, type DrawerStateDetail, type NavItem, type OpenDrawerDetail } from './nav'
 import '@/styles/shell.css'
 
@@ -13,9 +15,11 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
  * Menu mobile plein écran (dialogue modal) : s'ouvre sur l'événement window « swatter:open-drawer »
  * (burger de l'en-tête, onglet « Menu »…). Échap, piège du focus, retour du focus au bouton d'origine,
  * défilement de la page verrouillé, fermeture au changement de page.
+ * En bas : « Proposer une info » et l'accès à l'espace membres (« Mon espace » ou « Se connecter », selon le cookie témoin).
  */
 export function MobileMenu({ items }: { items: NavItem[] }) {
   const pathname = usePathname()
+  const member = useMemberHint()
   const [open, setOpen] = useState(false)
   const [path, setPath] = useState(pathname)
   const ref = useRef<HTMLDivElement>(null)
@@ -128,6 +132,17 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
       <Link className="btn btn--gold" href="/contact" onClick={close} style={{ '--i': items.length } as CSSProperties}>
         <Icon name="mail" />
         Proposer une info
+      </Link>
+      {/* Espace membres : page dynamique, pas de préchargement (le menu fermé reste « visible » pour le navigateur) */}
+      <Link
+        className="btn btn--ghost drawer__account"
+        href={member ? '/compte' : loginHref(pathname)}
+        prefetch={false}
+        onClick={close}
+        style={{ '--i': items.length + 1 } as CSSProperties}
+      >
+        <Icon name="user" />
+        {member ? 'Mon espace' : 'Se connecter'}
       </Link>
     </div>
   )

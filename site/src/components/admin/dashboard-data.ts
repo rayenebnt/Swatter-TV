@@ -1,8 +1,11 @@
-// Données du tableau de bord de l'administration : ce qui est affiché sur le site en ce moment et les derniers contenus modifiés.
+// Données du tableau de bord de l'administration : ce qui est affiché sur le site en ce moment, les derniers contenus modifiés
+// et les chiffres de l'espace membres.
 import type { Payload, Where } from 'payload'
 import { runningAdsWhere } from '@/access'
 import { shiftDay, tvDay } from '@/components/programme/model'
 import { parisDateTime } from '@/lib/format'
+import { loadItems } from '@/lib/members/items'
+import type { HistoryKind } from '@/lib/members/shared'
 import { twitchTarget } from '@/lib/video'
 
 export type Featured = { id: number; title: string; picked: boolean } | null
@@ -22,7 +25,23 @@ export type DashboardData = {
   /** vidéos et replays sans image (image YouTube introuvable à l'enregistrement) */
   missingImages: { videos: number; replays: number }
   recent: RecentItem[]
+  /** espace membres ; null : aucun compte (le tableau de bord n'en parle pas) */
+  members: MembersStats | null
 }
+
+export type MembersStats = {
+  /** membres à l'adresse confirmée et au compte non suspendu */
+  confirmed: number
+  /** parmi eux, inscrits ces 7 derniers jours */
+  newThisWeek: number
+  /** inscrits qui n'ont pas encore cliqué sur le lien de confirmation */
+  pending: number
+  signupOpen: boolean
+  /** contenus les plus regardés par les membres ces 7 derniers jours (5 au plus) */
+  topWatched: TopWatched[]
+}
+
+export type TopWatched = { kind: HistoryKind; id: number; title: string; href: string; members: number }
 
 export type RecentItem = { collection: RecentCollection; id: number; title: string; updatedAt: string; draft: boolean }
 export type RecentCollection = 'videos' | 'articles' | 'events' | 'replays'
@@ -103,9 +122,62 @@ async function recent(payload: Payload): Promise<RecentItem[]> {
     .slice(0, 6)
 }
 
+const WEEK_MS = 7 * 24 * 3600 * 1000
+/** Lignes d'historique lues au plus pour le classement (les plus récentes) : largement assez à l'échelle du site. */
+const TOP_SCAN = 20_000
+
+/**
+ * Classement des contenus regardés par les membres depuis `since`. L'historique a une ligne par membre et par contenu
+ * (date de la dernière lecture) : compter les lignes revient à compter les membres différents qui l'ont regardé.
+ */
+async function topWatched(payload: Payload, since: string): Promise<TopWatched[]> {
+  const { docs } = await payload.find({
+    collection: 'member-history',
+    where: { watchedAt: { greater_than_equal: since } },
+    sort: '-watchedAt',
+    limit: TOP_SCAN,
+    depth: 0,
+    pagination: false,
+    overrideAccess: true,
+    select: { kind: true, itemId: true },
+  })
+  const counts = new Map<string, { kind: HistoryKind; itemId: number; members: number }>()
+  for (const d of docs) {
+    const key = `${d.kind}:${d.itemId}`
+    const entry = counts.get(key)
+    if (entry) entry.members++
+    else counts.set(key, { kind: d.kind, itemId: d.itemId, members: 1 })
+  }
+  // quelques contenus de réserve : ceux qui ont été supprimés depuis sont absents de loadItems
+  const ranked = [...counts.values()].sort((a, b) => b.members - a.members).slice(0, 10)
+  if (!ranked.length) return []
+  const items = await loadItems(payload, ranked, { publicOnly: false })
+  return ranked
+    .flatMap((r) => {
+      const item = items.get(`${r.kind}:${r.itemId}`)
+      return item ? [{ kind: r.kind, id: r.itemId, title: item.title || 'Sans titre', href: item.href, members: r.members }] : []
+    })
+    .slice(0, 5)
+}
+
+/** Chiffres de l'espace membres (null s'il n'y a encore aucun compte) ; `signupOpen` est lu dans les réglages. */
+async function membersStats(payload: Payload): Promise<Omit<MembersStats, 'signupOpen'> | null> {
+  const count = async (where: Where) => (await payload.count({ collection: 'members', where, overrideAccess: true })).totalDocs
+  const active: Where = { and: [{ verified: { equals: true } }, { blocked: { not_equals: true } }] }
+  const since = new Date(Date.now() - WEEK_MS).toISOString()
+  const [total, confirmed, newThisWeek, pending, top] = await Promise.all([
+    count({ id: { exists: true } }),
+    count(active),
+    count({ and: [active, { createdAt: { greater_than_equal: since } }] }),
+    count({ and: [{ verified: { not_equals: true } }, { blocked: { not_equals: true } }] }),
+    attempt(() => topWatched(payload, since), [] as TopWatched[]),
+  ])
+  return total ? { confirmed, newThisWeek, pending, topWatched: top } : null
+}
+
 export async function getDashboardData(payload: Payload): Promise<DashboardData> {
   const noImage: Where = { and: [LIVE, { thumbnail: { exists: false } }] }
-  const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, messages, videosNoImage, replaysNoImage, recentItems] = await Promise.all([
+  const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, messages, videosNoImage, replaysNoImage, recentItems, members] = await Promise.all([
     attempt(() => payload.findGlobal({ slug: 'settings', depth: 0 }), null),
     attempt(() => payload.findGlobal({ slug: 'meteo', depth: 0 }), null),
     attempt(() => featured(payload, 'videos', 'isVideoOfDay'), null),
@@ -117,6 +189,7 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     attempt(async () => (await payload.count({ collection: 'videos', where: noImage })).totalDocs, 0),
     attempt(async () => (await payload.count({ collection: 'replays', where: noImage })).totalDocs, 0),
     attempt(() => recent(payload), [] as RecentItem[]),
+    attempt(() => membersStats(payload), null),
   ])
 
   const live = settings?.live
@@ -146,5 +219,6 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     meteo: { auto: meteo?.autoUpdate !== false, updatedAt: (meteo?.forecast as { updatedAt?: string } | null | undefined)?.updatedAt ?? null },
     missingImages: { videos: videosNoImage, replays: replaysNoImage },
     recent: recentItems,
+    members: members && { ...members, signupOpen: settings?.members?.signupOpen !== false },
   }
 }

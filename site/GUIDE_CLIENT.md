@@ -35,6 +35,7 @@ toujours disponible dans l’administration : lien **Aide**, en haut du tableau 
 18. [Le référencement Google (facultatif)](#18-le-référencement-google-facultatif)
 19. [Réservé aux administrateurs : comptes, redirections](#19-réservé-aux-administrateurs--comptes-redirections)
 20. [Les messages reçus (« Proposer une info »)](#20-les-messages-reçus--proposer-une-info-)
+21. [Les membres du site (espace « Mon espace »)](#21-les-membres-du-site-espace--mon-espace-)
 
 ---
 
@@ -49,6 +50,7 @@ Quelques informations ne pouvaient pas être inventées : merci de les renseigne
 | **Pages (pied de page)** › **Mentions légales** | forme juridique, capital, SIRET, directeur de la publication, hébergeur : remplacez chaque « [à compléter] » |
 | **Pages (pied de page)** › **Canaux de réception** | les box des opérateurs et numéros de canal |
 | **Pages (pied de page)** › **Crédits** | la conception et le développement du site |
+| **Pages (pied de page)** › **Vie privée** | relisez la partie « Votre espace membre » (données des membres, cookies, durées de conservation) et faites-la valider si besoin |
 
 Une fois une page complétée, cliquez sur **Publier les modifications** pour la mettre en ligne.
 
@@ -73,8 +75,9 @@ La rubrique **Vidéos** est vide au départ : elle se remplit avec votre chaîne
 
 ## 2. Se connecter
 
-1. Ouvrez **https://www.swatter-tv.fr/admin** (ajoutez cette adresse à vos favoris : le site n’affiche pas de bouton
-   de connexion, pour ne pas encombrer l’en-tête des visiteurs).
+1. Ouvrez **https://www.swatter-tv.fr/admin** (ajoutez cette adresse à vos favoris : le site n’affiche aucun lien vers
+   l’administration ; le bouton rond en forme de silhouette, en haut à droite du site, mène à l’espace des visiteurs,
+   voir partie 21, et votre compte d’administration n’y fonctionne pas).
 2. Saisissez votre **E-mail** et votre **Mot de passe**, puis cliquez sur **Se connecter**.
 
 - Après 5 essais erronés, le compte est bloqué 10 minutes : patientez, puis réessayez.
@@ -97,7 +100,9 @@ Après la connexion, le **tableau de bord** rassemble l’essentiel :
   week-end, le programme TV, le flash info, les publicités, la météo). Une pastille **À vérifier** signale un oubli, par
   exemple « Rien de prévu : sam. 24 » pour le programme TV ; le lien **Modifier** mène directement au bon endroit ;
 - **Derniers contenus modifiés** : pour reprendre un contenu en un clic ; la mention **À publier** signale des
-  modifications que les visiteurs ne voient pas encore.
+  modifications que les visiteurs ne voient pas encore ;
+- **Les plus regardées par les membres (7 derniers jours)**, dès que des visiteurs ont créé un compte : les 5 vidéos
+  ou replays regardés par le plus de membres connectés (partie 21).
 
 Le **menu** s’ouvre avec le bouton ☰ en haut à gauche (il reste ouvert sur un grand écran). Ses rubriques sont
 **dans le même ordre que le menu du site** :
@@ -109,7 +114,8 @@ Le **menu** s’ouvre avec le bouton ☰ en haut à gauche (il reste ouvert sur 
 - **Également** : **Publicités**, **Pages (pied de page)**, **Médiathèque** ;
 - en bas : **Voir le site** (dans un nouvel onglet) et **Aide** (ce guide).
 
-Les administrateurs voient en plus une rubrique **Administration** (partie 19).
+Les administrateurs voient en plus une rubrique **Administration** : **Membres du site** (partie 21), **Utilisateurs**
+et **Redirections** (partie 19).
 
 Dans une **liste** : le bouton **Ajouter**, à côté du titre, crée un nouveau contenu ; la barre de recherche et les
 **Filtres** aident à retrouver un contenu ; un clic sur une ligne l’ouvre.
@@ -444,7 +450,8 @@ Pour l’ajuster, cliquez sur le bloc pour le déplier :
 
 ## 19. Réservé aux administrateurs : comptes, redirections
 
-La rubrique **Administration** du menu n’apparaît qu’aux administrateurs.
+La rubrique **Administration** du menu n’apparaît qu’aux administrateurs. Les comptes des visiteurs du site
+(**Membres du site**) ont leur propre partie : voir partie 21.
 
 **Administration › Utilisateurs** : **Ajouter**, puis **E-mail**, **Prénom et nom**, mot de passe et **Rôle** :
 
@@ -488,3 +495,99 @@ lien vers leurs photos ou leur vidéo. L’emplacement publicitaire vide (« Dev
 - Les envois automatiques (robots) sont filtrés, et une même personne ne peut pas envoyer plus de 5 messages par quart
   d’heure.
 
+## 21. Les membres du site (espace « Mon espace »)
+
+Les visiteurs peuvent se créer gratuitement un compte sur le site : c’est leur espace **Mon espace**. Ils y accèdent par
+le bouton rond en forme de silhouette, en haut à droite du site (« Se connecter ou créer un compte » au survol), ou par
+le bouton **Se connecter** en bas du menu sur téléphone. Une fois connectés, une pastille dorée s’allume sur le bouton
+rond et celui du menu devient **Mon espace**. Ces comptes de visiteurs, les **membres**, sont complètement séparés des
+comptes de l’équipe : un membre n’a aucun accès à l’administration, et votre compte d’administration ne permet pas
+d’entrer dans « Mon espace » (pour tester, créez-vous un compte de membre comme un visiteur).
+
+### Ce que les visiteurs peuvent faire
+
+- **Créer un compte** avec leur prénom, leur e-mail et un mot de passe (8 caractères au moins) et, s’ils le souhaitent,
+  leur département et leur accord pour recevoir les e-mails de Swatter TV. Ils reçoivent aussitôt un e-mail
+  « Swatter TV — confirmez votre adresse e-mail » : le compte ne fonctionne qu’après un clic sur **Confirmer mon
+  adresse** (lien valable 48 heures ; un nouveau lien se demande depuis la page de connexion). Une inscription jamais
+  confirmée est supprimée automatiquement au bout de 7 jours.
+- **Retrouver les vidéos regardées** : les vidéos et replays qu’ils regardent en étant connectés s’ajoutent à leur
+  **Historique** (les 200 derniers) et à la rubrique **Reprendre** de leur espace. Ils peuvent retirer une vidéo, tout
+  effacer ou mettre l’historique en pause.
+- **Garder des contenus pour plus tard** : le bouton **Ajouter à ma liste**, sur la page d’une vidéo, d’un replay, d’un
+  article ou d’un événement, le range dans **Ma liste**.
+- **Suivre leur département** : s’ils en ont choisi un, leur espace affiche **Ma météo**, **L’info de mon département**
+  et **Sorties près de chez moi**.
+- **Gérer leur compte** dans **Mon profil** : modifier leurs informations et leur choix pour les e-mails, changer de mot
+  de passe, se déconnecter de tous leurs appareils, **télécharger leurs données** et **supprimer leur compte**.
+- **Mot de passe oublié** : depuis la page de connexion, ils reçoivent un lien (valable une heure) pour en choisir un
+  nouveau. Vous n’avez rien à faire : personne dans l’équipe ne voit ni ne change le mot de passe d’un membre.
+
+### Dans l’administration : Membres du site
+
+**Administration › Membres du site** est réservé aux administrateurs (les éditeurs ne voient pas les membres : ce sont
+des données personnelles).
+
+- **La liste** montre le prénom, l’e-mail, le département, **E-mail confirmé**, **Accepte les e-mails de Swatter TV**
+  et la date d’inscription (colonne « Créé(e) à »), les derniers inscrits en haut. La barre de recherche retrouve un
+  membre par son e-mail, son prénom ou son nom ; **Filtres** permet par exemple de n’afficher que les comptes non
+  confirmés.
+- **La fiche d’un membre** (un clic sur sa ligne) montre ses informations, sa **Dernière connexion**, la date à laquelle
+  il a accepté les conditions, le nombre de **Vidéos dans son historique** et de **Contenus dans « Ma liste »** (le
+  détail reste privé : seul le membre le voit). La date d’inscription est rappelée en haut de la fiche.
+- À droite de la fiche :
+  - **E-mail confirmé** : cochée quand le membre a cliqué sur le lien reçu. Si un membre ne reçoit pas l’e-mail
+    (indésirables, messagerie d’entreprise trop stricte…), assurez-vous d’abord que l’adresse est bien la sienne (par
+    exemple parce qu’il vous écrit depuis cette adresse), puis cochez la case et cliquez sur **Enregistrer** : il peut se
+    connecter aussitôt ;
+  - **Compte suspendu** : le membre ne peut plus se connecter et ses connexions en cours sont fermées, mais son compte
+    est conservé ; décochez la case pour le rétablir ;
+  - **Note interne (invisible du membre)** : un mémo pour l’équipe (« demande reçue par e-mail le 12/11 »…) ;
+  - **Historique en pause** : indique seulement si le membre a mis son historique en pause (lui seul peut le changer).
+- **Corriger une adresse e-mail** est possible dans la fiche ; le membre devra simplement se reconnecter, avec la
+  nouvelle adresse.
+- **Supprimer** (menu « ⋮ » de la fiche, ou cases à cocher dans la liste puis **Supprimer**) efface définitivement le
+  compte, son historique et sa liste. Réservez-le aux demandes des membres et aux comptes abusifs (un membre peut aussi
+  supprimer son compte lui-même).
+- Il n’y a pas de bouton **Ajouter** : un membre s’inscrit toujours lui-même sur le site, ce qui garantit son accord.
+
+**Exporter la lettre d’info.** Au-dessus de la liste, le bouton **Exporter les inscrits à la lettre d’info (CSV)**
+télécharge la liste des membres qui ont accepté de recevoir vos e-mails (adresse confirmée, compte non suspendu) :
+prénom, nom, e-mail, département et date d’inscription. Le fichier s’ouvre dans Excel ou LibreOffice, et s’importe dans
+un outil d’envoi de lettres d’information comme Brevo ou Mailjet (séparateur : point-virgule, si l’outil le demande).
+Le site n’envoie pas lui-même de lettre d’information. Exportez une liste fraîche avant chaque envoi (un membre qui a
+décoché la case ou supprimé son compte ne doit plus rien recevoir), ne transmettez pas ce fichier et supprimez-le après
+usage : il contient des données personnelles.
+
+**Sur le tableau de bord**, les administrateurs voient la ligne **Membres du site** dans « Sur le site en ce moment » :
+le nombre de membres (comptes confirmés et non suspendus), les inscrits des 7 derniers jours et les comptes en attente de
+confirmation. Toute l’équipe voit le bloc **Les plus regardées par les membres (7 derniers jours)** : les 5 vidéos ou
+replays regardés par le plus de membres connectés, sans aucun nom (un clic ouvre la page sur le site). Il ne compte que
+les membres connectés dont l’historique n’est pas en pause : c’est une tendance, pas une mesure d’audience complète.
+
+### Fermer les inscriptions
+
+**Accueil et direct** › onglet **Chaîne et contact** › **Espace membres** : décochez **Inscriptions ouvertes**, puis
+cliquez sur **Publier les modifications**. La page « Créer un compte » annonce alors que les inscriptions sont
+momentanément fermées ; les membres déjà inscrits se connectent normalement. Recochez la case (et publiez) pour rouvrir.
+
+### Les e-mails envoyés aux membres
+
+Le site envoie lui-même, par le même service d’envoi d’e-mails (SMTP) que les messages « Proposer une info » et le
+« Mot de passe oublié » de l’administration : l’e-mail de **confirmation de l’adresse**, celui du **mot de passe oublié**,
+et un avertissement quand quelqu’un essaie de créer un compte avec une adresse déjà inscrite. Si un membre ne reçoit
+rien, invitez-le à regarder dans ses indésirables ; si plus personne ne reçoit rien, prévenez votre prestataire
+technique (réglages d’envoi des e-mails). En attendant, vous pouvez confirmer un compte à la main (case **E-mail
+confirmé**, voir plus haut).
+
+### Données personnelles (RGPD)
+
+- Chaque membre exerce lui-même ses droits depuis **Mon espace › Mon profil** : il corrige ses informations, décoche les
+  e-mails, **télécharge ses données** (son profil, son historique et sa liste, dans un fichier) et **supprime son
+  compte** (effacement immédiat et définitif). La page **Vie privée** du site l’explique aux visiteurs.
+- Si une demande vous arrive par e-mail (accès, correction, suppression, arrêt des e-mails), vérifiez qu’elle vient bien
+  de l’adresse du compte, puis faites le nécessaire dans la fiche du membre : corriger une information, décocher
+  **Accepte les e-mails de Swatter TV** ou supprimer le compte. Pour une copie de ses données, invitez-le à utiliser
+  **Télécharger mes données** dans son espace (après **Mot de passe oublié ?** s’il ne peut plus se connecter).
+  Répondez dans le mois qui suit la demande (délai légal).
+- Ne communiquez jamais d’informations sur un membre à un tiers, et gardez les fichiers exportés en lieu sûr.

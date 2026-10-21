@@ -1,0 +1,102 @@
+/* Pages publiques de l'espace membres (connexion, inscription, mot de passe oublié, nouveau mot de passe) : carte centrée,
+   colonne d'informations à côté sur ordinateur et dessous sur mobile. Les champs reprennent les classes .contact-* (contact.css). */
+.auth-page { display: grid; grid-template-columns: minmax(0, 520px); justify-content: center; align-items: start; gap: 32px; }
+.auth-page--aside { grid-template-columns: minmax(0, 560px) minmax(0, 360px); gap: 40px; }
+.auth-card { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; padding: clamp(22px, 4vw, 38px); border: 1px solid var(--line); border-radius: var(--r-xl); background: var(--surface); box-shadow: 0 30px 60px -42px rgba(0, 0, 0, .9); }
+.auth-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px; background: var(--gold-grad); }
+.auth-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(20px, 2.4vw, 24px); letter-spacing: -.01em; color: var(--ink); }
+/* minmax(0, 1fr) : une longue adresse ou un long libellé de bouton ne fait pas déborder la carte à 390 px */
+.auth-form { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+
+/* Mot de passe : bouton afficher / masquer dans le champ */
+.auth-pass { position: relative; }
+.contact-field .auth-pass > input:not([type='checkbox']) { padding-right: 56px; }
+.auth-pass__toggle { position: absolute; top: 50%; right: 5px; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; color: var(--muted); transform: translateY(-50%); transition: color .2s, background .2s; }
+.auth-pass__toggle:hover { background: rgba(255, 255, 255, .06); color: var(--ink); }
+.auth-pass__toggle[aria-pressed='true'] { color: var(--gold-light); }
+.auth-pass__toggle:focus-visible { outline-offset: 0; }
+.auth-pass__toggle svg { width: 20px; height: 20px; }
+.auth-pass-group { display: grid; gap: 6px; }
+.auth-forgot { justify-self: end; font-size: 14px; }
+/* zone cliquable de 40 px de haut sans écarter les champs */
+.auth-forgot a { display: inline-block; padding: 10px 0; margin: -10px 0; color: var(--gold-light); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Liste des départements */
+.contact-field select.auth-select { width: 100%; height: 50px; padding: 0 44px 0 14px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d9aa45' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center / 18px; color: var(--ink); font-size: 16px; appearance: none; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
+.contact-field select.auth-select:focus-visible { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(217, 170, 69, .25); }
+.auth-select option { background: var(--surface); color: var(--ink); }
+
+/* Cases à cocher (actualités, politique de confidentialité) : toute la ligne est cliquable */
+.auth-checks { display: grid; gap: 4px; }
+.auth-checks .contact-consent label { padding: 9px 0; }
+.auth-checks a { color: var(--gold-light); text-decoration: underline; text-underline-offset: 3px; }
+/* .contact-field > label span (contact.css) dore tout le texte de la case : texte normal, astérisque doré */
+.auth-checks .contact-consent label > span { color: inherit; }
+.auth-checks .contact-consent label span[aria-hidden='true'] { color: var(--gold); }
+
+.btn.auth-submit { width: 100%; height: auto; min-height: 50px; padding-block: 12px; white-space: normal; text-align: center; }
+.auth-submit[disabled] { opacity: .7; cursor: progress; }
+.auth-submit-row { display: grid; justify-items: center; gap: 10px; }
+
+/* Encadrés de message */
+.auth-note { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid var(--line-2); border-radius: var(--r); background: rgba(255, 255, 255, .04); color: var(--ink-2); font-size: 14.5px; }
+.auth-note__icon { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; color: var(--gold); }
+.auth-note__body { display: grid; gap: 10px; min-width: 0; flex: 1; }
+.auth-note__title { font-weight: 700; color: var(--ink); }
+.auth-note__link { display: inline-flex; align-items: center; justify-self: start; gap: 6px; min-height: 40px; color: var(--gold-light); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.auth-note__link svg { width: 16px; height: 16px; }
+.auth-note--ok { border-color: rgba(217, 170, 69, .45); background: rgba(217, 170, 69, .1); }
+.auth-note--ok .auth-note__icon { color: var(--gold-light); }
+.auth-note--warn { border-color: rgba(240, 160, 60, .45); background: rgba(240, 160, 60, .09); }
+.auth-note--warn .auth-note__icon { color: #f5b45c; }
+.auth-note--error { border-color: rgba(232, 56, 61, .45); background: rgba(232, 56, 61, .1); color: #ffc4c5; }
+.auth-note--error .auth-note__icon { color: #ff8a8d; }
+.auth-note--error .auth-note__body > p:first-child { font-weight: 600; }
+
+/* Renvoi de l'e-mail de confirmation */
+.auth-resend { position: relative; display: grid; justify-items: start; gap: 10px; }
+.auth-resend--form { justify-items: stretch; gap: 12px; }
+.auth-resend--form .btn { justify-self: start; }
+.auth-resend .btn { height: auto; min-height: 42px; padding-block: 9px; white-space: normal; text-align: left; }
+.auth-resend .btn[disabled] { opacity: .7; cursor: progress; }
+.auth-live { color: var(--ink); font-size: 14px; }
+/* zone d'annonce vide : présente pour les lecteurs d'écran, sans place dans la mise en page */
+.auth-live:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; }
+
+/* Écrans « regardez votre messagerie » */
+.auth-done { padding: 0; }
+.auth-email { color: var(--ink); overflow-wrap: anywhere; }
+.auth-tips { display: grid; gap: 10px; color: var(--ink-2); font-size: 14.5px; }
+.auth-tips li { display: flex; align-items: flex-start; gap: 10px; }
+.auth-tips svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; color: var(--gold); }
+.auth-done__actions { display: grid; justify-items: start; gap: 12px; width: 100%; margin-top: 4px; }
+.auth-linkbtn { min-height: 40px; color: var(--ink-2); font-size: 14.5px; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
+.auth-linkbtn:hover { color: var(--ink); }
+.auth-focus:focus { outline: none; }
+
+/* Bas de carte : « Pas encore de compte ? » */
+.auth-switch { padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 15px; text-align: center; }
+.auth-switch a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; color: var(--gold-light); font-weight: 700; }
+.auth-switch a svg { width: 16px; height: 16px; transition: transform .2s var(--ease); }
+.auth-switch a:hover svg { transform: translateX(3px); }
+
+/* Colonne d'informations (inscription) */
+.auth-aside { position: sticky; top: calc(var(--header-h) + 24px); display: grid; gap: 18px; padding: 26px; border: 1px solid var(--line); border-radius: var(--r-xl); background: rgba(255, 255, 255, .03); }
+.auth-aside h2 { font-family: var(--font-display); font-size: 19px; color: var(--ink); }
+.auth-benefits { display: grid; gap: 16px; }
+.auth-benefits li { display: flex; align-items: flex-start; gap: 14px; color: var(--ink-2); font-size: 14.5px; }
+.auth-benefits__icon { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: rgba(217, 170, 69, .14); color: var(--gold-light); }
+.auth-benefits__icon svg { width: 20px; height: 20px; }
+.auth-benefits b { display: block; margin-bottom: 2px; font-family: var(--font-display); font-size: 15.5px; color: var(--ink); }
+.auth-aside__privacy { padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px; }
+.auth-aside__privacy a { color: var(--ink-2); text-decoration: underline; }
+
+@media (max-width: 960px) {
+  .auth-page--aside { grid-template-columns: minmax(0, 560px); gap: 24px; }
+  .auth-aside { position: static; }
+}
+@media (max-width: 480px) {
+  .auth-card { border-radius: var(--r-lg); }
+  .auth-aside { padding: 22px 18px; border-radius: var(--r-lg); }
+  .auth-note { padding: 12px 14px; }
+}

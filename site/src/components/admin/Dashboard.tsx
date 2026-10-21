@@ -2,8 +2,9 @@ import type { AdminViewServerProps } from 'payload'
 import { Gutter, Link } from '@payloadcms/ui'
 import { dayLabel, tvDay } from '@/components/programme/model'
 import { formatDayLong, formatTime, timeAgo } from '@/lib/format'
+import { KIND_LABELS } from '@/lib/members/shared'
 import { rangeSearch } from '@/lib/schedule-week'
-import { getDashboardData, type Featured, type RecentCollection } from './dashboard-data'
+import { getDashboardData, type Featured, type MembersStats, type RecentCollection } from './dashboard-data'
 import { scheduleSearch } from './menu'
 import { AdminIcon, type IconName } from './icons'
 
@@ -13,9 +14,19 @@ const TYPE_LABELS: Record<RecentCollection, string> = { videos: 'Vidéo', articl
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
 
+/** « 128 membres, dont 6 inscrits ces 7 derniers jours · 3 comptes en attente de confirmation · Inscriptions fermées » */
+function membersValue(m: MembersStats): string {
+  const confirmed = m.confirmed
+    ? `${plural(m.confirmed, 'membre', 'membres')}${m.newThisWeek ? `, dont ${plural(m.newThisWeek, 'inscrit', 'inscrits')} ces 7 derniers jours` : ''}`
+    : 'Aucun membre confirmé pour l’instant'
+  const pending = m.pending ? `${plural(m.pending, 'compte', 'comptes')} en attente de confirmation` : null
+  return [confirmed, pending, m.signupOpen ? null : 'Inscriptions fermées'].filter(Boolean).join(' · ')
+}
+
 /**
  * Tableau de bord de l'administration (admin.components.views.dashboard) : les actions courantes en gros boutons,
- * ce qui est affiché sur le site en ce moment (avec les oublis à corriger) et les derniers contenus modifiés.
+ * ce qui est affiché sur le site en ce moment (avec les oublis à corriger), les derniers contenus modifiés et, dès qu'un
+ * visiteur a créé un compte, les contenus les plus regardés par les membres (chiffres des comptes : administrateurs seuls).
  */
 export async function Dashboard({ payload, user }: AdminViewServerProps) {
   const admin = payload.config.routes.admin
@@ -23,6 +34,8 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
   const edit = (slug: string, id: number) => `${collection(slug)}/${id}`
   const global = (slug: string) => `${admin}/globals/${slug}`
   const data = await getDashboardData(payload)
+  // les membres du site (données personnelles) ne sont visibles que des administrateurs
+  const isAdmin = (user as { role?: string } | undefined)?.role === 'admin'
 
   const now = new Date()
   const firstName = String((user as { name?: string | null } | undefined)?.name ?? '').trim().split(/\s+/)[0]
@@ -224,32 +237,67 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
               value={data.messages ? `${data.messages} message${data.messages > 1 ? 's' : ''} à traiter` : 'Aucun message en attente'}
               href={collection('messages')}
             />
+            {isAdmin && data.members && (
+              <StatusRow
+                icon="member"
+                label="Membres du site"
+                tone={data.members.signupOpen ? 'ok' : 'off'}
+                value={membersValue(data.members)}
+                href={collection('members')}
+              />
+            )}
           </ul>
         </section>
 
-        <section className="sw-panel" aria-labelledby="sw-dash-recent">
-          <h2 className="sw-dash__h2" id="sw-dash-recent">
-            Derniers contenus modifiés
-          </h2>
-          {data.recent.length ? (
-            <ul className="sw-recent">
-              {data.recent.map((item) => (
-                <li key={`${item.collection}-${item.id}`}>
-                  <Link prefetch={false} className="sw-recent__link" href={edit(item.collection, item.id)}>
-                    <span className={`sw-chip sw-chip--${item.collection}`}>{TYPE_LABELS[item.collection]}</span>
-                    <span className="sw-recent__title">
-                      {item.title}
-                      {item.draft && <span className="sw-draft">À publier</span>}
-                    </span>
-                    <span className="sw-recent__when">{timeAgo(item.updatedAt, now)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="sw-panel__empty">Rien pour l’instant : vos prochaines publications apparaîtront ici.</p>
+        {/* colonne de droite : les blocs s'empilent */}
+        <div className="sw-dash__side">
+          <section className="sw-panel" aria-labelledby="sw-dash-recent">
+            <h2 className="sw-dash__h2" id="sw-dash-recent">
+              Derniers contenus modifiés
+            </h2>
+            {data.recent.length ? (
+              <ul className="sw-recent">
+                {data.recent.map((item) => (
+                  <li key={`${item.collection}-${item.id}`}>
+                    <Link prefetch={false} className="sw-recent__link" href={edit(item.collection, item.id)}>
+                      <span className={`sw-chip sw-chip--${item.collection}`}>{TYPE_LABELS[item.collection]}</span>
+                      <span className="sw-recent__title">
+                        {item.title}
+                        {item.draft && <span className="sw-draft">À publier</span>}
+                      </span>
+                      <span className="sw-recent__when">{timeAgo(item.updatedAt, now)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="sw-panel__empty">Rien pour l’instant : vos prochaines publications apparaîtront ici.</p>
+            )}
+          </section>
+
+          {data.members && (
+            <section className="sw-panel" aria-labelledby="sw-dash-watched">
+              <h2 className="sw-dash__h2" id="sw-dash-watched">
+                Les plus regardées par les membres (7 derniers jours)
+              </h2>
+              {data.members.topWatched.length ? (
+                <ul className="sw-recent">
+                  {data.members.topWatched.map((item) => (
+                    <li key={`${item.kind}-${item.id}`}>
+                      <a className="sw-recent__link" href={item.href} target="_blank" rel="noopener noreferrer">
+                        <span className={`sw-chip sw-chip--${item.kind === 'video' ? 'videos' : 'replays'}`}>{KIND_LABELS[item.kind]}</span>
+                        <span className="sw-recent__title">{item.title}</span>
+                        <span className="sw-recent__when">{plural(item.members, 'membre', 'membres')}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="sw-panel__empty">Aucune vidéo regardée par les membres connectés ces 7 derniers jours.</p>
+              )}
+            </section>
           )}
-        </section>
+        </div>
       </div>
     </Gutter>
   )

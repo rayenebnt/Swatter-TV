@@ -24,8 +24,10 @@ export type IconName =
   | 'tv'
   | 'page'
   | 'users'
+  | 'member'
   | 'redirect'
   | 'mail'
+  | 'download'
 
 const PATHS: Record<IconName, ReactNode> = {
   video: (
@@ -147,11 +149,24 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 20a6.5 6.5 0 0 0-2.5-5.1" />
     </>
   ),
+  member: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="10" r="3" />
+      <path d="M6.3 18.6a6.5 6.5 0 0 1 11.4 0" />
+    </>
+  ),
   redirect: <path d="M4 17V11a4 4 0 0 1 4-4h11M15 3l4 4-4 4M4 21h7" />,
   mail: (
     <>
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="m4 7 8 6 8-6" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M12 3.5v11.5M7 10l5 5 5-5" />
+      <path d="M4.5 17v2.5a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V17" />
     </>
   ),
   'arrow-left': <path d="M19 12H5M11 6l-6 6 6 6" />,

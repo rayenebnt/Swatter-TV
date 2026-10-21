@@ -12,18 +12,32 @@ export function notifyMemberChange() {
 }
 
 /**
+ * Abonnement stable (même fonction à chaque rendu : React ne se réabonne pas). Le cookie témoin peut aussi changer dans un
+ * autre onglet (connexion, déconnexion) : on le relit quand la page redevient visible ou reprend le focus.
+ */
+function subscribe(fn: () => void) {
+  subscribers.add(fn)
+  if (subscribers.size === 1) {
+    window.addEventListener('focus', notifyMemberChange)
+    window.addEventListener('pageshow', notifyMemberChange)
+    document.addEventListener('visibilitychange', notifyMemberChange)
+  }
+  return () => {
+    subscribers.delete(fn)
+    if (subscribers.size === 0) {
+      window.removeEventListener('focus', notifyMemberChange)
+      window.removeEventListener('pageshow', notifyMemberChange)
+      document.removeEventListener('visibilitychange', notifyMemberChange)
+    }
+  }
+}
+
+/**
  * Vrai si un membre semble connecté (cookie témoin) ; faux au rendu serveur et à l'hydratation, puis lu dans le navigateur.
  * Simple indication pour l'affichage : chaque action est vérifiée par le serveur (session signée).
  */
 export function useMemberHint(): boolean {
-  return useSyncExternalStore(
-    (fn) => {
-      subscribers.add(fn)
-      return () => subscribers.delete(fn)
-    },
-    readHint,
-    () => false,
-  )
+  return useSyncExternalStore(subscribe, readHint, () => false)
 }
 export const hasMemberHint = readHint
 

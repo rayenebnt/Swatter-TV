@@ -108,9 +108,10 @@ export const memberEndpoints: Endpoint[] = [
       if (!sameOrigin(req.headers, req.url)) return refused()
       const raw = await readBody(req)
       if (!raw) return json({ error: 'Requête illisible.' }, 400)
-      // champ piège rempli, ou envoi sans le formulaire / en moins de 3 s : un robot (réponse polie, rien n'est fait)
-      const shownAt = Number(raw.shownAt)
-      if (raw.website || !Number.isFinite(shownAt) || Date.now() - shownAt < 3000) return json({ ok: true })
+      // champ piège rempli, ou envoi sans le formulaire / moins de 3 s après son affichage (durée mesurée par le
+      // navigateur, `elapsed` en ms : indépendante de son horloge) : un robot (réponse polie, rien n'est fait)
+      const elapsed = Number(raw.elapsed)
+      if (raw.website || !Number.isFinite(elapsed) || elapsed < 3000) return json({ ok: true })
       const settings = await req.payload.findGlobal({ slug: 'settings', depth: 0 }).catch(() => null)
       if (settings?.members?.signupOpen === false) return json({ error: 'Les inscriptions sont momentanément fermées. Revenez bientôt !', code: 'closed' }, 403)
       const { data, errors } = checkSignup(raw)

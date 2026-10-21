@@ -43,6 +43,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum__pages_v_version_footer_group" AS ENUM('chaine', 'swatter');
   CREATE TYPE "public"."enum__pages_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_messages_subject" AS ENUM('info', 'publicite', 'autre');
+  CREATE TYPE "public"."enum_members_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
+  CREATE TYPE "public"."enum_member_history_kind" AS ENUM('video', 'replay');
+  CREATE TYPE "public"."enum_member_favorites_kind" AS ENUM('video', 'replay', 'article', 'event');
   CREATE TYPE "public"."enum_users_role" AS ENUM('admin', 'editeur');
   CREATE TYPE "public"."enum_redirects_to_type" AS ENUM('reference', 'custom');
   CREATE TYPE "public"."enum_settings_hero_slides_badges_style" AS ENUM('live', 'gold', 'glass');
@@ -509,6 +512,51 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
   
+  CREATE TABLE "members" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"first_name" varchar NOT NULL,
+  	"last_name" varchar,
+  	"email" varchar NOT NULL,
+  	"department" "enum_members_department",
+  	"newsletter" boolean DEFAULT false,
+  	"verified" boolean DEFAULT false,
+  	"blocked" boolean DEFAULT false,
+  	"note" varchar,
+  	"history_paused" boolean DEFAULT false,
+  	"last_login_at" timestamp(3) with time zone,
+  	"consent_at" timestamp(3) with time zone,
+  	"password_hash" varchar,
+  	"session_version" numeric DEFAULT 0,
+  	"login_attempts" numeric DEFAULT 0,
+  	"lock_until" timestamp(3) with time zone,
+  	"verify_token_hash" varchar,
+  	"verify_token_expires" timestamp(3) with time zone,
+  	"reset_token_hash" varchar,
+  	"reset_token_expires" timestamp(3) with time zone,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
+  CREATE TABLE "member_history" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"member_id" integer NOT NULL,
+  	"kind" "enum_member_history_kind" NOT NULL,
+  	"item_id" numeric NOT NULL,
+  	"watched_at" timestamp(3) with time zone NOT NULL,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
+  CREATE TABLE "member_favorites" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"member_id" integer NOT NULL,
+  	"kind" "enum_member_favorites_kind" NOT NULL,
+  	"item_id" numeric NOT NULL,
+  	"saved_at" timestamp(3) with time zone NOT NULL,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
   CREATE TABLE "users_sessions" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
@@ -583,6 +631,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"pages_id" integer,
   	"media_id" integer,
   	"messages_id" integer,
+  	"members_id" integer,
+  	"member_history_id" integer,
+  	"member_favorites_id" integer,
   	"users_id" integer,
   	"redirects_id" integer
   );
@@ -667,6 +718,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"socials_youtube" varchar,
   	"socials_tiktok" varchar,
   	"protect_notice" varchar DEFAULT 'Contenus protégés : captures et téléchargements détectés automatiquement',
+  	"members_signup_open" boolean DEFAULT true,
   	"_status" "enum_settings_status" DEFAULT 'draft',
   	"updated_at" timestamp(3) with time zone,
   	"created_at" timestamp(3) with time zone
@@ -731,6 +783,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_socials_youtube" varchar,
   	"version_socials_tiktok" varchar,
   	"version_protect_notice" varchar DEFAULT 'Contenus protégés : captures et téléchargements détectés automatiquement',
+  	"version_members_signup_open" boolean DEFAULT true,
   	"version__status" "enum__settings_v_version_status" DEFAULT 'draft',
   	"version_updated_at" timestamp(3) with time zone,
   	"version_created_at" timestamp(3) with time zone,
@@ -829,6 +882,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "pages" ADD CONSTRAINT "pages_meta_image_id_media_id_fk" FOREIGN KEY ("meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_pages_v" ADD CONSTRAINT "_pages_v_parent_id_pages_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_pages_v" ADD CONSTRAINT "_pages_v_version_meta_image_id_media_id_fk" FOREIGN KEY ("version_meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "member_history" ADD CONSTRAINT "member_history_member_id_members_id_fk" FOREIGN KEY ("member_id") REFERENCES "public"."members"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "member_favorites" ADD CONSTRAINT "member_favorites_member_id_members_id_fk" FOREIGN KEY ("member_id") REFERENCES "public"."members"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "users_sessions" ADD CONSTRAINT "users_sessions_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "redirects_rels" ADD CONSTRAINT "redirects_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."redirects"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "redirects_rels" ADD CONSTRAINT "redirects_rels_pages_fk" FOREIGN KEY ("pages_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
@@ -848,6 +903,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_pages_fk" FOREIGN KEY ("pages_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_media_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_messages_fk" FOREIGN KEY ("messages_id") REFERENCES "public"."messages"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_members_fk" FOREIGN KEY ("members_id") REFERENCES "public"."members"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_member_history_fk" FOREIGN KEY ("member_history_id") REFERENCES "public"."member_history"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_member_favorites_fk" FOREIGN KEY ("member_favorites_id") REFERENCES "public"."member_favorites"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_redirects_fk" FOREIGN KEY ("redirects_id") REFERENCES "public"."redirects"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_preferences"("id") ON DELETE cascade ON UPDATE no action;
@@ -1043,6 +1101,23 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "media_sizes_og_sizes_og_filename_idx" ON "media" USING btree ("sizes_og_filename");
   CREATE INDEX "messages_updated_at_idx" ON "messages" USING btree ("updated_at");
   CREATE INDEX "messages_created_at_idx" ON "messages" USING btree ("created_at");
+  CREATE UNIQUE INDEX "members_email_idx" ON "members" USING btree ("email");
+  CREATE INDEX "members_verify_token_hash_idx" ON "members" USING btree ("verify_token_hash");
+  CREATE INDEX "members_reset_token_hash_idx" ON "members" USING btree ("reset_token_hash");
+  CREATE INDEX "members_updated_at_idx" ON "members" USING btree ("updated_at");
+  CREATE INDEX "members_created_at_idx" ON "members" USING btree ("created_at");
+  CREATE INDEX "member_history_member_idx" ON "member_history" USING btree ("member_id");
+  CREATE INDEX "member_history_item_id_idx" ON "member_history" USING btree ("item_id");
+  CREATE INDEX "member_history_watched_at_idx" ON "member_history" USING btree ("watched_at");
+  CREATE INDEX "member_history_updated_at_idx" ON "member_history" USING btree ("updated_at");
+  CREATE INDEX "member_history_created_at_idx" ON "member_history" USING btree ("created_at");
+  CREATE UNIQUE INDEX "member_kind_itemId_idx" ON "member_history" USING btree ("member_id","kind","item_id");
+  CREATE INDEX "member_favorites_member_idx" ON "member_favorites" USING btree ("member_id");
+  CREATE INDEX "member_favorites_item_id_idx" ON "member_favorites" USING btree ("item_id");
+  CREATE INDEX "member_favorites_saved_at_idx" ON "member_favorites" USING btree ("saved_at");
+  CREATE INDEX "member_favorites_updated_at_idx" ON "member_favorites" USING btree ("updated_at");
+  CREATE INDEX "member_favorites_created_at_idx" ON "member_favorites" USING btree ("created_at");
+  CREATE UNIQUE INDEX "member_kind_itemId_1_idx" ON "member_favorites" USING btree ("member_id","kind","item_id");
   CREATE INDEX "users_sessions_order_idx" ON "users_sessions" USING btree ("_order");
   CREATE INDEX "users_sessions_parent_id_idx" ON "users_sessions" USING btree ("_parent_id");
   CREATE INDEX "users_updated_at_idx" ON "users" USING btree ("updated_at");
@@ -1077,6 +1152,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_pages_id_idx" ON "payload_locked_documents_rels" USING btree ("pages_id");
   CREATE INDEX "payload_locked_documents_rels_media_id_idx" ON "payload_locked_documents_rels" USING btree ("media_id");
   CREATE INDEX "payload_locked_documents_rels_messages_id_idx" ON "payload_locked_documents_rels" USING btree ("messages_id");
+  CREATE INDEX "payload_locked_documents_rels_members_id_idx" ON "payload_locked_documents_rels" USING btree ("members_id");
+  CREATE INDEX "payload_locked_documents_rels_member_history_id_idx" ON "payload_locked_documents_rels" USING btree ("member_history_id");
+  CREATE INDEX "payload_locked_documents_rels_member_favorites_id_idx" ON "payload_locked_documents_rels" USING btree ("member_favorites_id");
   CREATE INDEX "payload_locked_documents_rels_users_id_idx" ON "payload_locked_documents_rels" USING btree ("users_id");
   CREATE INDEX "payload_locked_documents_rels_redirects_id_idx" ON "payload_locked_documents_rels" USING btree ("redirects_id");
   CREATE INDEX "payload_preferences_key_idx" ON "payload_preferences" USING btree ("key");
@@ -1144,6 +1222,9 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "_pages_v" CASCADE;
   DROP TABLE "media" CASCADE;
   DROP TABLE "messages" CASCADE;
+  DROP TABLE "members" CASCADE;
+  DROP TABLE "member_history" CASCADE;
+  DROP TABLE "member_favorites" CASCADE;
   DROP TABLE "users_sessions" CASCADE;
   DROP TABLE "users" CASCADE;
   DROP TABLE "redirects" CASCADE;
@@ -1206,6 +1287,9 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum__pages_v_version_footer_group";
   DROP TYPE "public"."enum__pages_v_version_status";
   DROP TYPE "public"."enum_messages_subject";
+  DROP TYPE "public"."enum_members_department";
+  DROP TYPE "public"."enum_member_history_kind";
+  DROP TYPE "public"."enum_member_favorites_kind";
   DROP TYPE "public"."enum_users_role";
   DROP TYPE "public"."enum_redirects_to_type";
   DROP TYPE "public"."enum_settings_hero_slides_badges_style";

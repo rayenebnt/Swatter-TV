@@ -5,13 +5,16 @@ import { settle, watchErrors } from './helpers'
 // demande un compte administrateur pour relire « Messages reçus », est testé dans admin.spec.ts (connexions en série :
 // deux connexions simultanées au même compte peuvent s'écraser).
 
-test('contact : le bouton « Proposer une info » remplace « Se connecter »', async ({ page, isMobile }) => {
+test('contact : le bouton « Proposer une info » est dans l’en-tête, à côté de l’accès à l’espace membres', async ({ page, isMobile }) => {
   await page.goto('/')
   if (isMobile) await page.getByRole('button', { name: 'Ouvrir le menu' }).first().click()
-  const cta = (isMobile ? page.getByRole('dialog', { name: 'Menu' }) : page.locator('header')).getByRole('link', { name: 'Proposer une info' })
+  const zone = isMobile ? page.getByRole('dialog', { name: 'Menu' }) : page.locator('header')
+  const cta = zone.getByRole('link', { name: 'Proposer une info' })
   await expect(cta).toBeVisible()
   await expect(cta).toHaveAttribute('href', '/contact')
-  await expect(page.getByRole('link', { name: 'Se connecter' })).toHaveCount(0)
+  // l'administration n'est signalée nulle part : le lien de connexion mène à l'espace membres
+  await expect(zone.getByRole('link', { name: /Se connecter/ })).toHaveAttribute('href', '/connexion')
+  await expect(page.locator('a[href^="/admin"]')).toHaveCount(0)
 })
 
 test('contact : les champs obligatoires sont vérifiés avant l’envoi', async ({ page }) => {
@@ -32,7 +35,7 @@ test('contact : les champs obligatoires sont vérifiés avant l’envoi', async 
 })
 
 test('contact : l’API refuse un message incomplet et ignore les robots', async ({ request }) => {
-  const incomplete = await request.post('/api/contact', { data: { subject: 'info', name: 'A', email: 'x', message: 'court', shownAt: Date.now() - 10_000 } })
+  const incomplete = await request.post('/api/contact', { data: { subject: 'info', name: 'A', email: 'x', message: 'court', elapsed: 10_000 } })
   expect(incomplete.status()).toBe(400)
   const { errors } = (await incomplete.json()) as { errors: Record<string, string> }
   expect(Object.keys(errors).sort()).toEqual(['consent', 'email', 'message', 'name'])

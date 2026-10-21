@@ -6,6 +6,7 @@ import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore }
 import { preload } from 'react-dom'
 import type Hls from 'hls.js'
 import { openCookieSettings, useConsent } from '@/components/layout/consent'
+import { recordWatch } from '@/components/members/recordWatch'
 import { Icon } from '@/components/ui/Icon'
 import { SITE_URL } from '@/lib/site'
 import { twitchEmbedUrl, type ResolvedVideo } from '@/lib/video'
@@ -23,6 +24,8 @@ export type VideoPlayerProps = {
   autoPlay?: boolean
   /** Direct : badge « En direct » */
   live?: boolean
+  /** Espace membres : contenu ajouté une fois à l'historique du membre connecté, au premier démarrage réel de la lecture */
+  history?: { kind: 'video' | 'replay'; id: number }
 }
 
 type EmbedVideo = Extract<ResolvedVideo, { kind: 'youtube' | 'twitch' | 'iframe' }>
@@ -47,9 +50,18 @@ export function VideoPlayer(props: VideoPlayerProps) {
   return <Player key={sourceKey(props.video)} {...props} />
 }
 
-function Player({ video, poster, title, autoPlay = false, live = false }: VideoPlayerProps) {
+function Player({ video, poster, title, autoPlay = false, live = false, history }: VideoPlayerProps) {
   const [failed, setFailed] = useState(false)
   const fail = useCallback(() => setFailed(true), [])
+  // Historique : un seul envoi par lecteur (donc par source), au premier démarrage de la lecture
+  const recorded = useRef(false)
+  const historyKind = history?.kind
+  const historyId = history?.id
+  const onStart = useCallback(() => {
+    if (recorded.current || !historyKind || !historyId) return
+    recorded.current = true
+    recordWatch({ kind: historyKind, id: historyId })
+  }, [historyKind, historyId])
   const playable = video && !failed ? video : null
   const root = useRef<HTMLDivElement>(null)
   // Badge « En direct » (animation en boucle) en pause hors écran
@@ -60,9 +72,9 @@ function Player({ video, poster, title, autoPlay = false, live = false }: VideoP
       {!playable ? (
         <Unavailable poster={poster} live={live} />
       ) : playable.kind === 'youtube' || playable.kind === 'twitch' || playable.kind === 'iframe' ? (
-        <Embed video={playable} poster={poster} title={title} autoPlay={autoPlay} />
+        <Embed video={playable} poster={poster} title={title} autoPlay={autoPlay} onStart={onStart} />
       ) : (
-        <Native video={playable} poster={poster} title={title} autoPlay={autoPlay} live={live} onError={fail} />
+        <Native video={playable} poster={poster} title={title} autoPlay={autoPlay} live={live} onError={fail} onStart={onStart} />
       )}
       {live && playable && (
         <span className="badge badge--live vp__live">
@@ -82,7 +94,7 @@ function Poster({ src }: { src: string }) {
 }
 
 /** YouTube / Twitch / Bunny Stream : façade (affiche + bouton) ; l'iframe n'est chargée qu'au clic. */
-function Embed({ video, poster, title, autoPlay }: { video: EmbedVideo; poster?: string | null; title: string; autoPlay: boolean }) {
+function Embed({ video, poster, title, autoPlay, onStart }: { video: EmbedVideo; poster?: string | null; title: string; autoPlay: boolean; onStart: () => void }) {
   const consent = useConsent()
   const allowed = consent?.externes === true
   // Mention affichée une fois le choix connu : pas de clignotement pour qui a déjà accepté les contenus externes
@@ -97,6 +109,11 @@ function Embed({ video, poster, title, autoPlay }: { video: EmbedVideo; poster?:
     // Le bouton disparaît : le focus passe au lecteur pour continuer au clavier
     if (clicked) frame.current?.focus()
   }, [clicked])
+
+  useEffect(() => {
+    // Iframe chargée (clic, ou lecture automatique autorisée) : la lecture démarre
+    if (active) onStart()
+  }, [active, onStart])
 
   if (active) {
     return (
@@ -141,7 +158,23 @@ function posterUrl(src: string): string {
 }
 
 /** Fichier MP4 ou flux HLS : lecteur natif du navigateur. */
-function Native({ video, poster, title, autoPlay, live, onError }: { video: NativeVideo; poster?: string | null; title: string; autoPlay: boolean; live: boolean; onError: () => void }) {
+function Native({
+  video,
+  poster,
+  title,
+  autoPlay,
+  live,
+  onError,
+  onStart,
+}: {
+  video: NativeVideo
+  poster?: string | null
+  title: string
+  autoPlay: boolean
+  live: boolean
+  onError: () => void
+  onStart: () => void
+}) {
   const { kind, src } = video
   const ref = useRef<HTMLVideoElement>(null)
   const [started, setStarted] = useState(false)
@@ -234,7 +267,10 @@ function Native({ video, poster, title, autoPlay, live, onError }: { video: Nati
         src={kind === 'mp4' ? localize(src) : undefined}
         loop={loop}
         aria-label={title}
-        onPlay={() => setStarted(true)}
+        onPlay={() => {
+          setStarted(true)
+          onStart()
+        }}
         onError={() => {
           if (!viaHlsJs.current) onError()
         }}

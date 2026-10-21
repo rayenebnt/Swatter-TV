@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AdSlot } from '@/components/layout/AdSlot'
+import { SaveButton } from '@/components/members/SaveButton'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { Crumbs } from '@/components/video/Crumbs'
@@ -77,7 +78,8 @@ export default async function VideoPage({ params }: { params: Params }) {
         <div className="container">
           <Crumbs items={[{ label: 'Vidéos', href: '/videos' }, { label, href: videoListUrl(video.category) }, { label: video.title }]} />
           <article className="watch__grid" aria-labelledby="watch-title">
-            <VideoPlayer video={resolved} poster={poster} title={video.title} />
+            {/* history : vidéo ajoutée à l'historique du membre connecté au lancement de la lecture */}
+            <VideoPlayer video={resolved} poster={poster} title={video.title} history={{ kind: 'video', id: video.id }} />
             <div className="watch__info">
               <p className="kicker">
                 <Link href={videoListUrl(video.category)}>{label}</Link>
@@ -107,6 +109,7 @@ export default async function VideoPage({ params }: { params: Params }) {
               </ul>
               {video.description && <p className="watch__desc">{video.description}</p>}
               <div className="watch__actions">
+                <SaveButton kind="video" id={video.id} title={video.title} />
                 <Link className="btn btn--ghost btn--sm" href="/videos">
                   Toutes les vidéos
                   <Icon name="arrow" />

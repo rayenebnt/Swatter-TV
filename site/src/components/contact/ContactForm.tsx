@@ -1,11 +1,21 @@
 'use client'
 // Formulaire « Proposer une info » : vérification immédiate, envoi à POST /api/contact, confirmation à l'écran.
+// Membre connecté : nom et e-mail pré-remplis depuis son profil (GET /api/compte/moi).
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { CONTACT_SUBJECTS, checkContact, isSubject, type ContactErrors } from '@/lib/contact'
+import { memberApi, useMemberHint } from '@/lib/members/browser'
+import type { MemberProfile } from '@/lib/members/shared'
 
 type State = 'idle' | 'sending' | 'sent'
+type Identity = { name: string; email: string }
+
+/** Remplit un champ du formulaire (non contrôlé) s'il est encore vide : rien de ce que le visiteur a saisi n'est remplacé. */
+function fillEmpty(form: HTMLFormElement, name: string, value: string) {
+  const el = form.elements.namedItem(name)
+  if (value && el instanceof HTMLInputElement && !el.value) el.value = value
+}
 
 export function ContactForm() {
   const params = useSearchParams()
@@ -18,6 +28,32 @@ export function ContactForm() {
   const done = useRef<HTMLHeadingElement>(null)
   const shownAt = useRef(0)
   const id = useId()
+  const member = useMemberHint()
+  const [identity, setIdentity] = useState<Identity | null>(null)
+  // Formulaire déjà pré-rempli (un nouveau formulaire s'affiche après « Envoyer un autre message »)
+  const filled = useRef<HTMLFormElement | null>(null)
+
+  useEffect(() => {
+    if (!member) return
+    let cancelled = false
+    memberApi<MemberProfile>('/moi').then((res) => {
+      if (cancelled || !res.ok) return
+      // Même limite que le champ (maxlength ne s'applique qu'à la saisie)
+      const name = [res.data.firstName, res.data.lastName].map((v) => v?.trim()).filter(Boolean).join(' ').slice(0, 120)
+      setIdentity({ name, email: res.data.email ?? '' })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [member])
+
+  useEffect(() => {
+    const f = form.current
+    if (!f || !identity || filled.current === f) return
+    filled.current = f
+    fillEmpty(f, 'name', identity.name)
+    fillEmpty(f, 'email', identity.email)
+  }, [identity, state])
 
   useEffect(() => {
     shownAt.current = Date.now()
@@ -44,7 +80,8 @@ export function ContactForm() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...raw, shownAt: shownAt.current }),
+        // durée depuis l'affichage, mesurée ici : le serveur écarte les envois de moins de 3 s (robots)
+        body: JSON.stringify({ ...raw, elapsed: Date.now() - shownAt.current }),
       })
       const json = (await res.json().catch(() => null)) as { ok?: boolean; errors?: ContactErrors; error?: string } | null
       if (res.ok && json?.ok) return setState('sent')

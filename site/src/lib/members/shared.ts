@@ -102,9 +102,22 @@ export function checkProfile(raw: Record<string, unknown>): { data: Partial<Omit
   return { data, errors }
 }
 
-/** Chemin de retour après connexion : uniquement une adresse interne du site (jamais //autre-site ni l'administration). */
+/**
+ * Chemin de retour après connexion : uniquement une adresse interne du site (jamais //autre-site ni l'administration).
+ * Caractères de contrôle et barre oblique inverse refusés : le navigateur les retire ou les convertit, et « /\t/site »
+ * deviendrait « //site », une adresse extérieure.
+ */
 export function safeReturn(v: unknown, fallback = '/compte'): string {
-  if (typeof v !== 'string' || !v.startsWith('/') || v.startsWith('//') || v.startsWith('/\\')) return fallback
+  if (typeof v !== 'string' || !v.startsWith('/') || v.startsWith('//') || /[\u0000-\u001f\u007f\\]/.test(v)) return fallback
   if (/^\/(admin|api|_next)(\/|$|\?)/.test(v)) return fallback
   return v.slice(0, 300)
+}
+
+/** Pages d'où l'on ne revient pas après connexion (elles renverraient en boucle vers elles-mêmes ou vers /compte). */
+export const isAuthPage = (path: string) => /^\/(connexion|inscription|mot-de-passe-oublie|compte\/nouveau-mot-de-passe|compte\/verifier)(\/|\?|#|$)/.test(path)
+
+/** Lien « Se connecter » depuis la page `pathname` : on y revient après la connexion (sauf pages de connexion et espace). */
+export function loginHref(pathname: string | null): string {
+  if (!pathname || pathname === '/' || pathname.startsWith('/compte') || isAuthPage(pathname)) return '/connexion'
+  return `/connexion?retour=${encodeURIComponent(safeReturn(pathname, '/'))}`
 }

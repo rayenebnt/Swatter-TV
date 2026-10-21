@@ -18,6 +18,8 @@ src/
   components/<rubrique>/  composants de chaque rubrique
   lib/                    helpers (payload, safe, media, format, video, site, departments, categories, queries/)
   lib/import/             imports automatiques (météo, chaîne YouTube)
+  lib/members/            espace membres : API, sessions, mots de passe, e-mails, limites (voir « Espace membres »)
+  components/members/     espace membres côté site (formulaires, Mon espace, « Ajouter à ma liste », historique)
   styles/                 globals.css + un fichier par rubrique
   scripts/                scripts Payload (init-db, seed, import)
 ```
@@ -99,6 +101,10 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `/webcams` | webcams |
 | `/recherche?q=` | résultats de recherche |
 | `/[...slug]` | pages éditoriales (canaux de réception, le groupe, crédits, vie privée, mentions légales) et redirections des anciennes adresses |
+| `/inscription`, `/connexion`, `/mot-de-passe-oublie` | espace membres : créer un compte, se connecter, recevoir un lien de nouveau mot de passe |
+| `/compte`, `/compte/historique`, `/compte/ma-liste`, `/compte/profil` | « Mon espace » (membre connecté, sinon `/connexion?retour=<chemin>`) |
+| `/compte/verifier?token=`, `/compte/nouveau-mot-de-passe?token=` | liens des e-mails des membres (confirmation de l'adresse, nouveau mot de passe) |
+| `/api/compte/…`, `/api/membres/lettre-info.csv` | API des membres ; export CSV de la lettre d'info (administrateurs) |
 | `/admin`, `/api` | administration et API Payload |
 
 ## Commandes
@@ -198,6 +204,73 @@ npm run seed           # contenus de départ « Exemple » (efface les contenus)
 - **Tests et connexions** : Payload garde les sessions dans la fiche de l'utilisateur ; deux connexions simultanées au
   même compte peuvent s'écraser. Seul `admin.spec.ts` (en série) se connecte en administrateur.
 
+## Espace membres
+
+Comptes des visiteurs (« Mon espace ») : historique des vidéos et replays regardés, « Ma liste » (vidéos, replays,
+articles, événements), département préféré (météo, info, sorties), profil, export et suppression des données.
+
+- **Sessions séparées de l'authentification Payload.** Les membres ne sont pas une collection `auth` : la session est un
+  cookie signé `sw_membre` (`v1.<données>.<HMAC-SHA-256>`, clé dérivée de `PAYLOAD_SECRET`, 30 jours, `HttpOnly`,
+  `SameSite=Lax`, `Secure` si `NEXT_PUBLIC_SITE_URL` est en HTTPS) qui porte l'identifiant du membre et sa
+  `sessionVersion` ; incrémenter celle-ci (déconnexion « partout », nouveau mot de passe, compte suspendu, e-mail changé
+  dans l'administration) invalide toutes ses sessions. `sw_connecte` est un simple témoin lisible par le navigateur :
+  il permet aux pages en cache (ISR) d'afficher « Mon espace » sans lire la session côté serveur ; il ne donne aucun
+  droit. **Aucun `req.user`** : un membre n'a aucun accès à `/admin` ni à l'API REST de Payload, et les règles
+  `src/access` ne le voient pas.
+- **Modules** (`src/lib/members/`) : `shared.ts` (constantes, types, validation commune navigateur / serveur),
+  `browser.ts` (`useMemberHint`, `notifyMemberChange`, `memberApi`), `session.ts` (cookies, `getCurrentMember()` pour les
+  pages serveur, `toProfile()` : ne jamais renvoyer le document brut, qui contient les empreintes), `crypto.ts`
+  (scrypt N = 16384, r = 8, p = 1 ; jetons à usage unique dont seule l'empreinte SHA-256 est enregistrée ; signature des
+  sessions), `items.ts` (`loadItems()` : contenus de l'historique et de la liste prêts à afficher, publics seulement
+  sauf `publicOnly: false` pour les statistiques de l'équipe), `emails.ts`, `rate-limit.ts`, `endpoints.ts` (API).
+- **Collections** : `members` (`src/collections/Members.ts` ; lecture, modification et suppression par les
+  administrateurs, création impossible par l'API : seul `/api/compte/inscription` crée, par l'API locale ; champs
+  techniques `hidden`), `member-history` et `member-favorites` (`src/collections/MemberActivity.ts` ; une ligne unique par
+  membre × contenu : `kind` + `itemId`, date `watchedAt` / `savedAt` rafraîchie à chaque lecture ou ajout ; masquées du
+  menu, aucune écriture hors API locale). Supprimer un membre supprime son activité (`beforeDelete`). Réglage :
+  `settings.members.signupOpen`.
+- **API** (`/api/compte/…`, JSON, erreurs `{ error, code? }` ou `{ errors: { champ: message } }`) :
+
+| Méthode et chemin | Rôle |
+|---|---|
+| `POST /inscription` | compte non confirmé + e-mail de confirmation (48 h) ; réponse identique si l'adresse existe déjà (rien n'est révélé) ; piège `website` et délai `shownAt` ; 403 `closed` si inscriptions fermées |
+| `POST /connexion` | cookies de session ; 401 identifiants ; 403 `unverified` / `blocked` ; 429 `locked` (5 erreurs → 15 min) |
+| `POST /deconnexion` | `{ partout: true }` ferme aussi les autres appareils |
+| `POST /renvoyer-confirmation`, `POST /mot-de-passe-oublie` | toujours `{ ok }` |
+| `POST /nouveau-mot-de-passe` | `{ token, password }` → connecté ; `invalid` si lien expiré ou déjà utilisé |
+| `GET /moi`, `PATCH /profil`, `POST /mot-de-passe` | profil (`MemberProfile`), modification, changement de mot de passe (autres appareils déconnectés) |
+| `POST` / `DELETE /historique` | ajout (contenu public uniquement ; `{ paused: true }` si historique en pause), retrait d'une entrée ou de tout |
+| `GET` / `POST` / `DELETE /favoris` | « Ma liste » (500 au plus, 409 au-delà) |
+| `GET /export`, `POST /supprimer` | données du membre en JSON ; suppression du compte (mot de passe exigé) |
+
+  Les requêtes qui modifient quelque chose doivent venir du site (`sameOrigin()` : en-tête `Origin`, à défaut
+  `Sec-Fetch-Site`), en plus de `SameSite=Lax`. Historique limité à 200 entrées par membre (les plus anciennes sont
+  effacées, `HISTORY_MAX`). `GET /api/membres/lettre-info.csv` (administrateurs Payload) : membres confirmés, non
+  suspendus, qui acceptent les e-mails ; CSV `;` avec BOM UTF-8 (Excel).
+- **Limites par IP** (`rate-limit.ts`, mémoire du processus) : inscription, connexion, renvoi de confirmation, mot de
+  passe oublié, nouveau mot de passe, changement de mot de passe, suppression. **`MEMBER_RATE_FACTOR`** les multiplie
+  (tests de bout en bout : `10`, toutes les requêtes venant de la même adresse). IP = dernier maillon de
+  `X-Forwarded-For` (celui du reverse proxy ; `TRUSTED_PROXY_HOPS` s'il y en a plusieurs en chaîne, voir README).
+  Le formulaire de contact utilise la même fonction (`allow('contact', …)`, 5 messages par quart d'heure).
+- **E-mails** : `payload.sendEmail` (SMTP du site). Sans `SMTP_HOST` et hors production, `sendMemberEmail()` écrit le
+  lien dans le journal (`[swatter] (développement, pas de SMTP) … — lien : …`) : c'est ainsi qu'on confirme un compte en
+  local (ou en cochant « E-mail confirmé » dans l'administration).
+- **Pages** (`src/app/(frontend)/inscription`, `connexion`, `mot-de-passe-oublie`, `compte/…`) :
+  `export const dynamic = 'force-dynamic'`, `robots: { index: false, follow: false }`, hors du plan du site. Chaque page
+  de « Mon espace » vérifie elle-même le membre (`getCurrentMember()`) et renvoie vers `/connexion?retour=<chemin>`
+  (`safeReturn()` n'accepte que des chemins internes). Les pages publiques restent en cache : tout ce qui dépend du
+  membre y est chargé côté navigateur (bouton de l'en-tête `AccountButton`, menu mobile, `SaveButton` « Ajouter à ma
+  liste » des pages vidéo / replay / article / événement, enregistrement de l'historique par `VideoPlayer` via la prop
+  `history` → `recordWatch()` au premier démarrage réel de la lecture).
+- **Administration** : collection « Membres du site » (section Administration du menu, administrateurs seuls),
+  `MembersExport.tsx` au-dessus de la liste (nombre d'abonnés et export CSV), chiffres et « Les plus regardées par les
+  membres (7 derniers jours) » sur le tableau de bord (voir ci-dessous).
+- **Scripts** : `npm run seed` vide `member-history` et `member-favorites` avec les contenus, jamais `members` (comme
+  `users`) ; `npm run reinit` efface aussi les membres (seuls les comptes de l'équipe sont remis). Le texte de la page
+  Vie privée (`src/scripts/seed/pages.ts`) décrit l'espace membres : **`npm run maj-pages -- vie-privee`** l'applique sur
+  une base existante.
+- **Production** : migration à créer pour les trois collections et `settings.members` (voir README).
+
 ## Administration (pensée pour une équipe non technique)
 
 Composants dans `src/components/admin/`, déclarés dans `src/payload.config.ts` (`admin.components`) ou dans les collections ;
@@ -206,10 +279,16 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
 
 - **Tableau de bord** (`Dashboard.tsx` + `dashboard-data.ts`, `admin.components.views.dashboard`) : actions courantes,
   état du site (chaque requête échoue sans bloquer la page), derniers contenus modifiés (hors articles importés).
+  Espace membres (rien tant qu'aucun compte n'existe) : ligne « Membres du site » réservée aux administrateurs (membres
+  confirmés et non suspendus, inscrits des 7 derniers jours, comptes en attente, inscriptions fermées) et, pour toute
+  l'équipe, « Les plus regardées par les membres (7 derniers jours) » : lignes de `member-history` dont `watchedAt` a
+  moins de 7 jours (20 000 au plus, les plus récentes), comptées par contenu, soit le nombre de membres différents ;
+  titres et liens par `loadItems(…, { publicOnly: false })`. La colonne de droite empile ses blocs avec un style en
+  ligne (à déplacer dans `custom.scss` en `.sw-dash__side` à l'occasion).
 - **Menu** : menu sur mesure, **dans l'ordre du menu du site** (`menu.ts`, rendu par `NavLinks.tsx` en `beforeNavLinks`) ;
   le menu automatique de Payload est vidé (`admin.group: false` sur toutes les collections et tous les globals, plugin
-  `simpleDocuments`). Une nouvelle collection doit donc être ajoutée à `menu.ts`. La section « Administration » (comptes,
-  redirections) n'est affichée qu'aux administrateurs ; ces collections gardent `admin.hidden: hiddenForEditors`
+  `simpleDocuments`). Une nouvelle collection doit donc être ajoutée à `menu.ts`. La section « Administration » (membres
+  du site, comptes, redirections) n'est affichée qu'aux administrateurs ; ces collections gardent `admin.hidden: hiddenForEditors`
   (l'API garde ses propres règles d'accès). Liens sans préchargement (`prefetch={false}`) : le préchargement de dizaines de
   vues de l'administration ralentissait la navigation.
 - **Aperçu en direct** (`admin.livePreview`, config) : ouvert d'office sur les fiches à brouillons et sur « Accueil et

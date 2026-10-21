@@ -37,6 +37,12 @@
 .hdr__actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .hdr .burger { display: none; }
 kbd.k { font: 600 11px var(--font-body); color: var(--muted); border: 1px solid var(--line-2); border-radius: 6px; padding: 2px 6px; }
+/* Espace membres (AccountButton) : visible à toutes les tailles ; pastille dorée quand un membre est connecté */
+.hdr .account { position: relative; }
+.hdr .account.is-member { border-color: rgba(217, 170, 69, .45); color: var(--gold-light); }
+.account__dot { position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--gold-grad); box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
+/* Menu mobile : accès à l'espace membres sous « Proposer une info » */
+.drawer > .btn.drawer__account { margin-top: 12px; }
 
 @media (max-width: 1280px) {
   .nav a { padding: 10px; font-size: 14.5px; }
@@ -51,6 +57,20 @@ kbd.k { font: 600 11px var(--font-body); color: var(--muted); border: 1px solid 
 @media (max-width: 1100px) {
   .nav, .hdr .login, .hdr .k { display: none; }
   .hdr .burger { display: grid; }
+}
+/* Bouton « Mon espace » en plus (44 px) : les paliers intermédiaires commencent un peu plus tôt pour que tout tienne sur une ligne */
+@media (min-width: 1281px) and (max-width: 1350px) {
+  .nav a { padding: 10px; font-size: 14.5px; }
+  .nav:not(.is-ready) a[aria-current='page']::after { left: 10px; right: 10px; }
+}
+@media (min-width: 1241px) and (max-width: 1280px) {
+  .hdr .k { display: none; }
+}
+@media (min-width: 1101px) and (max-width: 1180px) {
+  .hdr__in { gap: 14px; }
+  .hdr__actions { gap: 8px; }
+  .nav a { padding: 10px 5px; }
+  .nav:not(.is-ready) a[aria-current='page']::after { left: 5px; right: 5px; }
 }
 @media (max-width: 760px) {
   .hdr__in { height: 66px; }

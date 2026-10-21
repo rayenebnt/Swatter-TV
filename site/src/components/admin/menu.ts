@@ -1,4 +1,5 @@
 // Menu de l'administration, dans l'ordre du menu du site (src/components/layout/nav.ts) pour s'y retrouver d'un coup d'œil.
+// La section Administration (membres du site, comptes de l'équipe, redirections) n'est montrée qu'aux administrateurs.
 import { currentMonday, rangeSearch } from '@/lib/schedule-week'
 import type { IconName } from './icons'
 
@@ -47,6 +48,7 @@ export const MENU: MenuSection[] = [
     title: 'Administration',
     adminOnly: true,
     items: [
+      { label: 'Membres du site', path: '/collections/members', icon: 'member' },
       { label: 'Utilisateurs', path: '/collections/users', icon: 'users' },
       { label: 'Redirections', path: '/collections/redirects', icon: 'redirect' },
     ],

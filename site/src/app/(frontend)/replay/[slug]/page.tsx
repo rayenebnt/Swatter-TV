@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AdSlot } from '@/components/layout/AdSlot'
+import { SaveButton } from '@/components/members/SaveButton'
 import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { Crumbs } from '@/components/video/Crumbs'
@@ -85,7 +86,8 @@ export default async function ReplayEpisodePage({ params }: { params: Params }) 
         <div className="container">
           <Crumbs items={[{ label: 'Replay', href: '/replay' }, ...(program ? [{ label: program.title, href: replayListUrl(program.slug) }] : []), { label: replay.title }]} />
           <article className="watch__grid" aria-labelledby="watch-title">
-            <VideoPlayer video={resolved} poster={poster} title={replay.title} />
+            {/* history : replay ajouté à l'historique du membre connecté au lancement de la lecture */}
+            <VideoPlayer video={resolved} poster={poster} title={replay.title} history={{ kind: 'replay', id: replay.id }} />
             <div className="watch__info">
               <p className="kicker">
                 {program ? <Link href={replayListUrl(program.slug)}>{program.title}</Link> : 'Replay'}
@@ -111,6 +113,7 @@ export default async function ReplayEpisodePage({ params }: { params: Params }) 
               </ul>
               {description && <p className="watch__desc">{description}</p>}
               <div className="watch__actions">
+                <SaveButton kind="replay" id={replay.id} title={replay.title} />
                 <Link className="btn btn--ghost btn--sm" href={program ? replayListUrl(program.slug) : '/replay'}>
                   {program ? 'Tous les épisodes' : 'Tous les replays'}
                   <Icon name="arrow" />
