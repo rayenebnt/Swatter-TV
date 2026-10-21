@@ -20,6 +20,7 @@ pour les conventions de code et les contrats entre rubriques, voir **[DEV_NOTES.
 | **Plugins Payload** | SEO (bloc « SEO » des contenus), redirections, stockage S3 facultatif (S3, Cloudflare R2, Scaleway…) |
 | **hls.js** | lecture des flux HLS (direct, webcams) |
 | **Open-Meteo** | prévisions météo (sans clé d’API), importées toutes les heures |
+| **Google Analytics 4** (facultatif) | mesure d’audience, chargée seulement après l’accord du visiteur (ID de mesure dans l’administration) |
 | **Vitest** et **Playwright** | tests unitaires, d’intégration (Payload sur une base de test) et de bout en bout (bureau 1440 px et mobile 390 px) |
 
 Styles en CSS natif (jetons de la maquette dans `src/styles/globals.css`, un fichier par rubrique), aucune bibliothèque d’interface.
@@ -381,7 +382,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 
 ### Ce qui est vérifié
 
-- **Tests unitaires** (`tests/unit/`, 821 tests, quelques secondes) : la logique pure du site.
+- **Tests unitaires** (`tests/unit/`, 832 tests, quelques secondes) : la logique pure du site.
   - Espace membres et sécurité : validation des champs, mots de passe, jetons et sessions signées, limites anti-abus,
     retours après la connexion et sortie de l’aperçu (près de 300 tentatives de redirection vers un autre site), e-mails,
     export CSV (formules de tableur neutralisées).
@@ -390,8 +391,9 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - Météo (lecture et import d’Open-Meteo, bulletins), sources vidéo (YouTube, Twitch, Bunny), import de la chaîne
     YouTube, recherche (classement, accents).
   - Règles d’accès de chaque collection, tableau de bord, agenda, info, webcams, bandeau cookies, menus, médias, anciennes
-    adresses, comportements automatiques (régénération du site, Top 10, vignette YouTube), formulaire de contact.
-- **Tests d’intégration** (`tests/integration/`, 398 tests, environ 2 min 30) : Payload complet sur la base de test.
+    adresses, comportements automatiques (régénération du site, Top 10, vignette YouTube), formulaire de contact, mesure
+    d’audience (Google Analytics : chargement, arrêt, cookies).
+- **Tests d’intégration** (`tests/integration/`, 403 tests, environ 2 min 30) : Payload complet sur la base de test.
   - Droits du public, des éditeurs et des administrateurs sur chaque collection et chaque réglage (REST et GraphQL),
     brouillons, contenus programmés, comptes de l’équipe, membres.
   - Comportements automatiques : adresses uniques, Top 10, vignettes YouTube, grille des programmes, régénération du site,
@@ -399,7 +401,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - API de l’espace membres (inscription, connexion et blocage, sessions, mot de passe oublié, historique, « Ma liste »,
     export, suppression), formulaire de contact, recherche, tâche planifiée, imports, recopie de la grille, export de la
     lettre d’info.
-- **Tests de bout en bout** (`tests/e2e/`, 143 tests, environ 6 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
+- **Tests de bout en bout** (`tests/e2e/`, 147 tests, environ 6 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
   390 × 844, tactile ; ceux qui ne dépendent pas de l’écran, comme le référencement et l’administration, une seule fois) :
   - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
     horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
@@ -416,6 +418,8 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - `contact.spec.ts` : bouton « Proposer une info », champs vérifiés, robots ignorés ;
   - `members.spec.ts` : espace membres fermé sans connexion, inscription, mot de passe oublié, retours sûrs après la
     connexion, pages lisibles sur mobile ;
+  - `mesure-audience.spec.ts` (projet `mesure-audience`, lancé après les autres) : Google Analytics chargé seulement après
+    l’accord du bandeau cookies, jamais après un refus ou un choix expiré, arrêté et cookies effacés au retrait de l’accord ;
   - `admin.spec.ts` (bureau, en série) : tableau de bord, aide, grille et recopie de semaine, Top 10, éditeurs,
     brouillons et aperçu en direct, direct Twitch, import YouTube (faux YouTube), blocage après 5 mauvais mots de passe,
     parcours complet d’un membre et sa gestion dans « Membres du site ».
