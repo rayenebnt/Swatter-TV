@@ -2,7 +2,7 @@
 //
 // CONTRAT
 // - Stockage : localStorage « swatter-consent » = { v: 1, audience, externes, date } (date ISO 8601).
-//   Un choix plus vieux que 13 mois, ou d'une autre version, est ignoré : le bandeau est alors reproposé.
+//   Un choix plus vieux que 6 mois, ou d'une autre version, est ignoré : le bandeau est alors reproposé.
 // - Événement window « swatter:consent » (CustomEvent<ConsentChoice>) : émis à chaque enregistrement
 //   d'un choix (Accepter, Refuser, Enregistrer). `detail` contient le choix complet.
 //   Écoute : window.addEventListener(CONSENT_EVENT, (e) => (e as CustomEvent<ConsentChoice>).detail)
@@ -31,8 +31,11 @@ export const CONSENT_KEY = 'swatter-consent'
 export const CONSENT_EVENT = 'swatter:consent'
 export const COOKIES_EVENT = 'swatter:cookies'
 
-/** Durée de validité d'un choix : 13 mois (recommandation CNIL). */
-const MAX_AGE_MS = 395 * 24 * 60 * 60 * 1000
+/**
+ * Durée de validité d'un choix, accord comme refus : 6 mois (recommandation de la CNIL, durée annoncée sur la page Vie
+ * privée). Les cookies de mesure d'audience, eux, vivent 13 mois au plus.
+ */
+const MAX_AGE_MS = 183 * 24 * 60 * 60 * 1000
 
 /**
  * Choix fait sur la page en cours que le stockage a refusé (navigation privée stricte, stockage plein…). Il l'emporte sur

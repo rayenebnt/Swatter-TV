@@ -1502,6 +1502,15 @@ export interface Setting {
      */
     signupOpen?: boolean | null;
   };
+  /**
+   * Statistiques de fréquentation (guide, partie 22). Google Analytics ne se charge que chez les visiteurs qui acceptent la « Mesure d’audience » dans le bandeau cookies, et jamais en mode aperçu.
+   */
+  analytics?: {
+    /**
+     * Vide : aucune mesure d’audience. Modifiable par les administrateurs.
+     */
+    measurementId?: string | null;
+  };
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1640,6 +1649,11 @@ export interface SettingsSelect<T extends boolean = true> {
     | T
     | {
         signupOpen?: T;
+      };
+  analytics?:
+    | T
+    | {
+        measurementId?: T;
       };
   _status?: T;
   updatedAt?: T;

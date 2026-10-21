@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 // Styles communs chargés AVANT ceux des composants (sinon ils l'emportent à spécificité égale).
 import '@/styles/globals.css'
 
-import { CookieBanner } from '@/components/layout/CookieBanner'
+import { CookieConsent } from '@/components/layout/CookieConsent'
 import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
 import { NavProgress } from '@/components/layout/NavProgress'
@@ -48,7 +48,7 @@ export default function FrontendLayout({ children }: { children: ReactNode }) {
         <Footer />
         <TabBar />
         <SearchOverlay />
-        <CookieBanner />
+        <CookieConsent />
         <PreviewMode />
         <Effects />
         <SiteJsonLd />

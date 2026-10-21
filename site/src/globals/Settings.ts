@@ -1,8 +1,9 @@
 import type { GlobalConfig } from 'payload'
-import { authenticated, publishedStatusOrAuthenticated } from '@/access'
+import { authenticated, isAdminField, publishedStatusOrAuthenticated } from '@/access'
 import { globalDraftVersions } from '@/fields/drafts'
 import { videoSourceField } from '@/fields/videoSource'
 import { revalidateGlobal } from '@/hooks/revalidate'
+import { isMeasurementId, normalizeMeasurementId } from '@/lib/analytics'
 
 export const Settings: GlobalConfig = {
   slug: 'settings',
@@ -169,6 +170,33 @@ export const Settings: GlobalConfig = {
                   type: 'checkbox',
                   defaultValue: true,
                   admin: { description: 'Décochez pour fermer temporairement les nouvelles inscriptions (les membres déjà inscrits peuvent toujours se connecter).' },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Mesure d’audience',
+          fields: [
+            {
+              name: 'analytics',
+              label: 'Google Analytics',
+              type: 'group',
+              admin: {
+                description:
+                  'Statistiques de fréquentation (guide, partie 22). Google Analytics ne se charge que chez les visiteurs qui acceptent la « Mesure d’audience » dans le bandeau cookies, et jamais en mode aperçu.',
+              },
+              fields: [
+                {
+                  name: 'measurementId',
+                  label: 'ID de mesure',
+                  type: 'text',
+                  // l'identifiant est inséré dans les pages du site : modifiable par les administrateurs seulement
+                  access: { update: isAdminField },
+                  hooks: { beforeValidate: [({ value }) => normalizeMeasurementId(value)] },
+                  validate: (value: string | null | undefined) =>
+                    !value || isMeasurementId(value) || 'Collez l’« ID de mesure » de Google Analytics, de la forme G-XXXXXXXXXX (Admin › Flux de données).',
+                  admin: { placeholder: 'G-XXXXXXXXXX', description: 'Vide : aucune mesure d’audience. Modifiable par les administrateurs.' },
                 },
               ],
             },

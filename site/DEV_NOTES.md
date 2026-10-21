@@ -162,6 +162,18 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
 
 ## Notes d'intégration (mises à jour en cours de développement)
 
+- **Mesure d'audience (Google Analytics 4)** : ID de mesure dans les réglages (`settings.analytics.measurementId`, onglet
+  « Mesure d'audience », modifiable par les administrateurs, vérifié par `isMeasurementId()` de `lib/analytics.ts` : il
+  finit dans l'adresse du script). `layout/CookieConsent.tsx` (serveur) rend le bandeau et, si un ID est saisi et hors
+  mode aperçu, `analytics/Analytics.tsx` (client). Celui-ci lit le choix au montage (`readConsent()`, puis
+  `onConsentChange`) et non par `useConsent()`, qui vaut null pendant l'hydratation : les cookies d'un visiteur qui a
+  accepté seraient effacés à chaque page. Accord « audience » : `initGtag` (file `dataLayer` d'objets `arguments`,
+  consentement par défaut, publicité refusée, signaux Google coupés, une seule configuration par page) puis `loadGtag`
+  (gtag.js, une fois). Refus, retrait ou choix expiré : `ga-disable-<ID>`, consentement « denied » et cookies `_ga…`
+  effacés (`clearGaCookies`, nom d'hôte et domaine principal). Pages vues : la première par `config`, les suivantes par
+  la mesure améliorée de GA4 (« changements d'historique », active par défaut sur le flux). Le choix des cookies est
+  gardé 6 mois (CNIL, page Vie privée). Le test de bout en bout (`mesure-audience.spec.ts`) tourne dans un projet
+  Playwright lancé après les autres : il active l'ID sur tout le site.
 - **Pages introuvables** : `notFound()` répond 404, avec le titre et `noindex` dans le HTML du serveur, mais Next 16 envoie
   le contenu de `not-found.tsx` dans les données de la page : il s'affiche avec le JavaScript (visiteurs, Google), pas sans.
   C'est le comportement de Next 16.3 lui-même (vérifié sur une application minimale) ; `global-not-found` (expérimental)

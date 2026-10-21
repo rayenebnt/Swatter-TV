@@ -1,5 +1,5 @@
 // Consentement aux cookies (src/components/layout/consent.ts) : lecture et écriture du choix dans le stockage local,
-// valeurs corrompues, expiration après 13 mois (CNIL), stockage bloqué, événements partagés entre rubriques et onglets.
+// valeurs corrompues, expiration après 6 mois (CNIL), stockage bloqué, événements partagés entre rubriques et onglets.
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -81,14 +81,14 @@ describe('lecture du choix (readConsent)', () => {
     }
   })
 
-  it('choix de plus de 13 mois (395 jours) : expiré', async () => {
+  it('choix de plus de 6 mois (183 jours) : expiré, comme l’annonce la page Vie privée', async () => {
     const { readConsent } = await load()
     const ago = (days: number) => new Date(NOW.getTime() - days * DAY).toISOString()
-    stored(choice({ date: ago(394) }))
+    stored(choice({ date: ago(182) }))
     expect(readConsent()).not.toBeNull()
-    stored(choice({ date: ago(395) }))
+    stored(choice({ date: ago(183) }))
     expect(readConsent()).not.toBeNull()
-    stored(choice({ date: new Date(NOW.getTime() - 395 * DAY - 1000).toISOString() }))
+    stored(choice({ date: new Date(NOW.getTime() - 183 * DAY - 1000).toISOString() }))
     expect(readConsent()).toBeNull()
     stored(choice({ date: ago(800) }))
     expect(readConsent()).toBeNull()

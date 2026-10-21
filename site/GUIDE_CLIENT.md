@@ -50,7 +50,8 @@ Quelques informations ne pouvaient pas être inventées : merci de les renseigne
 | **Pages (pied de page)** › **Mentions légales** | forme juridique, capital, SIRET, directeur de la publication, hébergeur : remplacez chaque « [à compléter] » |
 | **Pages (pied de page)** › **Canaux de réception** | les box des opérateurs et numéros de canal |
 | **Pages (pied de page)** › **Crédits** | la conception et le développement du site |
-| **Pages (pied de page)** › **Vie privée** | relisez la partie « Votre espace membre » (données des membres, cookies, durées de conservation) et faites-la valider si besoin |
+| **Pages (pied de page)** › **Vie privée** | relisez les parties « Votre espace membre » et « Mesure d’audience (Google Analytics) » (données des membres, cookies, durées de conservation) et faites-les valider si besoin |
+| **Accueil et direct** › onglet **Mesure d’audience** | l’« ID de mesure » de Google Analytics, si vous voulez suivre la fréquentation du site (partie 22) |
 
 Une fois une page complétée, cliquez sur **Publier les modifications** pour la mettre en ligne.
 
@@ -594,3 +595,33 @@ invitez-le à regarder dans ses indésirables ; si plus personne ne reçoit rien
   **Télécharger mes données** dans son espace (après **Mot de passe oublié ?** s’il ne peut plus se connecter).
   Répondez dans le mois qui suit la demande (délai légal).
 - Ne communiquez jamais d’informations sur un membre à un tiers, et gardez les fichiers exportés en lieu sûr.
+
+## 22. La mesure d’audience (Google Analytics)
+
+Google Analytics vous montre combien de personnes visitent le site, les pages les plus vues, d’où viennent les visiteurs
+(Google, Facebook…) et sur quel appareil. Il ne se charge que chez les visiteurs qui l’acceptent dans le bandeau cookies
+(« Mesure d’audience »), comme l’exige la CNIL : les chiffres ne comptent donc qu’une partie de vos visiteurs.
+
+**Mise en place, une seule fois (administrateur)**
+
+1. Sur [analytics.google.com](https://analytics.google.com), connectez-vous avec le compte Google de la chaîne, puis
+   **Admin** › **Créer** › **Propriété** : nom « Swatter TV », fuseau horaire France, devise euro.
+2. Choisissez la plateforme **Web**, saisissez l’adresse du site (www.swatter-tv.fr) et un nom de flux : Google affiche
+   l’**ID de mesure**, de la forme **G-XXXXXXXXXX**. Laissez la **mesure améliorée** activée : elle compte les pages vues
+   pendant la navigation dans le site.
+3. Dans l’administration : **Accueil et direct** › onglet **Mesure d’audience** › collez l’identifiant dans
+   **ID de mesure**, puis **Publier les modifications**. Google Analytics se charge dès la publication, chez les visiteurs
+   qui ont accepté la mesure d’audience.
+4. Réglages conseillés dans Google Analytics (**Admin**) : **Conservation des données** à 14 mois au plus (la durée
+   annoncée sur la page Vie privée) et **Signaux Google** désactivés (le site les désactive de son côté).
+
+Pour arrêter la mesure : videz la case **ID de mesure** et publiez.
+
+**Bon à savoir**
+
+- Les visites de l’équipe en mode **aperçu** ne sont jamais comptées.
+- Un visiteur qui retire son accord (« Gestion des cookies », en bas de page) n’est plus mesuré, et les cookies de Google
+  Analytics sont effacés de son navigateur.
+- Les visites apparaissent en quelques minutes dans le rapport **Temps réel**, puis sous 24 à 48 heures dans les autres
+  rapports.
+- La page **Vie privée** décrit Google Analytics ; si vous ne l’utilisez pas, retirez cette partie de la page.

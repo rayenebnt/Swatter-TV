@@ -30,10 +30,12 @@ export default defineConfig({
   projects: [
     {
       name: 'bureau',
+      testIgnore: /mesure-audience\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
     {
       name: 'mobile',
+      testIgnore: /mesure-audience\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 390, height: 844 },
@@ -41,6 +43,14 @@ export default defineConfig({
         isMobile: true,
         hasTouch: true,
       },
+    },
+    {
+      // active Google Analytics sur tout le site le temps de ses tests : lancé après les autres, pour qu'aucun test en
+      // parallèle ne charge gtag.js (adresse de Google injoignable sans Internet)
+      name: 'mesure-audience',
+      testMatch: /mesure-audience\.spec\.ts/,
+      dependencies: ['bureau', 'mobile'],
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
   ],
   webServer: process.env.E2E_BASE_URL

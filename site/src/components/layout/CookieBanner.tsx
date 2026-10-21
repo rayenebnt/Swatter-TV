@@ -11,9 +11,10 @@ const FIRST_VISIT_DELAY = 1400
  * Bandeau cookies conforme CNIL : Refuser, Personnaliser et Accepter présentés à égalité,
  * aucun traceur avant un choix, choix modifiable à tout moment (« Gestion des cookies »).
  * Rendu après montage seulement (rien dans le HTML serveur) ; ne bloque pas la navigation.
- * Contrat du stockage et des événements : voir ./consent.ts.
+ * Contrat du stockage et des événements : voir ./consent.ts. `analytics` : Google Analytics est configuré (le texte de la
+ * mesure d'audience le nomme).
  */
-export function CookieBanner() {
+export function CookieBanner({ analytics = false }: { analytics?: boolean }) {
   const [state, setState] = useState<'closed' | 'open' | 'leaving'>('closed')
   const [expanded, setExpanded] = useState(false)
   const [audience, setAudience] = useState(false)
@@ -123,7 +124,11 @@ export function CookieBanner() {
           <CookieOption
             id={`${id}-aud`}
             title="Mesure d’audience"
-            text="Statistiques de fréquentation pour améliorer nos programmes et le site."
+            text={
+              analytics
+                ? 'Statistiques de fréquentation avec Google Analytics (pages vues, appareil, région), pour améliorer nos programmes et le site.'
+                : 'Statistiques de fréquentation pour améliorer nos programmes et le site.'
+            }
             checked={audience}
             onChange={setAudience}
           />
