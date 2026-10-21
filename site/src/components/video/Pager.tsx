@@ -1,7 +1,11 @@
 import Link from 'next/link'
 import { Icon } from '@/components/ui/Icon'
 
-/** Pagination précédent / suivant (liens, rendu serveur). */
+/**
+ * Pagination précédent / suivant (liens, rendu serveur).
+ * Liens sans préchargement : Next 16 réutiliserait la tête de page préchargée (titre, canonique) d'une autre adresse de la
+ * même page.
+ */
 export function Pager({ page, totalPages, hrefFor, label }: { page: number; totalPages: number; hrefFor: (page: number) => string; label: string }) {
   if (totalPages <= 1) return null
   const prev = page > 1 ? hrefFor(page - 1) : null
@@ -9,7 +13,7 @@ export function Pager({ page, totalPages, hrefFor, label }: { page: number; tota
   return (
     <nav className="pager" aria-label={label}>
       {prev ? (
-        <Link className="btn btn--ghost btn--sm" href={prev} rel="prev">
+        <Link className="btn btn--ghost btn--sm" href={prev} rel="prev" prefetch={false}>
           <Icon name="left" />
           Précédent
         </Link>
@@ -23,7 +27,7 @@ export function Pager({ page, totalPages, hrefFor, label }: { page: number; tota
         Page {page} sur {totalPages}
       </p>
       {next ? (
-        <Link className="btn btn--ghost btn--sm" href={next} rel="next">
+        <Link className="btn btn--ghost btn--sm" href={next} rel="next" prefetch={false}>
           Suivant
           <Icon name="right" />
         </Link>

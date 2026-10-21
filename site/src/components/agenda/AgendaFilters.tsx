@@ -7,7 +7,8 @@ export type AgendaFilterLink = { href: string; label: string; current: boolean }
 
 /**
  * Barre de filtres sous forme de liens (adresses partageables), au style du contrôle segmenté.
- * Sur mobile la barre défile : le filtre actif est ramené au centre après chaque navigation.
+ * Sur mobile la barre défile : le filtre actif est ramené au centre après chaque navigation. Liens sans préchargement : Next 16 réutiliserait la tête de page préchargée (titre, canonique) d'une autre adresse de la
+ * même page.
  */
 export function AgendaFilterBar({ label, links }: { label: string; links: AgendaFilterLink[] }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -25,7 +26,7 @@ export function AgendaFilterBar({ label, links }: { label: string; links: Agenda
     <nav aria-label={label}>
       <div ref={ref} className="seg seg--bleed">
         {links.map((l) => (
-          <Link key={l.href} href={l.href} aria-current={l.current ? 'page' : undefined} scroll={false}>
+          <Link key={l.href} href={l.href} aria-current={l.current ? 'page' : undefined} scroll={false} prefetch={false}>
             {l.label}
           </Link>
         ))}

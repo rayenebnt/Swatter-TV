@@ -116,6 +116,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/replay', lastReplay),
     entry('/videos', lastVideo),
     entry('/webcams'),
+    entry('/contact'),
     ...[...DEPARTMENTS.map((d) => d.value), WEBCAMS_PLUS].filter((z) => webcams.some((w) => w.department === z)).map((z) => entry(`/webcams/${z}`)),
     ...withSlug(pages).map((p) => entry(pageUrl(p), p.updatedAt)),
     ...articles.map((a) => entry(articleUrl(a), a.updatedAt)),

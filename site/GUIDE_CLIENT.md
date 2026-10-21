@@ -98,7 +98,8 @@ Après la connexion, le **tableau de bord** rassemble l’essentiel :
 - **Gérer le site** : **Accueil et direct**, **La Météo**, **Programme TV**, **Webcams**, **Publicités**, **Médiathèque** ;
 - **Sur le site en ce moment** : ce que voient les visiteurs (le direct, la vidéo du jour, l’info du jour, la sortie du
   week-end, le programme TV, le flash info, les publicités, la météo). Une pastille **À vérifier** signale un oubli, par
-  exemple « Rien de prévu : sam. 24 » pour le programme TV ; le lien **Modifier** mène directement au bon endroit ;
+  exemple « Rien de prévu : sam. 24 » pour le programme TV ; le lien **Modifier** mène directement au bon endroit.
+  « Information indisponible » : la vérification n’a pas pu se faire à cet instant ; rechargez la page ;
 - **Derniers contenus modifiés** : pour reprendre un contenu en un clic ; la mention **À publier** signale des
   modifications que les visiteurs ne voient pas encore ;
 - **Les plus regardées par les membres (7 derniers jours)**, dès que des visiteurs ont créé un compte : les 5 vidéos

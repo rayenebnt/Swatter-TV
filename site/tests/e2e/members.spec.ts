@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from '@playwright/test'
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
 import { expectNoHorizontalOverflow, settle, watchErrors } from './helpers'
 
 // Espace membres : accès refusés, inscription (compte actif et connecté aussitôt), mot de passe oublié, affichage mobile.
@@ -14,6 +14,13 @@ function signup(request: APIRequestContext, email: string, extra: Record<string,
     headers: { origin },
     data: { firstName: 'Test', email, password: 'mot-de-passe-e2e', website: '', elapsed: 5000, ...extra },
   })
+}
+
+/** Supprime un compte de test (connexion puis suppression par le membre) : rien ne reste dans la base du serveur visé. */
+async function removeAccount(request: APIRequestContext, email: string, password = 'mot-de-passe-e2e') {
+  const headers = { origin: ORIGIN }
+  const login = await request.post('/api/compte/connexion', { headers, data: { email, password } })
+  if (login.ok()) await request.post('/api/compte/supprimer', { headers, data: { password } })
 }
 
 test('membres : l’espace et les données des membres sont fermés sans connexion', async ({ page, request }) => {
@@ -58,6 +65,7 @@ test('membres : l’API refuse les autres sites, les robots et les champs invali
   const again = await signup(request, twice)
   expect(again.status()).toBe(400)
   expect(((await again.json()) as { code?: string }).code).toBe('exists')
+  await removeAccount(request, twice)
 })
 
 test('membres : le bouton du compte ramène sur la page d’origine après la connexion', async ({ page, isMobile }) => {
@@ -98,6 +106,16 @@ test('membres : inscription par le formulaire (prénom, e-mail, mot de passe), c
   await page.getByRole('textbox', { name: 'E-mail', exact: true }).fill(email)
   await page.locator('input[name="password"]').fill('mot-de-passe-e2e')
   await page.getByRole('button', { name: 'Créer mon compte' }).click()
+  try {
+    await signedUpThenRefused(page, email, isMobile)
+    expect(errors.filter((e) => !/HTTP (400|401) : \/api\/compte\/(connexion|inscription)/.test(e)), errors.join('\n')).toEqual([])
+  } finally {
+    await removeAccount(page.request, email)
+  }
+})
+
+/** Suite du test du formulaire : connecté aussitôt, puis la même adresse refusée et un mauvais mot de passe refusé. */
+async function signedUpThenRefused(page: Page, email: string, isMobile: boolean) {
   // retour sur la page d'origine, connecté
   await page.waitForURL(/\/agenda$/, { timeout: 15_000 })
   if (isMobile) {
@@ -124,8 +142,7 @@ test('membres : inscription par le formulaire (prénom, e-mail, mot de passe), c
   await page.locator('input[name="password"]').fill('pas-le-bon-mot-de-passe')
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page.getByRole('alert').filter({ hasText: 'E-mail ou mot de passe incorrect.' })).toBeVisible()
-  expect(errors.filter((e) => !/HTTP (400|401) : \/api\/compte\/(connexion|inscription)/.test(e)), errors.join('\n')).toEqual([])
-})
+}
 
 test('membres : mot de passe oublié, même réponse que l’adresse ait un compte ou non', async ({ page, request }) => {
   const errors = watchErrors(page)

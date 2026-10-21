@@ -36,6 +36,9 @@ src/
   `({ params }: { params: Promise<{ slug: string }> })` puis `const { slug } = await params`. `notFound()` si absent.
 - **SEO** : `generateMetadata` en utilisant les champs du plugin SEO (`doc.meta?.title`, `doc.meta?.description`, `doc.meta?.image`)
   avec repli sur titre / chapô / image. Données structurées via `<JsonLd data={…} />`. URL canoniques via `alternates.canonical`.
+  La mise en page commune ne définit **ni canonique ni `og:url`** : chaque page indexable déclare les siennes
+  (`alternates.canonical`, `openGraph.url`), sinon elle désignerait l'accueil ; les pages non indexées n'en ont pas.
+  Nouvelle page indexable : l'ajouter aussi à `src/app/sitemap.ts`.
 - **Images** : `<MediaImage media={doc.image} size="card" sizes="…" />` (next/image, AVIF/WebP). `priority` seulement pour l'image principale.
 - **Dates** : tout affichage en heure de Paris via `src/lib/format.ts` (`formatTime`, `formatDayLong`, `dateChip`, `timeAgo`, `parisDay`, `parisDateTime`).
 - **Vidéo** : `resolveVideo(source)` (`src/lib/video.ts`) puis `<VideoPlayer video={…} />`.
@@ -159,6 +162,13 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
 
 ## Notes d'intégration (mises à jour en cours de développement)
 
+- **Pages introuvables** : `notFound()` répond 404, avec le titre et `noindex` dans le HTML du serveur, mais Next 16 envoie
+  le contenu de `not-found.tsx` dans les données de la page : il s'affiche avec le JavaScript (visiteurs, Google), pas sans.
+  C'est le comportement de Next 16.3 lui-même (vérifié sur une application minimale) ; `global-not-found` (expérimental)
+  ne servirait qu'aux adresses qu'aucune route ne reconnaît, or `[...slug]` les reconnaît toutes.
+- **Liens d'une page vers elle-même** avec d'autres paramètres (filtres par département ou catégorie, pages suivantes) :
+  `prefetch={false}`. Préchargés, Next 16 réutilise la tête de page (titre de l'onglet, canonique) d'une autre adresse de
+  la même page.
 - **Images** : `mediaUrl()` renvoie un **chemin local** (`/api/media/file/…`) pour que next/image optimise les fichiers
   (AVIF/WebP, srcset). Pour une URL absolue (JSON-LD, flux) : `absoluteUrl(mediaUrl(doc.image, 'card'))`
   (`absoluteUrl` laisse intactes les URL déjà absolues). `mediaFocal()` ne renvoie rien pour le centre par défaut (50 % 50 %) :

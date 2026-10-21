@@ -25,10 +25,11 @@ export const metadata: Metadata = {
   title: { default: 'Swatter TV — La chaîne d’Auvergne-Rhône-Alpes : direct, info, météo, replay', template: '%s — Swatter TV' },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url: SITE_URL },
+  // ni adresse canonique ni og:url par défaut : chaque page déclare les siennes (une page qui l'oublierait désignerait
+  // sinon l'accueil) ; les pages non indexées (espace membres, connexion…) n'en ont pas
+  openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME },
   twitter: { card: 'summary_large_image' },
   icons: { icon: '/favicon.png', apple: '/apple-touch-icon.png' },
-  alternates: { canonical: '/' },
 }
 
 export const viewport: Viewport = { themeColor: '#071224', colorScheme: 'dark' }

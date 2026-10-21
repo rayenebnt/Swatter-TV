@@ -381,14 +381,36 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 
 ### Ce qui est vérifié
 
-- `tests/unit/` : logique pure (adresses des contenus…) ;
-- `tests/integration/` : socle (base de test isolée, comptes et rôles de l’équipe) ;
-- `tests/e2e/` (projets `bureau` 1440 × 900 et `mobile` 390 × 844, tactile) :
+- **Tests unitaires** (`tests/unit/`, 821 tests, quelques secondes) : la logique pure du site.
+  - Espace membres et sécurité : validation des champs, mots de passe, jetons et sessions signées, limites anti-abus,
+    retours après la connexion et sortie de l’aperçu (près de 300 tentatives de redirection vers un autre site), e-mails,
+    export CSV (formules de tableur neutralisées).
+  - Dates en heure de Paris (changements d’heure, minuit, 29 février), programme TV et journées TV de 2 h à 2 h, recopie
+    de la grille.
+  - Météo (lecture et import d’Open-Meteo, bulletins), sources vidéo (YouTube, Twitch, Bunny), import de la chaîne
+    YouTube, recherche (classement, accents).
+  - Règles d’accès de chaque collection, tableau de bord, agenda, info, webcams, bandeau cookies, menus, médias, anciennes
+    adresses, comportements automatiques (régénération du site, Top 10, vignette YouTube), formulaire de contact.
+- **Tests d’intégration** (`tests/integration/`, 398 tests, environ 2 min 30) : Payload complet sur la base de test.
+  - Droits du public, des éditeurs et des administrateurs sur chaque collection et chaque réglage (REST et GraphQL),
+    brouillons, contenus programmés, comptes de l’équipe, membres.
+  - Comportements automatiques : adresses uniques, Top 10, vignettes YouTube, grille des programmes, régénération du site,
+    ménage des brouillons vides.
+  - API de l’espace membres (inscription, connexion et blocage, sessions, mot de passe oublié, historique, « Ma liste »,
+    export, suppression), formulaire de contact, recherche, tâche planifiée, imports, recopie de la grille, export de la
+    lettre d’info.
+- **Tests de bout en bout** (`tests/e2e/`, projets `bureau` 1440 × 900 et `mobile` 390 × 844, tactile) :
   - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
     horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
     canonique et JSON-LD valides ; administration et API joignables ; tâche planifiée refusée sans secret ;
   - `rubriques.spec.ts` : contenu de chaque rubrique (accueil complet, info, météo, programme TV, agenda, webcams,
     vidéos, replay, direct, recherche, page éditoriale et redirections) ;
+  - `parcours.spec.ts` : parcours d’un visiteur (météo, programme TV au clavier, recherche au clavier, filtres et pages de
+    l’agenda et de l’info, lecteur vidéo, plein écran des webcams, « Ma liste », refus des cookies) ;
+  - `accessibilite.spec.ts` : audit axe-core (WCAG 2.1, niveaux A et AA) de 22 pages et de leurs états ouverts (bandeau
+    cookies, recherche, menu mobile, formulaires en erreur, « Mon espace ») ;
+  - `seo.spec.ts` : plan du site, robots.txt, balises de chaque page principale dans le HTML du serveur, en-têtes de
+    sécurité, pages non indexées ;
   - `interactions.spec.ts` : recherche au clavier, bandeau cookies, menu mobile, lien d’évitement ;
   - `contact.spec.ts` : bouton « Proposer une info », champs vérifiés, robots ignorés ;
   - `members.spec.ts` : espace membres fermé sans connexion, inscription, mot de passe oublié, retours sûrs après la

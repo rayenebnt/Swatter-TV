@@ -5,6 +5,7 @@ import { ContactForm } from '@/components/contact/ContactForm'
 import { Icon } from '@/components/ui/Icon'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { getSettings } from '@/lib/queries/settings'
+import { SITE_NAME } from '@/lib/site'
 import '@/styles/contact.css'
 
 export const revalidate = 60
@@ -15,6 +16,8 @@ export const metadata: Metadata = {
   title: 'Proposer une info, nous contacter',
   description: DESCRIPTION,
   alternates: { canonical: '/contact' },
+  // image de partage : celle du site (opengraph-image)
+  openGraph: { type: 'website', locale: 'fr_FR', siteName: SITE_NAME, url: '/contact' },
 }
 
 /** Page « Proposer une info » : formulaire (envoyé par e-mail à la rédaction) et coordonnées de la chaîne. */

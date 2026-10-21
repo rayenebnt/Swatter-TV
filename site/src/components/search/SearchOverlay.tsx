@@ -300,7 +300,8 @@ export function SearchOverlay() {
           </button>
         </div>
 
-        <div className="results" aria-busy={loading}>
+        {/* zone qui défile : atteignable au clavier pour la faire défiler (les suggestions se parcourent aux flèches) */}
+        <div className="results" aria-busy={loading} role="region" aria-label="Résultats de la recherche" tabIndex={0}>
           {noResult && (
             <p className="results__msg">
               Aucun résultat pour «&nbsp;{term}&nbsp;»
