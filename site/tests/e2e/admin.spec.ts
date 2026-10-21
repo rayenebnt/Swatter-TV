@@ -12,6 +12,9 @@ const ADMIN = {
   password: process.env.E2E_ADMIN_PASSWORD || 'swatter-admin-2026',
 }
 
+/** Origine du site, pour les requêtes de l'espace membres qui modifient quelque chose (contrôle d'origine). */
+const SITE = new URL(process.env.E2E_BASE_URL || 'http://localhost:3000').origin
+
 async function login(page: Page, account: { email: string; password: string }) {
   await page.goto('/admin/login')
   // formulaire prêt (hydraté) : sinon la saisie peut être effacée au chargement
@@ -391,6 +394,117 @@ test.describe('administration', () => {
     } finally {
       await request.delete(`/api/pages/${doc.id}`, { headers })
       await anonymous.dispose()
+    }
+  })
+
+  test('membres : parcours complet d’un membre confirmé, et sa gestion dans « Membres du site »', async ({ page, request, browser }) => {
+    test.setTimeout(180_000)
+    const headers = await adminHeaders(request)
+    const errors = watchErrors(page)
+    const email = `e2e-membre-${Date.now()}@example.com`
+    const password = 'mot-de-passe-e2e'
+    const replays = (await (await request.get('/api/replays?limit=1&depth=0')).json()) as { docs: { id: number; slug: string; title: string }[] }
+    const replay = replays.docs[0]
+    test.skip(!replay, 'aucun replay publié (npm run seed)')
+
+    // inscription (visiteur), puis confirmation à la main dans l'administration (case « E-mail confirmé »)
+    const guest = await visitor()
+    const signup = await guest.post('/api/compte/inscription', {
+      headers: { origin: SITE },
+      data: { firstName: 'Camille', email, password, department: 'haute-savoie', newsletter: true, consent: true, website: '', elapsed: 5000 },
+    })
+    expect(await signup.json()).toEqual({ ok: true })
+    const found = (await (await request.get(`/api/members?where[email][equals]=${encodeURIComponent(email)}&depth=0`, { headers })).json()) as { docs: { id: number; passwordHash?: string }[] }
+    const memberId = found.docs[0]?.id
+    expect(memberId, 'membre créé').toBeTruthy()
+    expect(found.docs[0].passwordHash, 'empreinte du mot de passe jamais renvoyée, même aux administrateurs').toBeUndefined()
+    expect((await request.patch(`/api/members/${memberId}`, { headers, data: { verified: true } })).ok()).toBe(true)
+
+    try {
+      // connexion depuis la page d'un replay : retour sur cette page
+      await page.goto(`/replay/${replay.slug}`)
+      await settle(page)
+      await page.locator('header').getByRole('link', { name: /Se connecter/ }).click()
+      await expect(page).toHaveURL(new RegExp(`/connexion\\?retour=%2Freplay%2F${replay.slug}$`))
+      await page.waitForLoadState('networkidle')
+      await page.getByRole('textbox', { name: 'E-mail', exact: true }).fill(email)
+      await page.locator('input[name="password"]').fill(password)
+      await page.getByRole('button', { name: 'Se connecter' }).click()
+      await page.waitForURL(new RegExp(`/replay/${replay.slug}$`))
+      await expect(page.locator('header').getByRole('link', { name: 'Mon espace' })).toHaveAttribute('href', '/compte')
+
+      // la session d'un membre ne donne aucun droit dans l'administration ni sur les données des autres
+      const me = (await (await page.request.get('/api/users/me')).json()) as { user: unknown }
+      expect(me.user, 'un membre n’est pas un utilisateur de l’administration').toBeNull()
+      expect((await page.request.get('/api/members')).status()).toBe(403)
+      expect((await page.request.get('/api/membres/lettre-info.csv')).status()).toBe(403)
+
+      // « Ajouter à ma liste »
+      const save = page.getByRole('button', { name: /Ajouter à ma liste/ })
+      await save.click()
+      await expect(page.getByRole('button', { name: /Dans ma liste/ })).toHaveAttribute('aria-pressed', 'true')
+      await page.goto('/compte/ma-liste')
+      await expect(page.locator('main').getByRole('link', { name: replay.title }).first()).toBeVisible()
+
+      // historique (enregistré par le lecteur à la lecture : ici par l'API, le Chromium des tests ne lit pas les vidéos)
+      const watched = await page.request.post('/api/compte/historique', { headers: { origin: SITE }, data: { kind: 'replay', id: replay.id } })
+      expect(watched.ok()).toBe(true)
+      await page.goto('/compte/historique')
+      await expect(page.locator('main').getByRole('link', { name: replay.title }).first()).toBeVisible()
+      await page.getByRole('button', { name: /Retirer de l’historique/ }).first().click()
+      await expect(page.locator('main').getByRole('link', { name: replay.title })).toHaveCount(0)
+
+      // profil : changement de département, repris par le tableau de bord
+      await page.goto('/compte/profil')
+      await page.waitForLoadState('networkidle')
+      await page.getByLabel('Mon département').selectOption('rhone')
+      await page.getByRole('button', { name: 'Enregistrer' }).click()
+      await expect(page.getByRole('status').filter({ hasText: 'Vos informations sont enregistrées.' })).toBeVisible()
+      await page.goto('/compte')
+      await expect(page.getByRole('heading', { name: 'Ma météo' })).toBeVisible()
+      await expect(page.getByRole('region', { name: 'Ma météo' })).toContainText('Rhône')
+
+      // export des données : profil, liste, sans aucun secret
+      const exported = await page.request.get('/api/compte/export')
+      expect(exported.headers()['content-disposition']).toContain('attachment')
+      const text = await exported.text()
+      expect(text).toContain(email)
+      expect(text).not.toMatch(/passwordHash|scrypt\$|TokenHash|sessionVersion/)
+
+      // administration : export CSV des membres qui acceptent les e-mails, fiche du membre
+      const csv = await request.get('/api/membres/lettre-info.csv', { headers })
+      expect(csv.ok()).toBe(true)
+      expect(await csv.text()).toContain(email)
+      const admin = await browser.newPage()
+      await login(admin, ADMIN)
+      await admin.goto(`/admin/collections/members?search=${encodeURIComponent(email)}`)
+      await expect(admin.getByText(email).first()).toBeVisible()
+      await admin.close()
+
+      // suspension : la session en cours est fermée ; levée de la suspension : nouvelle connexion nécessaire
+      expect((await request.patch(`/api/members/${memberId}`, { headers, data: { blocked: true } })).ok()).toBe(true)
+      expect((await page.request.get('/api/compte/moi')).status()).toBe(401)
+      const blocked = await page.request.post('/api/compte/connexion', { headers: { origin: SITE }, data: { email, password } })
+      expect(((await blocked.json()) as { code?: string }).code).toBe('blocked')
+      expect((await request.patch(`/api/members/${memberId}`, { headers, data: { blocked: false } })).ok()).toBe(true)
+      expect((await page.request.post('/api/compte/connexion', { headers: { origin: SITE }, data: { email, password } })).ok()).toBe(true)
+
+      // suppression du compte par le membre (mot de passe demandé) : tout est effacé
+      await page.goto('/compte/profil')
+      await page.waitForLoadState('networkidle')
+      await page.getByRole('button', { name: 'Supprimer mon compte' }).click()
+      await page.locator('.space-danger input[name="password"]').fill(password)
+      await page.getByRole('button', { name: 'Supprimer définitivement' }).click()
+      await expect(page.getByRole('heading', { name: 'Votre compte a été supprimé' })).toBeVisible()
+      const gone = (await (await request.get(`/api/members?where[email][equals]=${encodeURIComponent(email)}&depth=0`, { headers })).json()) as { totalDocs: number }
+      expect(gone.totalDocs).toBe(0)
+      expect((await guest.post('/api/compte/connexion', { headers: { origin: SITE }, data: { email, password } })).status()).toBe(401)
+      // seules erreurs attendues : la session fermée par la suspension (401 de la page, avant la nouvelle connexion)
+      expect(errors.filter((e) => !/HTTP 401 : \/api\/compte\//.test(e)), errors.join('\n')).toEqual([])
+    } finally {
+      // nettoyage si le test s'est arrêté avant la suppression
+      await request.delete(`/api/members/${memberId}`, { headers }).catch(() => undefined)
+      await guest.dispose()
     }
   })
 })
