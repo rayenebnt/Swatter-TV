@@ -78,6 +78,9 @@ export interface Config {
     pages: Page;
     media: Media;
     messages: Message;
+    members: Member;
+    'member-history': MemberHistory;
+    'member-favorites': MemberFavorite;
     users: User;
     redirects: Redirect;
     'payload-kv': PayloadKv;
@@ -98,6 +101,9 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
+    members: MembersSelect<false> | MembersSelect<true>;
+    'member-history': MemberHistorySelect<false> | MemberHistorySelect<true>;
+    'member-favorites': MemberFavoritesSelect<false> | MemberFavoritesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -681,6 +687,88 @@ export interface Message {
   createdAt: string;
 }
 /**
+ * Les visiteurs inscrits sur le site (« Mon espace »). Cochez « Compte suspendu » pour bloquer quelqu’un sans supprimer son compte ; la suppression efface aussi son historique et sa liste.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "members".
+ */
+export interface Member {
+  id: number;
+  firstName: string;
+  lastName?: string | null;
+  email: string;
+  /**
+   * Choisi par le membre : sa météo, son info et ses sorties.
+   */
+  department?:
+    | (
+        | 'haute-savoie'
+        | 'savoie'
+        | 'ain'
+        | 'isere'
+        | 'rhone'
+        | 'loire'
+        | 'haute-loire'
+        | 'drome'
+        | 'ardeche'
+        | 'puy-de-dome'
+        | 'cantal'
+        | 'allier'
+      )
+    | null;
+  newsletter?: boolean | null;
+  /**
+   * Coché quand le membre a cliqué sur le lien reçu par e-mail. Cochez-le vous-même pour confirmer un compte à la main.
+   */
+  verified?: boolean | null;
+  /**
+   * Le membre ne peut plus se connecter ; ses sessions en cours sont fermées.
+   */
+  blocked?: boolean | null;
+  note?: string | null;
+  historyPaused?: boolean | null;
+  lastLoginAt?: string | null;
+  consentAt?: string | null;
+  historyCount?: number | null;
+  favoritesCount?: number | null;
+  passwordHash?: string | null;
+  sessionVersion?: number | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  verifyTokenHash?: string | null;
+  verifyTokenExpires?: string | null;
+  resetTokenHash?: string | null;
+  resetTokenExpires?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "member-history".
+ */
+export interface MemberHistory {
+  id: number;
+  member: number | Member;
+  kind: 'video' | 'replay';
+  itemId: number;
+  watchedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "member-favorites".
+ */
+export interface MemberFavorite {
+  id: number;
+  member: number | Member;
+  kind: 'video' | 'replay' | 'article' | 'event';
+  itemId: number;
+  savedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Les personnes qui peuvent se connecter. Un éditeur publie les contenus ; un administrateur gère aussi les comptes et les réglages techniques.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -817,6 +905,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'messages';
         value: number | Message;
+      } | null)
+    | ({
+        relationTo: 'members';
+        value: number | Member;
+      } | null)
+    | ({
+        relationTo: 'member-history';
+        value: number | MemberHistory;
+      } | null)
+    | ({
+        relationTo: 'member-favorites';
+        value: number | MemberFavorite;
       } | null)
     | ({
         relationTo: 'users';
@@ -1181,6 +1281,59 @@ export interface MessagesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "members_select".
+ */
+export interface MembersSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  email?: T;
+  department?: T;
+  newsletter?: T;
+  verified?: T;
+  blocked?: T;
+  note?: T;
+  historyPaused?: T;
+  lastLoginAt?: T;
+  consentAt?: T;
+  historyCount?: T;
+  favoritesCount?: T;
+  passwordHash?: T;
+  sessionVersion?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  verifyTokenHash?: T;
+  verifyTokenExpires?: T;
+  resetTokenHash?: T;
+  resetTokenExpires?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "member-history_select".
+ */
+export interface MemberHistorySelect<T extends boolean = true> {
+  member?: T;
+  kind?: T;
+  itemId?: T;
+  watchedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "member-favorites_select".
+ */
+export interface MemberFavoritesSelect<T extends boolean = true> {
+  member?: T;
+  kind?: T;
+  itemId?: T;
+  savedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
@@ -1348,6 +1501,12 @@ export interface Setting {
     tiktok?: string | null;
   };
   protectNotice?: string | null;
+  members?: {
+    /**
+     * Décochez pour fermer temporairement les nouvelles inscriptions (les membres déjà inscrits peuvent toujours se connecter).
+     */
+    signupOpen?: boolean | null;
+  };
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1482,6 +1641,11 @@ export interface SettingsSelect<T extends boolean = true> {
         tiktok?: T;
       };
   protectNotice?: T;
+  members?:
+    | T
+    | {
+        signupOpen?: T;
+      };
   _status?: T;
   updatedAt?: T;
   createdAt?: T;

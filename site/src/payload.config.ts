@@ -15,6 +15,9 @@ import { Ads } from './collections/Ads'
 import { Articles } from './collections/Articles'
 import { Events } from './collections/Events'
 import { Media } from './collections/Media'
+import { MemberFavorites, MemberHistory } from './collections/MemberActivity'
+import { Members } from './collections/Members'
+import { memberEndpoints } from './lib/members/endpoints'
 import { Messages } from './collections/Messages'
 import { Pages } from './collections/Pages'
 import { Programs } from './collections/Programs'
@@ -268,7 +271,7 @@ export default buildConfig({
     },
   },
   // Le menu de l'administration suit l'ordre du site : voir src/components/admin/menu.ts
-  collections: [Videos, Articles, Events, Replays, Schedule, Programs, Webcams, Ads, Pages, Media, Messages, Users],
+  collections: [Videos, Articles, Events, Replays, Schedule, Programs, Webcams, Ads, Pages, Media, Messages, Members, MemberHistory, MemberFavorites, Users],
   globals: [Settings, Meteo, Youtube],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -298,6 +301,8 @@ export default buildConfig({
   sharp,
   plugins,
   endpoints: [
+    // Espace membres (/api/compte/…) : voir src/lib/members/endpoints.ts
+    ...memberEndpoints,
     {
       // Tâche planifiée : GET /api/cron/import avec l'en-tête « Authorization: Bearer CRON_SECRET »
       // (ou ?secret=CRON_SECRET), toutes les heures (jusqu'à toutes les 15 minutes)

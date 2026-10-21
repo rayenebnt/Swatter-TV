@@ -158,6 +158,20 @@ export const Settings: GlobalConfig = {
               ],
             },
             { name: 'protectNotice', label: 'Mention de protection', type: 'text', defaultValue: 'Contenus protégés : captures et téléchargements détectés automatiquement' },
+            {
+              name: 'members',
+              label: 'Espace membres',
+              type: 'group',
+              fields: [
+                {
+                  name: 'signupOpen',
+                  label: 'Inscriptions ouvertes',
+                  type: 'checkbox',
+                  defaultValue: true,
+                  admin: { description: 'Décochez pour fermer temporairement les nouvelles inscriptions (les membres déjà inscrits peuvent toujours se connecter).' },
+                },
+              ],
+            },
           ],
         },
       ],
