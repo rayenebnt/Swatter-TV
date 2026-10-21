@@ -4,6 +4,9 @@ export function slugify(input: string): string {
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
+    // ligatures que la décomposition NFD laisse intactes : « Cœur » → « coeur », pas « c-ur »
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
     .replace(/['’]/g, '-')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')

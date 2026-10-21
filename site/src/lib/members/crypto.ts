@@ -18,23 +18,31 @@ export async function hashPassword(password: string): Promise<string> {
   return ['scrypt', N, R, P, salt.toString('base64url'), key.toString('base64url')].join('$')
 }
 
-/** Compare un mot de passe à son empreinte, en temps constant. Faux pour toute empreinte illisible. */
+/**
+ * Compare un mot de passe à son empreinte, en temps constant. Faux, jamais d'erreur, pour toute empreinte illisible ou
+ * abîmée : une empreinte vide ou tronquée ne doit pas se réduire à comparer quelques octets (voire aucun).
+ */
 export async function verifyPassword(password: string, stored: string | null | undefined): Promise<boolean> {
   const parts = (stored ?? '').split('$')
-  if (parts.length !== 6 || parts[0] !== 'scrypt') {
+  const want = Buffer.from(parts[5] ?? '', 'base64url')
+  if (parts.length !== 6 || parts[0] !== 'scrypt' || want.length !== KEYLEN) {
     // même coût qu'une vraie vérification : on ne révèle pas l'absence de compte par le temps de réponse
     await scrypt(password, Buffer.alloc(16), KEYLEN, { N, r: R, p: P, maxmem: 64 * 1024 * 1024 })
     return false
   }
-  const [, n, r, p, salt, expected] = parts
-  const want = Buffer.from(expected, 'base64url')
-  const key = await scrypt(password.normalize('NFKC'), Buffer.from(salt, 'base64url'), want.length, {
-    N: Number(n),
-    r: Number(r),
-    p: Number(p),
-    maxmem: 64 * 1024 * 1024,
-  })
-  return key.length === want.length && timingSafeEqual(key, want)
+  const [, n, r, p, salt] = parts
+  try {
+    const key = await scrypt(password.normalize('NFKC'), Buffer.from(salt, 'base64url'), KEYLEN, {
+      N: Number(n),
+      r: Number(r),
+      p: Number(p),
+      maxmem: 64 * 1024 * 1024,
+    })
+    return timingSafeEqual(key, want)
+  } catch {
+    // paramètres N, r, p refusés par scrypt (illisibles ou hors limites) : refus plutôt qu'une erreur 500
+    return false
+  }
 }
 
 /** Jeton à usage unique : la valeur envoyée par e-mail et son empreinte (seule enregistrée en base). */
@@ -65,8 +73,9 @@ export function signSession(memberId: number, sessionVersion: number, now = Date
 /** Contenu d'un jeton de session valide (signature et date), sinon null. */
 export function readSession(value: string | null | undefined, now = Date.now()): SessionClaims | null {
   if (!value) return null
-  const [version, body, sig] = value.split('.')
-  if (version !== 'v1' || !body || !sig) return null
+  const parts = value.split('.')
+  const [version, body, sig] = parts
+  if (parts.length !== 3 || version !== 'v1' || !body || !sig) return null
   const expected = createHmac('sha256', sessionKey()).update(`v1.${body}`).digest()
   const given = Buffer.from(sig, 'base64url')
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null

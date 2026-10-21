@@ -34,7 +34,8 @@ export function checkContact(raw: Record<string, unknown>): { data: ContactInput
   const data: ContactInput = {
     subject: isSubject(raw.subject) ? raw.subject : 'info',
     name: str(raw.name, 120),
-    email: str(raw.email, 200),
+    // coupée à 255, une adresse trop longue reste trop longue (refusée au-delà de 254), jamais une autre adresse valide
+    email: str(raw.email, 255),
     phone: str(raw.phone, 40),
     city: str(raw.city, 120),
     link: str(raw.link, 500),

@@ -129,6 +129,6 @@ export const isAuthPage = (path: string) => /^\/(connexion|inscription|mot-de-pa
 
 /** Lien « Se connecter » depuis la page `pathname` : on y revient après la connexion (sauf pages de connexion et espace). */
 export function loginHref(pathname: string | null): string {
-  if (!pathname || pathname === '/' || pathname.startsWith('/compte') || isAuthPage(pathname)) return '/connexion'
+  if (!pathname || pathname === '/' || /^\/compte(\/|\?|#|$)/.test(pathname) || isAuthPage(pathname)) return '/connexion'
   return `/connexion?retour=${encodeURIComponent(safeReturn(pathname, '/'))}`
 }

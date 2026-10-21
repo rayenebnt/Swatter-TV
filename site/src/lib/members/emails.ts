@@ -18,7 +18,8 @@ ${lines.map((l) => `<p>${l}</p>`).join('\n')}
 ${button}
 <p style="color:#888;font-size:13px">${footer}</p>
 </div>`
-  const plain = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  // &amp; en dernier : « &amp;lt; » (un « &lt; » tapé tel quel) doit redevenir « &lt; », pas « < »
+  const plain = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
   const text = [hello, ...lines, ...(action ? [`${action.label} : ${action.href}`] : []), footer].map(plain).join('\n\n')
   return { html, text }
 }

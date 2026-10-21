@@ -190,7 +190,7 @@ async function trimHistory(payload: Payload, memberId: number) {
  * Cellule CSV. Une valeur saisie par un membre qui commence par = + - @ (ou une tabulation) serait lue comme une formule par
  * Excel ou LibreOffice (lien piégé, envoi de la colonne des e-mails…) : une apostrophe en tête la garde comme du texte.
  */
-const csv = (raw: string) => {
+export const csv = (raw: string) => {
   const v = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw
   return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
 }
