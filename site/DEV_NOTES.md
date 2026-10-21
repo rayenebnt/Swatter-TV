@@ -349,7 +349,8 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
 (variables du thème Payload, thèmes clair et sombre).
 
 - **Tableau de bord** (`Dashboard.tsx` + `dashboard-data.ts`, `admin.components.views.dashboard`) : actions courantes,
-  état du site (chaque requête échoue sans bloquer la page), derniers contenus modifiés (hors articles importés).
+  état du site (chaque requête échoue sans bloquer la page ; une ligne dont la requête échoue affiche « Information
+  indisponible », jamais un état rassurant par défaut), derniers contenus modifiés.
   Espace membres (rien tant qu'aucun compte n'existe) : ligne « Membres du site » réservée aux administrateurs (membres
   non suspendus, inscrits des 7 derniers jours, inscriptions fermées) et, pour toute
   l'équipe, « Les plus regardées par les membres (7 derniers jours) » : lignes de `member-history` dont `watchedAt` a

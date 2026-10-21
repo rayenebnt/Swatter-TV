@@ -347,7 +347,7 @@ describe('une requête en échec n’empêche pas le tableau de bord de s’affi
     expect(data.members?.signupOpen).toBe(true)
   })
 
-  it('tout en panne : un tableau de bord vide mais complet', async () => {
+  it('tout en panne : un tableau de bord vide mais complet, sans état rassurant inventé (grille, publicités, messages : inconnus)', async () => {
     const all = ['videos', 'articles', 'events', 'replays', 'schedule', 'ads', 'messages', 'members', 'member-history']
     const data = await dashboard({}, {}, [...all.flatMap((c) => [`find:${c}`, `count:${c}`]), 'global:settings', 'global:meteo'])
     expect(data).toEqual({
@@ -356,9 +356,9 @@ describe('une requête en échec n’empêche pas le tableau de bord de s’affi
       infoOfDay: null,
       weekendPick: null,
       flash: { messages: 0, auto: true },
-      emptyDays: [],
-      ads: 0,
-      messages: 0,
+      emptyDays: null,
+      ads: null,
+      messages: null,
       meteo: { auto: true, updatedAt: null },
       missingImages: { videos: 0, replays: 0 },
       recent: [],

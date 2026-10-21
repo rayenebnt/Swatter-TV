@@ -13,6 +13,8 @@ type Tone = 'ok' | 'warn' | 'off'
 const TYPE_LABELS: Record<RecentCollection, string> = { videos: 'Vidéo', articles: 'Info', events: 'Agenda', replays: 'Replay' }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
+/** Ligne d'état dont la requête a échoué : ni « tout va bien » ni « rien à faire » par défaut. */
+const UNAVAILABLE = 'Information indisponible pour le moment : rechargez la page dans un instant'
 
 /** « 128 membres, dont 6 inscrits ces 7 derniers jours · Inscriptions fermées » (comptes suspendus non comptés) */
 function membersValue(m: MembersStats): string {
@@ -189,15 +191,17 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
             <StatusRow
               icon="grid"
               label="Programme TV"
-              tone={data.emptyDays.length ? 'warn' : 'ok'}
+              tone={data.emptyDays === null || data.emptyDays.length ? 'warn' : 'ok'}
               value={
-                data.emptyDays.length === 0
-                  ? 'Rempli pour les 7 prochains jours'
-                  : data.emptyDays.length === 7
-                    ? 'Aucune émission prévue pour les 7 prochains jours'
-                    : `Rien de prévu : ${data.emptyDays.map((d) => dayLabel(d, today).toLowerCase()).join(', ')}`
+                data.emptyDays === null
+                  ? UNAVAILABLE
+                  : data.emptyDays.length === 0
+                    ? 'Rempli pour les 7 prochains jours'
+                    : data.emptyDays.length === 7
+                      ? 'Aucune émission prévue pour les 7 prochains jours'
+                      : `Rien de prévu : ${data.emptyDays.map((d) => dayLabel(d, today).toLowerCase()).join(', ')}`
               }
-              href={data.emptyDays.length && data.emptyDays.length < 7 ? `${collection('schedule')}${rangeSearch(data.emptyDays[0], 1)}` : collection('schedule')}
+              href={data.emptyDays?.length && data.emptyDays.length < 7 ? `${collection('schedule')}${rangeSearch(data.emptyDays[0], 1)}` : collection('schedule')}
             />
             <StatusRow
               icon="star"
@@ -225,15 +229,17 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
             <StatusRow
               icon="ad"
               label="Publicités"
-              tone={data.ads ? 'ok' : 'off'}
-              value={data.ads ? `${data.ads} campagne${data.ads > 1 ? 's' : ''} en cours` : 'Aucune campagne en cours'}
+              tone={data.ads === null ? 'warn' : data.ads ? 'ok' : 'off'}
+              value={data.ads === null ? UNAVAILABLE : data.ads ? `${data.ads} campagne${data.ads > 1 ? 's' : ''} en cours` : 'Aucune campagne en cours'}
               href={collection('ads')}
             />
             <StatusRow
               icon="mail"
               label="Messages reçus"
-              tone={data.messages ? 'warn' : 'ok'}
-              value={data.messages ? `${data.messages} message${data.messages > 1 ? 's' : ''} à traiter` : 'Aucun message en attente'}
+              tone={data.messages === null || data.messages ? 'warn' : 'ok'}
+              value={
+                data.messages === null ? UNAVAILABLE : data.messages ? `${data.messages} message${data.messages > 1 ? 's' : ''} à traiter` : 'Aucun message en attente'
+              }
               href={collection('messages')}
             />
             {isAdmin && data.members && (

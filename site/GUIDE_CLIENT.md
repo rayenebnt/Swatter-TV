@@ -111,7 +111,7 @@ Le **menu** s’ouvre avec le bouton ☰ en haut à gauche (il reste ouvert sur 
 - **Les rubriques du site** : **Accueil et direct** (carrousel, direct, flash info, coordonnées de la chaîne),
   **Vidéos** (avec, juste en dessous, **Chaîne YouTube**), **L’Info**, **La Météo**, **Programme TV** (avec, juste en
   dessous, **Émissions**), **Agenda**, **Webcams**, **Le Replay** ;
-- **Également** : **Publicités**, **Pages (pied de page)**, **Médiathèque** ;
+- **Également** : **Publicités**, **Pages (pied de page)**, **Messages reçus** (partie 20), **Médiathèque** ;
 - en bas : **Voir le site** (dans un nouvel onglet) et **Aide** (ce guide).
 
 Les administrateurs voient en plus une rubrique **Administration** : **Membres du site** (partie 21), **Utilisateurs**

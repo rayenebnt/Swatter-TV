@@ -15,11 +15,13 @@ export type DashboardData = {
   infoOfDay: Featured
   weekendPick: Featured
   flash: { messages: number; auto: boolean }
-  /** jours TV (AAAA-MM-JJ) sans aucun créneau, parmi aujourd'hui et les 6 suivants */
-  emptyDays: string[]
-  ads: number
-  /** messages du formulaire de contact pas encore traités */
-  messages: number
+  /** jours TV (AAAA-MM-JJ) sans aucun créneau, parmi aujourd'hui et les 6 suivants ; null : requête en échec (jamais
+   * « Rempli » par défaut) */
+  emptyDays: string[] | null
+  /** campagnes en cours ; null : requête en échec */
+  ads: number | null
+  /** messages du formulaire de contact pas encore traités ; null : requête en échec (jamais « Aucun message » par défaut) */
+  messages: number | null
   meteo: { auto: boolean; updatedAt: string | null }
   /** vidéos et replays sans image (image YouTube introuvable à l'enregistrement) */
   missingImages: { videos: number; replays: number }
@@ -179,9 +181,9 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     attempt(() => featured(payload, 'videos', 'isVideoOfDay'), null),
     attempt(() => featured(payload, 'articles', 'isInfoOfDay'), null),
     attempt(() => weekendPick(payload), null),
-    attempt(() => emptyDays(payload), [] as string[]),
-    attempt(async () => (await payload.count({ collection: 'ads', where: { and: [LIVE, runningAdsWhere()] } })).totalDocs, 0),
-    attempt(async () => (await payload.count({ collection: 'messages', where: { handled: { not_equals: true } } })).totalDocs, 0),
+    attempt<string[] | null>(() => emptyDays(payload), null),
+    attempt<number | null>(async () => (await payload.count({ collection: 'ads', where: { and: [LIVE, runningAdsWhere()] } })).totalDocs, null),
+    attempt<number | null>(async () => (await payload.count({ collection: 'messages', where: { handled: { not_equals: true } } })).totalDocs, null),
     attempt(async () => (await payload.count({ collection: 'videos', where: noImage })).totalDocs, 0),
     attempt(async () => (await payload.count({ collection: 'replays', where: noImage })).totalDocs, 0),
     attempt(() => recent(payload), [] as RecentItem[]),
