@@ -14,7 +14,7 @@
   --on-gold: #1b1305;
   --ink: #f6f2e8; --ink-2: #c9d2e3; --muted: #8e9cb6;
   --line: rgba(255, 255, 255, .08); --line-2: rgba(255, 255, 255, .15);
-  --live: #e8383d;
+  --live: #d93036; /* texte blanc dessus : 4,7:1 (badges « En cours », « Direct », bouton de suppression) */
   --r-xl: 24px; --r-lg: 18px; --r: 14px;
   --container: 1360px; --gutter: clamp(16px, 4vw, 44px);
   --font-display: var(--font-outfit), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
