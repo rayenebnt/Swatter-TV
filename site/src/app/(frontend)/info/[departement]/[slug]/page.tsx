@@ -92,7 +92,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
   const dept = article.department
   const label = departmentLabel(dept)
   const [sameDept, latest] = await Promise.all([getLatestArticles(4, dept, [article.id]), getLatestArticles(13, null, [article.id])])
-  // « À lire aussi » : d'autres articles de la Haute-Savoie ; « En continu » : les dernières infos, sans doublon
+  // « À lire aussi » : même département, sinon le reste de la région ; « En continu » : les dernières infos, sans doublon
   const sameDeptRelated = sameDept.length > 0
   const related = (sameDeptRelated ? sameDept : latest.slice(0, 4)).map((a) => toTeaser(a))
   const relatedIds = new Set(related.map((r) => r.id))
@@ -110,6 +110,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
   const crumbs = [
     { label: 'Accueil', href: '/' },
     { label: 'L’Info', href: '/info' },
+    { label, href: departmentUrl(dept) },
     { label: article.title },
   ]
   const swatter = {
@@ -187,7 +188,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
                   ))}
                 </div>
                 <Link className="link-more" href="/info">
-                  Toute l’info
+                  Toute l’info de la région
                   <Icon name="arrow" />
                 </Link>
               </aside>
@@ -202,7 +203,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
 
       {related.length > 0 && (
         <section className="section container" aria-labelledby="art-related-title">
-          <SectionHead eyebrow={sameDeptRelated ? label : 'L’Info'} title={sameDeptRelated ? 'À lire aussi' : 'D’autres infos'} titleId="art-related-title">
+          <SectionHead eyebrow={sameDeptRelated ? label : 'L’Info'} title={sameDeptRelated ? 'À lire aussi' : 'D’autres infos de la région'} titleId="art-related-title">
             <Link className="link-more" href={sameDeptRelated ? departmentUrl(dept) : '/info'}>
               {sameDeptRelated ? `Toute l’info ${ofPlace(dept)}` : 'Toute l’info'}
               <Icon name="arrow" />

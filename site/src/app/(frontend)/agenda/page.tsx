@@ -34,7 +34,7 @@ import { ogImage } from '@/lib/og'
 export const revalidate = 60
 
 const PER_PAGE = 24
-const INTRO = 'Toute l’offre culturelle, touristique et sportive en Haute-Savoie et dans les Alpes\u00a0: fêtes, marchés, concerts, expositions et sorties en famille.'
+const INTRO = 'Toute l’offre culturelle, touristique et sportive en Auvergne-Rhône-Alpes\u00a0: fêtes, marchés, concerts, expositions et sorties en famille.'
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
@@ -65,9 +65,9 @@ function texts(category: EventCategory | null, period: EventPeriod | null, page:
   const parts = [quoted, when].filter(Boolean)
   return {
     cat,
-    title: `${parts.length ? `Agenda ${parts.join(', ')}` : 'Agenda des sorties en Haute-Savoie'}${suffix}`,
+    title: `${parts.length ? `Agenda ${parts.join(', ')}` : 'Agenda des sorties en Auvergne-Rhône-Alpes'}${suffix}`,
     description: parts.length
-      ? `Les sorties ${parts.join(' ')} en Haute-Savoie et dans les Alpes\u00a0: dates, lieux et programmes, avec Swatter TV.`
+      ? `Les sorties ${parts.join(' ')} en Auvergne-Rhône-Alpes\u00a0: dates, lieux et programmes, avec Swatter TV.`
       : `${INTRO} Dates, lieux et programmes avec Swatter TV.`,
   }
 }
@@ -120,7 +120,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
 
   return (
     <>
-      <PageHeader eyebrow="Sortir en Haute-Savoie" title={cat ? `Agenda «\u00a0${cat}\u00a0»` : 'Agenda'} description={INTRO} crumbs={crumbs} />
+      <PageHeader eyebrow="Sortir dans la région" title={cat ? `Agenda «\u00a0${cat}\u00a0»` : 'Agenda'} description={INTRO} crumbs={crumbs} />
 
       {feature && (
         <>
@@ -184,7 +184,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
                   Essayez une autre période ou une autre catégorie, ou <Link href="/agenda">consultez tout l’agenda</Link>.
                 </>
               ) : (
-                'Revenez bientôt pour découvrir les prochaines sorties en Haute-Savoie.'
+                'Revenez bientôt pour découvrir les prochaines sorties de la région.'
               )}
             </p>
           </div>

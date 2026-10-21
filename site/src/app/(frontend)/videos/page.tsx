@@ -40,8 +40,8 @@ function texts(category: VideoCategory | null, page: number) {
     label,
     title: `${label ? `${label}\u00a0: toutes les vidéos` : 'Vidéos'}${suffix}`,
     description: label
-      ? `Les vidéos «\u00a0${label}\u00a0» de Swatter TV, la chaîne locale de la Haute-Savoie, à regarder gratuitement.`
-      : 'Toutes les vidéos de Swatter TV, la chaîne locale de la Haute-Savoie\u00a0: à regarder gratuitement, où que vous soyez.',
+      ? `Les vidéos «\u00a0${label}\u00a0» de Swatter TV, la chaîne régionale d’Auvergne-Rhône-Alpes, à regarder gratuitement.`
+      : 'Toutes les vidéos de Swatter TV, la chaîne régionale d’Auvergne-Rhône-Alpes\u00a0: à regarder gratuitement, où que vous soyez.',
   }
 }
 

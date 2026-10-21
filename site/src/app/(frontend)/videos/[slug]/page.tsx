@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!video) return { title: 'Vidéo introuvable', robots: { index: false } }
 
   const url = videoUrl(video)
-  const description = (video.meta?.description || video.description || `Regardez «\u00a0${video.title}\u00a0» sur Swatter TV, la chaîne locale de la Haute-Savoie.`).slice(0, 200)
+  const description = (video.meta?.description || video.description || `Regardez «\u00a0${video.title}\u00a0» sur Swatter TV, la chaîne régionale d’Auvergne-Rhône-Alpes.`).slice(0, 200)
   const imageMedia = video.meta?.image && typeof video.meta.image === 'object' ? video.meta.image : video.thumbnail
   const { contentUrl } = videoLocation(resolveVideo(video.source))
   const ogTitle = video.meta?.title || video.title

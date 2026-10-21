@@ -17,7 +17,7 @@ import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
-const DESCRIPTION = 'Regardez Swatter TV en direct et gratuitement\u00a0: l’info, la météo, les magazines et les documentaires de la Haute-Savoie.'
+const DESCRIPTION = 'Regardez Swatter TV en direct et gratuitement\u00a0: l’info, la météo, les magazines et les documentaires d’Auvergne-Rhône-Alpes.'
 const FALLBACK_POSTER = '/visuels/hero-crepuscule.webp'
 
 export async function generateMetadata(): Promise<Metadata> {

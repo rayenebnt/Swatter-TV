@@ -12,8 +12,8 @@ import { ogImage } from '@/lib/og'
 // Page régénérée au plus toutes les 60 s (et après chaque import des prévisions).
 export const revalidate = 60
 
-const TITLE = 'La météo en Haute-Savoie'
-const DESCRIPTION = `Prévisions météo à cinq jours en Haute-Savoie (${METEO_CITY_LIST}) : températures heure par heure, tendances du matin au soir et bulletin du jour.`
+const TITLE = 'La météo en Auvergne-Rhône-Alpes'
+const DESCRIPTION = `Prévisions météo à cinq jours en Auvergne-Rhône-Alpes (${METEO_CITY_LIST}) : températures heure par heure, tendances du matin au soir et bulletin du jour.`
 const SHARE_IMAGE = '/visuels/t-nuages-a.webp'
 
 // Le global « meteo » n'a pas de champs SEO : titre, description et visuel de partage fixes.
@@ -43,7 +43,7 @@ export default async function MeteoPage() {
       <PageHeader
         eyebrow="Prévisions à 5 jours"
         title="La Météo"
-        description="Le temps qu’il fera en Haute-Savoie, des rives du Léman au massif du Mont-Blanc, du lac d’Annecy aux Aravis."
+        description="Le temps qu’il fera dans toute la région Auvergne-Rhône-Alpes, des Pays de Savoie à l’Auvergne, de Lyon au massif du Mont-Blanc."
         crumbs={[{ label: 'La Météo' }]}
       />
 
@@ -57,10 +57,10 @@ export default async function MeteoPage() {
 
       <section className="container section meteo-seo" aria-labelledby="meteo-seo-title">
         <div className="prose">
-          <h2 id="meteo-seo-title">La météo de la Haute-Savoie, vallée par vallée</h2>
+          <h2 id="meteo-seo-title">La météo des Pays de Savoie et de toute la région</h2>
           <p>
-            Lac d’Annecy, Genevois, Chablais et rives du Léman, vallée de l’Arve, Aravis ou massif du Mont-Blanc&nbsp;: Swatter TV vous
-            donne chaque jour le temps qu’il fera partout en Haute-Savoie. Les prévisions couvrent cinq jours, avec l’évolution des
+            Lac d’Annecy, massif du Mont-Blanc, métropole lyonnaise, Isère ou Auvergne&nbsp;: Swatter TV vous donne chaque jour le temps
+            qu’il fera partout en Auvergne-Rhône-Alpes. Les prévisions couvrent cinq jours, avec l’évolution des
             températures heure par heure, la tendance du matin, de l’après-midi et de la soirée, et les minimales et maximales à{' '}
             {METEO_CITY_LIST}.
           </p>

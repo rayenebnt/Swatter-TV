@@ -54,7 +54,7 @@ export const Settings: GlobalConfig = {
                   type: 'array',
                   maxRows: 3,
                   labels: { singular: 'Étiquette', plural: 'Étiquettes' },
-                  admin: { description: 'Petits badges au-dessus du titre (« En direct », « Haute-Savoie »…).', components: { RowLabel: '/components/admin/RowLabels#BadgeLabel' } },
+                  admin: { description: 'Petits badges au-dessus du titre (« En direct », « Auvergne-Rhône-Alpes »…).', components: { RowLabel: '/components/admin/RowLabels#BadgeLabel' } },
                   fields: [
                     {
                       type: 'row',
@@ -135,7 +135,7 @@ export const Settings: GlobalConfig = {
                 { name: 'viewsCount', label: 'Compteur de vues', type: 'number', defaultValue: 0 },
               ],
             },
-            { name: 'tagline', label: 'Présentation (pied de page)', type: 'textarea', defaultValue: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.' },
+            { name: 'tagline', label: 'Présentation (pied de page)', type: 'textarea', defaultValue: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.' },
             {
               name: 'contact',
               label: 'Contact',

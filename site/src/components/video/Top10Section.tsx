@@ -9,7 +9,7 @@ import { fallbackVisual } from './utils'
 import '@/styles/video.css'
 
 /**
- * Section « Le Top 10 Swatter » : rail de vignettes portrait avec grands chiffres dorés. Masquée sans vidéo.
+ * Section « Top 10 » : rail de vignettes portrait avec grands chiffres dorés. Masquée sans vidéo.
  * `priority` : première vignette chargée en priorité (section visible dès l'arrivée sur la page).
  */
 export async function Top10Section({ priority = false }: { priority?: boolean } = {}) {
@@ -17,11 +17,11 @@ export async function Top10Section({ priority = false }: { priority?: boolean } 
   if (!videos.length) return null
   return (
     <section className="section container" aria-labelledby="top-title">
-      <SectionHead eyebrow="Cette semaine" title="Le Top 10 Swatter" titleId="top-title">
+      <SectionHead eyebrow="Cette semaine" title="Top 10" titleId="top-title">
         <RailArrows target="rail-top" />
       </SectionHead>
       <div data-reveal>
-        <Rail id="rail-top" className="rail-top" label="Le Top 10 Swatter">
+        <Rail id="rail-top" className="rail-top" label="Top 10">
           {videos.map((v, i) => (
             <Link key={v.id} className="top" href={videoUrl(v)} aria-label={`${i + 1}. ${v.title}`}>
               <span className="top__n" aria-hidden="true">

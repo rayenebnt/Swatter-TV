@@ -1,6 +1,6 @@
 /**
  * Remplace le texte des pages légales par celui du code (src/scripts/seed/pages.ts), SANS toucher au reste du site.
- * Usage : npm run maj-pages                      (mentions légales, crédits, vie privée)
+ * Usage : npm run maj-pages                      (mentions légales, crédits, vie privée, le groupe)
  *         npm run maj-pages -- mentions-legales  (une ou plusieurs pages, par leur adresse)
  *
  * La page est publiée ; son ancien texte reste dans son historique (administration › la page › « Versions »).
@@ -11,7 +11,7 @@ import { getPayload } from 'payload'
 import { lexical } from './seed/lexical'
 import { PAGES } from './seed/pages'
 
-const DEFAULT = ['mentions-legales', 'credits', 'vie-privee']
+const DEFAULT = ['mentions-legales', 'credits', 'vie-privee', 'le-groupe']
 const wanted = process.argv.slice(2).filter((a) => !a.startsWith('-'))
 const slugs = wanted.length ? wanted : DEFAULT
 

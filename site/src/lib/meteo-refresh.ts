@@ -1,6 +1,6 @@
 // Météo toujours à jour, même sans tâche planifiée (poste de développement, hébergement sans cron) : quand une page
-// affiche des prévisions vieilles de plus d'une heure, ou celles de démonstration, Open-Meteo est interrogé en arrière-plan,
-// après l'envoi de la page. La tâche planifiée (GET /api/cron/import) reste la voie normale en production.
+// affiche des prévisions vieilles de plus d'une heure, celles de démonstration ou d'anciennes villes, Open-Meteo est
+// interrogé en arrière-plan, après l'envoi de la page. La tâche planifiée (GET /api/cron/import) reste la voie normale en production.
 import config from '@payload-config'
 import { after } from 'next/server'
 import { getPayload } from 'payload'
@@ -12,10 +12,11 @@ const STALE_MS = 60 * 60 * 1000
 const RETRY_MS = 10 * 60 * 1000
 let lastAttempt = 0
 
-export function refreshMeteoIfStale(state: { autoUpdate: boolean; source: string | null; updatedAt: string | null }): void {
+/** `complete` : faux quand les prévisions enregistrées ne couvrent pas toutes les villes suivies (liste changée depuis). */
+export function refreshMeteoIfStale(state: { autoUpdate: boolean; source: string | null; updatedAt: string | null; complete: boolean }): void {
   if (!state.autoUpdate || process.env.NEXT_PHASE === 'phase-production-build') return
   const age = state.updatedAt ? Date.now() - Date.parse(state.updatedAt) : Number.POSITIVE_INFINITY
-  if (state.source === OPEN_METEO_SOURCE && age < STALE_MS) return
+  if (state.source === OPEN_METEO_SOURCE && age < STALE_MS && state.complete) return
   if (Date.now() - lastAttempt < RETRY_MS) return
   lastAttempt = Date.now()
   try {

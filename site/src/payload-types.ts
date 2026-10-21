@@ -356,7 +356,7 @@ export interface Article {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Les sorties et événements de la Haute-Savoie. Ils disparaissent tout seuls de l’agenda une fois passés.
+ * Les sorties et événements de la région. Ils disparaissent tout seuls de l’agenda une fois passés.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events".
@@ -1238,7 +1238,7 @@ export interface Setting {
     | {
         kind: 'live' | 'custom';
         /**
-         * Petits badges au-dessus du titre (« En direct », « Haute-Savoie »…).
+         * Petits badges au-dessus du titre (« En direct », « Auvergne-Rhône-Alpes »…).
          */
         badges?:
           | {

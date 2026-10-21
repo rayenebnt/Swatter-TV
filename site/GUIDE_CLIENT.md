@@ -234,8 +234,8 @@ cookies) : sinon, le lecteur l’invite à modifier son choix.
 2. **Image** : la photo principale, en largeur (format paysage), d’au moins 1200 pixels de large.
 3. **Texte de l’article** : l’éditeur fonctionne comme un traitement de texte (intertitres, gras, listes, liens,
    citations). Sélectionnez un mot pour faire apparaître la barre de mise en forme ; tapez « / » pour insérer un bloc.
-4. **Commune** et **Rubrique** (Sport, Faits divers, Société…). L’info couvre la Haute-Savoie : pas de département à
-   choisir.
+4. **Département** (obligatoire : l’info couvre toute la région Auvergne-Rhône-Alpes ; il range l’article dans la page
+   de son département, par exemple « /info/isere »), **Commune** et **Rubrique** (Sport, Faits divers, Société…).
 5. À droite : **Date de publication**. Une date à venir programme la mise en ligne : une fois publié, l’article
    apparaîtra tout seul à cette date.
 6. Vérifiez l’aperçu, puis **Publier les modifications**.
@@ -388,7 +388,7 @@ l’adresse `/son-adresse` (champ **Adresse web (automatique)**) une fois publi�
 
 ## 16. La météo
 
-**La Météo** : les prévisions de la Haute-Savoie (Annecy, Annemasse, Thonon-les-Bains, Cluses, Chamonix, La Clusaz) arrivent
+**La Météo** : les prévisions d’Auvergne-Rhône-Alpes (Annecy, Lyon, Grenoble, Clermont-Ferrand, Chambéry, Chamonix) arrivent
 **automatiquement toutes les heures** grâce à Open-Meteo, tant que **Mise à jour automatique (toutes les heures)** est
 cochée : ce sont les prévisions actuelles, pas des exemples. Le site affiche sous la météo l’heure de la dernière mise à
 jour (« Mis à jour à 14:05 ») et la source (Open-Meteo). **Dernière mise à jour automatique** indique l’heure du dernier passage ; le tableau de bord vous prévient si

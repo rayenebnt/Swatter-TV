@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import { notFound, permanentRedirect } from 'next/navigation'
-import { InfoListing, listHref, listingMetadata, loadListing, parsePage, type SearchParams } from '@/components/info/InfoListing'
-import { INFO_DEPARTMENT, isDepartment } from '@/lib/departments'
+import { notFound } from 'next/navigation'
+import { InfoListing, listingMetadata, loadListing, parsePage, type SearchParams } from '@/components/info/InfoListing'
+import { isDepartment } from '@/lib/departments'
 
 // Page rendue à chaque requête, comme /info : elle lit la pagination (?page=), incompatible avec une page statique
 // (generateStaticParams + searchParams provoque une erreur 500 DYNAMIC_SERVER_USAGE en production).
@@ -20,8 +20,6 @@ export default async function DepartmentInfoPage({ params, searchParams }: { par
   const { departement } = await params
   if (!isDepartment(departement)) notFound()
   const page = parsePage(await searchParams)
-  // l'info ne couvre que la Haute-Savoie : sa page est L'Info elle-même
-  if (departement === INFO_DEPARTMENT) permanentRedirect(listHref(null, page))
   const data = await loadListing(departement, page)
   if (page > 1 && page > data.list.totalPages) notFound()
   return <InfoListing dept={departement} page={page} data={data} />

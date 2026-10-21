@@ -13,7 +13,7 @@ export async function AgendaSection() {
   const now = new Date()
   return (
     <section className="section container" id="agenda" aria-labelledby="agenda-title">
-      <SectionHead eyebrow="Sortir en Haute-Savoie" title="Agenda" titleId="agenda-title" subtitle="Toute l’offre culturelle, touristique et sportive en Haute-Savoie.">
+      <SectionHead eyebrow="Sortir dans la région" title="Agenda" titleId="agenda-title" subtitle="Toute l’offre culturelle, touristique et sportive en Auvergne-Rhône-Alpes.">
         <Link className="link-more" href="/agenda">
           Tout l’agenda <Icon name="arrow" />
         </Link>

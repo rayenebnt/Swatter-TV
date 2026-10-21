@@ -1,6 +1,6 @@
 import { cache } from 'react'
 import { dateChip, formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
-import { readForecast } from '@/lib/meteo'
+import { METEO_CITIES, readForecast } from '@/lib/meteo'
 import type { ForecastDay } from '@/lib/meteo-types'
 import { refreshMeteoIfStale } from '@/lib/meteo-refresh'
 import { getMeteoGlobal } from '@/lib/queries/settings'
@@ -45,7 +45,14 @@ export const getMeteo = cache(async (): Promise<MeteoData | null> => {
   const meteo = await getMeteoGlobal()
   const forecast = readForecast(meteo?.forecast)
   // prévisions de plus d'une heure (ou de démonstration) : nouvelle lecture d'Open-Meteo après l'envoi de la page
-  if (meteo) refreshMeteoIfStale({ autoUpdate: meteo.autoUpdate !== false, source: forecast?.source ?? null, updatedAt: forecast?.updatedAt ?? null })
+  if (meteo) {
+    refreshMeteoIfStale({
+      autoUpdate: meteo.autoUpdate !== false,
+      source: forecast?.source ?? null,
+      updatedAt: forecast?.updatedAt ?? null,
+      complete: (forecast?.days[0]?.cities.length ?? 0) >= METEO_CITIES.length,
+    })
+  }
   if (!forecast) return null
   const today = parisDay()
   // Bulletin saisi à la main : seulement le jour où il a été écrit

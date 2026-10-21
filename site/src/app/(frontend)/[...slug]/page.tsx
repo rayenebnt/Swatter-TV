@@ -126,7 +126,7 @@ export async function generateMetadata({ params }: { params: Params }, parent: R
   if (route?.kind !== 'page') return { title: 'Page introuvable', robots: { index: false } }
   const { page } = route
   const url = pageUrl(page)
-  const description = (page.meta?.description || page.intro || `${page.title}\u00a0: informations de ${SITE_NAME}, la chaîne de la Haute-Savoie.`).slice(0, 200)
+  const description = (page.meta?.description || page.intro || `${page.title}\u00a0: informations de ${SITE_NAME}, la chaîne d’Auvergne-Rhône-Alpes.`).slice(0, 200)
   const image = typeof page.meta?.image === 'object' && page.meta.image ? page.meta.image : null
   const src = mediaUrl(image, 'card')
   // Sans image propre : image de partage par défaut du site (opengraph-image, adresse résolue par Next)

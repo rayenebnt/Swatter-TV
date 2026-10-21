@@ -1,6 +1,6 @@
 # Swatter TV — site web
 
-Site de **Swatter TV & Info**, web TV régionale de la Haute-Savoie et d’Auvergne-Rhône-Alpes (siège à Thyez) :
+Site de **Swatter TV & Info**, web TV régionale d’Auvergne-Rhône-Alpes (siège à Thyez, Haute-Savoie) :
 le direct, les vidéos et le Top 10, le replay, l’info par département, la météo, le programme TV, l’agenda des sorties
 et les webcams, le tout administré par l’équipe de la chaîne depuis `/admin`.
 
@@ -110,7 +110,7 @@ npm run dev
 | `npm run seed` | contenus de départ « Exemple » (voir ci-dessus) |
 | `npm run maj-base` | **après un `git pull` qui change la structure des données** : met la base locale à jour **sans rien effacer** (retire les colonnes supprimées du code, qui feraient poser une question à drizzle, puis ajoute les nouvelles). Arrêtez `npm run dev` avant. Refusé en production (migrations) |
 | `npm run exemples` | ajoute les contenus d’exemple qui manquent **sans rien supprimer** (pour l’instant : le replay d’exemple, si « Replays » est vide) |
-| `npm run maj-pages` | remplace le texte des pages légales (mentions légales, crédits, vie privée) par celui de `src/scripts/seed/pages.ts`, sans toucher au reste ; l’ancien texte reste dans l’historique de la page. `npm run maj-pages -- mentions-legales` pour une seule page |
+| `npm run maj-pages` | remplace le texte des pages mentions légales, crédits, vie privée et le groupe par celui de `src/scripts/seed/pages.ts`, sans toucher au reste ; l’ancien texte reste dans l’historique de la page. `npm run maj-pages -- mentions-legales` pour une seule page |
 | `npm run reinit` | **après un `git pull` qui change la structure des données** : remet la base locale à neuf sans aucune question (garde les comptes et leurs mots de passe, vide la médiathèque, recharge les contenus « Exemple »). Arrêtez `npm run dev` avant. Refusé en production |
 | `npm run import` | import manuel de la météo et des vidéos de la chaîne YouTube (même traitement que la tâche planifiée) |
 | `npm run payload run src/scripts/init-db.ts` | tables + premier administrateur |

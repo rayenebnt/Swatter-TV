@@ -38,7 +38,7 @@ function published(department: DepartmentSlug | null, ...extra: Where[]): Where 
   }
 }
 
-/** Derniers articles publiés, sans ceux de `exclude`. */
+/** Derniers articles publiés de la région (ou d'un département), sans ceux de `exclude`. */
 export async function getLatestArticles(limit = 30, department: DepartmentSlug | null = null, exclude: number[] = []): Promise<ArticleListItem[]> {
   return safe(
     async () => {
@@ -81,7 +81,7 @@ export const getArticlesPage = cache(
     ),
 )
 
-/** Article « À la une » : l'info du jour récente (48 h) sinon le dernier article publié. */
+/** Article « À la une » : l'info du jour récente (48 h) de la région ou du département, sinon le dernier article publié. */
 export const getFeaturedArticle = cache(
   async (department: DepartmentSlug | null): Promise<ArticleListItem | null> =>
     safe(

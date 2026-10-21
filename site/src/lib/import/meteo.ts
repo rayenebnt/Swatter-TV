@@ -175,8 +175,8 @@ const fill = (template: string, values: Record<string, string>) => template.repl
 /** Journée homogène ({when} = « ce samedi »). */
 const UNIFORM: Record<WeatherKind, string[]> = {
   sun: [
-    '{when}, grand soleil sur la Haute-Savoie du matin au soir.',
-    'Le soleil s’impose {when} sur tout le département, avec un ciel limpide au-dessus des massifs.',
+    '{when}, grand soleil sur la région du matin au soir.',
+    'Le soleil s’impose {when} sur toute la région, avec un ciel limpide au-dessus des massifs.',
     'Une journée radieuse s’annonce {when}, sans le moindre nuage à l’horizon.',
   ],
   partly: [
@@ -184,11 +184,11 @@ const UNIFORM: Record<WeatherKind, string[]> = {
     'Le ciel hésite {when} entre passages nuageux et belles éclaircies.',
     '{when}, le soleil joue à cache-cache avec les nuages.',
   ],
-  cloud: ['{when}, le ciel reste gris et chargé sur l’ensemble du département.', 'Les nuages dominent {when} du matin au soir sur la Haute-Savoie.'],
-  rain: ['{when}, la pluie s’installe pour la journée : prévoyez le parapluie.', 'Journée maussade et pluvieuse {when} sur toute la Haute-Savoie.'],
-  snow: ['{when}, la neige tombe sur le département, jusque dans les vallées.', 'Place à la neige {when}, y compris à basse altitude : prudence sur les routes.'],
+  cloud: ['{when}, le ciel reste gris et chargé sur l’ensemble de la région.', 'Les nuages dominent {when} du matin au soir sur toute la région.'],
+  rain: ['{when}, la pluie s’installe pour la journée : prévoyez le parapluie.', 'Journée maussade et pluvieuse {when} sur toute la région.'],
+  snow: ['{when}, la neige tombe sur la région, jusque dans les vallées.', 'Place à la neige {when}, y compris à basse altitude : prudence sur les routes.'],
   fog: ['{when}, le brouillard s’accroche aux vallées et peine à se dissiper.', 'Grisaille et brouillard persistent {when} dans les vallées.'],
-  storm: ['{when}, temps lourd et orageux sur la Haute-Savoie : restez vigilants.', 'Des orages pourront éclater {when} à tout moment de la journée.'],
+  storm: ['{when}, temps lourd et orageux sur la région : restez vigilants.', 'Des orages pourront éclater {when} à tout moment de la journée.'],
 }
 const NOUN: Record<WeatherKind, string> = {
   sun: 'du soleil',

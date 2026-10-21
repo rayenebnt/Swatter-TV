@@ -31,7 +31,7 @@ export async function InfoSection() {
 
   return (
     <section className="section container" id="info" aria-labelledby="info-title">
-      <SectionHead eyebrow="7j/7 · 24h/24" title="L’Info en Haute-Savoie" titleId="info-title" subtitle="Le flux d’actualité de la Haute-Savoie, commune par commune.">
+      <SectionHead eyebrow="7j/7 · 24h/24" title="L’Info en Auvergne-Rhône-Alpes" titleId="info-title" subtitle="Le flux d’actualité de toute la région, département par département.">
         <Link className="link-more" href="/info">
           Toute l’info <Icon name="arrow" />
         </Link>

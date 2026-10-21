@@ -286,7 +286,7 @@ await payload.updateGlobal({
         kind: 'live',
         badges: [
           { label: 'En direct', style: 'live' },
-          { label: 'Haute-Savoie', style: 'glass' },
+          { label: 'Auvergne-Rhône-Alpes', style: 'glass' },
         ],
         titleLine1: 'Le direct,',
         titleLine2: 'au cœur des Alpes',
@@ -341,7 +341,7 @@ await payload.updateGlobal({
     ],
     rating: 4.5,
     viewsCount: 995349,
-    tagline: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Haute-Savoie.',
+    tagline: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.',
     contact: {
       email: 'contact@swatter-tv.fr',
       phone: '',

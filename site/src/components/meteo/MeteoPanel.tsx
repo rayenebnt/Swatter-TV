@@ -102,7 +102,7 @@ function DayView({
       <div className="meteo-full__chart">{chart}</div>
       {day.cities.length > 0 && (
         <div className="meteo-full__cities">
-          <h3 className="meteo-h3">En Haute-Savoie</h3>
+          <h3 className="meteo-h3">Dans la région</h3>
           <ul className="city-grid">
             {day.cities.map((c) => (
               <li className="city-card" key={c.name}>

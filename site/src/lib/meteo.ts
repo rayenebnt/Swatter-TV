@@ -76,21 +76,21 @@ export function formatTemp(t: number): string {
 export type MeteoCity = { name: string; latitude: number; longitude: number }
 
 /**
- * Villes suivies, toutes en Haute-Savoie, dans l'ordre d'affichage ; la première est la ville principale.
- * Bassin annécien, Genevois, Chablais et Léman, vallée de l'Arve, massif du Mont-Blanc, Aravis.
+ * Villes suivies en Auvergne-Rhône-Alpes, dans l'ordre d'affichage ; la première est la ville principale (Annecy, près
+ * de la chaîne). Pays de Savoie, métropole lyonnaise, Isère, Auvergne et massif du Mont-Blanc.
  */
 export const METEO_CITIES: readonly MeteoCity[] = [
   { name: 'Annecy', latitude: 45.899, longitude: 6.129 },
-  { name: 'Annemasse', latitude: 46.193, longitude: 6.234 },
-  { name: 'Thonon-les-Bains', latitude: 46.371, longitude: 6.479 },
-  { name: 'Cluses', latitude: 46.06, longitude: 6.58 },
+  { name: 'Lyon', latitude: 45.764, longitude: 4.835 },
+  { name: 'Grenoble', latitude: 45.188, longitude: 5.724 },
+  { name: 'Clermont-Ferrand', latitude: 45.778, longitude: 3.087 },
+  { name: 'Chambéry', latitude: 45.564, longitude: 5.917 },
   { name: 'Chamonix', latitude: 45.924, longitude: 6.869 },
-  { name: 'La Clusaz', latitude: 45.904, longitude: 6.423 },
 ]
 
-export const METEO_REGION = 'Haute-Savoie'
+export const METEO_REGION = 'Auvergne-Rhône-Alpes'
 
-/** « Annecy, Annemasse, … et La Clusaz » */
+/** « Annecy, Lyon, … et Chamonix » */
 export const METEO_CITY_LIST = `${METEO_CITIES.slice(0, -1)
   .map((c) => c.name)
   .join(', ')} et ${METEO_CITIES[METEO_CITIES.length - 1].name}`

@@ -195,7 +195,7 @@ export default async function EventPage({ params }: { params: Params }) {
 
       {others.length > 0 && (
         <section className="section container" aria-labelledby="ev-others-title">
-          <SectionHead eyebrow="Sortir en Haute-Savoie" title={status === 'past' ? 'Les prochains événements' : 'À venir aussi'} titleId="ev-others-title">
+          <SectionHead eyebrow="Sortir dans la région" title={status === 'past' ? 'Les prochains événements' : 'À venir aussi'} titleId="ev-others-title">
             <Link className="link-more" href="/agenda">
               Tout l’agenda <Icon name="arrow" />
             </Link>

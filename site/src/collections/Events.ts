@@ -13,7 +13,7 @@ export const Events: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'startDate', 'city', 'isWeekendPick'],
-    description: 'Les sorties et événements de la Haute-Savoie. Ils disparaissent tout seuls de l’agenda une fois passés.',
+    description: 'Les sorties et événements de la région. Ils disparaissent tout seuls de l’agenda une fois passés.',
     preview: (doc) => (doc.slug ? eventUrl(doc as { slug: string }) : null),
   },
   access: { read: publishedStatusOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },

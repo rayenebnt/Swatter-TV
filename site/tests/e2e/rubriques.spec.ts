@@ -22,16 +22,18 @@ test('accueil : toutes les rubriques sont présentes', async ({ page, request })
   expect(errors, errors.join('\n')).toEqual([])
 })
 
-test('info : liste (Haute-Savoie seulement) et article', async ({ page }) => {
+test('info : toute la région, pages par département et article', async ({ page }) => {
   const errors = watchErrors(page)
   await page.goto('/info')
   const articles = await linksMatching(page, /^\/info\/[a-z-]+\/[a-z0-9-]+$/)
   expect(articles.length, 'articles listés sur /info').toBeGreaterThanOrEqual(3)
-  // l'info ne couvre que la Haute-Savoie : l'ancienne page du département renvoie vers /info, les autres n'existent pas
-  const dept = await page.request.get('/info/haute-savoie', { maxRedirects: 0 })
-  expect([301, 308], 'redirection /info/haute-savoie').toContain(dept.status())
-  expect(dept.headers().location).toMatch(/\/info$/)
-  expect((await page.request.get('/info/isere')).status()).toBe(404)
+  // articles de plusieurs départements (contenus de départ : Haute-Savoie, Rhône, Isère)
+  expect(new Set(articles.map((a) => a.split('/')[2])).size, 'départements représentés').toBeGreaterThanOrEqual(2)
+  expect((await linksMatching(page, /^\/info\/[a-z-]+$/)).length, 'liens vers les départements').toBeGreaterThanOrEqual(2)
+  const dept = articles[0].split('/')[2]
+  await page.goto(`/info/${dept}`)
+  expect((await linksMatching(page, new RegExp(`^/info/${dept}/[a-z0-9-]+$`))).length, `articles du département ${dept}`).toBeGreaterThanOrEqual(1)
+  expect((await page.request.get('/info/paris')).status(), 'département hors région').toBe(404)
   const response = await page.goto(articles[0])
   expect(response?.status()).toBe(200)
   await settle(page)
@@ -40,17 +42,16 @@ test('info : liste (Haute-Savoie seulement) et article', async ({ page }) => {
   expect(errors, errors.join('\n')).toEqual([])
 })
 
-test('météo : prévisions de la Haute-Savoie seulement', async ({ page }) => {
+test('météo : prévisions d’Auvergne-Rhône-Alpes', async ({ page }) => {
   const errors = watchErrors(page)
   await page.goto('/meteo')
   await settle(page)
   const main = page.locator('main')
   await expect(main.getByRole('heading', { name: /prévisions/i }).first()).toBeVisible()
   await expect(main).toContainText(/-?\d+\s?°/)
-  await expect(main.getByRole('heading', { name: 'En Haute-Savoie' })).toBeVisible()
+  await expect(main.getByRole('heading', { name: 'Dans la région' })).toBeVisible()
   const cities = main.locator('.city-card__txt b')
-  await expect(cities).toHaveText(['Annecy', 'Annemasse', 'Thonon-les-Bains', 'Cluses', 'Chamonix', 'La Clusaz'])
-  for (const elsewhere of ['Lyon', 'Grenoble', 'Chambéry']) await expect(main).not.toContainText(elsewhere)
+  await expect(cities).toHaveText(['Annecy', 'Lyon', 'Grenoble', 'Clermont-Ferrand', 'Chambéry', 'Chamonix'])
   expect(errors, errors.join('\n')).toEqual([])
 })
 
