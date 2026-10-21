@@ -109,31 +109,47 @@ test('agenda : événements et fiche', async ({ page }) => {
   expect(errors, errors.join('\n')).toEqual([])
 })
 
-test('webcams : une page par département', async ({ page, request }) => {
+test('webcams : une page par département, et « Web Cams + » pour les vues hors région', async ({ page, request }) => {
   const { docs } = (await (await request.get('/api/webcams?where[active][equals]=true&limit=50&depth=0')).json()) as { docs: { name: string; department: string }[] }
   test.skip(new Set(docs.map((d) => d.department)).size < 2, 'webcams de moins de deux départements (lancez npm run seed)')
   const errors = watchErrors(page)
-  const dept = docs[0].department
+  // noms des webcams affichées (les noms de départements figurent aussi dans le filtre : on lit les cartes seulement)
+  const shown = async () => (await page.locator('.camp__name').allTextContents()).map((t) => t.trim()).sort()
+  const namesOf = (zone: string) => docs.filter((d) => d.department === zone).map((d) => d.name).sort()
+  const dept = docs.find((d) => d.department !== 'plus')!.department
   await page.goto('/webcams')
   await page.getByRole('navigation', { name: 'Les webcams par département' }).locator(`a[href="/webcams/${dept}"]`).click()
   await page.waitForURL(new RegExp(`/webcams/${dept}$`))
   await settle(page)
-  for (const w of docs) {
-    if (w.department === dept) await expect(page.locator('main'), w.name).toContainText(w.name)
-    else await expect(page.locator('main'), w.name).not.toContainText(w.name)
+  expect(await shown()).toEqual(namesOf(dept))
+  // webcams hors région : leur page, et leur section sous celles de la région
+  if (namesOf('plus').length) {
+    await page.goto('/webcams/plus')
+    await settle(page)
+    await expect(page.locator('h1')).toHaveText('Web Cams +')
+    expect(await shown()).toEqual(namesOf('plus'))
+    await page.goto('/webcams')
+    await expect(page.getByRole('heading', { name: 'Web Cams +' })).toBeVisible()
   }
   expect((await page.request.get('/webcams/paris')).status(), 'département hors région').toBe(404)
   expect(errors, errors.join('\n')).toEqual([])
 })
 
-test('webcams : les webcams actives sont présentées', async ({ page, request }) => {
+test('webcams : les webcams actives sont présentées, « Bientôt en direct » sans lien de flux', async ({ page, request }) => {
   const api = await request.get('/api/webcams?where[active][equals]=true&limit=50&depth=0&sort=order')
-  const { docs } = (await api.json()) as { docs: { name: string }[] }
+  const { docs } = (await api.json()) as { docs: { name: string; embedUrl?: string | null }[] }
   test.skip(!docs.length, 'aucune webcam active (lancez npm run seed)')
   const errors = watchErrors(page)
   await page.goto('/webcams')
   await settle(page)
   for (const { name } of docs) await expect(page.locator('main'), `webcam « ${name} »`).toContainText(name)
+  const soon = docs.filter((d) => !d.embedUrl?.trim())
+  if (soon.length) {
+    const card = page.locator('article.camp').filter({ has: page.locator('.camp__name', { hasText: new RegExp(`^${soon[0].name}$`) }) })
+    await expect(card.getByText('Bientôt en direct')).toBeVisible()
+    // ni direct ni plein écran tant que le lien n'est pas renseigné
+    await expect(card.getByRole('button', { name: /plein écran/ })).toHaveCount(0)
+  }
   expect(errors, errors.join('\n')).toEqual([])
 })
 

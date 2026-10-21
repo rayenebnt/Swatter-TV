@@ -189,8 +189,14 @@ npm run seed           # contenus de départ « Exemple » (efface les contenus)
   « en Isère / dans le Rhône » dans `src/lib/places.ts`) ; la météo suit une ville par département.
   Une restriction à la seule Haute-Savoie a été essayée puis abandonnée à la demande du client : les adresses
   `/info/<département>` restent celles d'origine.
+- **Webcams** : leur champ « Département » accepte en plus `plus` (« Web Cams + », vues hors région : Suisse, Aoste ;
+  `WEBCAMS_PLUS`, `WEBCAM_ZONES` dans `src/lib/departments.ts`), avec sa page `/webcams/plus` et sa section sous la
+  grille de `/webcams`. Lien du flux et image facultatifs : sans lien, la webcam s'affiche « Bientôt en direct »
+  (`isComingSoon()`, lecteur `ComingSoon`), sans plein écran ; l'accueil montre d'abord les webcams en direct. Les 14
+  webcams de la chaîne sont dans `src/scripts/seed/webcams.ts` (seed et `npm run webcams`, qui ajoute seulement celles
+  qui manquent).
 - **Formulaire de contact** : `POST /api/contact` (payload.config.ts) → champ piège `website` et délai minimal de 3 s
-  (`shownAt`) pour les robots (réponse `{ok:true}` sans rien faire), validation partagée client/serveur
+  (`elapsed`, mesuré par le navigateur) pour les robots (réponse `{ok:true}` sans rien faire), validation partagée client/serveur
   (`src/lib/contact.ts`), puis 5 messages valides par IP et par quart d'heure (mémoire du processus). `sendContact`
   (`src/lib/contact-send.ts`) enregistre d'abord dans la collection `messages` (création réservée au serveur), puis
   envoie l'e-mail (`replyTo` = l'expéditeur) à `settings.contact.email`, à défaut `contact@swatter-tv.fr` ; `emailed`

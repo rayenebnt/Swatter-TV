@@ -18,6 +18,9 @@ export function webcamPoster(w: WebcamItem): WebcamPoster {
   return { src, width, height, alt: mediaAlt(w.image, `Webcam ${w.name}`) }
 }
 
+/** Webcam dont le lien du flux n'est pas encore renseigné : affichée « Bientôt en direct ». */
+export const isComingSoon = (w: Pick<WebcamItem, 'embedUrl'>) => !w.embedUrl?.trim()
+
 /** Données transmises au lecteur (uniquement des valeurs simples). */
 export function toWebcamView(w: WebcamItem): WebcamView {
   return {
@@ -26,7 +29,7 @@ export function toWebcamView(w: WebcamItem): WebcamView {
     name: w.name,
     place: w.place?.trim() || null,
     provider: w.provider,
-    embedUrl: w.embedUrl,
+    embedUrl: w.embedUrl?.trim() || null,
     temperature: w.temperature?.trim() || null,
     poster: webcamPoster(w),
   }

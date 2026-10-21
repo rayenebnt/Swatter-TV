@@ -20,6 +20,7 @@
     "maj-base": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/maj-base.ts",
     "exemples": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/exemples.ts",
     "maj-pages": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/maj-pages.ts",
+    "webcams": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/webcams.ts",
     "import": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/import.ts",
     "test:e2e": "playwright test"
   },

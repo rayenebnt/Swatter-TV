@@ -123,6 +123,8 @@ export function WebcamTile({ cam, index }: { cam: WebcamView; index: number }) {
   const exit = () => (mode === 'native' ? leaveFullscreen() : setMode('off'))
 
   const dialog = mode === 'overlay' ? { role: 'dialog', 'aria-modal': true, 'aria-label': `Webcam ${cam.name} en plein écran` } : {}
+  // lien du flux pas encore renseigné : annoncée, sans direct ni plein écran
+  const soon = !cam.embedUrl
 
   return (
     // État du calque en attribut : modifier className effacerait la classe « is-in » posée par la révélation au défilement
@@ -137,16 +139,19 @@ export function WebcamTile({ cam, index }: { cam: WebcamView; index: number }) {
     >
       <div ref={screen} className={mode === 'off' ? 'camp__screen' : 'camp__screen is-full'} {...dialog}>
         <WebcamPlayer cam={cam} sizes={SIZES} priority={index < 3} />
-        <div className="cam__top" aria-hidden="true">
-          <span className="badge badge--live">
-            <i />
-            En direct
-          </span>
-          <span className="cam__clock">
-            <LiveClock />
-            {cam.temperature && <span className="cam__temp"> · {cam.temperature}</span>}
-          </span>
-        </div>
+        {/* webcam pas encore en ligne : le lecteur affiche « Bientôt en direct » */}
+        {!soon && (
+          <div className="cam__top" aria-hidden="true">
+            <span className="badge badge--live">
+              <i />
+              En direct
+            </span>
+            <span className="cam__clock">
+              <LiveClock />
+              {cam.temperature && <span className="cam__temp"> · {cam.temperature}</span>}
+            </span>
+          </div>
+        )}
         {mode !== 'off' && (
           <>
             <p className="camp__caption">
@@ -172,9 +177,11 @@ export function WebcamTile({ cam, index }: { cam: WebcamView; index: number }) {
             {cam.temperature}
           </p>
         )}
-        <button ref={openBtn} type="button" className="icon-btn camp__fs" onClick={enter} aria-label={`Afficher la webcam ${cam.name} en plein écran`}>
-          <Icon name="expand" />
-        </button>
+        {!soon && (
+          <button ref={openBtn} type="button" className="icon-btn camp__fs" onClick={enter} aria-label={`Afficher la webcam ${cam.name} en plein écran`}>
+            <Icon name="expand" />
+          </button>
+        )}
       </div>
     </article>
   )

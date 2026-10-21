@@ -3,7 +3,7 @@ import type { Where } from 'payload'
 import { parisDateTime, parisDay } from '@/lib/format'
 import { getPayloadClient } from '@/lib/payload'
 import { safe } from '@/lib/safe'
-import { DEPARTMENTS } from '@/lib/departments'
+import { DEPARTMENTS, WEBCAMS_PLUS } from '@/lib/departments'
 import { meteoHref } from '@/lib/meteo'
 import { absoluteUrl } from '@/lib/site'
 import { articleUrl, departmentUrl, eventUrl, pageUrl, replayUrl, videoUrl } from '@/lib/urls'
@@ -116,7 +116,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/replay', lastReplay),
     entry('/videos', lastVideo),
     entry('/webcams'),
-    ...DEPARTMENTS.filter((d) => webcams.some((w) => w.department === d.value)).map((d) => entry(`/webcams/${d.value}`)),
+    ...[...DEPARTMENTS.map((d) => d.value), WEBCAMS_PLUS].filter((z) => webcams.some((w) => w.department === z)).map((z) => entry(`/webcams/${z}`)),
     ...withSlug(pages).map((p) => entry(pageUrl(p), p.updatedAt)),
     ...articles.map((a) => entry(articleUrl(a), a.updatedAt)),
     ...withSlug(videos).map((v) => entry(videoUrl(v), v.updatedAt)),

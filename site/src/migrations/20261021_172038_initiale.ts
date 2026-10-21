@@ -28,10 +28,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_programs_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__programs_v_version_genre" AS ENUM('info', 'meteo', 'documentaire', 'magazine', 'agenda', 'divertissement', 'sport', 'serie', 'cinema');
   CREATE TYPE "public"."enum__programs_v_version_status" AS ENUM('draft', 'published');
-  CREATE TYPE "public"."enum_webcams_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
+  CREATE TYPE "public"."enum_webcams_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier', 'plus');
   CREATE TYPE "public"."enum_webcams_provider" AS ENUM('iframe', 'hls', 'youtube', 'image');
   CREATE TYPE "public"."enum_webcams_status" AS ENUM('draft', 'published');
-  CREATE TYPE "public"."enum__webcams_v_version_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier');
+  CREATE TYPE "public"."enum__webcams_v_version_department" AS ENUM('haute-savoie', 'savoie', 'ain', 'isere', 'rhone', 'loire', 'haute-loire', 'drome', 'ardeche', 'puy-de-dome', 'cantal', 'allier', 'plus');
   CREATE TYPE "public"."enum__webcams_v_version_provider" AS ENUM('iframe', 'hls', 'youtube', 'image');
   CREATE TYPE "public"."enum__webcams_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_ads_placement" AS ENUM('home-leaderboard', 'inner-leaderboard');

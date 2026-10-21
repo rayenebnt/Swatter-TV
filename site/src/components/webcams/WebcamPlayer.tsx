@@ -1,7 +1,7 @@
 'use client'
 // Lecteur de webcam selon le type de flux : image rafraîchie, flux HLS (natif ou hls.js chargé à la demande),
 // YouTube (façade puis lecteur youtube-nocookie) ou lecteur à intégrer (iframe), avec la même règle de consentement
-// que le lecteur vidéo pour les services externes.
+// que le lecteur vidéo pour les services externes. Sans lien renseigné : « Bientôt en direct ».
 import Image, { getImageProps } from 'next/image'
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent } from 'react'
 import type Hls from 'hls.js'
@@ -17,12 +17,15 @@ export type WebcamSource = {
   name: string
   place?: string | null
   provider: 'image' | 'hls' | 'youtube' | 'iframe'
-  embedUrl: string
+  /** null : lien pas encore renseigné, webcam « Bientôt en direct » */
+  embedUrl: string | null
   /** Vignette Payload (ou visuel de repli) : premier rendu et repli */
   poster: WebcamPoster
 }
 
 type FeedProps = { cam: WebcamSource; sizes: string; priority: boolean }
+/** Lecteurs d'un flux : lien renseigné. */
+type StreamProps = FeedProps & { cam: WebcamSource & { embedUrl: string } }
 
 /** Rafraîchissement des images : toutes les 60 s, seulement si la webcam est visible. */
 const REFRESH_MS = 60_000
@@ -68,6 +71,16 @@ function Unavailable({ cam, sizes, priority }: FeedProps) {
   )
 }
 
+/** Webcam annoncée, dont le lien n'est pas encore renseigné dans l'administration. */
+function ComingSoon({ cam, sizes, priority }: FeedProps) {
+  return (
+    <div className="wcp">
+      <Poster poster={cam.poster} sizes={sizes} priority={priority} />
+      <p className="wcp__msg">Bientôt en direct</p>
+    </div>
+  )
+}
+
 /* ----- Image rafraîchie ----- */
 
 /** Paramètre anti-cache (même origine : chemin relatif). */
@@ -77,7 +90,7 @@ function withCacheBuster(url: string, t: number): string {
   return u.origin === window.location.origin ? `${u.pathname}${u.search}` : u.toString()
 }
 
-function ImageFeed({ cam, sizes, priority }: FeedProps) {
+function ImageFeed({ cam, sizes, priority }: StreamProps) {
   const root = useRef<HTMLDivElement>(null)
   const [live, setLive] = useState<string | null>(null)
   const url = useMemo(() => streamUrl(cam.embedUrl), [cam.embedUrl])
@@ -166,7 +179,7 @@ function PauseIcon() {
   )
 }
 
-function HlsFeed({ cam, sizes, priority }: FeedProps) {
+function HlsFeed({ cam, sizes, priority }: StreamProps) {
   const ref = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -312,7 +325,7 @@ function manageCookies(e: MouseEvent<HTMLButtonElement>) {
   openCookieSettings(button)
 }
 
-function EmbedFeed({ cam, sizes, priority }: FeedProps) {
+function EmbedFeed({ cam, sizes, priority }: StreamProps) {
   const consent = useConsent()
   const allowed = consent?.externes === true
   // Mention affichée une fois le choix connu : pas de clignotement pour qui a déjà accepté les contenus externes
@@ -391,12 +404,15 @@ function EmbedFeed({ cam, sizes, priority }: FeedProps) {
 export function WebcamPlayer({ cam, sizes = '(max-width: 760px) 100vw, (max-width: 1100px) 50vw, 33vw', priority = false }: { cam: WebcamSource; sizes?: string; priority?: boolean }) {
   // Nouvelle source → nouveau lecteur : aucun état ne passe d'un flux à l'autre
   const key = `${cam.provider}:${cam.embedUrl}`
+  const { embedUrl } = cam
+  if (!embedUrl) return <ComingSoon cam={cam} sizes={sizes} priority={priority} />
+  const stream = { ...cam, embedUrl }
   switch (cam.provider) {
     case 'image':
-      return <ImageFeed key={key} cam={cam} sizes={sizes} priority={priority} />
+      return <ImageFeed key={key} cam={stream} sizes={sizes} priority={priority} />
     case 'hls':
-      return <HlsFeed key={key} cam={cam} sizes={sizes} priority={priority} />
+      return <HlsFeed key={key} cam={stream} sizes={sizes} priority={priority} />
     default:
-      return <EmbedFeed key={key} cam={cam} sizes={sizes} priority={priority} />
+      return <EmbedFeed key={key} cam={stream} sizes={sizes} priority={priority} />
   }
 }

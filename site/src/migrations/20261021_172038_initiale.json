@@ -10254,7 +10254,8 @@
         "ardeche",
         "puy-de-dome",
         "cantal",
-        "allier"
+        "allier",
+        "plus"
       ]
     },
     "public.enum_webcams_provider": {
@@ -10290,7 +10291,8 @@
         "ardeche",
         "puy-de-dome",
         "cantal",
-        "allier"
+        "allier",
+        "plus"
       ]
     },
     "public.enum__webcams_v_version_provider": {
@@ -10558,6 +10560,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "1aa022dd-76ae-4db2-a8a1-bdd1a46f9c66",
+  "id": "61929c67-3c35-41c1-9ea0-87611c4ccd3c",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

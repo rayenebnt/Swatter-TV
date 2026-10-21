@@ -64,7 +64,7 @@ avant l’ouverture :
 | **Agenda** | 3 événements « Exemple — … », dont la sortie du week-end |
 | **Replays** | 1 replay « Exemple — Un replay à remplacer » (vos vidéos longues YouTube arriveront ici toutes seules) |
 | **Émissions** et **Programme TV** | 4 émissions « (exemple) » et une grille type répétée chaque jour : remplacez-les par vos émissions et votre vraie grille (voir partie 8) |
-| **Webcams** | 2 webcams « (exemple) » qui affichent une simple photo : collez l’adresse de vos vraies webcams |
+| **Webcams** | vos 14 webcams (une par département, plus Suisse et Aoste dans « Web Cams + »), encore sans lien : elles s’affichent « Bientôt en direct » ; collez le lien de chacune |
 | **Accueil et direct** › **Carrousel** | les textes des 3 diapositives (« Texte d’exemple… », « Votre émission de ce soir », « Votre sortie du week-end ») |
 | **Accueil et direct** › **Le direct** | la vidéo d’exemple du direct : remplacez-la par votre flux (YouTube, Twitch, lien de diffusion…) |
 | **Accueil et direct** › **Flash info** | les 2 messages « Exemple » |
@@ -311,17 +311,25 @@ peut être filtrée par émission. Le même titre peut servir tous les jours («
 
 ## 10. Les webcams
 
-**Webcams › Ajouter**
+Les 14 webcams de la chaîne sont déjà créées : une par département (Ain, Allier, Ardèche, Cantal, Drôme, Haute-Loire,
+Haute-Savoie, Isère, Loire, Puy-de-Dôme, Rhône, Savoie), puis **Suisse** et **Aoste**, rangées dans **Web Cams +** (les
+vues hors de la région, dans leur propre section en bas de la page Webcams). Tant qu’une webcam n’a pas de lien, elle
+s’affiche **« Bientôt en direct »**. Pour la mettre en direct : **Webcams**, cliquez sur son nom, collez son **Lien du
+flux** (étape 2 ci-dessous), puis **Publier les modifications**. Sur l’accueil, les webcams déjà en direct passent devant.
+
+**Webcams › Ajouter** (pour une nouvelle webcam)
 
 1. **Nom** (« Lac du Bourget »), **Lieu précis** (« Port d’Aix-les-Bains ») et **Département** : la page Webcams
    propose un filtre par département (« Toute la région », « Savoie »…), qui ne montre que les départements ayant une
-   webcam.
-2. **Type de flux**, puis **Lien du flux** (fourni par le service de la webcam, bouton « Intégrer » ou « Partager ») :
+   webcam. Choisissez **Web Cams +** pour une vue hors de la région (Suisse, Vallée d’Aoste…).
+2. **Type de flux**, puis **Lien du flux** (fourni par le service de la webcam, bouton « Intégrer » ou « Partager » ;
+   laissé vide, la webcam s’affiche « Bientôt en direct ») :
    - **Lecteur à intégrer (lien iframe : Windy, Skaping, ViewSurf…)** : le lien « intégrer » fourni par le service ;
    - **Flux vidéo HLS (.m3u8)** : l’adresse du flux ;
    - **YouTube Live** : le lien du direct YouTube ;
    - **Image rafraîchie (lien vers une image)** : l’adresse d’une image mise à jour par la caméra (rechargée chaque minute).
-3. **Image d’aperçu** : affichée avant le chargement de la webcam.
+3. **Image d’aperçu** (facultative) : affichée avant le chargement de la webcam ; sans image, un visuel de la chaîne la
+   remplace.
 4. **Température affichée (facultatif)** (« 13° ») et **Ordre d’affichage** (les plus petits nombres en premier).
 5. **Active** (à droite) : décochez pour masquer une webcam en panne sans la supprimer.
 6. Vérifiez l’aperçu, puis **Publier les modifications**.

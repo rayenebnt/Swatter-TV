@@ -1,8 +1,8 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, publishedStatusOrAuthenticated } from '@/access'
-import { departmentField } from '@/fields/department'
 import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
+import { WEBCAM_ZONES } from '@/lib/departments'
 import { revalidateHooks } from '@/hooks/revalidate'
 
 export const Webcams: CollectionConfig = {
@@ -11,7 +11,8 @@ export const Webcams: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'place', 'department', 'active', 'order'],
-    description: 'Les vues en direct de la page « Webcams ». Décochez « Active » pour masquer une webcam sans la supprimer.',
+    description:
+      'Les vues en direct de la page « Webcams ». Une webcam sans lien de flux s’affiche « Bientôt en direct ». Décochez « Active » pour masquer une webcam sans la supprimer.',
   },
   access: { read: publishedStatusOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
   // brouillons enregistrés automatiquement, publiés au clic sur « Publier les modifications »
@@ -26,7 +27,16 @@ export const Webcams: CollectionConfig = {
         { name: 'place', label: 'Lieu précis', type: 'text', admin: { placeholder: 'Port d’Aix-les-Bains' } },
       ],
     },
-    departmentField('Les visiteurs peuvent filtrer les webcams par département.'),
+    {
+      name: 'department',
+      label: 'Département',
+      type: 'select',
+      required: true,
+      defaultValue: 'haute-savoie',
+      index: true,
+      options: WEBCAM_ZONES.map(({ value, label }) => ({ value, label: value === 'plus' ? 'Web Cams + (hors région : Suisse, Vallée d’Aoste…)' : label })),
+      admin: { description: 'Les visiteurs filtrent les webcams par département ; « Web Cams + » regroupe les vues hors de la région.' },
+    },
     {
       name: 'provider',
       label: 'Type de flux',
@@ -40,8 +50,21 @@ export const Webcams: CollectionConfig = {
         { label: 'Image rafraîchie (lien vers une image)', value: 'image' },
       ],
     },
-    { name: 'embedUrl', label: 'Lien du flux', type: 'text', required: true, admin: { description: 'Fourni par le service de la webcam (bouton « Intégrer » ou « Partager »).' } },
-    { name: 'image', label: 'Image d’aperçu', type: 'upload', relationTo: 'media', required: true, admin: { description: 'Affichée avant le chargement de la webcam.' } },
+    {
+      name: 'embedUrl',
+      label: 'Lien du flux',
+      type: 'text',
+      admin: {
+        description: 'Fourni par le service de la webcam (bouton « Intégrer » ou « Partager »). Laissé vide, la webcam s’affiche « Bientôt en direct ».',
+      },
+    },
+    {
+      name: 'image',
+      label: 'Image d’aperçu',
+      type: 'upload',
+      relationTo: 'media',
+      admin: { description: 'Affichée avant le chargement de la webcam (facultative : sans image, un visuel de la chaîne la remplace).' },
+    },
     {
       type: 'row',
       fields: [

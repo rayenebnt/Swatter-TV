@@ -16,6 +16,7 @@ const ROUTES = [
   '/videos',
   '/webcams',
   '/webcams/savoie',
+  '/webcams/plus',
   '/recherche?q=annecy',
   '/canaux-de-reception',
   '/mentions-legales',

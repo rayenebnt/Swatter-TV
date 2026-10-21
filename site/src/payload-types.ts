@@ -538,7 +538,7 @@ export interface Schedule {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Les vues en direct de la page « Webcams ». Décochez « Active » pour masquer une webcam sans la supprimer.
+ * Les vues en direct de la page « Webcams ». Une webcam sans lien de flux s’affiche « Bientôt en direct ». Décochez « Active » pour masquer une webcam sans la supprimer.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "webcams".
@@ -548,7 +548,7 @@ export interface Webcam {
   name: string;
   place?: string | null;
   /**
-   * Les visiteurs peuvent filtrer les webcams par département.
+   * Les visiteurs filtrent les webcams par département ; « Web Cams + » regroupe les vues hors de la région.
    */
   department:
     | 'haute-savoie'
@@ -562,16 +562,17 @@ export interface Webcam {
     | 'ardeche'
     | 'puy-de-dome'
     | 'cantal'
-    | 'allier';
+    | 'allier'
+    | 'plus';
   provider: 'iframe' | 'hls' | 'youtube' | 'image';
   /**
-   * Fourni par le service de la webcam (bouton « Intégrer » ou « Partager »).
+   * Fourni par le service de la webcam (bouton « Intégrer » ou « Partager »). Laissé vide, la webcam s’affiche « Bientôt en direct ».
    */
-  embedUrl: string;
+  embedUrl?: string | null;
   /**
-   * Affichée avant le chargement de la webcam.
+   * Affichée avant le chargement de la webcam (facultative : sans image, un visuel de la chaîne la remplace).
    */
-  image: number | Media;
+  image?: (number | null) | Media;
   temperature?: string | null;
   /**
    * Les plus petits nombres en premier.

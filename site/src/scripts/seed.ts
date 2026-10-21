@@ -4,7 +4,7 @@
  * Usage : npm run seed   (= payload run src/scripts/seed.ts)
  *
  * Supprime d'abord tous les contenus (jamais les utilisateurs), puis recrée médias, émissions d'exemple,
- * grille sur 8 jours, articles, événements et replay d'exemple, webcams d'exemple, pages, réglages et météo (Open-Meteo).
+ * grille sur 8 jours, articles, événements et replay d'exemple, webcams de la chaîne (sans lien de flux), pages, réglages et météo (Open-Meteo).
  * Refuse de tourner en production, sauf SEED_FORCE=1.
  */
 import config from '@payload-config'
@@ -22,7 +22,8 @@ import { EVENTS, type RelDay } from './seed/events'
 import { lexical } from './seed/lexical'
 import { MEDIA } from './seed/media'
 import { demoForecast } from './seed/meteo'
-import { PAGES, WEBCAMS } from './seed/pages'
+import { PAGES } from './seed/pages'
+import { WEBCAMS } from './seed/webcams'
 import { daySlots, PROGRAMS } from './seed/programs'
 import { EXAMPLE_REPLAY } from './seed/replay'
 
@@ -247,10 +248,11 @@ log(`${EVENTS.length} événements créés.`)
 // ---------------------------------------------------------------------------------------------
 // 7. Webcams, publicité, pages, redirection
 // ---------------------------------------------------------------------------------------------
+// webcams de la chaîne, sans lien de flux pour l'instant (« Bientôt en direct »)
 for (const [i, w] of WEBCAMS.entries()) {
   await payload.create({
     collection: 'webcams',
-    data: { _status: 'published', name: w.name, place: w.place, department: w.department, provider: w.provider, embedUrl: `/visuels/${w.image}.webp`, image: mediaId(w.image), temperature: w.temperature, order: i + 1, active: true },
+    data: { _status: 'published', name: w.name, department: w.department, provider: 'iframe', order: i + 1, active: true },
     overrideAccess: true,
     context,
   })
