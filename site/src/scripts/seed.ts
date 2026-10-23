@@ -360,7 +360,7 @@ await payload.updateGlobal({
     ],
     rating: 4.5,
     viewsCount: 995349,
-    tagline: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.',
+    tagline: 'Swatter TV Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.',
     contact: {
       email: 'contact@swatter-tv.fr',
       phone: '',

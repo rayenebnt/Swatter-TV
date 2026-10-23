@@ -47,7 +47,7 @@ export const PAGES: SeedPage[] = [
       'Il adapte son écriture aux exigences de chaque diffuseur et aux codes de chaque support, de la télévision aux formats natifs des réseaux sociaux et des plateformes numériques.',
       'Il intervient également en tant que présentateur-caméraman et journaliste professionnel, afin de transmettre son expérience du reportage, de la narration par l’image et des réalités du terrain.',
       '## Nous contacter',
-      'Swatter TV & Info, 36 rue de la Chaumière, 74300 Thyez. Par e-mail : [contact@swatter-tv.fr](mailto:contact@swatter-tv.fr).',
+      'Swatter TV Info, 36 rue de la Chaumière, 74300 Thyez. Par e-mail : [contact@swatter-tv.fr](mailto:contact@swatter-tv.fr).',
     ],
   },
   {
@@ -60,7 +60,7 @@ export const PAGES: SeedPage[] = [
       '## Conception et réalisation',
       'Conception et développement du site : [à compléter].',
       '## Images et vidéos',
-      'Sauf mention contraire, les photographies et les vidéos sont la propriété de Swatter TV & Info.',
+      'Sauf mention contraire, les photographies et les vidéos sont la propriété de Swatter TV Info.',
       '## Données',
       'Prévisions météo : Open-Meteo (licence CC BY 4.0).',
       '## Logiciels et polices',

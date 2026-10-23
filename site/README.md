@@ -1,6 +1,6 @@
 # Swatter TV — site web
 
-Site de **Swatter TV & Info**, web TV régionale d’Auvergne-Rhône-Alpes (siège à Thyez, Haute-Savoie) :
+Site de **Swatter TV Info**, web TV régionale d’Auvergne-Rhône-Alpes (siège à Thyez, Haute-Savoie) :
 le direct, les vidéos et le Top 10, le replay, l’info par département, la météo, le programme TV, l’agenda des sorties
 et les webcams, plus un espace membres pour les visiteurs (« Mon espace » : historique, « Ma liste », département), le
 tout administré par l’équipe de la chaîne depuis `/admin`.

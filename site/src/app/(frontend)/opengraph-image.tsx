@@ -4,7 +4,7 @@ import { ImageResponse } from 'next/og'
 
 // Image de partage par défaut (Open Graph / X), générée au build. Police par défaut de next/og (les WOFF2 du site
 // ne sont pas pris en charge) ; le logo est le SVG vectorisé de public/logo.svg (texte converti en tracés).
-export const alt = 'Swatter TV & Info, la chaîne d’Auvergne-Rhône-Alpes\u00a0: direct, info, météo, agenda et replay'
+export const alt = 'Swatter TV Info, la chaîne d’Auvergne-Rhône-Alpes\u00a0: direct, info, météo, agenda et replay'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -29,7 +29,7 @@ export default function OpengraphImage() {
       >
         <img src={logo} width={300} height={312} alt="" />
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-          <div style={{ display: 'flex', fontSize: 28, letterSpacing: 6, textTransform: 'uppercase', color: '#d9aa45' }}>Swatter TV &amp; Info</div>
+          <div style={{ display: 'flex', fontSize: 28, letterSpacing: 6, textTransform: 'uppercase', color: '#d9aa45' }}>Swatter TV Info</div>
           <div style={{ display: 'flex', flexDirection: 'column', marginTop: 18, fontSize: 58, lineHeight: 1.1, letterSpacing: -1, whiteSpace: 'nowrap' }}>
             <span>La chaîne de la région</span>
             <span>Auvergne-Rhône-Alpes</span>

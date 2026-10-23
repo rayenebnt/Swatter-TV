@@ -136,7 +136,7 @@ export const Settings: GlobalConfig = {
                 { name: 'viewsCount', label: 'Compteur de vues', type: 'number', defaultValue: 0 },
               ],
             },
-            { name: 'tagline', label: 'Présentation (pied de page)', type: 'textarea', defaultValue: 'Swatter TV & Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.' },
+            { name: 'tagline', label: 'Présentation (pied de page)', type: 'textarea', defaultValue: 'Swatter TV Info, votre chaîne locale : le direct, l’info, la météo et les sorties en Auvergne-Rhône-Alpes.' },
             {
               name: 'contact',
               label: 'Contact',

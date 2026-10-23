@@ -466,7 +466,7 @@ test.describe('administration', () => {
       await settle(page)
       await page.locator('header').getByRole('link', { name: /Se connecter/ }).click()
       await expect(page).toHaveURL(new RegExp(`/connexion\\?retour=%2Freplay%2F${replay.slug}$`))
-      await page.waitForLoadState('networkidle')
+      await settle(page)
       await page.getByRole('textbox', { name: 'E-mail', exact: true }).fill(email)
       await page.locator('input[name="password"]').fill(password)
       await page.getByRole('button', { name: 'Se connecter' }).click()
@@ -498,7 +498,7 @@ test.describe('administration', () => {
 
       // profil : département (repris par le tableau de bord) et accord pour les e-mails, choisis après l'inscription
       await page.goto('/compte/profil')
-      await page.waitForLoadState('networkidle')
+      await settle(page)
       await page.getByLabel('Mon département').selectOption('rhone')
       await page.getByRole('checkbox', { name: /Recevoir les actualités/ }).check()
       await page.getByRole('button', { name: 'Enregistrer' }).click()
@@ -536,7 +536,7 @@ test.describe('administration', () => {
 
       // suppression du compte par le membre (mot de passe demandé) : tout est effacé
       await page.goto('/compte/profil')
-      await page.waitForLoadState('networkidle')
+      await settle(page)
       await page.getByRole('button', { name: 'Supprimer mon compte' }).click()
       await page.locator('.space-danger input[name="password"]').fill(password)
       await page.getByRole('button', { name: 'Supprimer définitivement' }).click()

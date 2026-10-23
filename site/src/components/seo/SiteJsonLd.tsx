@@ -47,7 +47,7 @@ export async function SiteJsonLd() {
             '@type': 'TelevisionStation',
             '@id': ORG_ID,
             name: SITE_NAME,
-            alternateName: 'Swatter TV & Info',
+            alternateName: 'Swatter TV Info',
             url: SITE_URL,
             logo: { '@type': 'ImageObject', url: absoluteUrl('/apple-touch-icon.png'), width: 180, height: 180 },
             description: SITE_DESCRIPTION,

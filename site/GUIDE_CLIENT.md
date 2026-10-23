@@ -1,6 +1,6 @@
 # Guide de l’administration — Swatter TV
 
-Bienvenue ! Ce guide vous accompagne pas à pas pour faire vivre le site de **Swatter TV & Info** : ajouter une vidéo,
+Bienvenue ! Ce guide vous accompagne pas à pas pour faire vivre le site de **Swatter TV Info** : ajouter une vidéo,
 publier une info, annoncer une sortie, mettre à jour la grille des programmes… Aucune compétence technique n’est
 nécessaire. Chaque partie correspond à une tâche : allez directement à celle dont vous avez besoin. Ce guide est
 toujours disponible dans l’administration : lien **Aide**, en haut du tableau de bord et en bas du menu.
