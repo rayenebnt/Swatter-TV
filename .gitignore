@@ -1,0 +1,4 @@
+# Documents commerciaux (devis, factures, tampon) : jamais dans le dépôt
+devis/
+factures/
+tampon/
