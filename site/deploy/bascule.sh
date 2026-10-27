@@ -14,7 +14,8 @@ regler() {
 }
 
 if [ "${FORCER:-0}" != 1 ]; then
-  IP4="$(ip -4 route get 1.1.1.1 | awk '{ for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1) }')"
+  IP4="$(ip -4 route get 1.1.1.1 2> /dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1) }')" || IP4=""
+  [ -n "$IP4" ] || { echo "Adresse IP du serveur introuvable. Si le DNS a bien été changé : FORCER=1 $0"; exit 1; }
   for nom in www.swatter-tv.fr swatter-tv.fr; do
     getent ahostsv4 "$nom" | grep -qwF "$IP4" || {
       echo "$nom ne pointe pas encore vers ce serveur ($IP4) : attendez que le client ait changé le DNS, puis relancez."
