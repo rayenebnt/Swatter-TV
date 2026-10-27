@@ -44,8 +44,8 @@ const payload = await getPayload({ config })
 try {
   await payload.sendEmail({
     to,
-    subject: 'Swatter TV — e-mail d’essai',
-    text: 'Cet e-mail confirme que le site Swatter TV sait envoyer des e-mails (mot de passe oublié, formulaire « Proposer une info »).',
+    subject: 'Swatter TV Info — e-mail d’essai',
+    text: 'Cet e-mail confirme que le site Swatter TV Info sait envoyer des e-mails (mot de passe oublié, formulaire « Proposer une info »).',
   })
   console.log(`✔ E-mail d’essai envoyé à ${to} (regardez aussi les indésirables)`)
 } catch (error) {

@@ -36,7 +36,7 @@ export const Media: CollectionConfig = {
         description: 'Une courte phrase qui décrit l’image, par ex. « Le lac d’Annecy au lever du soleil ». Utile à Google et aux personnes malvoyantes.',
       },
     },
-    { name: 'credit', label: 'Crédit photo (facultatif)', type: 'text', admin: { placeholder: '© Swatter TV' } },
+    { name: 'credit', label: 'Crédit photo (facultatif)', type: 'text', admin: { placeholder: '© Swatter TV Info' } },
   ],
   upload: {
     // dossier des fichiers envoyés ; MEDIA_DIR : un autre dossier (tests automatiques, pour ne pas toucher à media/)

@@ -29,7 +29,7 @@ for (const slug of slugs) {
     intro: page.intro,
     content: lexical(page.body),
     footerGroup: page.footerGroup,
-    meta: { title: `${page.title} — Swatter TV`, description: page.metaDescription },
+    meta: { title: `${page.title} — Swatter TV Info`, description: page.metaDescription },
   }
   const existing = (await payload.find({ collection: 'pages', where: { slug: { equals: slug } }, limit: 1, depth: 0, overrideAccess: true, draft: true })).docs[0]
   if (existing) await payload.update({ collection: 'pages', id: existing.id, data, overrideAccess: true })

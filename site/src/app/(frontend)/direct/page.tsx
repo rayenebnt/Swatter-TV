@@ -17,7 +17,7 @@ import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
-const DESCRIPTION = 'Regardez Swatter TV en direct et gratuitement\u00a0: l’info, la météo, les magazines et les documentaires d’Auvergne-Rhône-Alpes.'
+const DESCRIPTION = 'Regardez Swatter TV Info en direct et gratuitement\u00a0: l’info, la météo, les magazines et les documentaires d’Auvergne-Rhône-Alpes.'
 const FALLBACK_POSTER = '/visuels/hero-crepuscule.webp'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -31,9 +31,9 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: 'fr_FR',
       siteName: SITE_NAME,
       url: '/direct',
-      title: 'Swatter TV en direct',
+      title: 'Swatter TV Info en direct',
       description: DESCRIPTION,
-      images: [ogImage(settings?.livePoster, FALLBACK_POSTER, 'Swatter TV en direct')],
+      images: [ogImage(settings?.livePoster, FALLBACK_POSTER, 'Swatter TV Info en direct')],
     },
   }
 }
@@ -47,12 +47,12 @@ export default async function DirectPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Swatter TV · 24 h/24" title="Le direct" description={DESCRIPTION} crumbs={[{ label: 'Le direct' }]} />
+      <PageHeader eyebrow="Swatter TV Info · 24 h/24" title="Le direct" description={DESCRIPTION} crumbs={[{ label: 'Le direct' }]} />
 
-      <section className="container direct" aria-label="Le direct de Swatter TV">
+      <section className="container direct" aria-label="Le direct de Swatter TV Info">
         <div className="direct__grid" data-preview="live">
           {live ? (
-            <VideoPlayer video={live} poster={poster} title={current ? `Swatter TV en direct\u00a0: ${current.title}` : 'Swatter TV en direct'} live />
+            <VideoPlayer video={live} poster={poster} title={current ? `Swatter TV Info en direct\u00a0: ${current.title}` : 'Swatter TV Info en direct'} live />
           ) : (
             <LiveOff poster={settings?.livePoster} next={onAir.next[0] ?? null} now={now} fallbackSrc={FALLBACK_POSTER} />
           )}
@@ -69,7 +69,7 @@ export default async function DirectPage() {
       {live && (
         <JsonLd
           data={videoObject({
-            name: current ? `${current.title} — Swatter TV en direct` : 'Swatter TV en direct',
+            name: current ? `${current.title} — Swatter TV Info en direct` : 'Swatter TV Info en direct',
             description: current?.synopsis || DESCRIPTION,
             thumbnail: poster,
             uploadDate: current?.start ?? settings?.updatedAt ?? new Date(now).toISOString(),

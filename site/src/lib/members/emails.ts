@@ -30,11 +30,11 @@ export function resetEmail(firstName: string, token: string): Mail {
   return {
     ...layout(
       firstName,
-      ['Une demande de nouveau mot de passe a été faite pour votre espace Swatter TV.'],
+      ['Une demande de nouveau mot de passe a été faite pour votre espace Swatter TV Info.'],
       { label: 'Choisir un nouveau mot de passe', href },
       'Ce lien est valable une heure. Vous n’êtes pas à l’origine de cette demande ? Ignorez cet e-mail : votre mot de passe actuel reste valable.',
     ),
-    subject: 'Swatter TV — choisir un nouveau mot de passe',
+    subject: 'Swatter TV Info — choisir un nouveau mot de passe',
   }
 }
 

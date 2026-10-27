@@ -1,5 +1,5 @@
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
-export const SITE_NAME = 'Swatter TV'
+export const SITE_NAME = 'Swatter TV Info'
 /** Titre d'onglet d'une page : « Agenda des sorties en Auvergne-Rhône-Alpes — Swatter TV » (modèle de la mise en page). */
 export const pageTitle = (title: string) => `${title} — ${SITE_NAME}`
 export const SITE_DESCRIPTION =

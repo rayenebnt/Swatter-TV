@@ -10,7 +10,7 @@ import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
-const INTRO = 'La grille de Swatter TV heure par heure : journaux, météo, magazines, documentaires et divertissements, aujourd’hui et toute la semaine.'
+const INTRO = 'La grille de Swatter TV Info heure par heure : journaux, météo, magazines, documentaires et divertissements, aujourd’hui et toute la semaine.'
 /** Texte d'en-tête : la description, complétée d'une aide à la lecture de la grille */
 const LEAD = `${INTRO} Choisissez un jour, puis touchez une émission pour lire son résumé et ses horaires.`
 const SHARE_IMAGE = '/visuels/hero-crepuscule.webp'
@@ -32,7 +32,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
   const { today, day } = await resolveDay(searchParams)
   const isToday = day === today
   const title = dayTitle(day, today)
-  const description = isToday ? INTRO : `Le programme de Swatter TV du ${dayLong(day)}, heure par heure : journaux, météo, magazines, documentaires et divertissements.`
+  const description = isToday ? INTRO : `Le programme de Swatter TV Info du ${dayLong(day)}, heure par heure : journaux, météo, magazines, documentaires et divertissements.`
   const url = programmeDayUrl(day, today)
   return {
     title,

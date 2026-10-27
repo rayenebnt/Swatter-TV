@@ -94,7 +94,7 @@ export function Icon({ name, className }: { name: IconName; className?: string }
 /** Logo Swatter TV (bouclier doré). */
 export function Logo({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 100 104" role="img" aria-label="Swatter TV">
+    <svg className={className} viewBox="0 0 100 104" role="img" aria-label="Swatter TV Info">
       <use href="#logo" />
     </svg>
   )

@@ -267,7 +267,7 @@ export function SearchOverlay() {
         <div className="search__field" onClick={(e) => e.target === e.currentTarget && inputRef.current?.focus()}>
           <Icon name="search" />
           <label className="sr-only" htmlFor="search-input">
-            Rechercher sur Swatter TV
+            Rechercher sur Swatter TV Info
           </label>
           <input
             ref={inputRef}

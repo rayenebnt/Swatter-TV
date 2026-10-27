@@ -13,7 +13,7 @@ type Tone = 'ok' | 'warn' | 'off'
 const TYPE_LABELS: Record<RecentCollection, string> = { videos: 'Vidéo', articles: 'Info', events: 'Agenda', replays: 'Replay' }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
-/** Rapports de Google Analytics (le compte Google de la chaîne y choisit la propriété « Swatter TV »). */
+/** Rapports de Google Analytics (le compte Google de la chaîne y choisit la propriété « Swatter TV Info »). */
 const ANALYTICS_URL = 'https://analytics.google.com/analytics/web/'
 /** Ligne d'état dont la requête a échoué : ni « tout va bien » ni « rien à faire » par défaut. */
 const UNAVAILABLE = 'Information indisponible pour le moment : rechargez la page dans un instant'

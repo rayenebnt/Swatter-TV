@@ -51,7 +51,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
         asideLabel="Ce que vous offre votre espace"
         aside={
           <>
-            <h2>Avec votre espace Swatter TV</h2>
+            <h2>Avec votre espace Swatter TV Info</h2>
             <ul className="auth-benefits">
               {BENEFITS.map((b) => (
                 <li key={b.icon}>

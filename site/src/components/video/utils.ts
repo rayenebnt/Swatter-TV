@@ -137,7 +137,7 @@ export function videoObject({
     url: absoluteUrl(url),
     ...videoLocation(video),
     ...(views ? { interactionStatistic: { '@type': 'InteractionCounter', interactionType: { '@type': 'WatchAction' }, userInteractionCount: views } } : {}),
-    publisher: { '@type': 'Organization', name: 'Swatter TV', url: absoluteUrl('/'), logo: { '@type': 'ImageObject', url: absoluteUrl('/apple-touch-icon.png') } },
+    publisher: { '@type': 'Organization', name: 'Swatter TV Info', url: absoluteUrl('/'), logo: { '@type': 'ImageObject', url: absoluteUrl('/apple-touch-icon.png') } },
     inLanguage: 'fr-FR',
     ...extra,
   }

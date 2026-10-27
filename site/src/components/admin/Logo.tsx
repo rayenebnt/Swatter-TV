@@ -6,7 +6,7 @@ export function Logo() {
     <div className="swatter-admin-logo">
       <Shield id="swatter-admin-logo-gold" className="swatter-admin-logo__shield" />
       <div className="swatter-admin-logo__text">
-        <strong>Swatter TV</strong>
+        <strong>Swatter TV Info</strong>
         <span>Administration du site</span>
       </div>
     </div>

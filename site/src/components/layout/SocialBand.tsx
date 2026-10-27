@@ -31,7 +31,7 @@ export async function SocialBand() {
       <OffscreenPause className="social" labelledBy="social-title">
         <div className="social__in">
           <div>
-            <h2 id="social-title">Suivez Swatter TV</h2>
+            <h2 id="social-title">Suivez Swatter TV Info</h2>
             <p>Coulisses, extraits et infos en avant-première sur nos réseaux.</p>
           </div>
           <ul className="socials">

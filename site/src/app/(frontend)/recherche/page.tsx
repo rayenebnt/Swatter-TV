@@ -15,7 +15,7 @@ import '@/styles/pages.css'
 
 /** Résultats affichés au plus (les plus pertinents). */
 const LIMIT = 60
-const INTRO = 'Vidéos, replays, articles, sorties, émissions et webcams\u00a0: tout Swatter TV en une recherche.'
+const INTRO = 'Vidéos, replays, articles, sorties, émissions et webcams\u00a0: tout Swatter TV Info en une recherche.'
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
@@ -73,11 +73,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
 
   return (
     <>
-      <PageHeader eyebrow="Recherche" title={q ? `Résultats pour ${quoted(q)}` : 'Rechercher sur Swatter TV'} description={description} crumbs={[{ label: 'Recherche' }]}>
+      <PageHeader eyebrow="Recherche" title={q ? `Résultats pour ${quoted(q)}` : 'Rechercher sur Swatter TV Info'} description={description} crumbs={[{ label: 'Recherche' }]}>
         <form className="sform" action="/recherche" method="get" role="search">
           <Icon name="search" />
           <label className="sr-only" htmlFor="sform-q">
-            Rechercher sur Swatter TV
+            Rechercher sur Swatter TV Info
           </label>
           <input id="sform-q" name="q" type="search" defaultValue={q} placeholder="Émission, vidéo, info, sortie, webcam…" maxLength={80} autoComplete="off" enterKeyHint="search" />
           <button className="btn btn--gold btn--sm" type="submit">

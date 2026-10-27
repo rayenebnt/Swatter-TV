@@ -87,7 +87,7 @@ function fromSettings(slides: ConfiguredSlide[], live: Omit<HeroLive, 'showTitle
 
 /** Diapositive « direct » par défaut : le programme en cours sur le visuel du crépuscule. */
 function liveDraft(current: Slot | null, live: Omit<HeroLive, 'showTitle'> | null, tagline: string | null): Draft {
-  const [line1, line2] = current ? splitTitle(current.title) : ['Swatter TV', 'en direct']
+  const [line1, line2] = current ? splitTitle(current.title) : ['Swatter TV Info', 'en direct']
   return {
     key: 'direct',
     badges: [{ label: 'En direct', style: 'live' }, ...(current?.genreLabel ? [{ label: current.genreLabel, style: 'glass' } as const] : [])],
@@ -95,7 +95,7 @@ function liveDraft(current: Slot | null, live: Omit<HeroLive, 'showTitle'> | nul
     line2,
     description: current?.synopsis || tagline,
     navLabel: 'En direct',
-    navTitle: current?.title ?? 'Swatter TV en direct',
+    navTitle: current?.title ?? 'Swatter TV Info en direct',
     primary: { label: 'Regarder le direct', href: '/direct', icon: 'play' },
     secondary: { label: 'Programme TV', href: '/programme-tv', icon: 'cal' },
     // Le titre du programme est déjà le titre de la diapositive
@@ -166,11 +166,11 @@ function brandDraft(tagline: string | null): Draft {
   return {
     key: 'swatter',
     badges: [],
-    line1: 'Swatter TV',
+    line1: 'Swatter TV Info',
     line2: null,
     description: tagline,
-    navLabel: 'Swatter TV',
-    navTitle: 'Swatter TV',
+    navLabel: 'Swatter TV Info',
+    navTitle: 'Swatter TV Info',
     primary: { label: 'Le replay', href: '/replay', icon: 'play' },
     secondary: { label: 'Programme TV', href: '/programme-tv', icon: 'cal' },
     live: null,

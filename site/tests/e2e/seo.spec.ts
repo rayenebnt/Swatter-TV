@@ -171,7 +171,7 @@ async function checkPage(page: Page, request: APIRequestContext, path: string, t
   const soft = (what: string) => `${label} (${path}) — ${what}`
   expect.soft(c.status, soft('statut')).toBe(200)
   expect.soft(c.lang, soft('attribut lang de <html>')).toMatch(/^fr\b/)
-  expect.soft(c.title, soft('<title>')).toMatch(/\S.*Swatter TV|Swatter TV.*\S/)
+  expect.soft(c.title, soft('<title>')).toMatch(/\S.*Swatter TV Info|Swatter TV Info.*\S/)
   const description = c.meta.description ?? ''
   expect.soft(description.length, soft(`longueur de la description « ${description} »`)).toBeGreaterThanOrEqual(50)
   expect.soft(description.length, soft('description de 300 caractères au plus')).toBeLessThanOrEqual(300)
@@ -188,7 +188,7 @@ async function checkPage(page: Page, request: APIRequestContext, path: string, t
   expect.soft(normalize(c.meta['og:url'] ?? ''), soft('og:url (même adresse que la canonique)')).toBe(canonical)
   expect.soft(c.meta['og:type'] ?? '', soft('og:type')).toMatch(/\S/)
   expect.soft(c.meta['og:locale'], soft('og:locale')).toBe('fr_FR')
-  expect.soft(c.meta['og:site_name'], soft('og:site_name')).toBe('Swatter TV')
+  expect.soft(c.meta['og:site_name'], soft('og:site_name')).toBe('Swatter TV Info')
   expect.soft(c.meta['twitter:card'], soft('twitter:card')).toBe('summary_large_image')
   const image = c.meta['og:image'] ?? ''
   expect.soft(image, soft('og:image : adresse absolue')).toMatch(/^https?:\/\//)
@@ -479,7 +479,7 @@ test.describe('référencement de la page d’une vidéo (vidéo YouTube créée
     const path = `/videos/${video.slug}`
     try {
       const c = await checkPage(page, request, path, { types: ['VideoObject'] }, 'une vidéo')
-      expect.soft(c.title, 'titre de la page').toBe(`${title} — Swatter TV`)
+      expect.soft(c.title, 'titre de la page').toBe(`${title} — Swatter TV Info`)
       expect.soft(c.meta['og:type'], 'og:type').toBe('video.other')
       const videoObject = c.jsonLd
         .flatMap((text) => ([] as Json[]).concat(JSON.parse(text) as Json))

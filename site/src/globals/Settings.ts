@@ -158,7 +158,7 @@ export const Settings: GlobalConfig = {
                 { name: 'tiktok', label: 'TikTok', type: 'text' },
               ],
             },
-            { name: 'protectNotice', label: 'Mention de protection', type: 'text', defaultValue: 'Contenus protégés : captures et téléchargements détectés automatiquement' },
+            { name: 'protectNotice', label: 'Mention de protection', type: 'text', defaultValue: 'Contenus protégés : reproduction interdite sans autorisation' },
             {
               name: 'members',
               label: 'Espace membres',

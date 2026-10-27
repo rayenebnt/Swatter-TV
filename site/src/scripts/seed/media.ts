@@ -4,7 +4,7 @@
 export type SeedMedia = { key: string; file: string; alt: string; credit?: string }
 
 const visual = (key: string, alt: string): SeedMedia => ({ key, file: `public/visuels/${key}.webp`, alt })
-const clip = (key: string, alt: string): SeedMedia => ({ key, file: `seed/assets/videos/${key}.mp4`, alt, credit: 'Swatter TV' })
+const clip = (key: string, alt: string): SeedMedia => ({ key, file: `seed/assets/videos/${key}.mp4`, alt, credit: 'Swatter TV Info' })
 
 export const MEDIA: SeedMedia[] = [
   visual('hero-crepuscule', 'Sommets enneigés dorés par le crépuscule, reflétés dans un lac de montagne'),

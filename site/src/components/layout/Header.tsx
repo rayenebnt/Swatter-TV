@@ -18,7 +18,7 @@ export function Header() {
     <>
       <HeaderFrame>
         <div className="container hdr__in">
-          <Link className="logo" href="/" aria-label="Swatter TV — Accueil">
+          <Link className="logo" href="/" aria-label="Swatter TV Info — Accueil">
             <Logo />
           </Link>
           <MainNav items={MAIN_NAV} />

@@ -11,7 +11,7 @@ import '@/styles/contact.css'
 
 export const revalidate = 60
 
-const DESCRIPTION = 'Un événement, une info, une idée de reportage en Auvergne-Rhône-Alpes ? Écrivez à la rédaction de Swatter TV : votre message lui est envoyé directement.'
+const DESCRIPTION = 'Un événement, une info, une idée de reportage en Auvergne-Rhône-Alpes ? Écrivez à la rédaction de Swatter TV Info : votre message lui est envoyé directement.'
 
 export const metadata: Metadata = {
   title: 'Proposer une info, nous contacter',

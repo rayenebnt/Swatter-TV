@@ -276,7 +276,7 @@ for (const p of PAGES) {
       intro: p.intro,
       content: lexical(p.body),
       footerGroup: p.footerGroup,
-      meta: { title: `${p.title} — Swatter TV`, description: p.metaDescription },
+      meta: { title: `${p.title} — Swatter TV Info`, description: p.metaDescription },
     },
     overrideAccess: true,
     context,
@@ -368,7 +368,7 @@ await payload.updateGlobal({
     },
     // Réseaux sociaux : à renseigner par le client (aucune adresse inventée).
     socials: { facebook: '', instagram: '', youtube: '', tiktok: '' },
-    protectNotice: 'Contenus protégés : captures et téléchargements détectés automatiquement',
+    protectNotice: 'Contenus protégés : reproduction interdite sans autorisation',
   },
   overrideAccess: true,
   context,

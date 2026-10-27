@@ -153,7 +153,7 @@ export function AccountData({ historyCount, favoritesCount }: { historyCount: nu
             <li>votre historique{count(historyCount, 'contenu', 'contenus')}&nbsp;;</li>
             <li>votre liste{count(favoritesCount, 'contenu', 'contenus')}.</li>
           </ul>
-          <p>Vous ne recevrez plus d’e-mails de Swatter TV. Si vous souhaitez garder une copie, téléchargez vos données avant.</p>
+          <p>Vous ne recevrez plus d’e-mails de Swatter TV Info. Si vous souhaitez garder une copie, téléchargez vos données avant.</p>
           <div className="contact-field" ref={pwdField}>
             <label htmlFor={`${id}-password`}>Votre mot de passe</label>
             <PasswordInput
@@ -203,7 +203,7 @@ export function AccountData({ historyCount, favoritesCount }: { historyCount: nu
           <Icon name="check" />
         </span>
         <h2 id={`${id}-bye`}>Votre compte a été supprimé</h2>
-        <p>Votre profil, votre historique et votre liste ont été effacés. Merci d’avoir suivi Swatter TV, à bientôt&nbsp;!</p>
+        <p>Votre profil, votre historique et votre liste ont été effacés. Merci d’avoir suivi Swatter TV Info, à bientôt&nbsp;!</p>
         <p className="contact-hint">Retour à l’accueil dans quelques secondes.</p>
         {/* seul élément activable : il reçoit le focus à l'ouverture de la fenêtre (showModal) */}
         <button type="button" className="btn btn--gold btn--sm" onClick={goHome}>

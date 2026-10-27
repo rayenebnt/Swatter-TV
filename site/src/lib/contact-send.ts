@@ -22,13 +22,13 @@ export function contactEmail(m: ContactInput): { subject: string; text: string; 
     ['Lien', m.link],
   ].filter(([, v]) => v) as [string, string][]
   const subject = `${subjectMail(m.subject)} — ${m.name}${m.city ? ` (${m.city})` : ''}`
-  const text = `${rows.map(([k, v]) => `${k} : ${v}`).join('\n')}\n\n${m.message}\n\n— Message envoyé depuis le formulaire « Proposer une info » du site Swatter TV.`
+  const text = `${rows.map(([k, v]) => `${k} : ${v}`).join('\n')}\n\n${m.message}\n\n— Message envoyé depuis le formulaire « Proposer une info » du site Swatter TV Info.`
   const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#1b1b1b">
 <table style="border-collapse:collapse;margin-bottom:16px">${rows
     .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#666">${esc(k)}</td><td style="padding:4px 0"><strong>${esc(v)}</strong></td></tr>`)
     .join('')}</table>
 <p style="white-space:pre-wrap;margin:0 0 20px">${esc(m.message)}</p>
-<p style="color:#888;font-size:13px">Message envoyé depuis le formulaire « Proposer une info » du site Swatter TV. Répondez directement à cet e-mail pour écrire à ${esc(m.name)}.</p>
+<p style="color:#888;font-size:13px">Message envoyé depuis le formulaire « Proposer une info » du site Swatter TV Info. Répondez directement à cet e-mail pour écrire à ${esc(m.name)}.</p>
 </div>`
   return { subject, text, html }
 }

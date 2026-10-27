@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     replay.meta?.description ||
     replay.description ||
     program?.synopsis ||
-    `Revoir «\u00a0${replay.title}\u00a0», diffusé le ${formatDate(replay.broadcastAt)} sur Swatter TV.`
+    `Revoir «\u00a0${replay.title}\u00a0», diffusé le ${formatDate(replay.broadcastAt)} sur Swatter TV Info.`
   ).slice(0, 200)
   const imageMedia = replay.meta?.image && typeof replay.meta.image === 'object' ? replay.meta.image : replay.thumbnail
   const { contentUrl } = videoLocation(resolveVideo(replay.source))

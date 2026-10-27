@@ -40,7 +40,7 @@ const iso = (d: string) => new Date(d).toISOString()
 
 /** Description : champ SEO, sinon chapô, sinon début du texte, sinon phrase générique. */
 function describe(a: Article): string {
-  const text = a.meta?.description?.trim() || a.excerpt?.trim() || plainText(a.content) || `${a.title} : l’info ${inPlace(a.department)} avec Swatter TV.`
+  const text = a.meta?.description?.trim() || a.excerpt?.trim() || plainText(a.content) || `${a.title} : l’info ${inPlace(a.department)} avec Swatter TV Info.`
   return truncate(text, 200)
 }
 

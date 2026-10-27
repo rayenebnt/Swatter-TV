@@ -47,7 +47,7 @@ const plugins: Plugin[] = [
   seoPlugin({
     collections: ['videos', 'replays', 'articles', 'events', 'pages', 'programs'],
     uploadsCollection: 'media',
-    generateTitle: ({ doc }) => `${(doc as { title?: string }).title ?? ''} — Swatter TV`,
+    generateTitle: ({ doc }) => `${(doc as { title?: string }).title ?? ''} — Swatter TV Info`,
     generateDescription: ({ doc }) => {
       const d = doc as { excerpt?: string; description?: string; synopsis?: string }
       return (d.excerpt || d.description || d.synopsis || '').slice(0, 160)
@@ -180,8 +180,8 @@ export default buildConfig({
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
     meta: {
-      titleSuffix: ' — Swatter TV',
-      description: 'Administration du site Swatter TV',
+      titleSuffix: ' — Swatter TV Info',
+      description: 'Administration du site Swatter TV Info',
       icons: [
         { rel: 'icon', type: 'image/png', url: '/favicon.png' },
         { rel: 'apple-touch-icon', url: '/apple-touch-icon.png' },
@@ -273,7 +273,7 @@ export default buildConfig({
     ? {
         email: nodemailerAdapter({
           defaultFromAddress: process.env.SMTP_FROM || 'contact@swatter-tv.fr',
-          defaultFromName: 'Swatter TV',
+          defaultFromName: 'Swatter TV Info',
           transportOptions: {
             host: process.env.SMTP_HOST,
             port: Number(process.env.SMTP_PORT || 587),

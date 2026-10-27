@@ -15,7 +15,7 @@
 .footer__title { margin-bottom: 14px; font-family: var(--font-display); font-weight: 700; font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
 .footer__grid ul a, .footer__grid ul button { display: inline-block; padding: 5px 0; color: var(--ink-2); font-size: 14.5px; text-align: left; transition: color .25s, transform .3s var(--ease); }
 .footer__grid ul a:hover, .footer__grid ul button:hover { color: var(--gold-light); transform: translateX(3px); }
-.wordmark { margin-top: 56px; font-family: var(--font-display); font-weight: 900; font-size: clamp(52px, 14vw, 220px); line-height: .82; letter-spacing: -.035em; text-align: center; color: transparent; background: linear-gradient(180deg, rgba(243, 213, 138, .32) 0%, rgba(217, 170, 69, .1) 55%, rgba(217, 170, 69, 0) 92%); -webkit-background-clip: text; background-clip: text; user-select: none; white-space: nowrap; }
+.wordmark { margin-top: 56px; font-family: var(--font-display); font-weight: 900; font-size: clamp(37px, 9.9vw, 156px); line-height: .82; letter-spacing: -.035em; text-align: center; color: transparent; background: linear-gradient(180deg, rgba(243, 213, 138, .32) 0%, rgba(217, 170, 69, .1) 55%, rgba(217, 170, 69, 0) 92%); -webkit-background-clip: text; background-clip: text; user-select: none; white-space: nowrap; }
 .footer__bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
 .protect { display: flex; align-items: center; gap: 8px; }
 .protect svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--gold); }
@@ -26,6 +26,6 @@
 @media (max-width: 760px) {
   .footer__grid { grid-template-columns: 1fr 1fr; gap: 32px 20px; }
   .footer__brand { grid-column: 1 / -1; }
-  .wordmark { font-size: min(52px, 14.5vw); margin-top: 44px; }
+  .wordmark { font-size: min(37px, 10.25vw); margin-top: 44px; }
   .footer__bottom { flex-direction: column; align-items: flex-start; }
 }

@@ -62,7 +62,7 @@ test.describe('météo', () => {
     await filter.getByRole('link', { name: 'Savoie', exact: true }).click()
     await page.waitForURL(/\/meteo\/savoie$/)
     await expect(page.locator('h1')).toHaveText('La Météo en Savoie')
-    await expectTabTitle(page, 'La météo en Savoie — Swatter TV', 'département « Savoie »')
+    await expectTabTitle(page, 'La météo en Savoie — Swatter TV Info', 'département « Savoie »')
     await expect(filter.locator('[aria-current="page"]')).toHaveText('Savoie')
     await expect(page.locator('main .now__city').first()).toHaveText('Chambéry')
     await expect(page.locator('main .city-card a[aria-current="page"]')).toHaveAccessibleName('Météo détaillée à Chambéry')
@@ -225,7 +225,7 @@ test.describe('recherche', () => {
     await settle(page)
 
     const dialog = await openSearch(page, isMobile)
-    const input = dialog.getByRole('combobox', { name: 'Rechercher sur Swatter TV' })
+    const input = dialog.getByRole('combobox', { name: 'Rechercher sur Swatter TV Info' })
     await expect(input).toBeFocused()
     await input.fill('annecy')
     const options = dialog.getByRole('option')
@@ -264,7 +264,7 @@ test.describe('recherche', () => {
 
     // Entrée sans option active : la page de tous les résultats
     const again = await openSearch(page, isMobile)
-    const field = again.getByRole('combobox', { name: 'Rechercher sur Swatter TV' })
+    const field = again.getByRole('combobox', { name: 'Rechercher sur Swatter TV Info' })
     await field.fill('')
     await field.fill('annecy')
     await expect(again.getByRole('option')).toHaveCount(hits.length + 1, { timeout: 15_000 })
@@ -365,7 +365,7 @@ test.describe('agenda', () => {
     await expect(categoryLink).toHaveAttribute('aria-current', 'page')
     await expect(page.locator('h1')).toHaveText(new RegExp(`^Agenda «\\s${escapeRegExp(label)}\\s»$`))
     await expect.poll(() => listedEvents(page)).toEqual(eventPaths(events.filter((e) => e.category === category)))
-    await expectTabTitle(page, new RegExp(`^Agenda «\\s${escapeRegExp(label)}\\s» en Auvergne-Rhône-Alpes — Swatter TV$`), `catégorie « ${label} »`)
+    await expectTabTitle(page, new RegExp(`^Agenda «\\s${escapeRegExp(label)}\\s» en Auvergne-Rhône-Alpes — Swatter TV Info$`), `catégorie « ${label} »`)
 
     // département : la catégorie choisie est conservée
     const departmentLink = byDepartment.locator(`a[href="/agenda?departement=${department}&categorie=${category}"]`)
@@ -375,7 +375,7 @@ test.describe('agenda', () => {
     const chosen = events.filter((e) => e.category === category && e.department === department)
     await expect.poll(() => listedEvents(page)).toEqual(eventPaths(chosen))
     const heading = (await page.locator('h1').innerText()).trim()
-    await expectTabTitle(page, `${heading} — Swatter TV`, `département et catégorie (${heading})`)
+    await expectTabTitle(page, `${heading} — Swatter TV Info`, `département et catégorie (${heading})`)
 
     // périodes : catégorie et département conservés
     for (const { value, label: periodLabel } of PERIODS) {
@@ -465,18 +465,18 @@ withAdmin('agenda : pages suivantes (événements créés pour le test)', (admin
     await page.waitForURL(/\/agenda\?departement=cantal&page=2$/)
     await expect(pager).toContainText(`Page 2 sur ${pages}`)
     await expect.poll(() => listedEvents(page)).toEqual(eventPaths(cantal.slice(24, 48)))
-    await expectTabTitle(page, 'Agenda des sorties dans le Cantal (page 2) — Swatter TV', '« Suivant »')
+    await expectTabTitle(page, 'Agenda des sorties dans le Cantal (page 2) — Swatter TV Info', '« Suivant »')
     const previous = pager.getByRole('link', { name: /Précédent/ })
     await expect(previous).toHaveAttribute('href', '/agenda?departement=cantal')
     await expect(previous).toHaveAttribute('rel', 'prev')
     await previous.click()
     await page.waitForURL(/\/agenda\?departement=cantal$/)
     await expect(pager).toContainText(`Page 1 sur ${pages}`)
-    await expectTabTitle(page, 'Agenda des sorties dans le Cantal — Swatter TV', '« Précédent »')
+    await expectTabTitle(page, 'Agenda des sorties dans le Cantal — Swatter TV Info', '« Précédent »')
 
     // page 2 ouverte directement : son titre et sa propre adresse canonique
     await page.goto('/agenda?departement=cantal&page=2')
-    await expect(page).toHaveTitle('Agenda des sorties dans le Cantal (page 2) — Swatter TV')
+    await expect(page).toHaveTitle('Agenda des sorties dans le Cantal (page 2) — Swatter TV Info')
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${SITE}/agenda?departement=cantal&page=2`)
 
     // filtre de catégorie conservé d'une page à l'autre
@@ -518,7 +518,7 @@ test.describe('info', () => {
     await expect(nav.locator(`a[href="/info/${dept}"]`)).toHaveAttribute('aria-current', 'page')
     await expect(nav.locator('[aria-current="page"]')).toHaveCount(1)
     await expect(page.locator('h1')).toHaveText(/^L’info (en|dans) /)
-    await expectTabTitle(page, /^L’info (en|dans) .+\s: l’actualité en continu — Swatter TV$/, `département « ${dept} »`)
+    await expectTabTitle(page, /^L’info (en|dans) .+\s: l’actualité en continu — Swatter TV Info$/, `département « ${dept} »`)
     const listed = async () => (await linksMatching(page, /^\/info\/[a-z-]+\/[a-z0-9-]+$/)).sort()
     await expect.poll(listed).toEqual(ofDept.slice(0, 21).map((a) => `/info/${dept}/${a.slug}`).sort())
 
@@ -572,19 +572,19 @@ withAdmin('info : pages suivantes (articles créés pour le test)', (admin) => {
     // le plus ancien article est sur la dernière page ; pas d'article à la une après la première page
     if (pages === 2) await expect(list.locator(`a[href="${path(1)}"]`)).toHaveCount(1)
     await expect(page.getByRole('heading', { name: 'À la une' })).toHaveCount(0)
-    await expectTabTitle(page, 'L’info dans le Cantal\u00a0: l’actualité en continu (page 2) — Swatter TV', '« Plus anciennes »')
+    await expectTabTitle(page, 'L’info dans le Cantal\u00a0: l’actualité en continu (page 2) — Swatter TV Info', '« Plus anciennes »')
     const newer = pager.getByRole('link', { name: /Plus récentes/ })
     await expect(newer).toHaveAttribute('href', '/info/cantal#actualites')
     await expect(newer).toHaveAttribute('rel', 'prev')
     await newer.click()
     await page.waitForURL(/\/info\/cantal#actualites$/)
     await expect(pager).toContainText(`Page 1 sur ${pages}`)
-    await expectTabTitle(page, 'L’info dans le Cantal\u00a0: l’actualité en continu — Swatter TV', '« Plus récentes »')
+    await expectTabTitle(page, 'L’info dans le Cantal\u00a0: l’actualité en continu — Swatter TV Info', '« Plus récentes »')
     expect((await request.get(`/info/cantal?page=${pages + 1}`)).status()).toBe(404)
 
     // page 2 ouverte directement : son titre et sa propre adresse canonique
     await page.goto('/info/cantal?page=2')
-    await expect(page).toHaveTitle('L’info dans le Cantal\u00a0: l’actualité en continu (page 2) — Swatter TV')
+    await expect(page).toHaveTitle('L’info dans le Cantal\u00a0: l’actualité en continu (page 2) — Swatter TV Info')
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${SITE}/info/cantal?page=2`)
 
     // toute la région : le Cantal est proposé dans le filtre, et les articles de 2001 sont sur la dernière page

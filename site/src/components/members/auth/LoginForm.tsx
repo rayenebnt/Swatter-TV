@@ -87,7 +87,7 @@ export function LoginForm({ retour, forgotHref }: { retour: string; forgotHref: 
           )}
           {failure.code === 'blocked' && (
             <Link href="/contact" className="auth-note__link">
-              Écrire à Swatter TV
+              Écrire à Swatter TV Info
               <Icon name="arrow" />
             </Link>
           )}

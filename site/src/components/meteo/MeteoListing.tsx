@@ -84,15 +84,15 @@ export async function MeteoListing({ dept }: { dept: DepartmentSlug | null }) {
           <h2 id="meteo-seo-title">{dept ? `La météo ${inPlace(dept)}, jour après jour` : 'La météo de toute la région, département par département'}</h2>
           <p>
             {dept
-              ? `Swatter TV vous donne chaque jour le temps qu’il fera ${inPlace(dept)}, avec les prévisions détaillées à ${meteoCityOf(dept).name}. `
-              : 'Pays de Savoie, métropole lyonnaise, Isère, Drôme et Ardèche ou Auvergne : Swatter TV vous donne chaque jour le temps qu’il fera partout en Auvergne-Rhône-Alpes. '}
+              ? `Swatter TV Info vous donne chaque jour le temps qu’il fera ${inPlace(dept)}, avec les prévisions détaillées à ${meteoCityOf(dept).name}. `
+              : 'Pays de Savoie, métropole lyonnaise, Isère, Drôme et Ardèche ou Auvergne : Swatter TV Info vous donne chaque jour le temps qu’il fera partout en Auvergne-Rhône-Alpes. '}
             Les prévisions couvrent cinq jours, avec l’évolution des températures heure par heure, la tendance du matin, de l’après-midi et
             de la soirée{dept ? ', et les minimales et maximales des grandes villes de la région.' : `, et les minimales et maximales à ${METEO_CITY_LIST}.`}
           </p>
           <p>
             Actualisées automatiquement tout au long de la journée et accompagnées d’un bulletin détaillé, elles vous aident à préparer
             une sortie, un trajet ou un week-end. Avant de partir, jetez aussi un œil aux images en direct de nos <Link href="/webcams">webcams</Link>, et
-            retrouvez la météo à l’antenne sur <Link href="/direct">le direct de Swatter TV</Link>.
+            retrouvez la météo à l’antenne sur <Link href="/direct">le direct de Swatter TV Info</Link>.
           </p>
         </div>
       </section>

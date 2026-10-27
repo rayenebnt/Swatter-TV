@@ -27,7 +27,7 @@ export function generateStaticParams() {
 type Params = Promise<{ slug: string[] }>
 type Route = { kind: 'page'; page: Page } | { kind: 'redirect'; to: string }
 
-const GROUP_LABEL: Record<NonNullable<Page['footerGroup']>, string> = { chaine: 'La chaîne', swatter: 'Swatter TV' }
+const GROUP_LABEL: Record<NonNullable<Page['footerGroup']>, string> = { chaine: 'La chaîne', swatter: 'Swatter TV Info' }
 
 /** Segments de l'adresse (décodés par Next ; décodage de secours s'il reste des séquences %XX). */
 async function pathOf(params: Params): Promise<string> {

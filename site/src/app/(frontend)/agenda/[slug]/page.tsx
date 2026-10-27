@@ -47,7 +47,7 @@ const shareMedia = (e: Event): MediaRef => (e.meta?.image && typeof e.meta.image
 function describe(e: Event): string {
   const text = e.meta?.description?.trim() || e.description?.trim()
   if (text) return text.length > 200 ? `${text.slice(0, 197).trimEnd()}…` : text
-  return `${dateLabel(e, true)} à ${e.city}${e.place ? ` (${e.place})` : ''}\u00a0: toutes les informations sur «\u00a0${e.title}\u00a0» dans l’agenda de Swatter TV.`
+  return `${dateLabel(e, true)} à ${e.city}${e.place ? ` (${e.place})` : ''}\u00a0: toutes les informations sur «\u00a0${e.title}\u00a0» dans l’agenda de Swatter TV Info.`
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {

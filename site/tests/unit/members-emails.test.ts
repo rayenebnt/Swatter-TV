@@ -27,7 +27,7 @@ describe('resetEmail : contenu de l’e-mail « nouveau mot de passe »', () => 
   it('objet en français, et lien vers la page « nouveau mot de passe » du site, dans le HTML et le texte', () => {
     const mail = resetEmail('Jeanne', TOKEN)
     const link = `${RESET_PAGE}?token=${TOKEN}`
-    expect(mail.subject).toBe('Swatter TV — choisir un nouveau mot de passe')
+    expect(mail.subject).toBe('Swatter TV Info — choisir un nouveau mot de passe')
     expect(mail.html).toContain(`href="${link}"`)
     // bouton, puis adresse à copier (lien et texte affiché)
     expect(mail.html.split(link).length - 1).toBe(3)
@@ -83,14 +83,14 @@ describe('resetEmail : contenu de l’e-mail « nouveau mot de passe »', () => 
     for (const body of [resetEmail('Jeanne', TOKEN).html, resetEmail('Jeanne', TOKEN).text]) {
       expect(body).toContain('Ce lien est valable une heure.')
       expect(body).toContain('Ignorez cet e-mail : votre mot de passe actuel reste valable.')
-      expect(body).toContain('Une demande de nouveau mot de passe a été faite pour votre espace Swatter TV.')
+      expect(body).toContain('Une demande de nouveau mot de passe a été faite pour votre espace Swatter TV Info.')
     }
   })
 
   it('texte brut : paragraphes séparés par une ligne vide', () => {
     expect(resetEmail('Jeanne', TOKEN).text.split('\n\n')).toEqual([
       'Bonjour Jeanne,',
-      'Une demande de nouveau mot de passe a été faite pour votre espace Swatter TV.',
+      'Une demande de nouveau mot de passe a été faite pour votre espace Swatter TV Info.',
       `Choisir un nouveau mot de passe : ${RESET_PAGE}?token=${TOKEN}`,
       'Ce lien est valable une heure. Vous n’êtes pas à l’origine de cette demande ? Ignorez cet e-mail : votre mot de passe actuel reste valable.',
     ])

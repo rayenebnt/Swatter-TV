@@ -242,7 +242,7 @@ describe('mot de passe oublié', () => {
     expect((await forgot(`  ${m.email.toUpperCase()} `)).body).toEqual({ ok: true })
     await vi.waitFor(() => expect(mailsTo(m.email)).toHaveLength(1))
     const [mail] = mailsTo(m.email)
-    expect(mail.subject).toBe('Swatter TV — choisir un nouveau mot de passe')
+    expect(mail.subject).toBe('Swatter TV Info — choisir un nouveau mot de passe')
     const token = mail.text.match(/token=([\w-]+)/)?.[1] ?? ''
     expect(token.length).toBeGreaterThanOrEqual(40)
     const link = `http://localhost:3000/compte/nouveau-mot-de-passe?token=${token}`
@@ -253,7 +253,7 @@ describe('mot de passe oublié', () => {
     expect(mail.html).toContain('Bonjour &lt;b&gt;Zoé&lt;/b&gt;,')
     expect(mail.html).not.toContain('<b>Zoé</b>')
     // sans SMTP, hors production : le lien est rappelé dans le journal du serveur pour pouvoir tester
-    expect(journal).toHaveBeenCalledWith(`[swatter] (développement, pas de SMTP) Swatter TV — choisir un nouveau mot de passe — lien : ${link}`)
+    expect(journal).toHaveBeenCalledWith(`[swatter] (développement, pas de SMTP) Swatter TV Info — choisir un nouveau mot de passe — lien : ${link}`)
 
     const member = await findMember(m.email)
     expect(member?.resetTokenHash).toBe(createHash('sha256').update(token).digest('hex'))

@@ -1,4 +1,4 @@
-# Notes de développement — site Swatter TV
+# Notes de développement — site Swatter TV Info
 
 ## Pile technique
 
@@ -369,7 +369,8 @@ articles, événements), département préféré (météo, info, sorties), profi
   `users`) ; `npm run reinit` efface aussi les membres (seuls les comptes de l'équipe sont remis). Le texte de la page
   Vie privée (`src/scripts/seed/pages.ts`) décrit l'espace membres : **`npm run maj-pages -- vie-privee`** l'applique sur
   une base existante.
-- **Production** : migration à créer pour les trois collections et `settings.members` (voir README).
+- **Production** : les trois collections et `settings.members` font partie de la migration initiale
+  (`src/migrations/20261021_172038_initiale.ts`).
 
 ## Administration (pensée pour une équipe non technique)
 

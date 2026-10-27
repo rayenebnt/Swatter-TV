@@ -48,7 +48,7 @@ function texts(dept: DepartmentSlug | null) {
       lede: 'Le flux d’actualité de toute la région, département par département.',
       title: 'L’info en Auvergne-Rhône-Alpes : l’actualité en continu',
       description:
-        'Toute l’actualité d’Auvergne-Rhône-Alpes en continu, département par département : faits divers, sport, société, culture, montagne… avec Swatter TV, la chaîne régionale d’Auvergne-Rhône-Alpes.',
+        'Toute l’actualité d’Auvergne-Rhône-Alpes en continu, département par département : faits divers, sport, société, culture, montagne… avec Swatter TV Info, la chaîne régionale d’Auvergne-Rhône-Alpes.',
     }
   }
   return {
@@ -56,7 +56,7 @@ function texts(dept: DepartmentSlug | null) {
     h1: `L’info ${inPlace(dept)}`,
     lede: `Toute l’actualité ${ofPlace(dept)} en continu, commune par commune.`,
     title: `L’info ${inPlace(dept)} : l’actualité en continu`,
-    description: `Toute l’actualité ${ofPlace(dept)} (${deptCode(dept)}) en continu : faits divers, sport, société, culture… avec Swatter TV, la chaîne régionale d’Auvergne-Rhône-Alpes.`,
+    description: `Toute l’actualité ${ofPlace(dept)} (${deptCode(dept)}) en continu : faits divers, sport, société, culture… avec Swatter TV Info, la chaîne régionale d’Auvergne-Rhône-Alpes.`,
   }
 }
 

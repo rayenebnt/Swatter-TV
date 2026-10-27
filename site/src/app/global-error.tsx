@@ -9,7 +9,7 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
     <html lang="fr">
       <body style={{ margin: 0, minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#071224', color: '#f6f2e8', fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' }}>
         <main style={{ maxWidth: 560, padding: '48px 24px', textAlign: 'center' }}>
-          <p style={{ margin: 0, color: '#d9aa45', fontWeight: 700, letterSpacing: '.16em', fontSize: 13, textTransform: 'uppercase' }}>Swatter TV</p>
+          <p style={{ margin: 0, color: '#d9aa45', fontWeight: 700, letterSpacing: '.16em', fontSize: 13, textTransform: 'uppercase' }}>Swatter TV Info</p>
           <h1 style={{ margin: '14px 0 12px', fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1.1 }}>Le site est momentanément indisponible</h1>
           <p style={{ margin: 0, color: '#c9d2e3', lineHeight: 1.6 }}>Un incident technique empêche l’affichage des pages. Réessayez dans quelques instants.</p>
           <p style={{ margin: '28px 0 0', display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>

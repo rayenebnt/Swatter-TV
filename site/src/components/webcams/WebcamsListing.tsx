@@ -22,15 +22,15 @@ export const webcamsHref = (zone: WebcamZone | null) => (zone ? `/webcams/${zone
 const PLUS_DESCRIPTION = 'Au-delà de la région : les webcams de nos voisins, en Suisse et dans la Vallée d’Aoste.'
 
 function texts(zone: WebcamZone | null) {
-  if (zone === WEBCAMS_PLUS) return { title: 'Web Cams +', description: `${PLUS_DESCRIPTION} En direct sur Swatter TV.` }
+  if (zone === WEBCAMS_PLUS) return { title: 'Web Cams +', description: `${PLUS_DESCRIPTION} En direct sur Swatter TV Info.` }
   return zone
     ? {
         title: `Webcams ${inPlace(zone)}`,
-        description: `Les webcams ${inPlace(zone)} en temps réel : lacs, villes, stations et sommets, en direct sur Swatter TV.`,
+        description: `Les webcams ${inPlace(zone)} en temps réel : lacs, villes, stations et sommets, en direct sur Swatter TV Info.`,
       }
     : {
         title: 'Webcams en direct',
-        description: 'Les lacs, les villes, les stations et les sommets d’Auvergne-Rhône-Alpes en temps réel : toutes les webcams de Swatter TV, en direct.',
+        description: 'Les lacs, les villes, les stations et les sommets d’Auvergne-Rhône-Alpes en temps réel : toutes les webcams de Swatter TV Info, en direct.',
       }
 }
 

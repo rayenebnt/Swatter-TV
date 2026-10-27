@@ -22,7 +22,7 @@ import { ogImage } from '@/lib/og'
 export const revalidate = 60
 
 const PER_PAGE = 24
-const INTRO = 'Les émissions de Swatter TV à voir ou revoir gratuitement\u00a0: journaux, magazines, documentaires et divertissements.'
+const INTRO = 'Les émissions de Swatter TV Info à voir ou revoir gratuitement\u00a0: journaux, magazines, documentaires et divertissements.'
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
@@ -42,7 +42,7 @@ const listTitle = (program: Program | null, page: number) => `${program ? `${pro
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
   const { program, page } = await resolveParams(await searchParams)
   const title = listTitle(program, page)
-  const description = (program ? program.meta?.description || program.synopsis || `Tous les épisodes de «\u00a0${program.title}\u00a0» à revoir sur Swatter TV.` : INTRO).slice(0, 200)
+  const description = (program ? program.meta?.description || program.synopsis || `Tous les épisodes de «\u00a0${program.title}\u00a0» à revoir sur Swatter TV Info.` : INTRO).slice(0, 200)
   const imageMedia = program ? (program.meta?.image && typeof program.meta.image === 'object' ? program.meta.image : program.image) : null
   const url = replayListUrl(program?.slug, page)
   return {
@@ -110,7 +110,7 @@ export default async function ReplayPage({ searchParams }: { searchParams: Searc
           data={{
             '@context': 'https://schema.org',
             '@type': 'ItemList',
-            name: program ? `${program.title} en replay` : 'Replays de Swatter TV',
+            name: program ? `${program.title} en replay` : 'Replays de Swatter TV Info',
             itemListElement: list.docs.map((r, i) => ({ '@type': 'ListItem', position: (page - 1) * PER_PAGE + i + 1, url: absoluteUrl(replayUrl(r)), name: r.title })),
           }}
         />

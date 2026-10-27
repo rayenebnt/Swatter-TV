@@ -107,7 +107,7 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
   return (
     <div ref={ref} id="drawer" className={`drawer${open ? ' is-open' : ''}`} role="dialog" aria-modal="true" aria-label="Menu" inert={!open}>
       <div className="drawer__top">
-        <Link className="logo" href="/" aria-label="Swatter TV — Accueil" onClick={close}>
+        <Link className="logo" href="/" aria-label="Swatter TV Info — Accueil" onClick={close}>
           <Logo />
         </Link>
         <button className="icon-btn drawer__close" type="button" aria-label="Fermer le menu" onClick={close}>

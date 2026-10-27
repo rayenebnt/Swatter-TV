@@ -138,7 +138,7 @@ export function SignupForm({ retour }: { retour: string }) {
             {busy ? 'Création du compte…' : 'Créer mon compte'}
           </button>
           <p className="contact-hint">
-            En créant votre compte, vous acceptez la <Link href="/vie-privee">politique de confidentialité</Link> de Swatter TV.
+            En créant votre compte, vous acceptez la <Link href="/vie-privee">politique de confidentialité</Link> de Swatter TV Info.
           </p>
         </div>
       </form>

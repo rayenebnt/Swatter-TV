@@ -62,7 +62,7 @@ export async function AdSlot({ placement }: { placement: Placement }) {
         <small>Publicité</small>
         <p className="ad__empty">
           <b>Espace partenaire</b>
-          <span>Faites connaître votre activité auprès des téléspectateurs de Swatter TV.</span>
+          <span>Faites connaître votre activité auprès des téléspectateurs de Swatter TV Info.</span>
           <Link href="/contact?sujet=publicite">
             Devenir partenaire
             <Icon name="arrow" />

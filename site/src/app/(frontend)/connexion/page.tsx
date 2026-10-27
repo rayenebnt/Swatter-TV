@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Connexion',
-  description: 'Connectez-vous à votre espace Swatter TV\u00a0: historique, «\u00a0Ma liste\u00a0» et actualité de votre département.',
+  description: 'Connectez-vous à votre espace Swatter TV Info\u00a0: historique, «\u00a0Ma liste\u00a0» et actualité de votre département.',
   robots: { index: false, follow: false },
   alternates: { canonical: '/connexion' },
 }

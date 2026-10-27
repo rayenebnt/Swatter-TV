@@ -22,7 +22,7 @@ const inter = localFont({ src: '../fonts/inter.woff2', variable: '--font-inter',
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Swatter TV — La chaîne d’Auvergne-Rhône-Alpes : direct, info, météo, replay', template: pageTitle('%s') },
+  title: { default: 'Swatter TV Info — La chaîne d’Auvergne-Rhône-Alpes : direct, info, météo, replay', template: pageTitle('%s') },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   // ni adresse canonique ni og:url par défaut : chaque page déclare les siennes (une page qui l'oublierait désignerait

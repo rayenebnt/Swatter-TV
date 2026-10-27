@@ -15,6 +15,6 @@ export async function requireMember(path: string): Promise<Member> {
 }
 
 /** Métadonnées d'une page de l'espace : titre propre, jamais indexée ni suivie (pages personnelles, hors plan du site). */
-export function spaceMetadata(title: string, description = 'Votre espace Swatter TV : historique, liste et réglages.'): Metadata {
+export function spaceMetadata(title: string, description = 'Votre espace Swatter TV Info : historique, liste et réglages.'): Metadata {
   return { title, description, robots: { index: false, follow: false } }
 }

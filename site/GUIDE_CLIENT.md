@@ -1,4 +1,4 @@
-# Guide de l’administration — Swatter TV
+# Guide de l’administration — Swatter TV Info
 
 Bienvenue ! Ce guide vous accompagne pas à pas pour faire vivre le site de **Swatter TV Info** : ajouter une vidéo,
 publier une info, annoncer une sortie, mettre à jour la grille des programmes… Aucune compétence technique n’est
@@ -47,9 +47,8 @@ Quelques informations ne pouvaient pas être inventées : merci de les renseigne
 |---|---|
 | **Accueil et direct** › onglet **Chaîne et contact** › **Réseaux sociaux** | les adresses de vos pages Facebook, Instagram, YouTube et TikTok (une case vide = l’icône n’apparaît pas) |
 | **Accueil et direct** › onglet **Chaîne et contact** › **Contact** › **Téléphone** | votre numéro, ou une mention comme « Uniquement par mail » |
-| **Pages (pied de page)** › **Mentions légales** | forme juridique, capital, SIRET, directeur de la publication, hébergeur : remplacez chaque « [à compléter] » |
+| **Pages (pied de page)** › **Mentions légales** | le numéro RCS (avec la ville du greffe), le SIRET, le numéro de TVA intracommunautaire et l’hébergeur du site : remplacez chaque « [à compléter] ». Vérifiez aussi la raison sociale, le capital et le directeur de la publication déjà indiqués |
 | **Pages (pied de page)** › **Canaux de réception** | les box des opérateurs et numéros de canal |
-| **Pages (pied de page)** › **Crédits** | la conception et le développement du site |
 | **Pages (pied de page)** › **Vie privée** | relisez les parties « Votre espace membre » et « Mesure d’audience (Google Analytics) » (données des membres, cookies, durées de conservation) et faites-les valider si besoin |
 | **Accueil et direct** › onglet **Mesure d’audience** | l’« ID de mesure » de Google Analytics, si vous voulez suivre la fréquentation du site (partie 22) |
 
@@ -83,7 +82,7 @@ La rubrique **Vidéos** est vide au départ : elle se remplit avec votre chaîne
 
 - Après 5 essais erronés, le compte est bloqué 10 minutes : patientez, puis réessayez.
 - **Mot de passe oublié** : sur la page de connexion, cliquez sur **Mot de passe oublié ?**, saisissez votre e-mail et
-  validez. Vous recevez un e-mail « Swatter TV — choisir un nouveau mot de passe » : cliquez sur le bouton **Choisir un
+  validez. Vous recevez un e-mail « Swatter TV Info — choisir un nouveau mot de passe » : cliquez sur le bouton **Choisir un
   nouveau mot de passe** (le lien est valable une heure), saisissez le nouveau mot de passe deux fois, et vous voilà
   connecté. Rien reçu ? Regardez dans les indésirables, ou demandez à un administrateur de vous définir un nouveau mot
   de passe (**Utilisateurs** › votre compte).
@@ -404,7 +403,7 @@ Le bandeau apparaît dans l’aperçu de la page d’accueil : vérifiez-le, pui
 
 **Pages (pied de page)** : les pages fixes (Canaux de réception, Le groupe, Crédits, Vie privée, Mentions légales). Chaque
 page a un **Titre**, une **Introduction**, un **Contenu** (même éditeur que les articles) et, à droite, un **Lien dans le
-pied de page** : **Colonne « La chaîne »**, **Colonne « Swatter TV »** ou aucun. Une nouvelle page est accessible à
+pied de page** : **Colonne « La chaîne »**, **Colonne « Swatter TV Info »** ou aucun. Une nouvelle page est accessible à
 l’adresse `/son-adresse` (champ **Adresse web (automatique)**) une fois publiée.
 
 ## 16. La météo
@@ -519,7 +518,7 @@ d’entrer dans « Mon espace » (pour tester, créez-vous un compte de membre c
 
 - **Créer un compte** avec seulement leur prénom, leur e-mail et un mot de passe (8 caractères au moins). Le compte
   fonctionne aussitôt, sans e-mail à confirmer : ils sont connectés et retrouvent la page où ils étaient. Leur
-  département et leur accord pour recevoir les e-mails de Swatter TV se choisissent ensuite dans **Mon profil**. Une
+  département et leur accord pour recevoir les e-mails de Swatter TV Info se choisissent ensuite dans **Mon profil**. Une
   adresse qui a déjà un compte est refusée (le visiteur est invité à se connecter).
 - **Retrouver les vidéos regardées** : les vidéos et replays qu’ils regardent en étant connectés s’ajoutent à leur
   **Historique** (les 200 derniers) et à la rubrique **Reprendre** de leur espace. Ils peuvent retirer une vidéo, tout
@@ -538,7 +537,7 @@ d’entrer dans « Mon espace » (pour tester, créez-vous un compte de membre c
 **Administration › Membres du site** est réservé aux administrateurs (les éditeurs ne voient pas les membres : ce sont
 des données personnelles).
 
-- **La liste** montre le prénom, l’e-mail, le département, **Accepte les e-mails de Swatter TV**, la dernière
+- **La liste** montre le prénom, l’e-mail, le département, **Accepte les e-mails de Swatter TV Info**, la dernière
   connexion et la date d’inscription (colonne « Créé(e) à »), les derniers inscrits en haut. La barre de recherche
   retrouve un membre par son e-mail, son prénom ou son nom ; **Filtres** permet par exemple de n’afficher que les comptes
   suspendus.
@@ -591,7 +590,7 @@ invitez-le à regarder dans ses indésirables ; si plus personne ne reçoit rien
   compte** (effacement immédiat et définitif). La page **Vie privée** du site l’explique aux visiteurs.
 - Si une demande vous arrive par e-mail (accès, correction, suppression, arrêt des e-mails), vérifiez qu’elle vient bien
   de l’adresse du compte, puis faites le nécessaire dans la fiche du membre : corriger une information, décocher
-  **Accepte les e-mails de Swatter TV** (vous pouvez décocher cette case à sa demande, jamais la cocher à sa place :
+  **Accepte les e-mails de Swatter TV Info** (vous pouvez décocher cette case à sa demande, jamais la cocher à sa place :
   l’accord ne peut venir que du membre) ou supprimer le compte. Pour une copie de ses données, invitez-le à utiliser
   **Télécharger mes données** dans son espace (après **Mot de passe oublié ?** s’il ne peut plus se connecter).
   Répondez dans le mois qui suit la demande (délai légal).
@@ -606,7 +605,7 @@ Google Analytics vous montre combien de personnes visitent le site, les pages le
 **Mise en place, une seule fois (administrateur)**
 
 1. Sur [analytics.google.com](https://analytics.google.com), connectez-vous avec le compte Google de la chaîne, puis
-   **Admin** › **Créer** › **Propriété** : nom « Swatter TV », fuseau horaire France, devise euro.
+   **Admin** › **Créer** › **Propriété** : nom « Swatter TV Info », fuseau horaire France, devise euro.
 2. Choisissez la plateforme **Web**, saisissez l’adresse du site (www.swatter-tv.fr) et un nom de flux : Google affiche
    l’**ID de mesure**, de la forme **G-XXXXXXXXXX**. Laissez la **mesure améliorée** activée : elle compte les pages vues
    pendant la navigation dans le site.

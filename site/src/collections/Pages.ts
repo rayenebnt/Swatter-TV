@@ -29,7 +29,7 @@ export const Pages: CollectionConfig = {
       type: 'select',
       options: [
         { label: 'Colonne « La chaîne »', value: 'chaine' },
-        { label: 'Colonne « Swatter TV »', value: 'swatter' },
+        { label: 'Colonne « Swatter TV Info »', value: 'swatter' },
       ],
       admin: { position: 'sidebar', description: 'Pour ajouter un lien vers cette page en bas du site.' },
     },

@@ -45,7 +45,7 @@ export function ProfileForm({ profile, since }: { profile: MemberProfile; since:
     if (res.ok) {
       setStatus(
         res.data.newsletter !== profile.newsletter
-          ? `Vos informations sont enregistrées. ${res.data.newsletter ? 'Vous recevrez les actualités de Swatter TV par e-mail.' : 'Vous ne recevrez plus d’e-mails d’actualité.'}`
+          ? `Vos informations sont enregistrées. ${res.data.newsletter ? 'Vous recevrez les actualités de Swatter TV Info par e-mail.' : 'Vous ne recevrez plus d’e-mails d’actualité.'}`
           : 'Vos informations sont enregistrées.',
       )
       // salutation de l'en-tête et blocs du département du tableau de bord
@@ -116,7 +116,7 @@ export function ProfileForm({ profile, since }: { profile: MemberProfile; since:
       <div className="contact-field contact-consent">
         <label>
           <input name="newsletter" type="checkbox" defaultChecked={profile.newsletter} />
-          <span>Recevoir les actualités de Swatter TV par e-mail</span>
+          <span>Recevoir les actualités de Swatter TV Info par e-mail</span>
         </label>
         <p className="contact-hint">Vous pouvez changer d’avis à tout moment, ici même.</p>
       </div>

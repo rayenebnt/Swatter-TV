@@ -108,7 +108,7 @@ export function ContactForm() {
         <h2 ref={done} tabIndex={-1}>
           Merci, votre message est bien parti&nbsp;!
         </h2>
-        <p>La rédaction de Swatter TV l’a reçu et vous répondra par e-mail si besoin.</p>
+        <p>La rédaction de Swatter TV Info l’a reçu et vous répondra par e-mail si besoin.</p>
         <button
           type="button"
           className="btn btn--ghost btn--sm"
@@ -198,7 +198,7 @@ export function ContactForm() {
         <label>
           <input {...field('consent')} type="checkbox" />
           <span>
-            J’accepte que Swatter TV utilise ces informations pour traiter ma demande et me répondre. <span aria-hidden="true">*</span>
+            J’accepte que Swatter TV Info utilise ces informations pour traiter ma demande et me répondre. <span aria-hidden="true">*</span>
           </span>
         </label>
         {error('consent')}

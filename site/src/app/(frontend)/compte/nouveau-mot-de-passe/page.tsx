@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Nouveau mot de passe',
-  description: 'Choisissez un nouveau mot de passe pour votre espace Swatter TV.',
+  description: 'Choisissez un nouveau mot de passe pour votre espace Swatter TV Info.',
   robots: { index: false, follow: false },
   alternates: { canonical: '/compte/nouveau-mot-de-passe' },
   // le lien contient un jeton secret : il ne doit pas partir vers un autre site

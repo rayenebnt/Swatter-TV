@@ -98,7 +98,7 @@ export const Members: CollectionConfig = {
         },
         {
           name: 'newsletter',
-          label: 'Accepte les e-mails de Swatter TV',
+          label: 'Accepte les e-mails de Swatter TV Info',
           type: 'checkbox',
           defaultValue: false,
           admin: { description: 'Choix du membre. Vous pouvez décocher la case à sa demande, jamais la cocher à sa place.' },

@@ -85,8 +85,8 @@ function texts({ category, period, department, page }: Filters) {
     place: department ? place : null,
     title: `${parts.length ? `Agenda ${parts.join(', ')} ${place}` : `Agenda des sorties ${place}`}${suffix}`,
     description: parts.length || department
-      ? `Les sorties ${[...parts, place].join(' ')}\u00a0: dates, lieux et programmes, avec Swatter TV.`
-      : `${intro(null)} Dates, lieux et programmes avec Swatter TV.`,
+      ? `Les sorties ${[...parts, place].join(' ')}\u00a0: dates, lieux et programmes, avec Swatter TV Info.`
+      : `${intro(null)} Dates, lieux et programmes avec Swatter TV Info.`,
   }
 }
 

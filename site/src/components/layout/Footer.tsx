@@ -58,7 +58,7 @@ export async function Footer() {
       <div className="container">
         <div className="footer__grid">
           <div className="footer__brand">
-            <Link className="logo" href="/" aria-label="Swatter TV — Accueil">
+            <Link className="logo" href="/" aria-label="Swatter TV Info — Accueil">
               <Logo />
             </Link>
             {tagline && <p>{tagline}</p>}
@@ -119,7 +119,7 @@ export async function Footer() {
           </div>
 
           <div>
-            <h2 className="footer__title">Swatter TV</h2>
+            <h2 className="footer__title">Swatter TV Info</h2>
             <ul>
               <LinkList links={[{ href: '/contact', label: 'Proposer une info' }, ...swatter]} />
               <li>
@@ -130,11 +130,11 @@ export async function Footer() {
         </div>
 
         <div className="wordmark" aria-hidden="true">
-          SWATTER TV
+          SWATTER TV INFO
         </div>
 
         <div className="footer__bottom">
-          <span>© {years} Swatter TV · Tous droits réservés</span>
+          <span>© {years} Swatter TV Info · Tous droits réservés</span>
           {settings?.protectNotice && (
             <span className="protect">
               <Icon name="shield" />

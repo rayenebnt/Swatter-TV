@@ -23,10 +23,10 @@ export async function MembersExport({ payload, user }: BeforeListTableServerProp
       <strong>Lettre d’information</strong>
       <span>
         {subscribers === null
-          ? 'Les membres qui ont accepté de recevoir les e-mails de Swatter TV (comptes suspendus exclus).'
+          ? 'Les membres qui ont accepté de recevoir les e-mails de Swatter TV Info (comptes suspendus exclus).'
           : subscribers === 0
-            ? 'Aucun membre n’a encore accepté de recevoir les e-mails de Swatter TV.'
-            : `${subscribers} membre${subscribers > 1 ? 's acceptent' : ' accepte'} de recevoir les e-mails de Swatter TV (comptes suspendus exclus).`}
+            ? 'Aucun membre n’a encore accepté de recevoir les e-mails de Swatter TV Info.'
+            : `${subscribers} membre${subscribers > 1 ? 's acceptent' : ' accepte'} de recevoir les e-mails de Swatter TV Info (comptes suspendus exclus).`}
       </span>
       <span>Le fichier s’ouvre dans Excel et s’importe dans votre outil d’envoi (Brevo, Mailjet…). Il contient des données personnelles : ne le partagez pas.</span>
       <div>
