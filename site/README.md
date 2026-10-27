@@ -226,8 +226,10 @@ partie « Espace membres » ; côté équipe : GUIDE_CLIENT.md, partie 21.
 
 ## Déploiement recommandé : VPS avec Docker Compose (ou Coolify)
 
-Pas à pas pour le serveur OVHcloud du client (commande, sécurité, adresse provisoire protégée par un mot de passe,
-e-mails, sauvegardes, jour de la bascule) : **DEPLOIEMENT.md**.
+Pour le serveur OVHcloud du client, tout est automatisé : installation en une commande (`deploy/installer.sh` : système,
+Docker, site, Caddy dans Docker avec HTTPS et mot de passe provisoire, sauvegardes), puis `deploy/emails.sh`,
+`deploy/bascule.sh` le jour J, `deploy/mise-a-jour.sh` et `deploy/restaurer.sh`. Mode d’emploi : **DEPLOIEMENT.md**.
+La suite de cette partie décrit l’installation à la main, pour un autre serveur.
 
 L’image (`Dockerfile`, base `node:22-bookworm-slim`, utilisateur non root, sortie `standalone`, `HEALTHCHECK`) a quatre
 étapes : `deps`, `builder`, `tools` (sources complètes et CLI Payload) et `runner` (le site seul). `docker-compose.yml`
@@ -333,7 +335,8 @@ pour remplacer sans attendre les prévisions de démonstration.
 ## Sauvegardes
 
 À automatiser chaque nuit, avec une copie hors du serveur, et à tester en restauration de temps en temps. Sur le serveur,
-`scripts/sauvegarde.sh` s’en charge (base et médias, 14 jours gardés : DEPLOIEMENT.md, parties 8 et 10). À la main :
+`scripts/sauvegarde.sh` s’en charge chaque nuit (base et médias, 14 jours gardés ; tâche posée par `deploy/installer.sh`),
+et `deploy/restaurer.sh AAAA-MM-JJ` restaure une date. À la main :
 
 ```bash
 # Base (format compressé de pg_dump)

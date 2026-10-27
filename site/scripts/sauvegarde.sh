@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Sauvegarde de Swatter TV Info sur le serveur (Docker Compose) : base PostgreSQL (pg_dump, format compressé) et fichiers
 # envoyés (volume « media »), dans SAUVEGARDE_DIR (/var/backups/swatter par défaut), gardés SAUVEGARDE_JOURS jours (14 par
-# défaut). Prévu pour une tâche cron chaque nuit (DEPLOIEMENT.md, partie 8) ; code d'erreur si quelque chose échoue.
-# Restauration : DEPLOIEMENT.md, « Restaurer une sauvegarde ».
+# défaut). Lancé chaque nuit par cron (tâche installée par deploy/installer.sh) ; code d'erreur si quelque chose échoue.
+# Restauration : deploy/restaurer.sh AAAA-MM-JJ.
 set -euo pipefail
 # Lisibles par leur seul propriétaire : la base contient les comptes (e-mails, mots de passe chiffrés)
 umask 077
