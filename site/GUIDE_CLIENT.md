@@ -481,8 +481,9 @@ pour une adresse imprimée sur un flyer).
    un événement : la redirection suivra même si son adresse change) ou **URL personnalisée** (saisissez l’adresse).
 3. **Enregistrer**.
 
-Les anciennes adresses du site précédent (/Le-Direct, /L-info, /La-Meteo…) sont déjà redirigées. L’URL d’origine ne doit
-pas être une adresse qui existe déjà sur le site.
+Les adresses de l’ancien site (/Le-Direct, /L-info-Haute-Savoie, /Nos-videos-du-jour, /Web-Cams-…, toutes celles de son
+plan) mènent déjà à la page correspondante : inutile de les ajouter. L’URL d’origine ne doit pas être une adresse qui existe
+déjà sur le site.
 
 ---
 

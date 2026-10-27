@@ -25,6 +25,36 @@ const OLD_ADDRESSES: [string, string][] = [
   ['/Le-Replay', '/replay'],
   ['/LeReplay', '/replay'],
   ['/Webcam', '/webcams'],
+  // plan de l'ancien site (sitemap.xml de SiteW, octobre 2026)
+  ['/L-info-du-jour', '/info'],
+  ['/Le-tirage-au-sort-L-info-du-jour', '/info'],
+  ['/L-info-Haute-Savoie', '/info/haute-savoie'],
+  ['/L-info-Savoie', '/info/savoie'],
+  ['/L-info-L-ain', '/info/ain'],
+  ['/L-info-Isere', '/info/isere'],
+  ['/L-info-Rhone', '/info/rhone'],
+  ['/L-info-Loire', '/info/loire'],
+  ['/L-info-Haute-Loire', '/info/haute-loire'],
+  ['/L-info-Drome', '/info/drome'],
+  ['/L-info-Ardeche', '/info/ardeche'],
+  ['/L-info-Puy-De-Dome', '/info/puy-de-dome'],
+  ['/L-info-Cantal', '/info/cantal'],
+  ['/L-info-Allier', '/info/allier'],
+  ['/L-info-Geneve', '/info'],
+  ['/L-info-Aoste', '/info'],
+  ['/Nos-videos-du-jour', '/videos'],
+  ['/Le-tirage-au-sort-Video-du-jour', '/videos'],
+  ['/Le-Cinema-Films', '/videos?categorie=cinema'],
+  ['/Le-Cinema-Dessin', '/videos?categorie=cinema'],
+  ['/Les-Documentaires', '/videos?categorie=documentaire'],
+  ['/Web-Cam-', '/webcams'],
+  ['/Web-Cams-', '/webcams/plus'],
+  ['/Manif-Samedi-17', '/agenda'],
+  ['/Manif-Samedi-24', '/agenda'],
+  ['/Deposer-une-publicite', '/contact?sujet=publicite'],
+  ['/Casting', '/contact'],
+  ['/Credit', '/credits'],
+  ['/4-7-Avis', '/'],
 ]
 
 /** Adresses actuelles du site : jamais redirigées. */
@@ -36,15 +66,17 @@ const CURRENT = [
 let raw: Redirect[]
 let rules: (Redirect & { match: ReturnType<typeof getPathMatch> })[]
 
-/** Suit les redirections comme le serveur de Next.js (au plus 5 sauts) : liste des adresses successives. */
+/** Suit les redirections comme le serveur de Next.js (au plus 5 sauts) : liste des adresses successives, paramètres de
+ * la destination compris (« /videos?categorie=cinema »). Les règles ne regardent que le chemin. */
 function follow(pathname: string): string[] {
   const hops = [pathname]
   for (let i = 0; i < 5; i++) {
-    const current = hops[hops.length - 1]
+    const current = hops[hops.length - 1].split('?')[0]
     const rule = rules.find((r) => r.match(current))
     if (!rule) break
     const params = rule.match(current) as Record<string, string | string[]>
-    hops.push(prepareDestination({ appendParamsToQuery: false, destination: rule.destination, params, query: {} }).newUrl)
+    const { newUrl, parsedDestination } = prepareDestination({ appendParamsToQuery: false, destination: rule.destination, params, query: {} })
+    hops.push(`${newUrl}${parsedDestination.search ?? ''}`)
   }
   return hops
 }
@@ -77,6 +109,10 @@ describe('next.config.ts : redirections permanentes des anciennes adresses', () 
     expect(follow('/programmetv').at(-1)).toBe('/programme-tv')
     expect(follow('/WEBCAM').at(-1)).toBe('/webcams')
     expect(follow('/accueil').at(-1)).toBe('/')
+    // l'ancien plan contenait /L-info-du-jour et /L-info-Du-Jour : une seule règle
+    expect(follow('/L-info-Du-Jour').at(-1)).toBe('/info')
+    expect(follow('/l-info-haute-savoie').at(-1)).toBe('/info/haute-savoie')
+    expect(follow('/WEB-CAMS-').at(-1)).toBe('/webcams/plus')
   })
 
   it('la barre oblique finale est retirée avant ces règles', () => {

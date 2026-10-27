@@ -236,4 +236,13 @@ test('page éditoriale et redirections', async ({ page, request }) => {
   const legacy = await request.get('/Le-Direct', { maxRedirects: 0 })
   expect(legacy.status()).toBe(308)
   expect(legacy.headers().location).toMatch(/\/direct$/)
+  // plan de l'ancien site (SiteW) : info d'un département, destination avec paramètre
+  for (const [old, target] of [
+    ['/L-info-Haute-Savoie', /\/info\/haute-savoie$/],
+    ['/Deposer-une-publicite', /\/contact\?sujet=publicite$/],
+  ] as const) {
+    const res = await request.get(old, { maxRedirects: 0 })
+    expect(res.status(), old).toBe(308)
+    expect(res.headers().location, old).toMatch(target)
+  }
 })
