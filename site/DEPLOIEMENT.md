@@ -6,9 +6,11 @@ remplisse ses contenus ; l’ancien site reste en ligne. Le jour J, une autre co
 
 ## 1. Le client commande le serveur
 
-Dans un compte OVHcloud au nom de la société : **VPS-1** (ou plus), système **Ubuntu 24.04**, localisation **France**,
-option **Sauvegarde automatique**, paiement mensuel avec renouvellement automatique. Il vous transfère ensuite l’e-mail
-d’OVHcloud « votre VPS est prêt » : adresse IP, identifiant `ubuntu` et mot de passe.
+Dans un compte OVHcloud au nom de la société : **VPS-1** (ou plus), système **Ubuntu 24.04** (pas une version plus
+récente : c’est celle de l’installation testée), localisation **France**, option **Backup automatisé** de base (gratuite :
+une sauvegarde de tout le serveur chaque jour), sans engagement, paiement mensuel avec renouvellement automatique. Il vous
+transfère sans attendre l’e-mail de livraison d’OVHcloud : adresse IP, utilisateur `ubuntu` et lien vers le mot de passe
+provisoire.
 
 ## 2. Le client ajoute une ligne dans son DNS
 
@@ -20,10 +22,17 @@ Message à lui envoyer (remplacez l’adresse IP par celle de l’e-mail d’OVH
 
 ## 3. Vous lancez l’installation
 
-Depuis votre ordinateur, connectez-vous au serveur avec le mot de passe de l’e-mail, puis collez la seconde ligne :
+Depuis votre ordinateur, connectez-vous au serveur avec le mot de passe provisoire d’OVHcloud :
 
 ```bash
 ssh ubuntu@IP_DU_SERVEUR
+```
+
+À cette première connexion, le serveur exige un nouveau mot de passe : tapez le provisoire, puis deux fois le nouveau
+(gardez-le dans un gestionnaire de mots de passe). S’il vous déconnecte, reconnectez-vous avec le nouveau. Collez
+ensuite cette ligne ; elle demande d’abord ce nouveau mot de passe (`sudo`) :
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/rayenebnt/Swatter-TV/claude/loving-curie-ftnboh/site/deploy/installer.sh | sudo bash
 ```
 
