@@ -22,6 +22,9 @@ src/
   components/members/     espace membres côté site (formulaires, Mon espace, « Ajouter à ma liste », historique)
   styles/                 globals.css + un fichier par rubrique
   scripts/                scripts Payload (init-db, seed, import)
+deploy/                   serveur de production (DEPLOIEMENT.md) : installer.sh, emails.sh, bascule.sh, mise-a-jour.sh,
+                          restaurer.sh ; serveur.yml (Caddy dans Docker Compose, via COMPOSE_FILE de .env) et caddy/
+scripts/                  sauvegarde.sh (chaque nuit sur le serveur), dev.mjs, test-complet.mjs
 ```
 
 ## Conventions
