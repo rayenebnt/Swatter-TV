@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Image de production du site Swatter TV (Next.js « standalone » + Payload CMS).
+# Image de production du site Swatter TV Info (Next.js « standalone » + Payload CMS).
 #
 #   docker build -t swatter-tv --build-arg NEXT_PUBLIC_SITE_URL=https://www.swatter-tv.fr .
 #   docker run -p 3000:3000 --env-file .env -v swatter-media:/app/media swatter-tv
@@ -22,12 +22,16 @@ RUN npm ci --no-audit --no-fund
 FROM ${NODE_IMAGE} AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Les variables NEXT_PUBLIC_* sont figées dans le code au moment du build. L'adresse publique est obligatoire (adresses
+# canoniques, sitemap, adresse du serveur Payload dont dépend l'enregistrement dans l'administration) : vérifiée d'emblée.
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_BUNNY_LIBRARY_ID=
+RUN test -n "$NEXT_PUBLIC_SITE_URL" || { echo "NEXT_PUBLIC_SITE_URL manquante : --build-arg NEXT_PUBLIC_SITE_URL=https://www.swatter-tv.fr (Docker Compose : dans .env)" >&2; exit 1; }
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Les variables NEXT_PUBLIC_* sont figées dans le code au moment du build.
-ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
-ARG NEXT_PUBLIC_BUNNY_LIBRARY_ID=
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
     NEXT_PUBLIC_BUNNY_LIBRARY_ID=${NEXT_PUBLIC_BUNNY_LIBRARY_ID}
 

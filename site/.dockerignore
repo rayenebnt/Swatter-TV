@@ -12,10 +12,14 @@ next-env.d.ts
 media
 
 # Tests, rapports et outils de développement
+.next-test
+.tests
+tsconfig.next-test.json
 tests
 test-results
 playwright-report
 playwright.config.ts
+vitest.config.ts
 .claude
 .vscode
 .idea

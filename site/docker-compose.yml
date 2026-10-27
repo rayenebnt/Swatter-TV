@@ -1,16 +1,17 @@
-# Swatter TV : site + base PostgreSQL + tâche planifiée (VPS, Coolify, Portainer…).
+# Swatter TV Info : site + base PostgreSQL + tâche planifiée (VPS, Coolify, Portainer…).
 #
 # 1. Copier .env.example en .env et renseigner au minimum :
 #      POSTGRES_PASSWORD     mot de passe de la base (long et aléatoire)
 #      PAYLOAD_SECRET        openssl rand -hex 32
 #      CRON_SECRET           openssl rand -hex 16
-#      NEXT_PUBLIC_SITE_URL  adresse publique, ex. https://www.swatter-tv.fr
+#      NEXT_PUBLIC_SITE_URL  adresse publique, ex. https://www.swatter-tv.fr (figée dans l'image : la changer impose de reconstruire)
 #    (facultatif : POSTGRES_DB, POSTGRES_USER, APP_PORT, NEXT_PUBLIC_BUNNY_LIBRARY_ID, YOUTUBE_API_KEY, S3_*)
 #    DATABASE_URI est inutile ici : il est construit à partir des variables POSTGRES_*.
 # 2. docker compose up -d --build
 #    → la base démarre, les migrations s'appliquent (service « migrate »), puis le site et la tâche planifiée démarrent.
-# 3. Premier administrateur : ouvrir https://…/admin et créer le compte en choisissant le rôle « Administrateur »
-#    (ou : docker compose run --rm -e ADMIN_EMAIL=… -e ADMIN_PASSWORD=… tools npm run payload run src/scripts/init-db.ts).
+# 3. Premier administrateur, dès le premier démarrage (tant qu'aucun compte n'existe, n'importe qui peut le créer) :
+#    docker compose run --rm -e ADMIN_EMAIL=… -e ADMIN_PASSWORD=… tools npm run payload run src/scripts/init-db.ts
+#    (ou : ouvrir https://…/admin et créer le compte en choisissant le rôle « Administrateur »).
 #
 # Commandes ponctuelles (service « tools », jamais démarré par « up ») :
 #    docker compose run --rm tools npm run payload migrate:status
@@ -25,7 +26,7 @@ name: swatter-tv
 x-app-env: &app-env
   DATABASE_URI: postgres://${POSTGRES_USER:-swatter}:${POSTGRES_PASSWORD:?Renseignez POSTGRES_PASSWORD dans .env}@db:5432/${POSTGRES_DB:-swatter}
   PAYLOAD_SECRET: ${PAYLOAD_SECRET:?Renseignez PAYLOAD_SECRET dans .env}
-  NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+  NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?Renseignez NEXT_PUBLIC_SITE_URL dans .env}
   CRON_SECRET: ${CRON_SECRET:?Renseignez CRON_SECRET dans .env}
   SMTP_HOST: ${SMTP_HOST:-}
   SMTP_PORT: ${SMTP_PORT:-587}
@@ -46,7 +47,7 @@ x-app-env: &app-env
 
 # Les variables NEXT_PUBLIC_* sont figées dans le code au moment du build de l'image.
 x-build-args: &build-args
-  NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+  NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?Renseignez NEXT_PUBLIC_SITE_URL dans .env}
   NEXT_PUBLIC_BUNNY_LIBRARY_ID: ${NEXT_PUBLIC_BUNNY_LIBRARY_ID:-}
 
 # Image « tools » du Dockerfile : sources complètes + CLI Payload (migrations, jeu de démonstration, imports).

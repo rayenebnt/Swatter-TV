@@ -1,4 +1,4 @@
-# Swatter TV — site web
+# Swatter TV Info — site web
 
 Site de **Swatter TV Info**, web TV régionale d’Auvergne-Rhône-Alpes (siège à Thyez, Haute-Savoie) :
 le direct, les vidéos et le Top 10, le replay, l’info par département, la météo, le programme TV, l’agenda des sorties
@@ -61,7 +61,7 @@ cp .env.example .env
 |---|---|---|
 | `DATABASE_URI` | oui | connexion PostgreSQL, ex. `postgres://swatter:motdepasse@127.0.0.1:5432/swatter` |
 | `PAYLOAD_SECRET` | oui | chaîne aléatoire longue (`openssl rand -hex 32`) : signe les sessions de l’administration et, par une clé qui en est dérivée, celles des membres (le changer déconnecte tout le monde) |
-| `NEXT_PUBLIC_SITE_URL` | oui | adresse publique sans `/` final ; **`http://localhost:3000` en local** (URL canoniques, Open Graph, adresse du serveur Payload) |
+| `NEXT_PUBLIC_SITE_URL` | oui | adresse publique sans `/` final ; **`http://localhost:3000` en local** (URL canoniques, Open Graph, adresse du serveur Payload). Figée dans l’image Docker au moment du build : sans elle, le build s’arrête ; la changer impose de reconstruire |
 | `CRON_SECRET` | oui en production | secret de la tâche planifiée `GET /api/cron/import` (`openssl rand -hex 16`) |
 | `NEXT_PUBLIC_BUNNY_LIBRARY_ID` | non | bibliothèque Bunny Stream (vidéos de type « Bunny Stream ») |
 | `YOUTUBE_API_KEY` | non | clé de l’API YouTube Data v3 : l’import de la chaîne reprend **toutes** ses vidéos (et leur durée) ; sans clé, il lit le flux RSS public de la chaîne, limité à ses 15 dernières vidéos |
@@ -250,6 +250,11 @@ docker compose ps              # « app » doit passer à « healthy »
 docker compose logs -f app cron
 ```
 
+`NEXT_PUBLIC_SITE_URL` est figée dans l’image : sans elle, `docker compose` refuse de démarrer (« Renseignez
+NEXT_PUBLIC_SITE_URL dans .env »). Ce doit être l’adresse par laquelle on ouvre le site, administration comprise :
+Payload n’accepte les sessions de l’administration que depuis cette adresse (protection CSRF), sinon rien ne s’enregistre.
+Pour passer d’une adresse provisoire au domaine définitif, changez-la dans `.env` puis `docker compose up -d --build`.
+
 Placez ensuite un reverse proxy HTTPS devant `127.0.0.1:3000`. Exemple avec Caddy (certificats automatiques) :
 
 ```
@@ -263,11 +268,14 @@ swatter-tv.fr {
 
 Avec Nginx, augmentez `client_max_body_size` (par exemple `500m`) pour l’envoi de vidéos dans la médiathèque.
 
-Premier administrateur : ouvrir `https://www.swatter-tv.fr/admin` et créer le compte avec le rôle « Administrateur », ou :
+Premier administrateur, à créer dès le premier démarrage : tant qu’aucun compte n’existe, n’importe qui ouvrant
+`/admin` peut créer le premier.
 
 ```bash
 docker compose run --rm -e ADMIN_EMAIL=… -e ADMIN_PASSWORD=… tools npm run payload run src/scripts/init-db.ts
 ```
+
+(ou ouvrir `https://www.swatter-tv.fr/admin` et créer le compte avec le rôle « Administrateur »).
 
 Autres commandes ponctuelles : `docker compose run --rm tools npm run payload migrate:status`,
 `docker compose run --rm tools npm run import`, et **au premier déploiement seulement**, pour livrer le site avec
