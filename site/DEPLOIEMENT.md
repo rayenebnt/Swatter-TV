@@ -64,7 +64,12 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```bash
 curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker ubuntu
-exit                                             # puis reconnectez-vous : le groupe « docker » s’applique
+exit
+```
+
+Reconnectez-vous (`ssh ubuntu@IP_DU_SERVEUR`) pour que le groupe « docker » s’applique, puis :
+
+```bash
 docker run --rm hello-world                      # vérifie que Docker répond
 git clone --branch claude/loving-curie-ftnboh https://github.com/rayenebnt/Swatter-TV.git
 cd Swatter-TV/site
