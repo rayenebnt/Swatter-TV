@@ -119,8 +119,8 @@ install -d -o "$COMPTE" -g "$COMPTE" -m 750 /var/backups/swatter
 echo "17 3 * * * $COMPTE $SITE/scripts/sauvegarde.sh >> /var/backups/swatter/sauvegarde.log 2>&1" > /etc/cron.d/swatter-sauvegarde
 sudo -u "$COMPTE" "$SITE/scripts/sauvegarde.sh"
 
-IP4="$(ip -4 route get 1.1.1.1 2> /dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1) }')"
-IP6="$(ip -6 addr show scope global 2> /dev/null | awk '/inet6/ { sub("/.*", "", $2); print $2; exit }')"
+IP4="$(ip -4 route get 1.1.1.1 2> /dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1) }')" || IP4=""
+IP6="$(ip -6 addr show scope global 2> /dev/null | awk '/inet6/ { sub("/.*", "", $2); print $2; exit }')" || IP6=""
 etape "Terminé"
 echo "Site : $URL (utilisateur « swatter » et le mot de passe provisoire) ; administration : $URL/admin"
 case "$ADRESSE" in
