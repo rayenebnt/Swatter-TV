@@ -54,9 +54,11 @@ fi
 if [ "${SANS_SYSTEME:-0}" != 1 ]; then
   etape "Mises à jour du système et pare-feu"
   export DEBIAN_FRONTEND=noninteractive
-  apt-get update -q
-  apt-get -yq -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade
-  apt-get -yq install git curl ufw unattended-upgrades
+  # Sur un serveur tout juste livré, les mises à jour automatiques tiennent souvent apt : on attend qu'il se libère
+  APT=(apt-get -yq -o DPkg::Lock::Timeout=900 -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
+  "${APT[@]}" update
+  "${APT[@]}" upgrade
+  "${APT[@]}" install git curl ufw unattended-upgrades
   timedatectl set-timezone Europe/Paris
   ufw allow OpenSSH > /dev/null
   ufw allow 80,443/tcp > /dev/null
