@@ -98,7 +98,8 @@ URL="$(grep '^NEXT_PUBLIC_SITE_URL=' .env | cut -d= -f2-)"
 ADRESSE="$(grep '^ADRESSE_PROVISOIRE=' .env | cut -d= -f2-)"
 
 etape "Construction et démarrage (10 à 15 minutes la première fois)"
-if [ "${CONSTRUIRE:-1}" = 1 ]; then docker compose up -d --build; else docker compose up -d --no-build; fi
+# Conteneurs toujours neufs : une installation interrompue peut laisser un conteneur au réseau inutilisable
+if [ "${CONSTRUIRE:-1}" = 1 ]; then docker compose up -d --build --force-recreate; else docker compose up -d --no-build --force-recreate; fi
 for _ in $(seq 1 60); do
   [ "$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q app)")" = healthy ] && break
   sleep 5
