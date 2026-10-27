@@ -25,6 +25,8 @@ regler() {
 }
 
 [ "$(id -u)" -eq 0 ] || arret "Lancez l'installation avec sudo."
+# Serveur livré avec le seul compte root (sans utilisateur « ubuntu ») : le site lui appartient
+getent passwd "$COMPTE" > /dev/null || COMPTE=root
 MAISON="$(getent passwd "$COMPTE" | cut -d: -f6)"
 [ -n "$MAISON" ] || arret "Compte « $COMPTE » introuvable."
 DOSSIER="$MAISON/Swatter-TV"
@@ -63,6 +65,11 @@ if [ "${SANS_SYSTEME:-0}" != 1 ]; then
   ufw allow OpenSSH > /dev/null
   ufw allow 80,443/tcp > /dev/null
   ufw --force enable > /dev/null
+  # Moins de 6 Go de mémoire (VPS-1 : 4 Go) : 4 Go d'espace d'échange, la construction du site en demande autant
+  if [ "$(awk '/MemTotal/ { print int($2 / 1048576) }' /proc/meminfo)" -lt 6 ] && [ -z "$(swapon --show)" ]; then
+    fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile > /dev/null && swapon /swapfile
+    grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  fi
 
   etape "Docker"
   command -v docker > /dev/null || curl -fsSL https://get.docker.com | sh

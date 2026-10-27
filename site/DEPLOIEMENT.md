@@ -6,8 +6,10 @@ remplisse ses contenus ; l’ancien site reste en ligne. Le jour J, une autre co
 
 ## 1. Le client commande le serveur
 
-Dans un compte OVHcloud au nom de la société : **VPS-1** (ou plus), système **Ubuntu 24.04** (pas une version plus
-récente : c’est celle de l’installation testée), localisation **France**, option **Backup automatisé** de base (gratuite :
+Dans un compte OVHcloud au nom de la société : **VPS-1** (4 Go de mémoire suffisent : l’installation ajoute l’espace
+d’échange qu’il faut pour construire le site), système **Ubuntu 24.04** dans la liste des images (pas 26.04, proposée par
+défaut : c’est la 24.04 qui a été testée), localisation en **Europe** (France de préférence ; si aucune n’est disponible,
+réessayer quelques jours plus tard), option **Backup automatisé** de base (gratuite :
 une sauvegarde de tout le serveur chaque jour), sans engagement, paiement mensuel avec renouvellement automatique. Il vous
 transfère sans attendre l’e-mail de livraison d’OVHcloud : adresse IP, utilisateur `ubuntu` et lien vers le mot de passe
 provisoire.
