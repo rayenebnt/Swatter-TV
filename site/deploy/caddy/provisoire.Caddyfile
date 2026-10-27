@@ -1,0 +1,9 @@
+# Phase provisoire (deploy/installer.sh) : site protégé par un mot de passe (utilisateur « swatter »), invisible pour les
+# moteurs de recherche. Certificat HTTPS automatique dès que le DNS de l'adresse pointe vers le serveur.
+{$ADRESSE_PROVISOIRE} {
+	basic_auth {
+		swatter {$CADDY_MOT_DE_PASSE}
+	}
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy app:3000
+}

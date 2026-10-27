@@ -1,0 +1,25 @@
+# Serveur de production (deploy/installer.sh) : Caddy devant le site, HTTPS automatique et, pendant la phase provisoire,
+# mot de passe. Ajouté à docker-compose.yml par COMPOSE_FILE dans .env : toute commande « docker compose » l'inclut.
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      ADRESSE_PROVISOIRE: ${ADRESSE_PROVISOIRE:-nouveau.swatter-tv.fr}
+      CADDY_MOT_DE_PASSE: ${CADDY_MOT_DE_PASSE:-}
+    volumes:
+      # « provisoire » (mot de passe), puis « final » le jour J (deploy/bascule.sh)
+      - ./deploy/caddy/${CADDY_CONFIG:-provisoire}.Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:

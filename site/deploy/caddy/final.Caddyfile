@@ -1,0 +1,8 @@
+# Site définitif (deploy/bascule.sh) : sans mot de passe ; l'adresse sans « www » et l'adresse provisoire y mènent.
+www.swatter-tv.fr {
+	reverse_proxy app:3000
+}
+
+swatter-tv.fr, {$ADRESSE_PROVISOIRE} {
+	redir https://www.swatter-tv.fr{uri} permanent
+}
