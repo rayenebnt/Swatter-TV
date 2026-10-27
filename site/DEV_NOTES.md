@@ -214,8 +214,10 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   et efface `is-in`, l'élément redevient invisible. Utiliser un attribut `data-*` ou un élément enfant.
 - **Open Graph** : une page qui définit `openGraph` sans `images` perd l'image par défaut (`opengraph-image` du groupe
   `(frontend)`, dont l'adresse est suffixée) : reprendre `images: (await parent).openGraph?.images ?? []` ou fournir une image.
-- **Redirections** : les anciennes adresses sont dans `next.config.ts` (`redirects()`) ; les variantes qui ne diffèrent que par
-  la casse ou les accents passent par `[...slug]` (la correspondance de `next.config.ts` est insensible à la casse et bouclerait).
+- **Redirections** : les anciennes adresses sont dans `next.config.ts` (`redirects()`), à recopier dans `LEGACY` de
+  `[...slug]/legacy.ts` (un test le vérifie) ; les variantes qui ne diffèrent que par la casse ou les accents passent par
+  `[...slug]` (la correspondance de `next.config.ts` est insensible à la casse et bouclerait). À eux deux, ils couvrent les
+  39 adresses du plan de l’ancien site (sitemap.xml de SiteW, octobre 2026).
   Limite connue : ces variantes perdent leurs paramètres (`/Agenda?quand=week-end` → `/agenda`), car la page attrape-tout
   ne lit pas `searchParams` pour rester en cache ; les redirections de `next.config.ts`, elles, les gardent.
 - **Recherche** : « webcam(s) », « caméra »… désignent la rubrique : ces mots (et les petits mots autour) sont retirés de la

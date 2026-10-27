@@ -1,0 +1,11 @@
+# Caddy, site définitif (DEPLOIEMENT.md, partie 11, jour de la bascule) : certificats HTTPS automatiques.
+# À copier dans /etc/caddy/Caddyfile, puis : sudo systemctl reload caddy
+
+www.swatter-tv.fr {
+	reverse_proxy 127.0.0.1:3000
+}
+
+# Sans « www » et ancienne adresse provisoire : vers le site définitif
+swatter-tv.fr, nouveau.swatter-tv.fr {
+	redir https://www.swatter-tv.fr{uri} permanent
+}

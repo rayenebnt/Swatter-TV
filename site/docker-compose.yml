@@ -51,7 +51,10 @@ x-build-args: &build-args
   NEXT_PUBLIC_BUNNY_LIBRARY_ID: ${NEXT_PUBLIC_BUNNY_LIBRARY_ID:-}
 
 # Image « tools » du Dockerfile : sources complètes + CLI Payload (migrations, jeu de démonstration, imports).
+# Une seule image pour « migrate » et « tools » : « docker compose up -d --build » la reconstruit (service « migrate »),
+# donc « docker compose run tools … » n'utilise jamais une version du code plus ancienne que le site.
 x-tools: &tools
+  image: swatter-tv-tools:latest
   build:
     context: .
     target: tools

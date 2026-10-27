@@ -26,6 +26,12 @@ vitest.config.ts
 .DS_Store
 npm-debug.log*
 
+# Documentation et fichiers du serveur (GUIDE_CLIENT.md reste : page « Aide » de l'administration)
+README.md
+DEV_NOTES.md
+DEPLOIEMENT.md
+deploy
+
 # Git et fichiers Docker
 .git
 .gitignore

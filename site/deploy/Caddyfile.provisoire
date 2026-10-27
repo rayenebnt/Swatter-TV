@@ -1,0 +1,11 @@
+# Caddy, adresse provisoire (DEPLOIEMENT.md, partie 6) : le site est protégé par un mot de passe le temps que le client
+# remplisse ses contenus. Remplacez HASH par le résultat de « caddy hash-password » (le mot de passe choisi, chiffré).
+# À copier dans /etc/caddy/Caddyfile, puis : sudo systemctl reload caddy
+
+nouveau.swatter-tv.fr {
+	basic_auth {
+		swatter HASH
+	}
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy 127.0.0.1:3000
+}
