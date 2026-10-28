@@ -19,11 +19,11 @@ html[data-theme='dark'] {
   align-items: center;
   gap: 16px;
 
-  &__shield {
-    width: 64px;
-    height: 67px;
+  &__marque {
+    width: 88px;
+    height: 66px;
     flex-shrink: 0;
-    filter: drop-shadow(0 6px 18px rgba(217, 170, 69, 0.28));
+    color: var(--theme-text);
   }
 
   &__text {
@@ -51,8 +51,9 @@ html[data-theme='dark'] {
 
 .swatter-admin-icon {
   display: block;
-  width: 26px;
+  width: 36px;
   height: 27px;
+  color: var(--theme-text);
 }
 
 /* ---------- Boutons principaux : fond doré, texte bleu nuit ---------- */

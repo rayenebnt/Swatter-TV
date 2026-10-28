@@ -18,10 +18,11 @@
 .hdr__in { position: relative; display: flex; align-items: center; gap: 22px; height: 80px; }
 
 /* Logo (en-tête, menu mobile, pied de page) */
-.logo { position: relative; display: flex; align-items: center; flex-shrink: 0; overflow: hidden; border-radius: 8px; }
-.logo svg { width: 54px; height: 56px; filter: drop-shadow(0 6px 16px rgba(217, 170, 69, .4)); }
-.logo::after { content: ''; position: absolute; inset: -20%; background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .75) 50%, transparent 60%); transform: translateX(-120%); animation: sheen 6s 1.2s var(--ease) infinite; pointer-events: none; }
-@keyframes sheen { 0%, 70% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+.logo { position: relative; display: flex; align-items: center; flex-shrink: 0; }
+.logo svg { width: 72px; height: 54px; filter: drop-shadow(0 4px 14px rgba(249, 187, 6, .28)); }
+/* Reflet qui balaie le logo, découpé à sa forme (public/logo.svg) : rien ne passe sur le fond transparent */
+.logo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .75) 50%, transparent 60%) 100% 0 / 300% 100% no-repeat; mask: url(/logo.svg) center / contain no-repeat; animation: sheen 6s 1.2s var(--ease) infinite; pointer-events: none; }
+@keyframes sheen { 0%, 70% { background-position: 100% 0; } 85%, 100% { background-position: 0 0; } }
 
 /* Navigation principale : pastille glissante au survol, soulignement doré de la rubrique active */
 .nav { position: relative; display: flex; gap: 2px; }
@@ -74,7 +75,7 @@ kbd.k { font: 600 11px var(--font-body); color: var(--muted); border: 1px solid 
 }
 @media (max-width: 760px) {
   .hdr__in { height: 66px; }
-  .logo svg { width: 44px; height: 46px; }
+  .logo svg { width: 56px; height: 42px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .logo::after { animation: none; }

@@ -1,10 +1,10 @@
-import { Shield } from './Shield'
+import { Marque } from './Marque'
 
 /** Logo de la page de connexion de l'administration (admin.components.graphics.Logo). */
 export function Logo() {
   return (
     <div className="swatter-admin-logo">
-      <Shield id="swatter-admin-logo-gold" className="swatter-admin-logo__shield" />
+      <Marque id="swatter-admin-logo-gold" className="swatter-admin-logo__marque" />
       <div className="swatter-admin-logo__text">
         <strong>Swatter TV Info</strong>
         <span>Administration du site</span>

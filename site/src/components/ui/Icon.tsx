@@ -1,14 +1,14 @@
+import { LOGO_GOLD_PATH, LOGO_VIEWBOX, LOGO_WHITE_PATH, logoGradient } from '@/lib/logo'
+
 // Sprite SVG (logo + icônes), repris de la maquette. Rendu une fois dans le layout.
 const SPRITE = `<defs>
-    <linearGradient id="g-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBE6A6"/><stop offset=".45" stop-color="#E4B64C"/><stop offset="1" stop-color="#AF7E24"/></linearGradient>
     <linearGradient id="g-line" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F9E4A4"/><stop offset="1" stop-color="#D9AA45"/></linearGradient>
     <linearGradient id="g-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4B64C" stop-opacity=".35"/><stop offset="1" stop-color="#E4B64C" stop-opacity="0"/></linearGradient>
+    ${logoGradient('g-logo')}
   </defs>
-  <symbol id="logo" viewBox="0 0 100 104">
-    <path d="M10 6h80a6 6 0 0 1 5.3 8.8L55.3 97a6 6 0 0 1-10.6 0L4.7 14.8A6 6 0 0 1 10 6z" fill="url(#g-gold)"/>
-    <path d="M13.5 10.5h73a3 3 0 0 1 2.6 4.4L52.6 90.6a3 3 0 0 1-5.2 0L10.9 14.9a3 3 0 0 1 2.6-4.4z" fill="none" stroke="#5C3F0C" stroke-opacity=".35" stroke-width="1.2"/>
-    <text x="50" y="31" text-anchor="middle" font-family="Outfit,'Arial Black',sans-serif" font-weight="800" font-size="14.5" letter-spacing=".4" fill="#0E0B05">SWATTER</text>
-    <text x="50" y="66" text-anchor="middle" font-family="Outfit,'Arial Black',sans-serif" font-weight="900" font-size="34" letter-spacing="-1" fill="#0E0B05">TV</text>
+  <symbol id="logo" viewBox="${LOGO_VIEWBOX}">
+    <path d="${LOGO_GOLD_PATH}" fill="url(#g-logo)" fill-rule="evenodd"/>
+    <path d="${LOGO_WHITE_PATH}" fill="#fff"/>
   </symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></g></symbol>
@@ -91,10 +91,10 @@ export function Icon({ name, className }: { name: IconName; className?: string }
   )
 }
 
-/** Logo Swatter TV (bouclier doré). */
+/** Logo Swatter TV (triangle doré, fond transparent ; lib/logo.ts). */
 export function Logo({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 100 104" role="img" aria-label="Swatter TV Info">
+    <svg className={className} viewBox={LOGO_VIEWBOX} role="img" aria-label="Swatter TV Info">
       <use href="#logo" />
     </svg>
   )
