@@ -29,8 +29,27 @@ export const Ads: CollectionConfig = {
         { label: 'Pages intérieures — bannière', value: 'inner-leaderboard' },
       ],
     },
-    { name: 'image', label: 'Visuel (bureau, 970 × 250)', type: 'upload', relationTo: 'media', required: true },
-    { name: 'imageMobile', label: 'Visuel mobile (facultatif, 320 × 100)', type: 'upload', relationTo: 'media' },
+    {
+      name: 'image',
+      label: 'Visuel (bureau, 1940 × 500 conseillés)',
+      type: 'upload',
+      relationTo: 'media',
+      required: true,
+      admin: {
+        description:
+          'Bannière horizontale, affichée jusqu’à 1272 pixels de large\u00a0: envoyez-la en 1940 × 500 pixels (le double de 970 × 250) pour qu’elle reste nette sur les écrans haute définition. Le cadre prend les proportions du visuel.',
+      },
+    },
+    {
+      name: 'imageMobile',
+      label: 'Visuel mobile (conseillé, 1080 × 340)',
+      type: 'upload',
+      relationTo: 'media',
+      admin: {
+        description:
+          'Affiché sur les téléphones à la place du visuel bureau. Sans lui, la bannière bureau y est réduite à environ 360 × 90 pixels\u00a0: son texte devient illisible. Envoyez 1080 × 340 pixels (ou un carré de 1080 × 1080), avec un texte court et gros.',
+      },
+    },
     { name: 'link', label: 'Lien (site de l’annonceur)', type: 'text', admin: { placeholder: 'https://…' } },
     {
       type: 'row',

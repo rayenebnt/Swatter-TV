@@ -1,5 +1,5 @@
 // Outils des webcams (rendu serveur) : vignette de repli et données sérialisables pour les composants client.
-import { mediaAlt, mediaSize, mediaUrl } from '@/lib/media'
+import { mediaAlt, mediaFocal, mediaSize, mediaUrl } from '@/lib/media'
 import type { WebcamItem } from '@/lib/queries/webcams'
 import type { WebcamPoster } from './WebcamPlayer'
 import type { WebcamView } from './WebcamTile'
@@ -10,12 +10,14 @@ const VISUALS = ['t-matin-a', 't-crepuscule-a', 't-ete-a', 't-hiver-b', 't-hiver
 const PAN = ['24s', '28s', '20s', '26s']
 export const panDuration = (i: number) => PAN[i % PAN.length]
 
-/** Vignette de la webcam (taille « card » de Payload), sinon un visuel de la maquette. */
+/** Vignette de la webcam (taille « card » de Payload) et son point focal, sinon un visuel de la maquette. */
 export function webcamPoster(w: WebcamItem): WebcamPoster {
   const src = mediaUrl(w.image, 'card')
   if (!src) return { src: `/visuels/${VISUALS[w.id % VISUALS.length]}.webp`, width: 960, height: 540, alt: '' }
   const { width, height } = mediaSize(w.image, 'card')
-  return { src, width, height, alt: mediaAlt(w.image, `Webcam ${w.name}`) }
+  // Cartes plus étroites que la vignette 16:9 (4:3) : le point focal garde le sujet dans le cadre ; absent pour le centre
+  const position = mediaFocal(w.image, 'card')
+  return { src, width, height, alt: mediaAlt(w.image, `Webcam ${w.name}`), ...(position ? { position } : {}) }
 }
 
 /** Webcam dont le lien du flux n'est pas encore renseigné : affichée « Bientôt en direct ». */

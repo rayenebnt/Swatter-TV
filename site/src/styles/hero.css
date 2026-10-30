@@ -8,7 +8,8 @@
 .slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 1.3s var(--ease), visibility 0s 1.3s; }
 .slide.is-active { opacity: 1; visibility: visible; transition: opacity 1.3s var(--ease), visibility 0s; }
 .slide__media { position: absolute; inset: -30px; transform: translate3d(calc(var(--px, 0) * -18px), calc(var(--py, 0) * -12px), 0); transition: transform 1.2s var(--ease-out); }
-.slide__media img { object-fit: cover; transform: scale(1.16); }
+/* Cadrage de chaque source de la balise <picture> en variables (MediaImage « mobile ») : point focal sur ordinateur */
+.slide__media img { object-fit: cover; object-position: var(--focal, 50% 50%); transform: scale(1.16); }
 /* La diapositive sortante garde la même animation (pas de saut de zoom pendant son fondu) */
 .slide.is-active .slide__media img, .slide.is-prev .slide__media img { animation: kenburns calc(var(--hero-dur) + 2s) var(--ease) forwards; }
 @keyframes kenburns { from { transform: scale(1.16) translateX(1.5%); } to { transform: scale(1.03) translateX(0); } }
@@ -93,7 +94,9 @@
 @media (max-width: 760px) {
   .hero { height: clamp(620px, 92svh, 760px); }
   .slide::after { background: linear-gradient(0deg, var(--bg) 6%, rgba(4, 10, 22, .8) 42%, rgba(4, 10, 22, .2) 72%, rgba(4, 10, 22, .55) 100%); }
-  .slide__media img { object-position: 62% 50%; }
+  /* Cadre portrait : image pour téléphone (centrée), ou image de fond centrée sur son point focal (Hero.tsx) ;
+     sans point focal, cadrage par défaut des visuels paysage, dont le sujet est un peu à droite */
+  .slide__media img { object-position: var(--focal-m, 62% 50%); }
   .slide__content { bottom: 96px; }
   .slide__desc { font-size: 15.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   /* Boutons côte à côte qui se partagent la largeur, chacun sur sa ligne si les libellés ne tiennent pas */

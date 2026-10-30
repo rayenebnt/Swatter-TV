@@ -3,14 +3,21 @@
 // YouTube (façade puis lecteur youtube-nocookie) ou lecteur à intégrer (iframe), avec la même règle de consentement
 // que le lecteur vidéo pour les services externes. Sans lien renseigné : « Bientôt en direct ».
 import Image, { getImageProps } from 'next/image'
-import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent } from 'react'
 import type Hls from 'hls.js'
 import { openCookieSettings, useConsent } from '@/components/layout/consent'
 import { Icon } from '@/components/ui/Icon'
 import { youtubeId } from '@/lib/video'
 import '@/styles/webcams.css'
 
-export type WebcamPoster = { src: string; width: number; height: number; alt: string }
+export type WebcamPoster = {
+  src: string
+  width: number
+  height: number
+  alt: string
+  /** Point focal de l'image (object-position), absent pour le centre */
+  position?: string
+}
 
 /** Données sérialisables d'une webcam pour le lecteur. */
 export type WebcamSource = {
@@ -57,9 +64,20 @@ function youtubeEmbed(url: string): string | null {
   return channel ? `https://www.youtube-nocookie.com/embed/live_stream?channel=${channel}&${params}` : null
 }
 
-/** Vignette plein cadre (next/image : AVIF/WebP, tailles adaptées). */
+/** Vignette plein cadre (next/image : AVIF/WebP, tailles adaptées), cadrée sur son point focal (variable CSS : le plein écran la centre). */
 function Poster({ poster, sizes, priority }: { poster: WebcamPoster; sizes: string; priority: boolean }) {
-  return <Image className="wcp__img" src={poster.src} alt={poster.alt} fill sizes={sizes} preload={priority} unoptimized={isAbsolute(poster.src)} />
+  return (
+    <Image
+      className="wcp__img"
+      src={poster.src}
+      alt={poster.alt}
+      fill
+      sizes={sizes}
+      preload={priority}
+      unoptimized={isAbsolute(poster.src)}
+      style={{ '--focal': poster.position } as CSSProperties}
+    />
+  )
 }
 
 function Unavailable({ cam, sizes, priority }: FeedProps) {

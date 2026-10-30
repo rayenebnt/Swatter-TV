@@ -74,13 +74,27 @@ export const Settings: GlobalConfig = {
                   ],
                 },
                 { name: 'description', label: 'Texte', type: 'textarea' },
-                { name: 'image', label: 'Image de fond (2400 px de large conseillés)', type: 'upload', relationTo: 'media', required: true },
+                {
+                  name: 'image',
+                  label: 'Image de fond (paysage, 2400 px de large conseillés)',
+                  type: 'upload',
+                  relationTo: 'media',
+                  required: true,
+                  admin: {
+                    description:
+                      'Photo en largeur, d’au moins 2400 × 1350 pixels. Sur téléphone, le carrousel est en hauteur\u00a0: seule une bande verticale de la photo reste visible. Réglez son point focal (dans la médiathèque\u00a0: « Modifier l’image », puis « Point focal », cliquez sur le sujet) pour que le sujet reste au centre, ou ajoutez une image pour téléphone ci-dessous.',
+                  },
+                },
                 {
                   name: 'imageMobile',
-                  label: 'Image pour téléphone (facultative)',
+                  label: 'Image pour téléphone (facultative, portrait 1080 × 1350 ou plus)',
                   type: 'upload',
                   relationTo: 'media',
                   filterOptions: { mimeType: { contains: 'image/' } },
+                  admin: {
+                    description:
+                      'Remplace l’image de fond sur les téléphones. Choisissez une photo en hauteur (1080 × 1350 pixels ou plus), sujet dans la moitié haute\u00a0: le texte de la diapositive s’affiche en bas. Vide\u00a0: l’image de fond est recadrée autour de son point focal. Vérifiez avec l’aperçu « Téléphone ».',
+                  },
                 },
                 { name: 'navLabel', label: 'Libellé court (vignette de navigation)', type: 'text', admin: { placeholder: 'Ce soir, Ce week-end…' } },
                 {

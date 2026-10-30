@@ -14,7 +14,8 @@ export const Media: CollectionConfig = {
   slug: 'media',
   labels: { singular: 'Média', plural: 'Médiathèque' },
   admin: {
-    description: 'Toutes les images et vidéos envoyées sur le site. Une image ajoutée depuis une fiche (vidéo, article…) arrive aussi ici.',
+    description:
+      'Toutes les images et vidéos envoyées sur le site. Une image ajoutée depuis une fiche (vidéo, article…) arrive aussi ici. Point focal\u00a0: ouvrez l’image, cliquez sur « Modifier l’image » puis « Point focal » et cliquez sur le sujet ; il restera visible sur téléphone, où les images sont recadrées.',
   },
   access: { read: anyone, create: authenticated, update: authenticated, delete: authenticated },
   hooks: {

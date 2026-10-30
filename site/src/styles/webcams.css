@@ -7,7 +7,8 @@
 .cams { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 .cam { aspect-ratio: 4 / 3.1; }
 .cam .media { position: absolute; inset: 0; aspect-ratio: auto; }
-.cam .media > img { animation: pan var(--pd, 22s) ease-in-out infinite alternate; }
+/* --focal : point focal de l'image d'aperçu (WebcamCard, WebcamPlayer), centre par défaut */
+.cam .media > img { object-position: var(--focal, 50% 50%); animation: pan var(--pd, 22s) ease-in-out infinite alternate; }
 .card.cam:hover .media > img { transform: none; }
 @keyframes pan { from { transform: scale(1.18) translate(-3%, 1%); } to { transform: scale(1.18) translate(3%, -1%); } }
 .cam .media::after { background: linear-gradient(180deg, rgba(4, 10, 22, .55) 0%, rgba(4, 10, 22, 0) 28%, rgba(4, 10, 22, 0) 52%, rgba(4, 10, 22, .9) 100%); }
@@ -25,6 +26,7 @@
 /* ----- Lecteur ----- */
 .wcp { position: absolute; inset: 0; overflow: hidden; background: var(--surface-2); }
 .wcp__img, .wcp__video, .wcp__frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; }
+.wcp__img { object-position: var(--focal, 50% 50%); }
 .wcp__video { background: #000; }
 .wcp__overlay { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 56px 18px 18px; text-align: center; background: linear-gradient(180deg, rgba(4, 10, 22, .2), rgba(4, 10, 22, .6)); }
 .wcp__play { position: relative; width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; color: var(--on-gold); background: var(--gold-grad); box-shadow: 0 18px 40px -14px rgba(217, 170, 69, .8), inset 0 1px 0 rgba(255, 255, 255, .5); transition: transform .4s var(--ease); }
@@ -67,7 +69,8 @@
 .camp[data-expanded] { opacity: 1; transform: none; transition: none; }
 .camp[data-expanded] .camp__screen { position: fixed; inset: 0; z-index: 62; aspect-ratio: auto; }
 .camp__screen.is-full, .is-full .wcp { background: #000; }
-.is-full .wcp__img, .is-full .wcp__video { object-fit: contain; }
+/* Image entière, centrée (le point focal ne sert qu'au recadrage) */
+.is-full .wcp__img, .is-full .wcp__video { object-fit: contain; object-position: 50% 50%; }
 .is-full .cam__top { top: calc(20px + env(safe-area-inset-top)); left: 20px; right: 76px; }
 .is-full .cam__temp { display: inline; }
 .is-full .camp__close { display: grid; position: absolute; z-index: 5; top: calc(14px + env(safe-area-inset-top)); right: 14px; background: rgba(4, 10, 22, .62); border-color: var(--line-2); }

@@ -8,6 +8,7 @@ import { getSettings } from '@/lib/queries/settings'
 import { eventUrl, programUrl } from '@/lib/urls'
 import type { Setting } from '@/payload-types'
 import { CountUp } from './CountUp'
+import { heroMobileSource } from './heroMedia'
 import { HeroClient, type HeroBadge, type HeroLink, type HeroLive, type HeroSlide } from './HeroClient'
 import type { LiveSlot } from './LiveProgress'
 import '@/styles/hero.css'
@@ -17,6 +18,8 @@ type ConfiguredSlide = NonNullable<Setting['heroSlides']>[number]
 /** Diapositive avant rendu des images (l'image prioritaire dépend de la position finale). */
 type Draft = Omit<HeroSlide, 'media' | 'thumb'> & {
   image: MediaRef
+  /** Image pour téléphone (diapositives des réglages) */
+  imageMobile: MediaRef
   /** Visuels de repli (public/visuels) */
   heroFallback: string
   thumbFallback: string
@@ -78,6 +81,7 @@ function fromSettings(slides: ConfiguredSlide[], live: Omit<HeroLive, 'showTitle
       secondary: configuredLink(s.secondaryLabel, s.secondaryHref, false),
       live: isLive && live ? { ...live, showTitle: true } : null,
       image: s.image,
+      imageMobile: s.imageMobile,
       heroFallback: fb.hero,
       thumbFallback: fb.thumb,
       requireLarge: false,
@@ -101,6 +105,7 @@ function liveDraft(current: Slot | null, live: Omit<HeroLive, 'showTitle'> | nul
     // Le titre du programme est déjà le titre de la diapositive
     live: live ? { ...live, showTitle: !current } : null,
     image: null,
+    imageMobile: null,
     heroFallback: FALLBACKS[0].hero,
     thumbFallback: FALLBACKS[0].thumb,
     requireLarge: true,
@@ -125,6 +130,7 @@ function eveningDraft({ slot, image, tonight }: EveningProgram): Draft {
     secondary: { label: 'Programme TV', href: '/programme-tv', icon: 'cal' },
     live: null,
     image,
+    imageMobile: null,
     heroFallback: FALLBACKS[1].hero,
     thumbFallback: FALLBACKS[1].thumb,
     requireLarge: true,
@@ -155,6 +161,7 @@ function eventDraft(event: HomeEvent, now: Date): Draft {
     secondary: { label: 'Tout l’agenda', href: '/agenda', icon: null },
     live: null,
     image: event.poster,
+    imageMobile: null,
     heroFallback: FALLBACKS[2].hero,
     thumbFallback: FALLBACKS[2].thumb,
     requireLarge: true,
@@ -175,6 +182,7 @@ function brandDraft(tagline: string | null): Draft {
     secondary: { label: 'Programme TV', href: '/programme-tv', icon: 'cal' },
     live: null,
     image: null,
+    imageMobile: null,
     heroFallback: FALLBACKS[0].hero,
     thumbFallback: FALLBACKS[0].thumb,
     requireLarge: true,
@@ -183,12 +191,24 @@ function brandDraft(tagline: string | null): Draft {
 
 const isLarge = (m: MediaRef) => typeof m === 'object' && m !== null && (m.width ?? 0) >= HERO_MIN_WIDTH
 
-function render({ image, heroFallback, thumbFallback, requireLarge, ...slide }: Draft, index: number): HeroSlide {
+function render({ image, imageMobile, heroFallback, thumbFallback, requireLarge, ...slide }: Draft, index: number): HeroSlide {
   const background = requireLarge && !isLarge(image) ? null : image
   return {
     ...slide,
-    // Image LCP : la première diapositive est préchargée, les autres sont chargées en différé
-    media: <MediaImage media={background} fallbackSrc={heroFallback} size="hero" fill sizes="100vw" priority={index === 0} alt="" />,
+    // Image LCP : la première diapositive est chargée en priorité, les autres en différé. Sous 760 px (cadre portrait),
+    // image pour téléphone de la diapositive, sinon l'image de fond recadrée autour de son point focal
+    media: (
+      <MediaImage
+        media={background}
+        fallbackSrc={heroFallback}
+        size="hero"
+        fill
+        sizes="100vw"
+        priority={index === 0}
+        alt=""
+        mobile={heroMobileSource(background, imageMobile, heroFallback)}
+      />
+    ),
     thumb: <MediaImage media={image} fallbackSrc={thumbFallback} size="thumb" sizes="76px" alt="" />,
   }
 }
