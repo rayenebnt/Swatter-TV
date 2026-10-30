@@ -3,7 +3,8 @@ import { createServer, type Server } from 'node:http'
 import path from 'node:path'
 
 /**
- * Faux YouTube pour tester l'import sans Internet : page de chaîne (@swattertv-test), flux RSS et vignettes.
+ * Faux YouTube pour tester l'import sans Internet : page de chaîne (@swattertv-test), flux RSS, vignettes et les 3 images
+ * prises dans chaque vidéo (maxres1-3, sd1-3, mq1-3 : aperçu animé en diaporama).
  * Le serveur du site doit être lancé avec YOUTUBE_BASE=http://127.0.0.1:<port> et YOUTUBE_THUMB_BASE=http://127.0.0.1:<port>/vi.
  */
 export const MOCK_CHANNEL_ID = 'UCswatterTVtestChannel01'
@@ -47,7 +48,7 @@ export function startYoutubeMock(port: number, videos = MOCK_VIDEOS): Promise<Se
       const v = videos.find((x) => x.id === url.searchParams.get('v'))!
       res.writeHead(200, { 'content-type': 'text/html' })
       res.end(`<html><head><meta itemprop="duration" content="PT${v.seconds}S"></head><body><script>var x = {"lengthSeconds":"${v.seconds}"}</script></body></html>`)
-    } else if (/^\/vi\/[\w-]{11}\/maxresdefault\.jpg$/.test(url.pathname)) {
+    } else if (/^\/vi\/[\w-]{11}\/(?:maxresdefault|(?:maxres|sd|mq)[1-3])\.jpg$/.test(url.pathname)) {
       res.writeHead(200, { 'content-type': 'image/jpeg' })
       res.end(thumb)
     } else {

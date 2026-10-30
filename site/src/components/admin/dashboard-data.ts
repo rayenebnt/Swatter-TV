@@ -24,7 +24,8 @@ export type DashboardData = {
   /** messages du formulaire de contact pas encore traités ; null : requête en échec (jamais « Aucun message » par défaut) */
   messages: number | null
   meteo: { auto: boolean; updatedAt: string | null }
-  /** vidéos et replays sans image (image YouTube introuvable à l'enregistrement) */
+  /** vidéos et replays en ligne sans image : couverture impossible à tirer de la vidéo à l'enregistrement (YouTube injoignable,
+   * fichier ou lien illisible ; nouvel essai 10 min plus tard au plus tôt, voir src/hooks/videoAutoMedia.ts) */
   missingImages: { videos: number; replays: number }
   /** ID de mesure de Google Analytics publié (null : aucune mesure d'audience) */
   analyticsId: string | null

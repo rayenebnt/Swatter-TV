@@ -8,7 +8,7 @@
 // Options : --rapide (étapes 1 et 2 seulement), --e2e (étape 3 seulement), --garder (laisse le site de test ouvert à la
 // fin, pour y regarder ; Ctrl+C pour l'arrêter).
 // Ports (variables d'environnement) : TEST_PORT 3100 (site), TEST_YOUTUBE_PORT 8766, TEST_METEO_PORT 8771.
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
@@ -152,6 +152,10 @@ try {
     await client.end()
   } catch (error) {
     throw new Error(`PostgreSQL injoignable (${error.message}) : lancez la base (docker start swatter-db), puis relancez.`)
+  }
+  // ffmpeg (couvertures et aperçus tirés des vidéos) : sans lui, les tests qui en dépendent sont sautés
+  if (spawnSync(process.env.FFMPEG_PATH || 'ffmpeg', ['-version']).status !== 0) {
+    console.warn('ffmpeg introuvable : les couvertures et aperçus animés tirés des vidéos ne seront pas vérifiés (apt install ffmpeg).')
   }
 
   if (!e2eOnly) {

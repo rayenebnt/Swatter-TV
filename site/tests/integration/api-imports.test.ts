@@ -1,7 +1,8 @@
 // Tests d'intégration des imports : tâche planifiée GET /api/cron/import (secret exigé ; météo depuis un faux Open-Meteo,
 // vidéos de la chaîne depuis un faux YouTube, fiches vides abandonnées supprimées) et bouton « Importer maintenant »
-// (POST /api/youtube/import, réservé à l'équipe connectée). Les faux services écoutent sur les ports des adresses
-// données au site (OPEN_METEO_URL, YOUTUBE_BASE de vitest.config.ts).
+// (POST /api/youtube/import, réservé à l'équipe connectée), avec la vignette et l'aperçu animé de chaque vidéo. Les faux
+// services écoutent sur les ports des adresses données au site (OPEN_METEO_URL, YOUTUBE_BASE de vitest.config.ts).
+import { spawnSync } from 'node:child_process'
 import type { Server } from 'node:http'
 import type { Payload } from 'payload'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -28,6 +29,8 @@ const CONTEXT = { disableRevalidate: true }
 const watchUrl = (id: string) => `https://www.youtube.com/watch?v=${id}`
 
 const port = (url: string | undefined) => Number(new URL(url ?? 'http://127.0.0.1').port)
+/** ffmpeg installé sur la machine des tests (aperçus animés). */
+const hasFfmpeg = spawnSync(process.env.FFMPEG_PATH || 'ffmpeg', ['-version']).status === 0
 const close = (server: Server) => new Promise<void>((resolve) => server.close(() => resolve()))
 
 let payload: Payload
@@ -233,6 +236,8 @@ describe('tâche planifiée : chaîne YouTube', () => {
       [show, 'swTest00003'],
     ] as const) {
       expect((doc.thumbnail as Media | null)?.filename).toMatch(new RegExp(`^youtube-${id}(-\\d+)?\\.\\w+$`))
+      // aperçu animé : diaporama des 3 images de la vidéo (faux YouTube), si ffmpeg est installé
+      if (hasFfmpeg) expect((doc.preview as Media | null)?.filename).toMatch(new RegExp(`^apercu-y${id}(-\\d+)?\\.mp4$`))
     }
 
     const channel = await payload.findGlobal({ slug: 'youtube', depth: 0 })

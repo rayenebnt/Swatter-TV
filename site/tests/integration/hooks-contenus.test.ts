@@ -360,15 +360,31 @@ describe('brouillons, publication et versions', () => {
     expect(ok.body.doc._status).toBe('published')
   })
 
-  it('vidéo ou replay hors YouTube : image obligatoire à la publication, pas en brouillon', async () => {
+  it('vidéo ou replay Bunny Stream : image obligatoire à la publication (elle n’est pas tirée de la vidéo), pas en brouillon', async () => {
     for (const collection of ['videos', 'replays'] as const) {
-      const body = { title: unique('Sans image'), source: { provider: 'url', url: 'https://exemple.fr/sans-image.mp4' } }
+      const body = { title: unique('Sans image'), source: { provider: 'bunny', bunnyVideoId: 'abc-123' } }
       const refused = await apiJson(`/${collection}`, { method: 'POST', token: editor, body: { ...body, _status: 'published' } })
       expect(refused.status).toBe(400)
-      expect(JSON.stringify(refused.body)).toContain('Ajoutez une image')
+      expect(JSON.stringify(refused.body)).toContain('Ajoutez une image : elle n’est pas tirée automatiquement d’une vidéo Bunny Stream.')
       const draft = await apiJson<{ doc: Doc }>(`/${collection}?draft=true`, { method: 'POST', token: editor, body })
       expect(draft.status).toBe(201)
       track(collection, draft.body.doc)
+    }
+  })
+
+  it('vidéo ou replay par lien direct ou fichier envoyé : publiable sans image (tirée de la vidéo, ou visuel de remplacement)', async () => {
+    const warn = vi.spyOn(payload.logger, 'warn').mockImplementation(() => undefined)
+    try {
+      for (const collection of ['videos', 'replays'] as const) {
+        // lien injoignable (port fermé) : enregistré quand même, sans image
+        const body = { title: unique('Sans image'), source: { provider: 'url', url: 'http://127.0.0.1:9/sans-image.mp4' }, _status: 'published' }
+        const res = await apiJson<{ doc: Doc }>(`/${collection}`, { method: 'POST', token: editor, body })
+        expect(res.status, JSON.stringify(res.body)).toBe(201)
+        track(collection, res.body.doc)
+        expect(res.body.doc.thumbnail ?? null).toBeNull()
+      }
+    } finally {
+      warn.mockRestore()
     }
   })
 })

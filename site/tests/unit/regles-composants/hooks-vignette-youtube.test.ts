@@ -1,24 +1,26 @@
-// Vignette YouTube automatique (src/hooks/youtubeThumbnail.ts) avec une fausse requête et un faux fetch (aucun accès à
-// Internet) : téléchargement de la plus grande image disponible, réutilisation d'une image déjà téléchargée, échecs.
+// Vignette YouTube automatique (src/hooks/videoAutoMedia.ts) avec une fausse requête et un faux fetch (aucun accès à
+// Internet) : téléchargement de la plus grande image disponible, réutilisation d'une image déjà téléchargée, échecs ;
+// règle de l'image obligatoire. ffmpeg est déclaré absent (FFMPEG_PATH) : pas d'aperçu animé ici (voir
+// hooks-couverture-apercu.test.ts), la couverture YouTube se passe de ffmpeg.
 import type { CollectionBeforeValidateHook } from 'payload'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOP10_REORDER } from '@/hooks/top10'
-import { thumbnailUnlessYoutube, youtubeThumbnail } from '@/hooks/youtubeThumbnail'
+import { resetVideoAutoMedia, thumbnailUnlessAutomatic, videoAutoMedia } from '@/hooks/videoAutoMedia'
 
 const ID = 'dQw4w9WgXcQ'
 const BASE = 'http://127.0.0.1:9/vi'
 const LINK = `https://www.youtube.com/watch?v=${ID}`
 
 type Media = { id: number; filename: string }
+type Where = { or: { filename: { like: string } }[] }
+/** « like » de Payload : ILIKE '%…%', où « _ » est un joker. */
+const like = (filename: string, value: string) => new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/_/g, '.'), 'i').test(filename)
 /** Fausse requête : médiathèque en mémoire (recherche « like » simulée en ILIKE), création notée. */
 function fakeReq(library: Media[] = []) {
   return {
     payload: {
-      find: vi.fn(async ({ where }: { where: { filename: { like: string } } }) => {
-        // « like » de Payload : ILIKE '%…%', où « _ » est un joker
-        const pattern = new RegExp(where.filename.like.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/_/g, '.'), 'i')
-        return { docs: library.filter((m) => pattern.test(m.filename)) }
-      }),
+      find: vi.fn(async ({ where }: { where: Where }) => ({ docs: library.filter((m) => where.or.some((w) => like(m.filename, w.filename.like))) })),
+      findByID: vi.fn(async ({ id }: { id: number }) => library.find((m) => m.id === id) ?? null),
       create: vi.fn(async () => ({ id: 77 })),
       logger: { warn: vi.fn() },
     },
@@ -28,7 +30,7 @@ type Req = ReturnType<typeof fakeReq>
 
 type HookArgs = Parameters<CollectionBeforeValidateHook>[0]
 const run = (req: Req, data: Record<string, unknown> | undefined, originalDoc?: Record<string, unknown>, context: Record<string, unknown> = {}) =>
-  youtubeThumbnail({ data, originalDoc, req, context, operation: originalDoc ? 'update' : 'create', collection: { slug: 'videos' } } as unknown as HookArgs)
+  videoAutoMedia({ data, originalDoc, req, context, operation: originalDoc ? 'update' : 'create', collection: { slug: 'videos' } } as unknown as HookArgs)
 
 const image = (bytes: number) => new Response(new Uint8Array(bytes), { status: 200, headers: { 'content-type': 'image/jpeg' } })
 let responses: Record<string, () => Response | Promise<Response>>
@@ -42,6 +44,8 @@ beforeEach(() => {
   fetchMock.mockClear()
   vi.stubGlobal('fetch', fetchMock)
   vi.stubEnv('YOUTUBE_THUMB_BASE', `${BASE}/`)
+  vi.stubEnv('FFMPEG_PATH', '/inexistant/ffmpeg')
+  resetVideoAutoMedia()
 })
 
 afterEach(() => {
@@ -118,6 +122,8 @@ describe('vidéo YouTube enregistrée sans image', () => {
     const links = [`https://youtu.be/${ID}`, `${yt}/shorts/${ID}`, `${yt}/live/${ID}?si=x`, `${yt}/embed/${ID}`, ID]
     for (const link of links) {
       fetchMock.mockClear()
+      // échec précédent (aucune image servie) oublié : sinon pas de nouvel essai avant 10 min
+      resetVideoAutoMedia()
       await run(fakeReq(), youtube({ source: { provider: 'youtube', youtubeUrl: link } }))
       expect(String(fetchMock.mock.calls[0]?.[0]), link).toBe(`${BASE}/${ID}/maxresdefault.jpg`)
     }
@@ -145,20 +151,21 @@ describe('image déjà dans la médiathèque', () => {
     ]
     const req = fakeReq(other)
     const result = await run(req, youtube({ source: { provider: 'youtube', youtubeUrl: 'https://youtu.be/ab_defghijk' } }))
-    expect(req.payload.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'media', where: { filename: { like: 'youtube-ab_defghijk' } } }))
+    const where = { or: [{ filename: { like: 'youtube-ab_defghijk.' } }, { filename: { like: 'youtube-ab_defghijk-' } }] }
+    expect(req.payload.find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'media', where }))
     expect(result?.thumbnail).toBe(77)
   })
 })
 
 describe('rien à faire', () => {
   it('image déjà choisie, dans le formulaire ou dans la fiche enregistrée', async () => {
-    const req = fakeReq()
+    const req = fakeReq([{ id: 3, filename: 'lac-annecy.webp' }])
     const withImage = youtube({ thumbnail: 3 })
     expect(await run(req, withImage)).toBe(withImage)
     const unchanged = { title: 'Titre' }
     expect(await run(req, unchanged, { thumbnail: 3, source: { provider: 'youtube', youtubeUrl: LINK } })).toBe(unchanged)
-    expect(req.payload.find).not.toHaveBeenCalled()
     expect(fetchMock).not.toHaveBeenCalled()
+    expect(req.payload.create).not.toHaveBeenCalled()
   })
 
   it('image retirée (champ vidé) d’une vidéo YouTube : une nouvelle image est récupérée', async () => {
@@ -173,11 +180,10 @@ describe('rien à faire', () => {
     expect((await run(req, { title: 'Titre' }, { source: { provider: 'youtube', youtubeUrl: LINK } }))?.thumbnail).toBe(77)
   })
 
-  it('autre source que YouTube, lien vide ou qui ne désigne pas une vidéo : rien', async () => {
+  it('Bunny sans hôte de diffusion, lien YouTube vide ou qui ne désigne pas une vidéo : rien', async () => {
     const req = fakeReq()
     for (const source of [
       { provider: 'bunny', bunnyVideoId: 'abc' },
-      { provider: 'url', url: 'https://exemple.fr/video.mp4' },
       { provider: 'youtube', youtubeUrl: '' },
       { provider: 'youtube' },
       { provider: 'youtube', youtubeUrl: 'https://www.youtube.com/@swattertv' },
@@ -199,15 +205,17 @@ describe('rien à faire', () => {
   })
 })
 
-describe('thumbnailUnlessYoutube : image obligatoire, sauf pour une vidéo YouTube', () => {
-  it('image fournie, ou vidéo YouTube : valide', () => {
-    expect(thumbnailUnlessYoutube(12, { siblingData: { source: { provider: 'bunny' } } })).toBe(true)
-    expect(thumbnailUnlessYoutube(null, { siblingData: { source: { provider: 'youtube' } } })).toBe(true)
+describe('thumbnailUnlessAutomatic : image tirée de la vidéo, sauf pour Bunny Stream', () => {
+  it('image fournie, ou vidéo YouTube, fichier envoyé, lien direct (image tirée de la vidéo) : valide', () => {
+    expect(thumbnailUnlessAutomatic(12, { siblingData: { source: { provider: 'bunny' } } })).toBe(true)
+    for (const provider of ['youtube', 'upload', 'url']) {
+      expect(thumbnailUnlessAutomatic(null, { siblingData: { source: { provider } } }), provider).toBe(true)
+    }
   })
 
-  it('autre source sans image : message en français', () => {
-    for (const siblingData of [{ source: { provider: 'bunny' } }, { source: { provider: 'url' } }, { source: { provider: 'upload' } }, {}]) {
-      expect(thumbnailUnlessYoutube(null, { siblingData })).toBe('Ajoutez une image : elle est obligatoire, sauf pour une vidéo YouTube.')
+  it('Bunny Stream (ou source inconnue) sans image : message en français', () => {
+    for (const siblingData of [{ source: { provider: 'bunny' } }, { source: {} }, {}]) {
+      expect(thumbnailUnlessAutomatic(undefined, { siblingData })).toBe('Ajoutez une image : elle n’est pas tirée automatiquement d’une vidéo Bunny Stream.')
     }
   })
 })
