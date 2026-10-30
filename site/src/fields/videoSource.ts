@@ -71,6 +71,7 @@ export const videoSourceField = (name = 'source', label = 'Vidéo', required = t
       label: 'Fichier vidéo',
       type: 'upload',
       relationTo: 'media',
+      filterOptions: { mimeType: { contains: 'video/' } },
       admin: { condition: (_, s) => s?.provider === 'upload', description: 'MP4 conseillé. Pour les vidéos longues, préférez YouTube ou Bunny Stream.' },
     },
   ],

@@ -75,6 +75,13 @@ export const Settings: GlobalConfig = {
                 },
                 { name: 'description', label: 'Texte', type: 'textarea' },
                 { name: 'image', label: 'Image de fond (2400 px de large conseillés)', type: 'upload', relationTo: 'media', required: true },
+                {
+                  name: 'imageMobile',
+                  label: 'Image pour téléphone (facultative)',
+                  type: 'upload',
+                  relationTo: 'media',
+                  filterOptions: { mimeType: { contains: 'image/' } },
+                },
                 { name: 'navLabel', label: 'Libellé court (vignette de navigation)', type: 'text', admin: { placeholder: 'Ce soir, Ce week-end…' } },
                 {
                   type: 'row',

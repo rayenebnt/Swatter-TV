@@ -32,8 +32,12 @@ export const Replays: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       validate: thumbnailUnlessYoutube,
+      // images seulement : un MP4 choisi ici donnerait une vignette cassée
+      filterOptions: { mimeType: { contains: 'image/' } },
       admin: { description: 'Facultative pour une vidéo YouTube : son image est récupérée automatiquement à l’enregistrement.' },
     },
+    // aperçu animé (court extrait muet, MP4) généré automatiquement à partir de la vidéo : voir src/hooks
+    { name: 'preview', label: 'Aperçu animé', type: 'upload', relationTo: 'media', admin: { hidden: true } },
     {
       type: 'row',
       fields: [

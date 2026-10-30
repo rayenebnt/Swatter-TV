@@ -182,6 +182,7 @@ export interface Video {
    * Facultative pour une vidéo YouTube : son image est récupérée automatiquement à l’enregistrement.
    */
   thumbnail?: (number | null) | Media;
+  preview?: (number | null) | Media;
   category:
     | 'divertissement'
     | 'series-realite'
@@ -463,6 +464,7 @@ export interface Replay {
    * Facultative pour une vidéo YouTube : son image est récupérée automatiquement à l’enregistrement.
    */
   thumbnail?: (number | null) | Media;
+  preview?: (number | null) | Media;
   /**
    * Le replay apparaît sur le site à partir de cette date.
    */
@@ -982,6 +984,7 @@ export interface VideosSelect<T extends boolean = true> {
         file?: T;
       };
   thumbnail?: T;
+  preview?: T;
   category?: T;
   duration?: T;
   description?: T;
@@ -1079,6 +1082,7 @@ export interface ReplaysSelect<T extends boolean = true> {
         file?: T;
       };
   thumbnail?: T;
+  preview?: T;
   broadcastAt?: T;
   duration?: T;
   description?: T;
@@ -1436,6 +1440,7 @@ export interface Setting {
         titleLine2?: string | null;
         description?: string | null;
         image: number | Media;
+        imageMobile?: (number | null) | Media;
         navLabel?: string | null;
         primaryLabel?: string | null;
         primaryHref?: string | null;
@@ -1598,6 +1603,7 @@ export interface SettingsSelect<T extends boolean = true> {
         titleLine2?: T;
         description?: T;
         image?: T;
+        imageMobile?: T;
         navLabel?: T;
         primaryLabel?: T;
         primaryHref?: T;
