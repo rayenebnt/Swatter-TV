@@ -153,6 +153,8 @@ Dans toutes les rubriques du site, rien n’arrive en ligne sans votre accord :
    Le bouton **Fermer
    l’aperçu** (ou **Aperçu en direct** pour le rouvrir) libère de la place ; au-dessus de l’aperçu, la liste
    **Responsive** affiche la page comme sur un **Téléphone**, une **Tablette** ou un **Ordinateur**.
+   Sur **téléphone ou tablette**, il n’y a pas la place de l’afficher à côté du formulaire : le bouton **Aperçu** ouvre
+   la page, modifications pas encore publiées comprises, dans un nouvel onglet.
 3. **Publiez** : **Publier les modifications** met la nouvelle version en ligne pour tous les visiteurs.
 
 En haut de la fiche, **Statut** indique où en est le contenu :

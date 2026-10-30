@@ -3,6 +3,7 @@
 import { useDocumentInfo, useFormFields } from '@payloadcms/ui'
 import { useEffect, useState } from 'react'
 import { previewFocus, type EditHint } from '@/lib/preview'
+import { AdminIcon } from './icons'
 
 /** Message envoyé à l'aperçu (reçu par src/components/preview/PreviewClient.tsx). */
 export type PreviewFocusMessage = { type: 'swatter:preview-focus'; path: string; target?: string }
@@ -12,7 +13,9 @@ const text = (v: unknown) => (typeof v === 'string' ? v : null)
 /**
  * Fiches avec aperçu en direct (admin.components…beforeDocumentControls) : suit l'onglet ouvert et le champ touché, et
  * indique à l'aperçu la page et l'endroit à montrer (ex. : onglet « Flash info » → bandeau de l'accueil, créneau →
- * son jour dans la grille, publicité → sa bannière). Ne rend rien.
+ * son jour dans la grille, publicité → sa bannière).
+ * Sur téléphone et tablette, l'aperçu à côté du formulaire est masqué (custom.scss) : le lien « Aperçu » rendu ici ouvre
+ * la même page, brouillon compris, dans un nouvel onglet.
  */
 export function PreviewFocus() {
   const { id, collectionSlug, globalSlug } = useDocumentInfo()
@@ -61,5 +64,10 @@ export function PreviewFocus() {
     return () => window.removeEventListener('message', onMessage)
   }, [path, target])
 
-  return null
+  return (
+    <a className="sw-preview-mobile" href={`/apercu?chemin=${encodeURIComponent(path)}`} target="_blank" rel="noopener">
+      <AdminIcon name="external" />
+      Aperçu
+    </a>
+  )
 }

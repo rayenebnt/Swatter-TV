@@ -971,3 +971,87 @@ html[data-theme='dark'] .sw-day[aria-pressed='true'] {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ======================================================================
+   Téléphone et tablette
+   ====================================================================== */
+
+/* logo de l'en-tête (fil d'Ariane) : Payload le prévoit carré et de 16 px, le nôtre est plus large */
+.step-nav__home {
+  display: flex;
+  align-items: center;
+  width: auto;
+  height: auto;
+
+  > span {
+    display: flex;
+    width: auto;
+    max-width: none;
+    overflow: visible;
+  }
+
+  .swatter-admin-icon {
+    width: 32px;
+    height: 24px;
+  }
+}
+
+/* fil d'Ariane trop long (titre d'une fiche) : il se coupe au lieu de pousser l'avatar hors de l'écran */
+.app-header__step-nav-wrapper {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* lien « Aperçu » des fiches (PreviewFocus.tsx) : seulement quand l'aperçu à côté du formulaire est masqué */
+.sw-preview-mobile {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  height: calc(var(--base) * 1.6);
+  padding: 0 12px;
+  border: 1px solid var(--swatter-gold);
+  border-radius: var(--style-radius-s);
+  color: var(--swatter-accent);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Jusqu'à 1024 px, l'aperçu en direct prendrait toute la largeur et écraserait le formulaire dans une colonne de
+   quelques pixels : il est masqué, le formulaire garde toute la largeur et « Aperçu » ouvre la page dans un onglet. */
+@media (max-width: 1024px) {
+  #live-preview-toggler,
+  .live-preview-window {
+    display: none !important;
+  }
+
+  .sw-preview-mobile {
+    display: inline-flex;
+  }
+
+  /* « Aperçu » montre déjà la page (brouillon compris) : « Voir sur le site » ferait doublon dans une barre étroite */
+  .doc-controls__controls:has(.sw-preview-mobile) .sw-view-site {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* menu : liens plus hauts, faciles à toucher du doigt */
+  .sw-nav__link {
+    min-height: 40px;
+    padding-block: 8px;
+  }
+
+  /* tableau de bord : titres des derniers contenus sur deux lignes plutôt que coupés après quelques mots */
+  .sw-recent__title {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}

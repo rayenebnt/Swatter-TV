@@ -408,6 +408,10 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   `[data-preview~=cible]` (sans `scrollIntoView`, qui ferait défiler l'administration). Cibles : `hero`, `flash`, `live`,
   `footer`, `ad`, `forecast`, `bulletin`, `webcam-<slug>`, `slot-<id>`. `settings` a `forceSelect: { _status: true }` : sans cela, Payload affiche
   « Brouillon » au lieu de « Modifications non publiées » sur un global qui a un brouillon.
+  **Téléphone et tablette (≤ 1024 px)** : Payload passe l'aperçu en pleine largeur sans replier le formulaire, qui se
+  retrouve écrasé ; `custom.scss` masque donc l'aperçu et son bouton à ces tailles, et `PreviewFocus` rend un lien
+  « Aperçu » (`/apercu?chemin=…`, même page que l'aperçu, brouillon compris) qui l'ouvre dans un onglet. Le choix
+  « aperçu ouvert » reste mémorisé tel quel pour l'ordinateur.
 - **Page « Aide »** (`/admin/aide`, `HelpView.tsx`) : rend `GUIDE_CLIENT.md` (mini-rendu `markdown.tsx`, identifiants
   d'intertitres à la GitHub pour le sommaire). Le fichier est lu à l'exécution et embarqué dans le build autonome par
   `outputFileTracingIncludes` (`next.config.ts`) : **tenir le guide à jour à chaque changement d'écran**.
