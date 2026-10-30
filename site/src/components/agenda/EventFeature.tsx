@@ -1,11 +1,12 @@
 import Link from 'next/link'
+import type { CSSProperties } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { mediaAlt } from '@/lib/media'
 import type { EventFeatureItem } from '@/lib/queries/events'
 import { eventUrl } from '@/lib/urls'
 import { DateChip } from './DateChip'
-import { eventVisual, frenchSpaces, isMultiDay, shortWhen, timeLabel } from './utils'
+import { eventVisual, featureRatio, frenchSpaces, isMultiDay, shortWhen, timeLabel } from './utils'
 import '@/styles/agenda.css'
 
 const SIZES = '(max-width: 760px) 92vw, (max-width: 1100px) 46vw, 420px'
@@ -37,7 +38,8 @@ export function EventFeature({
 
   return (
     <article className={wide ? 'card feature feature--wide' : 'card feature'} data-reveal>
-      <div className="media">
+      {/* Sur téléphone, cadre aux proportions de l'affiche (bornées) : l'essentiel d'une affiche portrait reste visible */}
+      <div className="media" style={{ '--poster-ratio': featureRatio(event.poster) } as CSSProperties}>
         <MediaImage media={event.poster} fill priority={priority} sizes={wide ? WIDE_SIZES : SIZES} alt={mediaAlt(event.poster, `Affiche\u00a0: ${event.title}`)} fallbackSrc={eventVisual(event.id)} />
       </div>
       <div className="card__body">

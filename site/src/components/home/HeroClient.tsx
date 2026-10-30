@@ -23,7 +23,7 @@ export type HeroSlide = {
   primary: HeroLink | null
   secondary: HeroLink | null
   live: HeroLive | null
-  /** Image de fond (MediaImage « fill ») */
+  /** Image de fond (MediaImage « fill » : <picture> avec une source pour téléphone) */
   media: ReactNode
   /** Vignette de navigation */
   thumb: ReactNode

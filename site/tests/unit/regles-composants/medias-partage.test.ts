@@ -1,9 +1,10 @@
 // Médias et images de partage (src/lib/media.ts, src/lib/og.ts) : adresse locale optimisable, taille demandée ou repli,
-// média absent ou non chargé, stockage S3, description et point focal ; images Open Graph en JPEG 1200 × 630.
+// média absent ou non chargé, stockage S3, description et point focal (aussi dans une déclinaison découpée autour de
+// lui, ou centré dans un cadre recadré) ; images Open Graph en JPEG 1200 × 630.
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { mediaAlt, mediaFocal, mediaSize, mediaUrl } from '@/lib/media'
+import { coverWidth, focalCover, mediaAlt, mediaFocal, mediaRatio, mediaSize, mediaUrl } from '@/lib/media'
 import { ogImage, ogVisual } from '@/lib/og'
 import { SITE_URL } from '@/lib/site'
 import { SHARE_VISUAL } from '@/components/video/utils'
@@ -103,6 +104,50 @@ describe('mediaSize, mediaAlt, mediaFocal', () => {
     expect(mediaFocal(media({ focalX: null, focalY: 40 }))).toBeUndefined()
     expect(mediaFocal(media())).toBeUndefined()
     expect(mediaFocal(null)).toBeUndefined()
+  })
+
+  it('mediaFocal avec une taille : position du point dans la déclinaison, découpée autour de lui à l’envoi', () => {
+    // 2400 × 1600 (3:2) → card 960 × 540 : image ramenée à 960 × 640, 540 lignes gardées autour du point (bord atteint)
+    expect(mediaFocal(media({ focalX: 25, focalY: 80 }), 'card')).toBe('25% 76.3%')
+    expect(mediaFocal(media({ focalX: 50, focalY: 20 }), 'card')).toBe('50% 23.7%')
+    // point loin des bords : il se retrouve au centre de la découpe (cadrage toujours imposé : ce n'est plus le centre par défaut)
+    expect(mediaFocal(media({ focalX: 70, focalY: 50 }), 'card')).toBe('70% 50%')
+    // panorama 3000 × 1000 → card : coupé en largeur (image ramenée à 1620 × 540, 960 colonnes gardées)
+    const pano = media({ width: 3000, height: 1000, focalX: 90, focalY: 30, sizes: { card: { url: '/api/media/file/pano-960x540.webp', width: 960, height: 540 } } })
+    expect(mediaFocal(pano, 'card')).toBe('83.1% 30%')
+    expect(mediaFocal({ ...pano, focalX: 60 }, 'card')).toBe('50% 30%')
+  })
+
+  it('mediaFocal avec une taille non découpée, absente ou non générée : point focal du fichier d’origine', () => {
+    const m = media({ focalX: 25, focalY: 80, sizes: { hero: { url: '/api/media/file/mont-blanc-2400x1600.webp', width: 2400, height: 1600 }, card: { url: null } } })
+    expect(mediaFocal(m, 'hero')).toBe('25% 80%')
+    expect(mediaFocal(m, 'card')).toBe('25% 80%')
+    expect(mediaFocal(m, 'poster')).toBe('25% 80%')
+    expect(mediaFocal(media({ focalX: 50, focalY: 50 }), 'card')).toBeUndefined()
+    expect(mediaFocal(7, 'card')).toBeUndefined()
+  })
+
+  it('mediaRatio et coverWidth : proportions affichées et largeur d’une image qui couvre un cadre (attribut sizes)', () => {
+    expect(mediaRatio(media())).toBe(1.5)
+    expect(mediaRatio(media(), 'card')).toBeCloseTo(16 / 9)
+    expect(mediaRatio(null)).toBeCloseTo(16 / 9)
+    // image paysage dans un cadre portrait : elle déborde en largeur ; image étroite : largeur du cadre
+    expect(coverWidth(450, 820, 16 / 9)).toBeCloseTo(1457.8, 1)
+    expect(coverWidth(450, 820, 0.5)).toBe(450)
+  })
+
+  it('focalCover : point focal au centre du cadre, contre le bord s’il en est trop près ; rien pour le centre par défaut', () => {
+    const wide = (focalX: number, focalY: number) => media({ width: 1600, height: 900, sizes: {}, focalX, focalY })
+    // 16:9 dans un cadre portrait (1:2) : 28 % de la largeur visible ; hauteur entière (pas de cadrage vertical)
+    expect(focalCover(wide(85, 40), 0.5)).toBe('98.7% 50%')
+    expect(focalCover(wide(95, 40), 0.5)).toBe('100% 50%')
+    expect(focalCover(wide(10, 40), 0.5)).toBe('0% 50%')
+    expect(focalCover(wide(50, 50), 0.5)).toBeUndefined()
+    // portrait 9:16 dans un cadre 16:9 : cadrage vertical seulement
+    expect(focalCover(media({ width: 900, height: 1600, sizes: {}, focalX: 30, focalY: 20 }), 16 / 9)).toBe('50% 6.1%')
+    // cadre aux mêmes proportions : rien n'est coupé
+    expect(focalCover(wide(85, 40), 16 / 9)).toBe('50% 50%')
+    expect(focalCover(null, 0.5)).toBeUndefined()
   })
 })
 

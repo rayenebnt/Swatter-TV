@@ -20,7 +20,7 @@ export function WebcamCard({ webcam, index }: { webcam: WebcamItem; index: numbe
   return (
     <article className="card cam" data-reveal style={{ '--d': index } as CSSProperties}>
       <div className="media" style={{ '--pd': panDuration(index) } as CSSProperties}>
-        <Image src={cam.poster.src} alt="" fill sizes={SIZES} unoptimized={/^https?:\/\//.test(cam.poster.src)} />
+        <Image src={cam.poster.src} alt="" fill sizes={SIZES} unoptimized={/^https?:\/\//.test(cam.poster.src)} style={{ '--focal': cam.poster.position } as CSSProperties} />
       </div>
       <div className="cam__top" aria-hidden="true">
         {soon ? (

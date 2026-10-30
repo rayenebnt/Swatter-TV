@@ -3,6 +3,7 @@ import type { Event } from '@/payload-types'
 import { EVENT_CATEGORIES, labelOf } from '@/lib/categories'
 import type { DepartmentSlug } from '@/lib/departments'
 import { dateChip, formatDate, formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
+import { coverWidth, mediaRatio, type MediaRef } from '@/lib/media'
 import type { EventCategory, EventPeriod } from '@/lib/queries/events'
 
 type Dates = Pick<Event, 'startDate' | 'endDate'>
@@ -15,6 +16,23 @@ export const eventVisual = (id: number) => `/visuels/${VISUALS[Math.abs(id) % VI
 
 /** Visuel de partage des pages de liste. */
 export const AGENDA_VISUAL = '/visuels/t-crepuscule-a.webp'
+
+/* ----- Affiches ----- */
+
+/** Vignette d'affiche des cartes sur téléphone (agenda.css : 112 px de large, environ 150 px de haut avec le texte). */
+const POSTER_THUMB = { width: 112, height: 150 }
+
+/**
+ * Attribut sizes de l'affiche d'origine dans la vignette des cartes sur téléphone : largeur réellement affichée (une
+ * affiche paysage couvre la vignette par sa hauteur, elle est donc plus large qu'elle).
+ */
+export const posterThumbSizes = (poster: MediaRef) => `${Math.round(coverWidth(POSTER_THUMB.width, POSTER_THUMB.height, mediaRatio(poster)))}px`
+
+/**
+ * Proportions de l'encart vedette sur téléphone : celles de l'affiche, entre 4:5 et 3:2. Une affiche portrait garde
+ * presque toute sa hauteur (titre, date), une photo paysage presque toute sa largeur.
+ */
+export const featureRatio = (poster: MediaRef) => (Math.round(Math.min(1.5, Math.max(0.8, mediaRatio(poster))) * 1000) / 1000).toString()
 
 /** Espaces insécables de la typographie française (avant : ; ! ? » et après «) dans les textes saisis. */
 export const frenchSpaces = (s: string) => s.replace(/ (?=[:;!?»])/g, '\u00a0').replace(/« /g, '«\u00a0')

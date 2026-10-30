@@ -106,7 +106,8 @@
 }
 @media (max-width: 760px) {
   .feature { grid-template-columns: 1fr; }
-  .feature .media { aspect-ratio: 1 / 1; }
+  /* Proportions de l'affiche, entre 4:5 et 3:2 (EventFeature) */
+  .feature .media { aspect-ratio: var(--poster-ratio, 1); }
   .feature .card__body { padding: 22px; }
   .feature .card__title { font-size: 25px; }
   .feature--wide { min-height: 0; }

@@ -5,7 +5,7 @@ import { MediaImage } from '@/components/ui/MediaImage'
 import type { EventListItem } from '@/lib/queries/events'
 import { eventUrl } from '@/lib/urls'
 import { DateChip } from './DateChip'
-import { eventKicker, eventStatus, eventVisual, frenchSpaces, shortWhen, untilLabel } from './utils'
+import { eventKicker, eventStatus, eventVisual, frenchSpaces, posterThumbSizes, shortWhen, untilLabel } from './utils'
 import '@/styles/agenda.css'
 
 export const POSTER_CARD_SIZES = '(max-width: 760px) 140px, (max-width: 1100px) 46vw, 330px'
@@ -61,10 +61,22 @@ export function EventCard({
   }
 
   const status = eventStatus(event, now)
+  const visual = eventVisual(event.id)
   return (
     <article className="card ecard" data-reveal style={style}>
       <div className="media">
-        <MediaImage media={event.poster} size="card" fill priority={priority} sizes={sizes} alt="" fallbackSrc={eventVisual(event.id)} />
+        {/* Carte 16:9 : déclinaison « card » (découpée autour du point focal) ; vignette presque carrée sur téléphone :
+            affiche d'origine cadrée sur son point focal, plutôt qu'une seconde découpe de la bande 16:9 */}
+        <MediaImage
+          media={event.poster}
+          size="card"
+          fill
+          priority={priority}
+          sizes={sizes}
+          alt=""
+          fallbackSrc={visual}
+          mobile={{ media: event.poster, sizes: posterThumbSizes(event.poster), fallbackSrc: visual }}
+        />
         <DateChip event={event} className="ecard__chip" />
         {status !== 'upcoming' && <span className="badge badge--glass badge--sm ecard__status">{status === 'ongoing' ? 'En cours' : 'Terminé'}</span>}
       </div>
