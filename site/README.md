@@ -287,7 +287,8 @@ docker compose run --rm -e ADMIN_EMAIL=… -e ADMIN_PASSWORD=… tools npm run p
 (ou ouvrir `https://www.swatter-tv.fr/admin` et créer le compte avec le rôle « Administrateur »).
 
 Autres commandes ponctuelles : `docker compose run --rm tools npm run payload migrate:status`,
-`docker compose run --rm tools npm run import`, et **au premier déploiement seulement**, pour livrer le site avec
+`docker compose run --rm tools npm run import`, `docker compose run --rm tools npm run apercus` (image et aperçu animé
+des vidéos et replays qui n’en ont pas encore ; lancé en arrière-plan par `deploy/mise-a-jour.sh`), et **au premier déploiement seulement**, pour livrer le site avec
 les contenus de départ à modifier : `docker compose run --rm -e SEED_FORCE=1 tools npm run seed` (efface tous les
 contenus : jamais une fois le site rempli).
 
@@ -401,7 +402,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 
 ### Ce qui est vérifié
 
-- **Tests unitaires** (`tests/unit/`, 937 tests, quelques secondes) : la logique pure du site.
+- **Tests unitaires** (`tests/unit/`, 942 tests, quelques secondes) : la logique pure du site.
   - Espace membres et sécurité : validation des champs, mots de passe, jetons et sessions signées, limites anti-abus,
     retours après la connexion et sortie de l’aperçu (près de 300 tentatives de redirection vers un autre site), e-mails,
     export CSV (formules de tableur neutralisées).
@@ -414,7 +415,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
     arguments de ffmpeg), formulaire de contact, mesure d’audience (Google Analytics : chargement, arrêt, cookies).
   - Aperçu animé (un seul à la fois, survol, défilement sur téléphone, « réduire les animations »), images adaptées au
     téléphone (texte riche, carrousel, point focal), gros envois réservés à l’équipe et ménage des fichiers temporaires.
-- **Tests d’intégration** (`tests/integration/`, 415 tests, environ 3 min 30) : Payload complet sur la base de test.
+- **Tests d’intégration** (`tests/integration/`, 417 tests, environ 3 min 30) : Payload complet sur la base de test.
   - Droits du public, des éditeurs et des administrateurs sur chaque collection et chaque réglage (REST et GraphQL),
     brouillons, contenus programmés, comptes de l’équipe, membres.
   - Comportements automatiques : adresses uniques, Top 10, couvertures et aperçus animés tirés des vidéos (vrai ffmpeg :

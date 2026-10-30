@@ -23,6 +23,7 @@
     "webcams": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/webcams.ts",
     "test-email": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/test-email.ts",
     "import": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/import.ts",
+    "apercus": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/apercus-existants.ts",
     "test": "vitest run",
     "test:unit": "vitest run --project unitaires",
     "test:integration": "cross-env NODE_OPTIONS=--no-deprecation vitest run --project integration",

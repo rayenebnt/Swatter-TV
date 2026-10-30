@@ -10,6 +10,7 @@ import path from 'node:path'
 import config from '@payload-config'
 import { handleEndpoints, type CollectionSlug, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { catchUpAutoMedia, resetVideoAutoMedia } from '@/hooks/videoAutoMedia'
 import type { Media } from '@/payload-types'
 import { apiJson, editorToken, SITE, testPayload, unique } from './helpers'
 
@@ -164,6 +165,44 @@ describe.runIf(ffmpegOk)('fichier envoyé dans la médiathèque (ffmpeg)', () =>
     expect((await media(saved.thumbnail)).filename).toMatch(new RegExp(`^video-m${file}(-\\d+)?\\.webp$`))
     expect((await media(saved.preview)).filename).toMatch(new RegExp(`^apercu-m${file}(-\\d+)?\\.mp4$`))
     expect(saved.preview).not.toBe(oldPreview)
+  })
+
+  it('rattrapage des fiches sans image ni aperçu (antérieures, ffmpeg absent) : complétées sans toucher au brouillon en cours ni aux autres champs', async () => {
+    const copy = path.join(work, 'rattrapage.mp4')
+    ffmpeg(['-i', CLIP, '-c', 'copy', copy])
+    const file = await upload(copy)
+    const warn = vi.spyOn(payload.logger, 'warn').mockImplementation(() => undefined)
+    vi.stubEnv('FFMPEG_PATH', path.join(work, 'inexistant', 'ffmpeg'))
+    vi.stubEnv('FFPROBE_PATH', path.join(work, 'inexistant', 'ffprobe'))
+    let doc: Doc
+    const draftTitle = unique('Titre en brouillon')
+    try {
+      doc = await post('videos', { provider: 'upload', file }, { description: 'Description gardée' })
+      expect([doc.thumbnail ?? null, doc.preview ?? null]).toEqual([null, null])
+      // modification pas encore publiée
+      await patch('videos', doc.id, { title: draftTitle }, '&draft=true')
+    } finally {
+      vi.unstubAllEnvs()
+      warn.mockRestore()
+      // ffmpeg absent déjà signalé : oublié, pour les tests suivants
+      resetVideoAutoMedia()
+    }
+    const done: string[] = []
+    const result = await catchUpAutoMedia(payload, (line) => done.push(line))
+    expect(result.updated).toBeGreaterThanOrEqual(1)
+    expect(done.some((line) => line.includes(doc.title as string) && line.includes('image et aperçu animé')), done.join('\n')).toBe(true)
+
+    const online = await payload.findByID({ collection: 'videos', id: doc.id, depth: 0 })
+    expect((await media(online.thumbnail as number)).filename).toMatch(new RegExp(`^video-m${file}(-\\d+)?\\.webp$`))
+    expect((await media(online.preview as number)).filename).toMatch(new RegExp(`^apercu-m${file}(-\\d+)?\\.mp4$`))
+    expect(online).toMatchObject({ title: doc.title, description: 'Description gardée', _status: 'published', source: { provider: 'upload', file } })
+    // le brouillon en cours reste la dernière version, avec sa modification
+    const latest = await payload.findByID({ collection: 'videos', id: doc.id, depth: 0, draft: true })
+    expect(latest.title).toBe(draftTitle)
+    // déjà complète : rien à refaire au passage suivant
+    const again: string[] = []
+    await catchUpAutoMedia(payload, (line) => again.push(line))
+    expect(again.filter((line) => line.includes(doc.title as string))).toEqual([])
   })
 
   it('ffmpeg introuvable (FFMPEG_PATH, FFPROBE_PATH) : enregistrement sans erreur, sans couverture ni aperçu, signalé dans le journal', async () => {

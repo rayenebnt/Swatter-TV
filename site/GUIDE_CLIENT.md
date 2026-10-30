@@ -228,8 +228,9 @@ Pour ajouter une vidéo à la main (une vidéo d’une autre chaîne, par exempl
 7. Vérifiez l’aperçu, puis **Publier les modifications**.
 
 **Aperçu animé** : pour chaque vidéo, le site prépare aussi tout seul un court aperçu muet d’environ 5 secondes (pour
-YouTube, un petit diaporama des images de la vidéo). Vous n’avez rien à faire. Si vous changez la vidéo d’une fiche,
-l’aperçu est refait, ainsi que l’image si c’était celle prise automatiquement dans l’ancienne vidéo. Sur le site, les
+YouTube, un petit diaporama des images de la vidéo). Vous n’avez rien à faire : les vidéos déjà sur le site reçoivent aussi le leur, ainsi
+qu’une image si elles n’en avaient pas. Si vous changez la vidéo d’une fiche, l’aperçu est refait, ainsi que l’image si
+c’était celle prise automatiquement dans l’ancienne vidéo. Sur le site, les
 vidéos « tournent » ainsi sans qu’on clique, pour donner envie de les regarder :
 
 - sur ordinateur, l’aperçu démarre quand la souris passe sur une vignette ;

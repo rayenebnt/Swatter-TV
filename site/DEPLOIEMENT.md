@@ -82,6 +82,7 @@ provisoire y mènent. Déclarez enfin le site dans **Google Search Console** ave
 | revenir à la sauvegarde d’une date | `~/Swatter-TV/site/deploy/restaurer.sh AAAA-MM-JJ` |
 | voir si tout tourne | `cd ~/Swatter-TV/site && docker compose ps` |
 | lire les messages d’erreur du site | `cd ~/Swatter-TV/site && docker compose logs app` |
+| donner leur image et leur aperçu animé aux vidéos qui n’en ont pas (lancé seul, en arrière-plan, par la mise à jour) | `cd ~/Swatter-TV/site && docker compose run --rm tools npm run apercus` |
 
 Les sauvegardes se font seules chaque nuit (base et images, 14 jours gardés, dans `/var/backups/swatter`) ; l’option
 Sauvegarde automatique d’OVHcloud en garde une copie ailleurs.

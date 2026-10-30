@@ -8,7 +8,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import type { CollectionAfterChangeHook, CollectionBeforeValidateHook, PayloadRequest } from 'payload'
+import { createLocalReq, type CollectionAfterChangeHook, type CollectionBeforeValidateHook, type Payload, type PayloadRequest } from 'payload'
 import { youtubeId } from '@/lib/video'
 import { ffmpegReady, MissingProgramError, probeVideo, resetFfmpegState, slideshow, videoClip, videoCover, type VideoInput, type VideoProbe } from './ffmpeg'
 import { TOP10_REORDER } from './top10'
@@ -392,6 +392,45 @@ export const videoAutoMedia: CollectionBeforeValidateHook = async ({ data, origi
     req.payload.logger.warn(`[swatter] Couverture ou aperçu automatique impossible : ${reasonOf(error)}`)
     return data
   }
+}
+
+/** Bilan du rattrapage : fiches examinées, fiches complétées. */
+export type CatchUpResult = { checked: number; updated: number }
+
+/**
+ * Rattrapage des vidéos et replays sans couverture ou sans aperçu (fiches antérieures à l'aperçu animé, vidéo injoignable
+ * à l'enregistrement) : fichiers fabriqués comme à l'enregistrement, puis écrits directement dans la fiche
+ * (payload.db.updateOne : ni nouvelle version ni hooks, donc un brouillon en cours reste intact ; l'administration
+ * reprend ces fichiers, retrouvés par leur nom, au prochain enregistrement). Une image choisie à la main n'est jamais
+ * touchée. Jamais d'erreur. Voir src/scripts/apercus-existants.ts.
+ */
+export async function catchUpAutoMedia(payload: Payload, onUpdate?: (line: string) => void): Promise<CatchUpResult> {
+  const result: CatchUpResult = { checked: 0, updated: 0 }
+  for (const collection of ['videos', 'replays'] as const) {
+    const { docs } = await payload.find({
+      collection,
+      where: { and: [{ 'source.provider': { in: AUTO_COVER_PROVIDERS } }, { or: [{ thumbnail: { exists: false } }, { preview: { exists: false } }] }] },
+      depth: 0,
+      pagination: false,
+      select: { title: true, source: true, thumbnail: true, preview: true },
+    })
+    for (const doc of docs as unknown as (Data & { id: number | string })[]) {
+      result.checked++
+      try {
+        const req = await createLocalReq({}, payload)
+        const next = await fillAutoMedia({ ...doc }, doc, req)
+        const changes: Data = {}
+        for (const field of ['thumbnail', 'preview']) if (!same(idOf(next[field]), idOf(doc[field]))) changes[field] = idOf(next[field])
+        if (!Object.keys(changes).length) continue
+        await payload.db.updateOne({ collection, id: doc.id, data: changes, req })
+        result.updated++
+        onUpdate?.(`${collection === 'videos' ? 'Vidéo' : 'Replay'} « ${String(doc.title ?? doc.id)} » : ${Object.keys(changes).map((f) => (f === 'thumbnail' ? 'image' : 'aperçu animé')).join(' et ')}`)
+      } catch (error) {
+        payload.logger.warn(`[swatter] Rattrapage impossible pour ${collection} n° ${doc.id} : ${reasonOf(error)}`)
+      }
+    }
+  }
+  return result
 }
 
 /**

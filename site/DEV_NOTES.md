@@ -496,6 +496,11 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
     la vidéo ne change pas, un fichier lié différent de celui de la fiche enregistrée est vérifié (`isGone`) et remplacé
     s'il a disparu, sinon l'écriture violerait la clé étrangère. Un lien direct dont le fichier change à la même adresse n'est pas
     détecté (clé = empreinte de l'adresse).
+  - Rattrapage (`catchUpAutoMedia`, `npm run apercus`, lancé en arrière-plan par `deploy/mise-a-jour.sh`) : vidéos et
+    replays YouTube, fichier envoyé ou lien direct sans couverture ou sans aperçu (fiches antérieures, vidéo injoignable à
+    l'enregistrement) ; fichiers fabriqués par la même logique que le hook puis écrits par `payload.db.updateOne` dans la
+    fiche (ni version ni hooks : un brouillon en cours reste la dernière version ; l'administration retrouve ces fichiers
+    par leur nom au prochain enregistrement ; les pages se régénèrent en 60 s, `revalidate`).
   - Import de la chaîne : chaque vidéo créée reçoit sa couverture et son diaporama (premier import avec clé d'API : long).
     `importYoutube` ne lance qu'un import à la fois par processus : pendant un import, la tâche planifiée en partage le
     résultat, « Importer maintenant » (`force`) attend sa fin puis relance un import avec les réglages relus.
