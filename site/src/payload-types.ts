@@ -154,7 +154,7 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Vidéo du jour, Top 10 et vidéos à la demande. Pour une vidéo YouTube, collez simplement son lien : l’image est récupérée toute seule.
+ * Vidéo du jour, Top 10 et vidéos à la demande. Une image et un court aperçu animé sont tirés automatiquement de la vidéo à l’enregistrement ; choisissez une autre image si elle ne convient pas.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "videos".
@@ -179,7 +179,7 @@ export interface Video {
     file?: (number | null) | Media;
   };
   /**
-   * Facultative pour une vidéo YouTube : son image est récupérée automatiquement à l’enregistrement.
+   * Une image est tirée automatiquement de la vidéo à l’enregistrement ; choisissez-en une autre ici si elle ne convient pas. Obligatoire seulement pour une vidéo Bunny Stream.
    */
   thumbnail?: (number | null) | Media;
   preview?: (number | null) | Media;
@@ -225,7 +225,7 @@ export interface Video {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Toutes les images et vidéos envoyées sur le site. Une image ajoutée depuis une fiche (vidéo, article…) arrive aussi ici.
+ * Toutes les images et vidéos envoyées sur le site. Une image ajoutée depuis une fiche (vidéo, article…) arrive aussi ici. Point focal : ouvrez l’image, cliquez sur « Modifier l’image » puis « Point focal » et cliquez sur le sujet ; il restera visible sur téléphone, où les images sont recadrées.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
@@ -432,7 +432,7 @@ export interface Event {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Les émissions déjà diffusées, à revoir sur le site. Pour une vidéo YouTube, l’image est récupérée toute seule.
+ * Les émissions déjà diffusées, à revoir sur le site. Une image et un court aperçu animé sont tirés automatiquement de la vidéo à l’enregistrement ; choisissez une autre image si elle ne convient pas.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "replays".
@@ -461,7 +461,7 @@ export interface Replay {
     file?: (number | null) | Media;
   };
   /**
-   * Facultative pour une vidéo YouTube : son image est récupérée automatiquement à l’enregistrement.
+   * Une image est tirée automatiquement de la vidéo à l’enregistrement ; choisissez-en une autre ici si elle ne convient pas. Obligatoire seulement pour une vidéo Bunny Stream.
    */
   thumbnail?: (number | null) | Media;
   preview?: (number | null) | Media;
@@ -599,7 +599,13 @@ export interface Ad {
   id: number;
   name: string;
   placement: 'home-leaderboard' | 'inner-leaderboard';
+  /**
+   * Bannière horizontale, affichée jusqu’à 1272 pixels de large : envoyez-la en 1940 × 500 pixels (le double de 970 × 250) pour qu’elle reste nette sur les écrans haute définition. Le cadre prend les proportions du visuel.
+   */
   image: number | Media;
+  /**
+   * Affiché sur les téléphones à la place du visuel bureau. Sans lui, la bannière bureau y est réduite à environ 360 × 90 pixels : son texte devient illisible. Envoyez 1080 × 340 pixels (ou un carré de 1080 × 1080), avec un texte court et gros.
+   */
   imageMobile?: (number | null) | Media;
   link?: string | null;
   /**
@@ -1439,7 +1445,13 @@ export interface Setting {
         titleLine1: string;
         titleLine2?: string | null;
         description?: string | null;
+        /**
+         * Photo en largeur, d’au moins 2400 × 1350 pixels. Sur téléphone, le carrousel est en hauteur : seule une bande verticale de la photo reste visible. Réglez son point focal (dans la médiathèque : « Modifier l’image », puis « Point focal », cliquez sur le sujet) pour que le sujet reste au centre, ou ajoutez une image pour téléphone ci-dessous.
+         */
         image: number | Media;
+        /**
+         * Remplace l’image de fond sur les téléphones. Choisissez une photo en hauteur (1080 × 1350 pixels ou plus), sujet dans la moitié haute : le texte de la diapositive s’affiche en bas. Vide : l’image de fond est recadrée autour de son point focal. Vérifiez avec l’aperçu « Téléphone ».
+         */
         imageMobile?: (number | null) | Media;
         navLabel?: string | null;
         primaryLabel?: string | null;
