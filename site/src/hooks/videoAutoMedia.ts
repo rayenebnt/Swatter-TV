@@ -4,7 +4,7 @@
 // - Bunny Stream : son image, si l'hôte de la zone de diffusion est connu (BUNNY_CDN_HOST), sans aperçu.
 // Les fichiers créés sont reconnaissables à leur nom : youtube-<id>, video-<clé>, bunny-<id> (couvertures) et apercu-<clé>
 // (aperçus), où la clé désigne la vidéo (y<id YouTube>, m<n° du fichier>, u<empreinte du lien>). Une image choisie à la main
-// n'est jamais remplacée. Le hook ne lève jamais d'erreur : en cas d'échec, la fiche est enregistrée sans couverture ni aperçu.
+// (ou un aperçu fourni par l'API) n'est jamais remplacée. Le hook ne lève jamais d'erreur : en cas d'échec, la fiche est enregistrée sans couverture ni aperçu.
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -285,11 +285,15 @@ async function findAuto(base: string, req: PayloadRequest): Promise<number | str
   return docs.find((m) => typeof m.filename === 'string' && hasBase(m.filename, base))?.id ?? null
 }
 
-/** L'image actuelle est-elle un fichier automatique tiré d'une autre vidéo (donc à remplacer) ? */
-async function isOtherAutoCover(thumbnail: number | string, key: string, req: PayloadRequest): Promise<boolean> {
-  const media = await req.payload.findByID({ collection: 'media', id: thumbnail, depth: 0, req, disableErrors: true })
-  const filename = typeof media?.filename === 'string' ? media.filename : ''
-  return isAutoFilename(filename) && !hasBase(filename, coverBase(key))
+/**
+ * Fichier lié à remplacer après un changement de vidéo : fichier automatique tiré d'une autre vidéo que `base`, ou
+ * fichier disparu de la médiathèque. Un fichier choisi à la main (ou fourni par l'API) est gardé.
+ */
+async function isStale(id: number | string, base: string, req: PayloadRequest): Promise<boolean> {
+  const media = await req.payload.findByID({ collection: 'media', id, depth: 0, req, disableErrors: true })
+  if (!media) return true
+  const filename = typeof media.filename === 'string' ? media.filename : ''
+  return isAutoFilename(filename) && !hasBase(filename, base)
 }
 
 /** Nouveau document de la médiathèque (le fichier du formulaire en cours, req.file, est rendu ensuite). */
@@ -324,7 +328,7 @@ const same = (a: unknown, b: unknown) => String(a ?? '') === String(b ?? '')
 async function fillAutoMedia(data: Data, originalDoc: Data | undefined, req: PayloadRequest): Promise<Data> {
   const source = currentSource(data, originalDoc)
   const key = autoKey(source)
-  // autre vidéo qu'avant : nouvel aperçu, et nouvelle couverture si l'actuelle était tirée de l'ancienne vidéo
+  // autre vidéo qu'avant : nouvelle couverture et nouvel aperçu si les actuels étaient tirés de l'ancienne vidéo
   const changed = key !== autoKey(originalDoc?.source as Source)
   const thumbnail = idOf(data.thumbnail === undefined ? originalDoc?.thumbnail : data.thumbnail)
   const preview = idOf(data.preview === undefined ? originalDoc?.preview : data.preview)
@@ -334,8 +338,10 @@ async function fillAutoMedia(data: Data, originalDoc: Data | undefined, req: Pay
   if ((!key || !previewBase(key)) && preview !== null) changes.preview = null
 
   if (key && source) {
-    const coverName = !thumbnail || (changed && (await isOtherAutoCover(thumbnail, key, req))) ? coverBase(key) : null
-    const previewName = !preview || changed ? previewBase(key) : null
+    const coverBaseName = coverBase(key)
+    const previewBaseName = previewBase(key)
+    const coverName = !thumbnail || (changed && (await isStale(thumbnail, coverBaseName, req))) ? coverBaseName : null
+    const previewName = previewBaseName && (!preview || (changed && (await isStale(preview, previewBaseName, req)))) ? previewBaseName : null
     if (coverName || previewName) {
       const steps = recipe(key, source, req)
       const coverFound = coverName ? await findAuto(coverName, req) : null
@@ -351,7 +357,7 @@ async function fillAutoMedia(data: Data, originalDoc: Data | undefined, req: Pay
       const title = String(data.title ?? originalDoc?.title ?? '').trim()
       const cover = coverFound ?? (coverFile ? await createMedia(req, coverFile, `${coverName}.jpg`, 'image/jpeg', title || 'Image de la vidéo', credit) : null)
       const clip = previewFound ?? (previewFile ? await createMedia(req, previewFile, `${previewName}.mp4`, 'video/mp4', title ? `Aperçu animé : ${title}` : 'Aperçu animé de la vidéo', credit) : null)
-      // échec : l'image tirée de l'ancienne vidéo est retirée (visuel de remplacement du site) ; nouvel essai plus tard
+      // échec : l'image et l'aperçu tirés de l'ancienne vidéo sont retirés (visuel de remplacement du site) ; nouvel essai plus tard
       if (coverName && !same(cover, thumbnail)) changes.thumbnail = cover
       if (previewName && !same(clip, preview)) changes.preview = clip
     }

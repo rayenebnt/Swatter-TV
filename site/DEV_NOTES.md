@@ -468,9 +468,9 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   - Clé de la vidéo : `y<id YouTube>`, `m<n° du média>`, `u<sha1(url) sur 12 hex>`, `b<id Bunny>`. Fichiers créés :
     couvertures `youtube-<id>`, `video-<clé>`, `bunny-<id>` ; aperçus `apercu-<clé>.mp4`. Réutilisation par nom (like
     « base. » ou « base- », puis nom vérifié par expression régulière ; les doublons « -1 » sont acceptés).
-  - Changement de clé par rapport à `originalDoc` : l'aperçu est refait ; la couverture n'est remplacée que si elle est
-    vide ou si c'est un fichier automatique d'une autre clé (retirée en cas d'échec) ; une image choisie à la main n'est
-    jamais touchée. Source non prise en charge : `preview` remis à null, couverture laissée. Rien n'est refait quand la
+  - Changement de clé par rapport à `originalDoc` : la couverture et l'aperçu ne sont remplacés que s'ils sont vides, si
+    ce sont des fichiers automatiques d'une autre clé ou s'ils ont disparu de la médiathèque (retirés en cas d'échec) ;
+    une image choisie à la main, ou un aperçu fourni par l'API (tests e2e), n'est jamais touché. Source non prise en charge : `preview` remis à null, couverture laissée. Rien n'est refait quand la
     clé ne change pas et que la couverture et l'aperçu sont déjà remplis (enregistrement automatique).
   - YouTube : la couverture n'a pas besoin de ffmpeg (maxresdefault, puis sddefault, puis hqdefault, `YOUTUBE_THUMB_BASE`).
     L'aperçu est un diaporama de maxres1-3, sinon sd1-3, sinon mq1-3 (recadrées en 16:9, zoom léger, fondus, 5 s).

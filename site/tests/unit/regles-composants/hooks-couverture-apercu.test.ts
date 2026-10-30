@@ -293,6 +293,22 @@ describe('changement de source', () => {
     expect(videoCover).not.toHaveBeenCalled()
   })
 
+  it('aperçu fourni par l’API (fichier non automatique) : gardé, à la création comme au changement de vidéo', async () => {
+    const req = fakeReq([clip(), { id: 5, filename: 'mon-image.webp' }, { id: 7, filename: 'extrait-maison.mp4', mimeType: 'video/mp4' }])
+    const youtube = { title: 'Balade', thumbnail: 5, preview: 7, source: { provider: 'youtube', youtubeUrl: YT } }
+    expect(await run(req, youtube)).toBe(youtube)
+    const data = { ...now, thumbnail: 5, preview: 7 }
+    expect(await run(req, data, { ...before, preview: 7 })).toBe(data)
+    expect(slideshow).not.toHaveBeenCalled()
+    expect(videoClip).not.toHaveBeenCalled()
+    expect(req.payload.create).not.toHaveBeenCalled()
+  })
+
+  it('aperçu disparu de la médiathèque : refait au changement de vidéo', async () => {
+    const req = fakeReq([clip(), { id: 5, filename: 'mon-image.webp' }])
+    expect(await run(req, { ...now, thumbnail: 5, preview: 6 }, before)).toMatchObject({ preview: 100 })
+  })
+
   it('même vidéo, aperçu manquant : seul l’aperçu est fabriqué', async () => {
     const req = fakeReq([clip(), { id: 5, filename: 'video-m12.webp' }])
     const result = await run(req, { title: 'Balade' }, { thumbnail: 5, preview: null, source: now.source })
