@@ -8,7 +8,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import type { CollectionBeforeValidateHook, PayloadRequest } from 'payload'
+import type { CollectionAfterChangeHook, CollectionBeforeValidateHook, PayloadRequest } from 'payload'
 import { youtubeId } from '@/lib/video'
 import { ffmpegReady, MissingProgramError, probeVideo, resetFfmpegState, slideshow, videoClip, videoCover, type VideoInput, type VideoProbe } from './ffmpeg'
 import { TOP10_REORDER } from './top10'
@@ -271,8 +271,8 @@ function recipe(key: string, source: NonNullable<Source>, req: PayloadRequest): 
 
 // ---------- Médiathèque ----------
 
-/** Fichier automatique `base` déjà dans la médiathèque (même vidéo en replay et dans « Vidéos », image retirée puis remise…). */
-async function findAuto(base: string, req: PayloadRequest): Promise<number | string | null> {
+/** Fichiers de la médiathèque nommés `base` (« -1 », « -2 »… compris). */
+async function findAllAuto(base: string, req: PayloadRequest): Promise<(number | string)[]> {
   const { docs } = await req.payload.find({
     collection: 'media',
     // « like » est approximatif (insensible à la casse, « _ » joker) : le nom exact est vérifié ensuite ; « base. » et
@@ -282,7 +282,12 @@ async function findAuto(base: string, req: PayloadRequest): Promise<number | str
     depth: 0,
     req,
   })
-  return docs.find((m) => typeof m.filename === 'string' && hasBase(m.filename, base))?.id ?? null
+  return docs.filter((m) => typeof m.filename === 'string' && hasBase(m.filename, base)).map((m) => m.id)
+}
+
+/** Fichier automatique `base` déjà dans la médiathèque (même vidéo en replay et dans « Vidéos », image retirée puis remise…). */
+async function findAuto(base: string, req: PayloadRequest): Promise<number | string | null> {
+  return (await findAllAuto(base, req))[0] ?? null
 }
 
 /**
@@ -328,8 +333,9 @@ const same = (a: unknown, b: unknown) => String(a ?? '') === String(b ?? '')
 async function fillAutoMedia(data: Data, originalDoc: Data | undefined, req: PayloadRequest): Promise<Data> {
   const source = currentSource(data, originalDoc)
   const key = autoKey(source)
-  // autre vidéo qu'avant : nouvelle couverture et nouvel aperçu si les actuels étaient tirés de l'ancienne vidéo
-  const changed = key !== autoKey(originalDoc?.source as Source)
+  // autre vidéo qu'avant (modification seulement : à la création, une image ou un aperçu fourni est gardé) : nouvelle
+  // couverture et nouvel aperçu si les actuels étaient tirés de l'ancienne vidéo
+  const changed = originalDoc !== undefined && key !== autoKey(originalDoc.source as Source)
   const thumbnail = idOf(data.thumbnail === undefined ? originalDoc?.thumbnail : data.thumbnail)
   const preview = idOf(data.preview === undefined ? originalDoc?.preview : data.preview)
   const changes: Data = {}
@@ -378,6 +384,26 @@ export const videoAutoMedia: CollectionBeforeValidateHook = async ({ data, origi
     req.payload.logger.warn(`[swatter] Couverture ou aperçu automatique impossible : ${reasonOf(error)}`)
     return data
   }
+}
+
+/**
+ * Fichier vidéo de la médiathèque remplacé (même document, autre fichier) : sa couverture et son aperçu automatiques
+ * (video-m<n°>, apercu-m<n°>), tirés de l'ancien fichier, sont supprimés. Les fiches liées perdent ces fichiers (clé
+ * étrangère ON DELETE SET NULL) et les retrouvent, tirés du nouveau fichier, à leur prochain enregistrement.
+ */
+export const purgeReplacedVideoMedia: CollectionAfterChangeHook = async ({ doc, previousDoc, operation, req }) => {
+  if (operation !== 'update' || !previousDoc) return doc
+  const wasVideo = typeof previousDoc.mimeType === 'string' && previousDoc.mimeType.startsWith('video/')
+  const replaced = previousDoc.filename !== doc.filename || previousDoc.filesize !== doc.filesize
+  if (!wasVideo || !replaced || !/^\d+$/.test(String(doc.id))) return doc
+  try {
+    for (const base of [coverBase(`m${doc.id}`), previewBase(`m${doc.id}`) as string]) {
+      for (const id of await findAllAuto(base, req)) await req.payload.delete({ collection: 'media', id, req })
+    }
+  } catch (error) {
+    req.payload.logger.warn(`[swatter] Couverture ou aperçu de l’ancien fichier n° ${doc.id} non supprimé : ${reasonOf(error)}`)
+  }
+  return doc
 }
 
 /** Image obligatoire seulement si elle ne peut pas être tirée de la vidéo (Bunny Stream). */

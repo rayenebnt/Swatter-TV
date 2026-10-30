@@ -188,6 +188,8 @@ export function PlayerPreview({ src }: { src: string }) {
     const next = !paused
     setPaused(next)
     runtime.director.setPaused(slot.current, next)
+    // relance acceptée : le bouton reste en place (et garde le focus) sans attendre l'événement « playing »
+    if (!next && runtime.director.current?.id === slot.current) setPlaying(true)
   }
   const label = paused ? 'Relancer l’aperçu' : 'Mettre l’aperçu en pause'
 

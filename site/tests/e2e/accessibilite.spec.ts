@@ -70,7 +70,7 @@ async function ready(page: Page) {
 
 /** Vidéo de la médiathèque (clip du jeu d'essai), utilisée comme aperçu animé ; null sans vidéo. */
 async function clipId(admin: AdminApi): Promise<number | null> {
-  const res = await admin.send('GET', '/api/media?limit=1&depth=0&where[mimeType][contains]=video%2F')
+  const res = await admin.send('GET', '/api/media?limit=1&depth=0&where[filename][like]=direct-mont-blanc&where[mimeType][contains]=video%2F')
   return ((await res.json()) as { docs: { id: number }[] }).docs[0]?.id ?? null
 }
 

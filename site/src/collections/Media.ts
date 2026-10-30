@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, authenticated } from '@/access'
+import { purgeReplacedVideoMedia } from '@/hooks/videoAutoMedia'
 
 /** « lac-annecy_matin-2.jpg » → « Lac annecy matin 2 » : description de secours tirée du nom du fichier. */
 const altFromFilename = (filename: string) => {
@@ -27,6 +28,8 @@ export const Media: CollectionConfig = {
         return typeof filename === 'string' ? { ...data, alt: altFromFilename(filename) || null } : data
       },
     ],
+    // fichier vidéo remplacé : couverture et aperçu tirés de l'ancien fichier supprimés (refaits à l'enregistrement des fiches)
+    afterChange: [purgeReplacedVideoMedia],
   },
   fields: [
     {

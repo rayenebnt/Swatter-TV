@@ -489,7 +489,9 @@ Conseils :
   **Recadrer** coupe l’image partout : réservez-le aux bords inutiles.
 - Les images et aperçus préparés automatiquement à partir des vidéos sont rangés dans la médiathèque sous des noms
   comme `youtube-…`, `video-…`, `bunny-…` (images) et `apercu-…` (aperçus animés). Ne les supprimez pas : ils servent
-  aux fiches des vidéos.
+  aux fiches des vidéos. Si vous remplacez le fichier d’une vidéo dans la médiathèque, son ancienne image et son ancien
+  aperçu sont retirés : enregistrez à nouveau la fiche de la vidéo pour qu’ils soient refaits à partir du nouveau fichier.
+- L’envoi d’une grosse vidéo peut prendre plusieurs minutes : gardez la page ouverte jusqu’à la fin.
 
 ## 18. Le référencement Google (facultatif)
 

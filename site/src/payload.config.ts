@@ -6,7 +6,6 @@ import { seoPlugin } from '@payloadcms/plugin-seo'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { s3Storage } from '@payloadcms/storage-s3'
 import { fr } from '@payloadcms/translations/languages/fr'
-import os from 'os'
 import path from 'path'
 import { buildConfig, type Field, type Plugin } from 'payload'
 import sharp from 'sharp'
@@ -37,6 +36,7 @@ import { sendContact } from './lib/contact-send'
 import { deleteEmptyDrafts } from './lib/drafts-cleanup'
 import { importMeteo } from './lib/import/meteo'
 import { importYoutube } from './lib/import/youtube'
+import { startUploadTmpPurge, UPLOAD_TMP_DIR } from './hooks/envois'
 import { DRAFT_COLLECTIONS, publicationAware } from './lib/publication'
 import { previewPath, previewUrl } from './lib/preview'
 import { search } from './lib/search'
@@ -271,15 +271,18 @@ export default buildConfig({
   editor: lexicalEditor(),
   // Fichiers envoyés (médiathèque) : vidéos jusqu'à 500 Mo (Payload s'arrête à 20 Mo par défaut). Le fichier reçu est écrit
   // au fur et à mesure dans un dossier temporaire, puis copié dans la médiathèque (ou envoyé vers S3 par flux) : jamais
-  // chargé en entier en mémoire. Dossier temporaire du système : /app n'est pas modifiable par le site dans Docker.
+  // chargé en entier en mémoire. Dossier temporaire du système : /app n'est pas modifiable par le site dans Docker. Gros
+  // envois réservés à l'équipe connectée et fichiers temporaires oubliés effacés : voir src/hooks/envois.ts.
   upload: {
     useTempFiles: true,
-    tempFileDir: path.join(os.tmpdir(), 'swatter-envois'),
+    tempFileDir: UPLOAD_TMP_DIR,
     limits: { fileSize: MAX_UPLOAD_BYTES },
     // fichier + champs du formulaire
     requestSizeLimit: MAX_UPLOAD_BYTES + 10 * 1024 * 1024,
     responseOnLimit: 'Fichier trop lourd : 500 Mo au plus. Pour une vidéo plus longue, publiez-la sur YouTube ou Bunny Stream.',
   },
+  // fichiers temporaires d'envoi laissés par une requête refusée (ou un stockage S3) : ménage toutes les heures
+  onInit: (payload) => startUploadTmpPurge(payload),
   secret: process.env.PAYLOAD_SECRET || '',
   // E-mails de l'administration (mot de passe oublié…) : envoyés par SMTP dès que SMTP_HOST est renseigné,
   // sinon simplement écrits dans le journal du serveur

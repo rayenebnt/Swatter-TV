@@ -284,6 +284,18 @@ describe('tâche planifiée : chaîne YouTube', () => {
     expect(await thumbnails()).toBe(thumbnailsBefore)
   })
 
+  it('YouTube : deux imports lancés en même temps (tâche planifiée et « Importer maintenant ») ne créent chaque vidéo qu’une fois', async () => {
+    await forgetImports()
+    await setChannel()
+    const [planned, now] = await Promise.all([runCron(), importNow({ token: await adminToken() })])
+    expect(planned.body.youtube).toMatchObject({ ok: true, created: 3 })
+    // le second appel attend le premier import et rend le même résultat
+    expect(now.body).toMatchObject({ ok: true, created: 3 })
+    for (const id of ['swTest00001', 'swTest00002']) expect(await imported('videos', id), id).toHaveLength(1)
+    expect(await imported('replays', 'swTest00003')).toHaveLength(1)
+    await forgetImports()
+  })
+
   it('YouTube : vidéos importées en brouillon si la fiche « Chaîne YouTube » le demande', async () => {
     await forgetImports()
     await setChannel({ publishMode: 'draft', category: 'sport' })

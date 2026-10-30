@@ -287,12 +287,24 @@ export function importSummary(r: Pick<YoutubeImportResult, 'videos' | 'replays' 
   return `${parts.join(' et ')} (sur ${plural(r.total, 'vidéo')} ${r.total > 1 ? 'lues' : 'lue'} sur la chaîne)`
 }
 
+/** Import en cours dans ce processus (tâche planifiée, bouton « Importer maintenant »). */
+let running: Promise<YoutubeImportResult> | null = null
+
 /**
  * Met sur le site les vidéos lues sur la chaîne (sans clé : les 15 dernières) : chacune qui n'est encore ni dans
  * « Vidéos » ni dans « Replays » est créée dans la rubrique que lui donne sa durée. `force` : même si l'import
  * automatique est désactivé (bouton « Importer maintenant »). Ne lève jamais d'exception ; le résultat est noté dans le global.
+ * Un seul import à la fois : un appel pendant un import en cours (long au premier passage, chaque vidéo recevant son
+ * image et son aperçu animé) en attend le résultat au lieu de créer les mêmes vidéos une seconde fois.
  */
-export async function importYoutube(payload: Payload, { force = false } = {}): Promise<YoutubeImportResult> {
+export function importYoutube(payload: Payload, options: { force?: boolean } = {}): Promise<YoutubeImportResult> {
+  running ??= runImport(payload, options).finally(() => {
+    running = null
+  })
+  return running
+}
+
+async function runImport(payload: Payload, { force = false }: { force?: boolean }): Promise<YoutubeImportResult> {
   const result: YoutubeImportResult = { ok: false, created: 0, videos: 0, replays: 0, skipped: 0, total: 0, ids: [] }
   const settings = await payload.findGlobal({ slug: 'youtube', depth: 0 })
   if (!settings.channel?.trim()) return { ...result, error: 'aucune chaîne YouTube renseignée (Vidéos › Chaîne YouTube)' }

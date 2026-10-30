@@ -233,7 +233,7 @@ try {
       async () => {
         const standalone = path.join(ROOT, DIST, 'standalone')
         if (!existsSync(path.join(standalone, 'server.js'))) throw new Error('server.js introuvable : la construction a échoué.')
-        server = spawn(process.execPath, ['server.js'], { cwd: standalone, stdio: ['ignore', 'ignore', 'inherit'], env: { ...process.env, ...env, PORT: String(PORT), HOSTNAME: '127.0.0.1' } })
+        server = spawn(process.execPath, ['--require', path.join(ROOT, 'http-timeouts.cjs'), 'server.js'], { cwd: standalone, stdio: ['ignore', 'ignore', 'inherit'], env: { ...process.env, ...env, PORT: String(PORT), HOSTNAME: '127.0.0.1' } })
         return waitFor(`${SITE}/robots.txt`, 120_000)
       },
       { blocking: true },

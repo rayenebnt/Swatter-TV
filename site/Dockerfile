@@ -80,6 +80,8 @@ RUN groupadd --system --gid 1001 nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Délai de réception d'une requête porté de 5 à 30 minutes (envoi de vidéos jusqu'à 500 Mo)
+COPY --from=builder --chown=nextjs:nodejs /app/http-timeouts.cjs ./
 
 USER nextjs
 EXPOSE 3000
@@ -89,4 +91,4 @@ VOLUME ["/app/media"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/globals/settings?depth=0').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "server.js"]
+CMD ["node", "--require", "./http-timeouts.cjs", "server.js"]

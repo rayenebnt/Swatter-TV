@@ -10,7 +10,7 @@ import type { CollectionBeforeValidateHook } from 'payload'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ffmpegReady, probeVideo, slideshow, videoClip, videoCover } from '@/hooks/ffmpeg'
 import { TOP10_REORDER } from '@/hooks/top10'
-import { autoKey, coverBase, hasBase, isAutoFilename, previewBase, remoteUrl, resetVideoAutoMedia, RETRY_AFTER_MS, videoAutoMedia } from '@/hooks/videoAutoMedia'
+import { autoKey, coverBase, hasBase, isAutoFilename, previewBase, purgeReplacedVideoMedia, remoteUrl, resetVideoAutoMedia, RETRY_AFTER_MS, videoAutoMedia } from '@/hooks/videoAutoMedia'
 
 vi.mock('@/hooks/ffmpeg', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/ffmpeg')>()),
@@ -304,6 +304,14 @@ describe('changement de source', () => {
     expect(req.payload.create).not.toHaveBeenCalled()
   })
 
+  it('création avec une image et un aperçu fournis, même tirés d’une autre vidéo : gardés', async () => {
+    const req = fakeReq([clip(), { id: 5, filename: `youtube-${YT}.webp` }, { id: 6, filename: 'apercu-m3.mp4', mimeType: 'video/mp4' }])
+    const data = { ...now, thumbnail: 5, preview: 6 }
+    expect(await run(req, data)).toBe(data)
+    expect(req.payload.findByID).not.toHaveBeenCalled()
+    expect(req.payload.create).not.toHaveBeenCalled()
+  })
+
   it('aperçu disparu de la médiathèque : refait au changement de vidéo', async () => {
     const req = fakeReq([clip(), { id: 5, filename: 'mon-image.webp' }])
     expect(await run(req, { ...now, thumbnail: 5, preview: 6 }, before)).toMatchObject({ preview: 100 })
@@ -386,5 +394,46 @@ describe('robustesse', () => {
     expect(await run(req, upload, undefined, { [TOP10_REORDER]: true })).toBe(upload)
     expect(await run(req, undefined)).toBeUndefined()
     expect(req.payload.find).not.toHaveBeenCalled()
+  })
+})
+
+describe('fichier vidéo remplacé dans la médiathèque', () => {
+  type AfterArgs = Parameters<typeof purgeReplacedVideoMedia>[0]
+  const purge = (req: Req, doc: Record<string, unknown>, previousDoc: Record<string, unknown> | undefined, operation = 'update') =>
+    purgeReplacedVideoMedia({ doc, previousDoc, operation, req, context: {}, collection: { slug: 'media' } } as unknown as AfterArgs)
+  const library = (): Media[] => [
+    clip(),
+    { id: 20, filename: 'video-m12.webp' },
+    { id: 21, filename: 'video-m12-1.webp' },
+    { id: 22, filename: 'apercu-m12.mp4' },
+    { id: 23, filename: 'video-m120.webp' },
+    { id: 24, filename: 'apercu-m1.mp4' },
+  ]
+  const withDelete = (req: Req) => Object.assign(req.payload, { delete: vi.fn(async (_args: { id: number }) => ({})) }).delete
+
+  it('nouveau fichier : couverture et aperçu tirés de l’ancien supprimés, pas ceux des autres fichiers', async () => {
+    const req = fakeReq(library())
+    const remove = withDelete(req)
+    const doc = { id: 12, filename: 'balade-v2.mp4', filesize: 2000, mimeType: 'video/mp4' }
+    expect(await purge(req, doc, { ...doc, filename: 'balade.mp4', filesize: 1000 })).toBe(doc)
+    expect(remove.mock.calls.map(([args]) => args.id).sort()).toEqual([20, 21, 22])
+  })
+
+  it('description ou point focal modifiés, image remplacée, création : rien n’est supprimé', async () => {
+    const req = fakeReq(library())
+    const remove = withDelete(req)
+    const video = { id: 12, filename: 'balade.mp4', filesize: 1000, mimeType: 'video/mp4' }
+    await purge(req, { ...video, alt: 'Nouvelle description' }, video)
+    await purge(req, { id: 30, filename: 'photo-2.webp', filesize: 9, mimeType: 'image/webp' }, { id: 30, filename: 'photo.webp', filesize: 8, mimeType: 'image/webp' })
+    await purge(req, video, undefined, 'create')
+    expect(remove).not.toHaveBeenCalled()
+  })
+
+  it('échec de la suppression : avertissement, jamais d’erreur', async () => {
+    const req = fakeReq(library())
+    withDelete(req).mockRejectedValue(new Error('base injoignable'))
+    const doc = { id: 12, filename: 'balade-v2.mp4', filesize: 2000, mimeType: 'video/mp4' }
+    await expect(purge(req, doc, { ...doc, filesize: 1000 })).resolves.toBe(doc)
+    expect(warnings(req).some((w) => w.includes('base injoignable'))).toBe(true)
   })
 })

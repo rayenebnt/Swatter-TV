@@ -37,9 +37,9 @@ type Media = { id: number; url?: string | null; filename?: string | null; mimeTy
 /** Bouton pause / relance de l'aperçu d'une fiche (noms exacts : le titre de la vidéo peut contenir « aperçu »). */
 const PREVIEW_TOGGLE = /^(Mettre l’aperçu en pause|Relancer l’aperçu)$/
 
-/** Vidéo de la médiathèque (clip de démonstration du jeu d'essai), utilisée comme aperçu ; null sans vidéo. */
+/** Clip de démonstration du jeu d'essai (pas un aperçu automatique apercu-…), utilisé comme aperçu ; null sans lui. */
 async function clipMedia(admin: AdminApi): Promise<Media | null> {
-  const res = await admin.send('GET', '/api/media?limit=1&depth=0&where[mimeType][contains]=video%2F')
+  const res = await admin.send('GET', '/api/media?limit=1&depth=0&where[filename][like]=direct-mont-blanc&where[mimeType][contains]=video%2F')
   const { docs } = (await res.json()) as { docs: Media[] }
   return docs[0] ?? null
 }

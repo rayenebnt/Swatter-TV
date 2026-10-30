@@ -490,10 +490,23 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
     (Debian 12 : ffmpeg 5.1). Sans lui, les tests qui en dépendent sont sautés et `test:complet` le signale.
   - Le replay d'exemple du jeu de démonstration (fichier envoyé, couverture choisie à la main) reçoit son aperçu pendant
     le seed.
+  - Fichier vidéo remplacé dans un média existant (même n°, autre fichier) : `purgeReplacedVideoMedia` (afterChange de
+    Media) supprime `video-m<n°>` et `apercu-m<n°>` ; les fiches liées passent à null (ON DELETE SET NULL) et retrouvent
+    couverture et aperçu à leur prochain enregistrement. Un lien direct dont le fichier change à la même adresse n'est pas
+    détecté (clé = empreinte de l'adresse).
+  - Import de la chaîne : chaque vidéo créée reçoit sa couverture et son diaporama (premier import avec clé d'API : long).
+    `importYoutube` ne lance qu'un import à la fois par processus : un second appel (tâche planifiée, « Importer
+    maintenant ») attend le résultat de l'import en cours au lieu de recréer les mêmes vidéos.
 - **Envois de fichiers** (`buildConfig.upload`) : 500 Mo par fichier, `useTempFiles` (dossier os.tmpdir()/swatter-envois) ;
   le fichier reçu va sur le disque puis est copié dans la médiathèque (S3 : flux depuis le fichier temporaire), jamais
   chargé en mémoire (vérifié avec un envoi réel de 284 Mo). `src/proxy.ts` ne doit jamais viser `/api`, sinon Next
   mettrait le corps en mémoire jusqu'à `proxyClientMaxBodySize` (10 Mo) et tronquerait les envois.
+  - Payload ne supprime le fichier temporaire qu'après une opération sur la médiathèque : `src/app/(payload)/api/[...slug]/route.ts`
+    refuse (401, sur les en-têtes, avant la lecture du corps) tout envoi multipart de plus de 1 Mo ou de taille inconnue
+    sans compte de l'équipe (`refuseAnonymousUpload`, `src/hooks/envois.ts`) ; `onInit` lance un ménage horaire des
+    fichiers temporaires de plus de 2 h (`purgeUploadTmp` : requêtes refusées, stockage S3).
+  - Node coupe une requête non reçue en 5 min (`requestTimeout`) : `http-timeouts.cjs` (chargé par
+    `node --require ./http-timeouts.cjs server.js` dans le Dockerfile et `test:complet`) porte ce délai à 30 min.
 - **Grille des programmes** : `src/proxy.ts` (le « middleware » de Next 16) redirige `/admin/collections/schedule` sans
   filtre vers la semaine en cours, côté serveur (un filtre posé côté client entrait en concurrence avec la synchronisation
   d'adresse de Payload et chargeait toute la grille). `ScheduleTools.tsx` (au-dessus du tableau de la liste) filtre par
