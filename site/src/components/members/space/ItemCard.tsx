@@ -29,14 +29,14 @@ type Remove = {
   disabled?: boolean
 }
 
-/** Vignette ; vidéo ou replay : aperçu animé (petite vignette des lignes : au survol ou au focus seulement). */
-function Thumb({ entry, sizes, small = false }: { entry: SpaceEntry; sizes: string; small?: boolean }) {
+/** Vignette ; vidéo ou replay : aperçu animé, en boucle tant que la vignette est visible. */
+function Thumb({ entry, sizes }: { entry: SpaceEntry; sizes: string }) {
   const { src, unoptimized } = imageSource(entry.item.image)
   const preview = playable(entry.item.kind) ? entry.item.preview : undefined
   return (
     <div className="media">
       <Image src={src} alt="" fill sizes={sizes} unoptimized={unoptimized} />
-      {preview && <VideoPreview src={preview} kind={small ? 'hover' : 'card'} />}
+      {preview && <VideoPreview src={preview} />}
       {playable(entry.item.kind) && (
         <span className="play" aria-hidden="true">
           <Icon name="play" />
@@ -92,7 +92,7 @@ export function SpaceRow({ entry, remove }: { entry: SpaceEntry; remove?: Remove
   const { item } = entry
   return (
     <article className="card space-row" data-kind={item.kind}>
-      <Thumb entry={entry} sizes={ROW_SIZES} small />
+      <Thumb entry={entry} sizes={ROW_SIZES} />
       <div className="space-row__body">
         <p className="kicker space-kind">
           <Icon name={KIND_ICONS[item.kind]} />

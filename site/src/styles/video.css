@@ -44,7 +44,8 @@
 
 /* ----- Aperçu animé (VideoPreview) : court extrait muet sur l'image d'une carte ou derrière le bouton de lecture -----
    Placé juste après l'image : au-dessus d'elle, sous les badges, le dégradé et le lien de la carte (les clics le
-   traversent). Invisible tant qu'il ne tourne pas : apparition en fondu (classe is-on), retour à l'image à l'arrêt. */
+   traversent). Il tourne en boucle tant que la carte est visible ; invisible tant qu'il ne tourne pas : apparition en
+   fondu (classe is-on), retour à l'image à la pause (sortie de l'écran, plafond d'aperçus atteint, onglet masqué). */
 .vprev { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; pointer-events: none; transition: opacity .45s var(--ease), transform 1s var(--ease); }
 .vprev.is-on { opacity: 1; }
 /* même zoom que l'image au survol de la carte */
