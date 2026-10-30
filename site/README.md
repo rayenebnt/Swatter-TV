@@ -370,8 +370,8 @@ archive du dossier `media/`. Avec S3 / R2, activez le versionnage du bucket ou s
 ## Tests
 
 ```bash
-npm run test:complet                 # tout, avant une livraison (environ 10 minutes)
-npm run test:complet -- --rapide     # TypeScript, ESLint, tests unitaires et d’intégration (environ 3 minutes)
+npm run test:complet                 # tout, avant une livraison (environ 12 minutes)
+npm run test:complet -- --rapide     # TypeScript, ESLint, tests unitaires et d’intégration (environ 4 minutes)
 npm run test:complet -- --e2e        # seulement les tests de bout en bout
 npm run test:complet -- --garder     # laisse le site de test ouvert à la fin (http://localhost:3100), Ctrl+C pour l’arrêter
 ```
@@ -401,7 +401,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 
 ### Ce qui est vérifié
 
-- **Tests unitaires** (`tests/unit/`, 832 tests, quelques secondes) : la logique pure du site.
+- **Tests unitaires** (`tests/unit/`, 937 tests, quelques secondes) : la logique pure du site.
   - Espace membres et sécurité : validation des champs, mots de passe, jetons et sessions signées, limites anti-abus,
     retours après la connexion et sortie de l’aperçu (près de 300 tentatives de redirection vers un autre site), e-mails,
     export CSV (formules de tableur neutralisées).
@@ -410,17 +410,20 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - Météo (lecture et import d’Open-Meteo, bulletins), sources vidéo (YouTube, Twitch, Bunny), import de la chaîne
     YouTube, recherche (classement, accents).
   - Règles d’accès de chaque collection, tableau de bord, agenda, info, webcams, bandeau cookies, menus, médias, anciennes
-    adresses, comportements automatiques (régénération du site, Top 10, vignette YouTube), formulaire de contact, mesure
-    d’audience (Google Analytics : chargement, arrêt, cookies).
-- **Tests d’intégration** (`tests/integration/`, 403 tests, environ 2 min 30) : Payload complet sur la base de test.
+    adresses, comportements automatiques (régénération du site, Top 10, couverture et aperçu animé tirés des vidéos,
+    arguments de ffmpeg), formulaire de contact, mesure d’audience (Google Analytics : chargement, arrêt, cookies).
+  - Aperçu animé (un seul à la fois, survol, défilement sur téléphone, « réduire les animations »), images adaptées au
+    téléphone (texte riche, carrousel, point focal), gros envois réservés à l’équipe et ménage des fichiers temporaires.
+- **Tests d’intégration** (`tests/integration/`, 415 tests, environ 3 min 30) : Payload complet sur la base de test.
   - Droits du public, des éditeurs et des administrateurs sur chaque collection et chaque réglage (REST et GraphQL),
     brouillons, contenus programmés, comptes de l’équipe, membres.
-  - Comportements automatiques : adresses uniques, Top 10, vignettes YouTube, grille des programmes, régénération du site,
-    ménage des brouillons vides.
+  - Comportements automatiques : adresses uniques, Top 10, couvertures et aperçus animés tirés des vidéos (vrai ffmpeg :
+    fichier envoyé, lien direct MP4 et HLS, YouTube ; envoi de 35 Mo), grille des programmes, régénération du site,
+    ménage des brouillons vides, imports YouTube simultanés sans doublon.
   - API de l’espace membres (inscription, connexion et blocage, sessions, mot de passe oublié, historique, « Ma liste »,
     export, suppression), formulaire de contact, recherche, tâche planifiée, imports, recopie de la grille, export de la
     lettre d’info.
-- **Tests de bout en bout** (`tests/e2e/`, 148 tests, environ 6 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
+- **Tests de bout en bout** (`tests/e2e/`, 154 tests, environ 7 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
   390 × 844, tactile ; ceux qui ne dépendent pas de l’écran, comme le référencement et l’administration, une seule fois) :
   - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
     horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
@@ -437,6 +440,10 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - `contact.spec.ts` : bouton « Proposer une info », champs vérifiés, robots ignorés ;
   - `members.spec.ts` : espace membres fermé sans connexion, inscription, mot de passe oublié, retours sûrs après la
     connexion, pages lisibles sur mobile ;
+  - `apercus.spec.ts` : aperçu animé des cartes (rien de demandé avant le survol ou le défilement, sans le son, lien
+    toujours cliquable, aucune requête vers un autre site, rien en « réduire les animations ») et des fiches ;
+  - `images-mobile.spec.ts` : carrousel en `<picture>` avec image pour téléphone, photo du texte d’un article à ses
+    vraies proportions à 390 px ;
   - `mesure-audience.spec.ts` (projet `mesure-audience`, lancé après les autres) : Google Analytics chargé seulement après
     l’accord du bandeau cookies, jamais après un refus ou un choix expiré, arrêté et cookies effacés au retrait de l’accord ;
   - `admin.spec.ts` (bureau, en série) : tableau de bord, aide, grille et recopie de semaine, Top 10, éditeurs,
