@@ -294,10 +294,13 @@ let running: Promise<YoutubeImportResult> | null = null
  * Met sur le site les vidéos lues sur la chaîne (sans clé : les 15 dernières) : chacune qui n'est encore ni dans
  * « Vidéos » ni dans « Replays » est créée dans la rubrique que lui donne sa durée. `force` : même si l'import
  * automatique est désactivé (bouton « Importer maintenant »). Ne lève jamais d'exception ; le résultat est noté dans le global.
- * Un seul import à la fois : un appel pendant un import en cours (long au premier passage, chaque vidéo recevant son
- * image et son aperçu animé) en attend le résultat au lieu de créer les mêmes vidéos une seconde fois.
+ * Un seul import à la fois (long au premier passage, chaque vidéo recevant son image et son aperçu animé) : pendant un
+ * import, la tâche planifiée en partage le résultat, « Importer maintenant » attend sa fin puis relance un import ; les
+ * mêmes vidéos ne sont jamais créées deux fois.
  */
-export function importYoutube(payload: Payload, options: { force?: boolean } = {}): Promise<YoutubeImportResult> {
+export async function importYoutube(payload: Payload, options: { force?: boolean } = {}): Promise<YoutubeImportResult> {
+  // « Importer maintenant » pendant un import : attend sa fin, puis relance avec les réglages tout juste enregistrés
+  if (running && options.force) await running.catch(() => undefined)
   running ??= runImport(payload, options).finally(() => {
     running = null
   })

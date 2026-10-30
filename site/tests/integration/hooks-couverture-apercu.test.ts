@@ -144,6 +144,28 @@ describe.runIf(ffmpegOk)('fichier envoyé dans la médiathèque (ffmpeg)', () =>
     expect(kept.preview).toBe(changed.preview)
   })
 
+  it('fichier remplacé dans le même média : couverture et aperçu de l’ancien fichier supprimés ; la fiche, enregistrée avec les anciens numéros (formulaire resté ouvert), les retrouve tirés du nouveau fichier', async () => {
+    const first = path.join(work, 'premier.mp4')
+    const second = path.join(work, 'second.mp4')
+    ffmpeg(['-i', CLIP, '-c', 'copy', first])
+    ffmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=1280x720:rate=25', '-t', '6', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', second])
+    const file = await upload(first)
+    const doc = await post('videos', { provider: 'upload', file })
+    const [oldCover, oldPreview] = [doc.thumbnail as number, doc.preview as number]
+    expect((await media(oldCover)).filename).toMatch(new RegExp(`^video-m${file}(-\\d+)?\\.webp$`))
+
+    await payload.update({ collection: 'media', id: file, data: {}, filePath: second })
+    for (const id of [oldCover, oldPreview]) expect(await payload.findByID({ collection: 'media', id, depth: 0, disableErrors: true }), `média ${id}`).toBeNull()
+    const stored = await payload.findByID({ collection: 'videos', id: doc.id, depth: 0, draft: true })
+    expect([stored.thumbnail ?? null, stored.preview ?? null]).toEqual([null, null])
+
+    const saved = await patch('videos', doc.id, { title: unique('Nouveau montage'), thumbnail: oldCover, preview: oldPreview })
+    expect(saved.thumbnail).not.toBe(oldCover)
+    expect((await media(saved.thumbnail)).filename).toMatch(new RegExp(`^video-m${file}(-\\d+)?\\.webp$`))
+    expect((await media(saved.preview)).filename).toMatch(new RegExp(`^apercu-m${file}(-\\d+)?\\.mp4$`))
+    expect(saved.preview).not.toBe(oldPreview)
+  })
+
   it('ffmpeg introuvable (FFMPEG_PATH, FFPROBE_PATH) : enregistrement sans erreur, sans couverture ni aperçu, signalé dans le journal', async () => {
     const copy = path.join(work, 'copie.mp4')
     ffmpeg(['-i', CLIP, '-c', 'copy', copy])

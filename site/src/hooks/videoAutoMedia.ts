@@ -290,6 +290,11 @@ async function findAuto(base: string, req: PayloadRequest): Promise<number | str
   return (await findAllAuto(base, req))[0] ?? null
 }
 
+/** Fichier disparu de la médiathèque (supprimé pendant que le formulaire de la fiche restait ouvert). */
+async function isGone(id: number | string, req: PayloadRequest): Promise<boolean> {
+  return !(await req.payload.findByID({ collection: 'media', id, depth: 0, req, disableErrors: true }))
+}
+
 /**
  * Fichier lié à remplacer après un changement de vidéo : fichier automatique tiré d'une autre vidéo que `base`, ou
  * fichier disparu de la médiathèque. Un fichier choisi à la main (ou fourni par l'API) est gardé.
@@ -346,8 +351,11 @@ async function fillAutoMedia(data: Data, originalDoc: Data | undefined, req: Pay
   if (key && source) {
     const coverBaseName = coverBase(key)
     const previewBaseName = previewBase(key)
-    const coverName = !thumbnail || (changed && (await isStale(thumbnail, coverBaseName, req))) ? coverBaseName : null
-    const previewName = previewBaseName && (!preview || (changed && (await isStale(preview, previewBaseName, req)))) ? previewBaseName : null
+    // même vidéo : un fichier lié différent de celui de la fiche enregistrée (formulaire resté ouvert pendant le
+    // remplacement du fichier vidéo, qui a supprimé l'ancienne couverture) est vérifié, sinon l'écriture échouerait
+    const replace = (id: number | string, stored: unknown, base: string) => (changed ? isStale(id, base, req) : !same(id, idOf(stored)) && isGone(id, req))
+    const coverName = !thumbnail || (await replace(thumbnail, originalDoc?.thumbnail, coverBaseName)) ? coverBaseName : null
+    const previewName = previewBaseName && (!preview || (await replace(preview, originalDoc?.preview, previewBaseName))) ? previewBaseName : null
     if (coverName || previewName) {
       const steps = recipe(key, source, req)
       const coverFound = coverName ? await findAuto(coverName, req) : null

@@ -308,13 +308,26 @@ describe('changement de source', () => {
     const req = fakeReq([clip(), { id: 5, filename: `youtube-${YT}.webp` }, { id: 6, filename: 'apercu-m3.mp4', mimeType: 'video/mp4' }])
     const data = { ...now, thumbnail: 5, preview: 6 }
     expect(await run(req, data)).toBe(data)
-    expect(req.payload.findByID).not.toHaveBeenCalled()
     expect(req.payload.create).not.toHaveBeenCalled()
   })
 
   it('aperçu disparu de la médiathèque : refait au changement de vidéo', async () => {
     const req = fakeReq([clip(), { id: 5, filename: 'mon-image.webp' }])
     expect(await run(req, { ...now, thumbnail: 5, preview: 6 }, before)).toMatchObject({ preview: 100 })
+  })
+
+  it('même vidéo, formulaire resté ouvert pendant le remplacement du fichier : anciens numéros (supprimés) remplacés', async () => {
+    const req = fakeReq([clip()])
+    const result = await run(req, { title: 'Balade', thumbnail: 20, preview: 22 }, { thumbnail: null, preview: null, source: now.source })
+    expect(result).toEqual({ title: 'Balade', thumbnail: 100, preview: 101 })
+  })
+
+  it('même vidéo, mêmes fichiers que la fiche enregistrée (enregistrement automatique) : aucune lecture de la médiathèque', async () => {
+    const req = fakeReq([clip(), { id: 5, filename: 'video-m12.webp' }, { id: 6, filename: 'apercu-m12.mp4' }])
+    const data = { title: 'Balade', thumbnail: 5, preview: 6 }
+    expect(await run(req, data, { ...data, source: now.source })).toBe(data)
+    expect(req.payload.findByID).not.toHaveBeenCalled()
+    expect(req.payload.find).not.toHaveBeenCalled()
   })
 
   it('même vidéo, aperçu manquant : seul l’aperçu est fabriqué', async () => {

@@ -492,19 +492,25 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
     le seed.
   - Fichier vidéo remplacé dans un média existant (même n°, autre fichier) : `purgeReplacedVideoMedia` (afterChange de
     Media) supprime `video-m<n°>` et `apercu-m<n°>` ; les fiches liées passent à null (ON DELETE SET NULL) et retrouvent
-    couverture et aperçu à leur prochain enregistrement. Un lien direct dont le fichier change à la même adresse n'est pas
+    couverture et aperçu à leur prochain enregistrement. Un formulaire resté ouvert renvoie les anciens numéros : quand
+    la vidéo ne change pas, un fichier lié différent de celui de la fiche enregistrée est vérifié (`isGone`) et remplacé
+    s'il a disparu, sinon l'écriture violerait la clé étrangère. Un lien direct dont le fichier change à la même adresse n'est pas
     détecté (clé = empreinte de l'adresse).
   - Import de la chaîne : chaque vidéo créée reçoit sa couverture et son diaporama (premier import avec clé d'API : long).
-    `importYoutube` ne lance qu'un import à la fois par processus : un second appel (tâche planifiée, « Importer
-    maintenant ») attend le résultat de l'import en cours au lieu de recréer les mêmes vidéos.
+    `importYoutube` ne lance qu'un import à la fois par processus : pendant un import, la tâche planifiée en partage le
+    résultat, « Importer maintenant » (`force`) attend sa fin puis relance un import avec les réglages relus.
 - **Envois de fichiers** (`buildConfig.upload`) : 500 Mo par fichier, `useTempFiles` (dossier os.tmpdir()/swatter-envois) ;
   le fichier reçu va sur le disque puis est copié dans la médiathèque (S3 : flux depuis le fichier temporaire), jamais
   chargé en mémoire (vérifié avec un envoi réel de 284 Mo). `src/proxy.ts` ne doit jamais viser `/api`, sinon Next
   mettrait le corps en mémoire jusqu'à `proxyClientMaxBodySize` (10 Mo) et tronquerait les envois.
-  - Payload ne supprime le fichier temporaire qu'après une opération sur la médiathèque : `src/app/(payload)/api/[...slug]/route.ts`
-    refuse (401, sur les en-têtes, avant la lecture du corps) tout envoi multipart de plus de 1 Mo ou de taille inconnue
-    sans compte de l'équipe (`refuseAnonymousUpload`, `src/hooks/envois.ts`) ; `onInit` lance un ménage horaire des
-    fichiers temporaires de plus de 2 h (`purgeUploadTmp` : requêtes refusées, stockage S3).
+  - Payload écrit les parties « fichier » d'un envoi multipart sur le disque avant toute vérification de droits, et ne
+    les supprime qu'après une opération sur la médiathèque. `src/app/(payload)/api/[...slug]/route.ts` passe donc par
+    `guardUpload` (`src/hooks/envois.ts`) : sans compte de l'équipe (`users`), un envoi multipart de plus de 1 Mo ou de
+    taille inconnue est refusé (401) sur les en-têtes, avant la lecture du corps ; un envoi plus petit est lu en mémoire
+    et refusé s'il contient une partie fichier (nom de fichier ou type de partie, comme busboy). Les formulaires de
+    l'administration sans fichier (connexion, mot de passe oublié : un seul champ texte `_payload`) passent.
+    `src/app/(payload)/api/graphql/route.ts` refuse tout envoi multipart (415). `onInit` lance un ménage horaire des
+    fichiers temporaires de plus de 2 h (`purgeUploadTmp` : envois de l'équipe refusés, stockage S3).
   - Node coupe une requête non reçue en 5 min (`requestTimeout`) : `http-timeouts.cjs` (chargé par
     `node --require ./http-timeouts.cjs server.js` dans le Dockerfile et `test:complet`) porte ce délai à 30 min.
 - **Grille des programmes** : `src/proxy.ts` (le « middleware » de Next 16) redirige `/admin/collections/schedule` sans

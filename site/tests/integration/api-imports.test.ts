@@ -284,13 +284,16 @@ describe('tâche planifiée : chaîne YouTube', () => {
     expect(await thumbnails()).toBe(thumbnailsBefore)
   })
 
-  it('YouTube : deux imports lancés en même temps (tâche planifiée et « Importer maintenant ») ne créent chaque vidéo qu’une fois', async () => {
+  it('YouTube : imports lancés en même temps (deux tâches planifiées, « Importer maintenant ») : chaque vidéo n’est créée qu’une fois', async () => {
     await forgetImports()
     await setChannel()
-    const [planned, now] = await Promise.all([runCron(), importNow({ token: await adminToken() })])
-    expect(planned.body.youtube).toMatchObject({ ok: true, created: 3 })
-    // le second appel attend le premier import et rend le même résultat
-    expect(now.body).toMatchObject({ ok: true, created: 3 })
+    const token = await adminToken()
+    const [first, second, now] = await Promise.all([runCron(), runCron(), importNow({ token })])
+    // l'ordre d'arrivée varie : une tâche planifiée partage l'import en cours, « Importer maintenant » attend sa fin puis
+    // relance (réglages relus) ; chaque appel réussit et les 3 vidéos sont créées une fois en tout
+    const results = [first.body.youtube, second.body.youtube, now.body]
+    for (const result of results) expect(result).toMatchObject({ ok: true })
+    expect(Math.max(...results.map((r) => r.created))).toBe(3)
     for (const id of ['swTest00001', 'swTest00002']) expect(await imported('videos', id), id).toHaveLength(1)
     expect(await imported('replays', 'swTest00003')).toHaveLength(1)
     await forgetImports()
