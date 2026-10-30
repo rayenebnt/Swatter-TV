@@ -116,8 +116,14 @@ done
 
 if [ "$DEJA" -eq 0 ]; then
   etape "Premier administrateur et contenus de départ"
-  docker compose run --rm -e ADMIN_EMAIL -e ADMIN_PASSWORD tools npm run payload run src/scripts/init-db.ts
-  docker compose run --rm -e SEED_FORCE=1 tools npm run seed
+  # Base déjà remplie (installation interrompue après cette étape) : rien n'est recréé ni effacé
+  COMPTES="$(docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "select count(*) from users"' 2> /dev/null | tr -d '[:space:]')" || COMPTES=""
+  if [ "${COMPTES:-0}" -gt 0 ] 2> /dev/null; then
+    echo "La base contient déjà des comptes et des contenus : ils sont gardés tels quels."
+  else
+    docker compose run --rm -e ADMIN_EMAIL -e ADMIN_PASSWORD tools npm run payload run src/scripts/init-db.ts
+    docker compose run --rm -e SEED_FORCE=1 tools npm run seed
+  fi
   regler INSTALLATION_TERMINEE 1
 fi
 

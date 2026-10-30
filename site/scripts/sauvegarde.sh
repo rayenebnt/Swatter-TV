@@ -16,7 +16,11 @@ base="$DEST/swatter-$DATE.dump"
 media="$DEST/media-$DATE.tar.gz"
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
-mkdir -p "$DEST"
+if ! mkdir -p "$DEST" 2> /dev/null || [ ! -w "$DEST" ]; then
+  echo "Dossier des sauvegardes $DEST impossible à créer ou à écrire. Créez-le une fois :" >&2
+  echo "  sudo install -d -o $(id -un) -g $(id -gn) -m 750 $DEST" >&2
+  exit 1
+fi
 # Fichiers « .part » renommés seulement une fois complets : une sauvegarde interrompue ne passe jamais pour bonne
 trap 'rm -f "$base.part" "$media.part"' EXIT
 
