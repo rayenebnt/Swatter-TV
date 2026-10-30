@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { imageSource } from '@/components/video/utils'
+import { VideoPreview } from '@/components/video/VideoPreview'
 import { KIND_LABELS, type FavoriteKind } from '@/lib/members/shared'
 import type { SpaceEntry } from './types'
 
@@ -28,11 +29,14 @@ type Remove = {
   disabled?: boolean
 }
 
-function Thumb({ entry, sizes }: { entry: SpaceEntry; sizes: string }) {
+/** Vignette ; vidéo ou replay : aperçu animé (petite vignette des lignes : au survol ou au focus seulement). */
+function Thumb({ entry, sizes, small = false }: { entry: SpaceEntry; sizes: string; small?: boolean }) {
   const { src, unoptimized } = imageSource(entry.item.image)
+  const preview = playable(entry.item.kind) ? entry.item.preview : undefined
   return (
     <div className="media">
       <Image src={src} alt="" fill sizes={sizes} unoptimized={unoptimized} />
+      {preview && <VideoPreview src={preview} kind={small ? 'hover' : 'card'} />}
       {playable(entry.item.kind) && (
         <span className="play" aria-hidden="true">
           <Icon name="play" />
@@ -88,7 +92,7 @@ export function SpaceRow({ entry, remove }: { entry: SpaceEntry; remove?: Remove
   const { item } = entry
   return (
     <article className="card space-row" data-kind={item.kind}>
-      <Thumb entry={entry} sizes={ROW_SIZES} />
+      <Thumb entry={entry} sizes={ROW_SIZES} small />
       <div className="space-row__body">
         <p className="kicker space-kind">
           <Icon name={KIND_ICONS[item.kind]} />

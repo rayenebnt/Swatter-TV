@@ -1,8 +1,9 @@
 // Tests unitaires de src/lib/video.ts : identifiant YouTube de chaque forme d’adresse (watch, youtu.be, shorts, live,
 // embed, paramètres, adresses invalides), chaîne ou vidéo Twitch d’après ce qu’on a collé, lecteur Twitch intégré
-// et transformation d’une source saisie dans l’administration en lecture exploitable par le lecteur.
+// et transformation d’une source saisie dans l’administration en lecture exploitable par le lecteur ; lecteurs lancés
+// seuls sans le son (direct) et adresse de l’aperçu animé.
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { resolveVideo, twitchEmbedUrl, twitchTarget, youtubeId } from '@/lib/video'
+import { mutedEmbedUrl, previewUrl, resolveVideo, twitchEmbedUrl, twitchTarget, youtubeId } from '@/lib/video'
 
 const ID = 'dQw4w9WgXcQ'
 
@@ -155,6 +156,46 @@ describe('twitchEmbedUrl : lecteur Twitch intégré', () => {
     expect(twitchEmbedUrl({ param: 'video', value: 'v123456789' }, ['localhost'])).toBe(
       'https://player.twitch.tv/?video=v123456789&autoplay=true&muted=false&parent=localhost',
     )
+  })
+
+  it('direct lancé seul quand il est visible : lecture automatique sans le son (muted=true)', () => {
+    const url = new URL(twitchEmbedUrl({ param: 'channel', value: 'swattertv' }, ['www.swatter-tv.fr'], true))
+    expect(url.searchParams.get('autoplay')).toBe('true')
+    expect(url.searchParams.get('muted')).toBe('true')
+    expect(url.searchParams.getAll('parent')).toEqual(['www.swatter-tv.fr'])
+  })
+})
+
+describe('mutedEmbedUrl : lecteur intégré lancé seul, sans le son', () => {
+  it('YouTube : mute=1 et playsinline=1 ajoutés aux paramètres du lecteur sans cookies', () => {
+    const youtube = resolveVideo({ provider: 'youtube', youtubeUrl: `https://www.youtube.com/watch?v=${ID}` })
+    expect(youtube?.kind).toBe('youtube')
+    const url = new URL(mutedEmbedUrl(youtube as Extract<typeof youtube, { kind: 'youtube' }>))
+    expect(url.origin + url.pathname).toBe(`https://www.youtube-nocookie.com/embed/${ID}`)
+    expect(Object.fromEntries(url.searchParams)).toEqual({ autoplay: '1', rel: '0', modestbranding: '1', mute: '1', playsinline: '1' })
+  })
+
+  it('Bunny Stream : muted=true, les autres paramètres conservés', () => {
+    const url = new URL(mutedEmbedUrl({ kind: 'iframe', embedUrl: 'https://iframe.mediadelivery.net/embed/12345/abc-def?autoplay=true&preload=true&responsive=true' }))
+    expect(url.origin + url.pathname).toBe('https://iframe.mediadelivery.net/embed/12345/abc-def')
+    expect(Object.fromEntries(url.searchParams)).toEqual({ autoplay: 'true', preload: 'true', responsive: 'true', muted: 'true' })
+  })
+})
+
+describe('previewUrl : aperçu animé d’une vidéo ou d’un replay', () => {
+  it('extrait de la médiathèque chargé : son adresse, en chemin local (même origine que la page)', () => {
+    expect(previewUrl({ id: 7, url: '/api/media/file/apercu-balade.mp4', mimeType: 'video/mp4' } as never)).toBe('/api/media/file/apercu-balade.mp4')
+    expect(previewUrl({ id: 7, url: 'http://localhost:3000/api/media/file/apercu-balade.webm', mimeType: 'video/webm' } as never)).toBe(
+      '/api/media/file/apercu-balade.webm',
+    )
+  })
+
+  it('aucun aperçu, relation non chargée ou média qui n’est pas une vidéo : rien (l’image reste fixe, aucune requête)', () => {
+    expect(previewUrl(null)).toBeNull()
+    expect(previewUrl(undefined)).toBeNull()
+    expect(previewUrl(7)).toBeNull()
+    expect(previewUrl({ id: 7, url: null, mimeType: 'video/mp4' } as never)).toBeNull()
+    expect(previewUrl({ id: 7, url: '/api/media/file/photo.webp', mimeType: 'image/webp' } as never)).toBeNull()
   })
 })
 

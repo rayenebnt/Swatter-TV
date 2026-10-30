@@ -12,11 +12,11 @@ import { VideoPlayer } from '@/components/video/VideoPlayer'
 import { fallbackVisual, renderNow, spokenDuration, videoListUrl, videoLocation, videoObject } from '@/components/video/utils'
 import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
 import { formatDate, formatNumber } from '@/lib/format'
-import { mediaAlt, mediaUrl } from '@/lib/media'
+import { mediaAlt, mediaFocal, mediaUrl } from '@/lib/media'
 import { getOtherVideos, getRelatedVideos, getVideoBySlug } from '@/lib/queries/videos'
 import { SITE_NAME } from '@/lib/site'
 import { videoUrl } from '@/lib/urls'
-import { resolveVideo } from '@/lib/video'
+import { previewUrl, resolveVideo } from '@/lib/video'
 import '@/styles/video.css'
 import { ogImage } from '@/lib/og'
 
@@ -78,8 +78,16 @@ export default async function VideoPage({ params }: { params: Params }) {
         <div className="container">
           <Crumbs items={[{ label: 'Vidéos', href: '/videos' }, { label, href: videoListUrl(video.category) }, { label: video.title }]} />
           <article className="watch__grid" aria-labelledby="watch-title">
-            {/* history : vidéo ajoutée à l'historique du membre connecté au lancement de la lecture */}
-            <VideoPlayer video={resolved} poster={poster} title={video.title} history={{ kind: 'video', id: video.id }} />
+            {/* history : vidéo ajoutée à l'historique du membre connecté au lancement de la lecture ;
+                preview : aperçu animé (chargé avec la fiche, depth 1) derrière le bouton de lecture */}
+            <VideoPlayer
+              video={resolved}
+              poster={poster}
+              posterPosition={mediaFocal(video.thumbnail)}
+              preview={previewUrl(video.preview)}
+              title={video.title}
+              history={{ kind: 'video', id: video.id }}
+            />
             <div className="watch__info">
               <p className="kicker">
                 <Link href={videoListUrl(video.category)}>{label}</Link>

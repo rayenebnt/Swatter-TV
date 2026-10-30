@@ -1,5 +1,6 @@
 import { expect, request as apiRequest, test, type APIRequestContext, type Page } from '@playwright/test'
 import { settle, watchErrors } from './helpers'
+import { presetConsent, recordThirdParty } from './outils-contenus'
 import { MOCK_PROGRAM, MOCK_VIDEOS, startYoutubeMock } from './youtube-mock'
 
 /**
@@ -284,7 +285,7 @@ test.describe('administration', () => {
     }
   })
 
-  test('direct sur Twitch : lien vérifié à la publication, lecteur Twitch au clic', async ({ page, request }) => {
+  test('direct sur Twitch : lien vérifié à la publication ; façade sans accord, lecteur seul et sans le son avec l’accord', async ({ page, request, browser }) => {
     const headers = await adminHeaders(request)
     const published = (await (await request.get('/api/globals/settings?depth=0', { headers })).json()) as Record<string, unknown>
     try {
@@ -294,15 +295,54 @@ test.describe('administration', () => {
 
       const saved = await request.post('/api/globals/settings', { headers, data: { liveEnabled: true, live: { provider: 'twitch', twitchUrl: 'https://www.twitch.tv/SwatterTV' } } })
       expect(saved.ok()).toBe(true)
+      await recordThirdParty(page.context())
       await page.goto('/direct')
-      // façade : rien n'est chargé depuis Twitch avant le clic (consentement « contenus externes »)
+      // sans accord aux contenus externes : façade, rien n'est chargé depuis Twitch avant le clic
       await expect(page.locator('.vp__notice')).toContainText('lecteur Twitch')
+      await page.waitForTimeout(1_000)
       await expect(page.locator('iframe.vp__frame')).toHaveCount(0)
       await page.locator('.vp__play').click()
       const src = new URL((await page.locator('iframe.vp__frame').getAttribute('src')) ?? '')
       expect(src.origin).toBe('https://player.twitch.tv')
       expect(src.searchParams.get('channel')).toBe('swattertv')
       expect(src.searchParams.getAll('parent')).toContain(new URL(page.url()).hostname)
+      // lecture demandée par un clic : avec le son
+      expect(src.searchParams.get('muted')).toBe('false')
+
+      // accord aux contenus externes : le direct se charge seul dès qu'il est visible, sans le son (règle des navigateurs)
+      const baseURL = test.info().project.use.baseURL
+      const accepted = await browser.newContext({ baseURL, viewport: { width: 1440, height: 900 } })
+      try {
+        await presetConsent(accepted, { audience: false, externes: true })
+        await recordThirdParty(accepted)
+        const visit = await accepted.newPage()
+        await visit.goto('/direct')
+        const frame = visit.locator('iframe.vp__frame')
+        await expect(frame).toHaveAttribute('src', /^https:\/\/player\.twitch\.tv\//)
+        const auto = new URL((await frame.getAttribute('src')) ?? '')
+        expect(auto.searchParams.get('channel')).toBe('swattertv')
+        expect(auto.searchParams.get('autoplay')).toBe('true')
+        expect(auto.searchParams.get('muted')).toBe('true')
+        expect(auto.searchParams.getAll('parent')).toContain(new URL(visit.url()).hostname)
+        await expect(visit.locator('.vp__play')).toHaveCount(0)
+      } finally {
+        await accepted.close()
+      }
+
+      // « réduire les animations » : jamais de lecture automatique, même avec l'accord
+      const calm = await browser.newContext({ baseURL, viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
+      try {
+        await presetConsent(calm, { audience: false, externes: true })
+        const third = await recordThirdParty(calm)
+        const visit = await calm.newPage()
+        await visit.goto('/direct')
+        await expect(visit.locator('.vp__play')).toBeVisible()
+        await visit.waitForTimeout(1_500)
+        await expect(visit.locator('iframe.vp__frame')).toHaveCount(0)
+        expect(third, 'rien de Twitch sans clic').toEqual([])
+      } finally {
+        await calm.close()
+      }
     } finally {
       await request.post('/api/globals/settings?depth=0', { headers, data: published })
     }

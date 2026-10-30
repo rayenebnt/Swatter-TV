@@ -5,6 +5,7 @@ import { departmentLabel } from '@/lib/departments'
 import { formatDate } from '@/lib/format'
 import { mediaUrl, type MediaRef } from '@/lib/media'
 import { articleUrl, eventUrl, replayUrl, videoUrl } from '@/lib/urls'
+import { previewUrl } from '@/lib/video'
 import { KIND_LABELS, type FavoriteKind } from './shared'
 
 /** Contenu tel qu'affiché dans l'espace membres (valeurs simples, transmissibles aux composants client). */
@@ -16,12 +17,19 @@ export type MemberItem = {
   image: string
   /** « Vidéo · 04:05 », « Info · Annecy », « Agenda · 24 oct. 2026 » */
   meta: string
+  /** Vidéos et replays : adresse de l'aperçu animé (absente sans aperçu) */
+  preview?: string
 }
 
 type Ref = { kind: FavoriteKind; itemId: number }
 
 const meta = (kind: FavoriteKind, ...parts: (string | null | undefined)[]) => [KIND_LABELS[kind], ...parts.filter(Boolean)].join(' · ')
 const image = (m: MediaRef, id: number) => mediaUrl(m, 'card') ?? fallbackVisual(id)
+/** Clé « preview » ajoutée seulement si l'aperçu existe. */
+const preview = (m: MediaRef): { preview?: string } => {
+  const url = previewUrl(m)
+  return url ? { preview: url } : {}
+}
 
 /**
  * Charge les contenus de `refs` encore visibles du public (publiés, déjà en ligne), dans l'ordre de `refs` ; ceux qui
@@ -39,14 +47,22 @@ export async function loadItems(payload: Payload, refs: Ref[], { publicOnly = tr
   const add = (item: MemberItem) => out.set(`${item.kind}:${item.id}`, item)
 
   const [videos, replays, articles, events] = await Promise.all([
-    ids('video').length ? payload.find({ collection: 'videos', ...opts('video'), select: { title: true, slug: true, thumbnail: true, duration: true } }) : null,
-    ids('replay').length ? payload.find({ collection: 'replays', ...opts('replay'), select: { title: true, slug: true, thumbnail: true, duration: true, broadcastAt: true } }) : null,
+    ids('video').length ? payload.find({ collection: 'videos', ...opts('video'), select: { title: true, slug: true, thumbnail: true, preview: true, duration: true } }) : null,
+    ids('replay').length ? payload.find({ collection: 'replays', ...opts('replay'), select: { title: true, slug: true, thumbnail: true, preview: true, duration: true, broadcastAt: true } }) : null,
     ids('article').length ? payload.find({ collection: 'articles', ...opts('article'), select: { title: true, slug: true, department: true, city: true, image: true, publishedAt: true } }) : null,
     ids('event').length ? payload.find({ collection: 'events', ...opts('event'), select: { title: true, slug: true, city: true, poster: true, startDate: true } }) : null,
   ])
-  for (const v of videos?.docs ?? []) add({ kind: 'video', id: v.id, title: v.title, href: videoUrl(v), image: image(v.thumbnail, v.id), meta: meta('video', v.duration) })
+  for (const v of videos?.docs ?? []) add({ kind: 'video', id: v.id, title: v.title, href: videoUrl(v), image: image(v.thumbnail, v.id), meta: meta('video', v.duration), ...preview(v.preview) })
   for (const r of replays?.docs ?? [])
-    add({ kind: 'replay', id: r.id, title: r.title, href: replayUrl(r), image: image(r.thumbnail, r.id), meta: meta('replay', r.duration, r.broadcastAt ? formatDate(r.broadcastAt) : null) })
+    add({
+      kind: 'replay',
+      id: r.id,
+      title: r.title,
+      href: replayUrl(r),
+      image: image(r.thumbnail, r.id),
+      meta: meta('replay', r.duration, r.broadcastAt ? formatDate(r.broadcastAt) : null),
+      ...preview(r.preview),
+    })
   for (const a of articles?.docs ?? [])
     add({ kind: 'article', id: a.id, title: a.title, href: articleUrl(a), image: image(a.image, a.id), meta: meta('article', a.city || departmentLabel(a.department)) })
   for (const e of events?.docs ?? [])

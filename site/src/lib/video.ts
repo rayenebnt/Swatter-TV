@@ -1,4 +1,5 @@
 import type { Media } from '@/payload-types'
+import { mediaUrl, type MediaRef } from './media'
 
 /** Source vidéo telle que stockée par le champ videoSourceField. */
 export type VideoSourceData = {
@@ -69,11 +70,37 @@ export function twitchTarget(input: string | null | undefined): TwitchTarget | n
 /**
  * Adresse du lecteur Twitch. Twitch exige le nom de domaine de chaque page qui l'intègre (`parent`, sans port ni
  * protocole) et un site en HTTPS : le lecteur ne s'affiche donc pas en développement sur http://localhost.
+ * `muted` : lecture automatique sans le son (direct lancé seul quand il est visible), sinon avec le son (clic).
  */
-export function twitchEmbedUrl({ param, value }: TwitchTarget, hosts: string[]): string {
-  const params = new URLSearchParams({ [param]: value, autoplay: 'true', muted: 'false' })
+export function twitchEmbedUrl({ param, value }: TwitchTarget, hosts: string[], muted = false): string {
+  const params = new URLSearchParams({ [param]: value, autoplay: 'true', muted: String(muted) })
   for (const host of new Set(hosts.filter(Boolean))) params.append('parent', host)
   return `https://player.twitch.tv/?${params}`
+}
+
+/**
+ * Adresse d'un lecteur YouTube ou Bunny Stream lancé seul, sans le son (seule lecture automatique admise par les
+ * navigateurs) : YouTube mute=1 et playsinline=1 (sinon plein écran forcé sur iPhone), Bunny Stream muted=true.
+ */
+export function mutedEmbedUrl(video: { kind: 'youtube' | 'iframe'; embedUrl: string }): string {
+  const url = new URL(video.embedUrl)
+  if (video.kind === 'youtube') {
+    url.searchParams.set('mute', '1')
+    url.searchParams.set('playsinline', '1')
+  } else {
+    url.searchParams.set('muted', 'true')
+  }
+  return url.toString()
+}
+
+/**
+ * Aperçu animé d'une vidéo ou d'un replay (court extrait muet de la médiathèque, relation chargée) : son adresse, ou
+ * null s'il est absent ou si le média n'est pas une vidéo (rien n'est alors demandé : l'image reste fixe).
+ */
+export function previewUrl(m: MediaRef): string | null {
+  if (typeof m !== 'object' || m === null) return null
+  if (m.mimeType && !m.mimeType.startsWith('video/')) return null
+  return mediaUrl(m)
 }
 
 /** Transforme une source saisie dans l'administration en lecture exploitable par le lecteur. */

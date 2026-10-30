@@ -8,8 +8,8 @@ import { safe } from '../safe'
 
 export type VideoCategory = Video['category']
 
-/** Champs utiles aux cartes et rails (sans la source vidéo). */
-export type VideoListItem = Pick<Video, 'id' | 'title' | 'slug' | 'category' | 'duration' | 'thumbnail' | 'description' | 'publishedAt' | 'top10Rank' | 'views'>
+/** Champs utiles aux cartes et rails (sans la source vidéo ; avec l'aperçu animé, dont seule l'adresse sert). */
+export type VideoListItem = Pick<Video, 'id' | 'title' | 'slug' | 'category' | 'duration' | 'thumbnail' | 'preview' | 'description' | 'publishedAt' | 'top10Rank' | 'views'>
 
 export type VideosPage = { docs: VideoListItem[]; page: number; totalPages: number; totalDocs: number }
 
@@ -19,6 +19,7 @@ const LIST_SELECT = {
   category: true,
   duration: true,
   thumbnail: true,
+  preview: true,
   description: true,
   publishedAt: true,
   top10Rank: true,

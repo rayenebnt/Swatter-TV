@@ -4,10 +4,12 @@ import { MiniMeteo } from '@/components/meteo/MiniMeteo'
 import { Icon } from '@/components/ui/Icon'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { SectionHead } from '@/components/ui/SectionHead'
+import { VideoPreview } from '@/components/video/VideoPreview'
 import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
 import { formatDayLong, formatTime, timeAgo } from '@/lib/format'
 import { getInfoOfDay, getVideoOfDay, getWeekendEvent, type HomeArticle, type HomeEvent, type HomeVideo } from '@/lib/queries/home'
 import { articleUrl, eventUrl, videoUrl } from '@/lib/urls'
+import { previewUrl } from '@/lib/video'
 import '@/styles/une.css'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -22,9 +24,10 @@ function formatDuration(d: string | null | undefined): string | null {
   return parts.length === 2 ? `${parts[0].padStart(2, '0')}:${parts[1]}` : v
 }
 
-/** Grande tuile : vidéo du jour (ou dernière vidéo). */
+/** Grande tuile : vidéo du jour (ou dernière vidéo), avec son aperçu animé lancé seul une fois quand elle est visible. */
 function VideoTile({ video, now }: { video: HomeVideo; now: Date }) {
   const duration = formatDuration(video.duration)
+  const preview = previewUrl(video.preview)
   const category = labelOf(VIDEO_CATEGORIES, video.category)
   const fresh = now.getTime() - new Date(video.publishedAt).getTime() < DAY_MS
   return (
@@ -36,6 +39,7 @@ function VideoTile({ video, now }: { video: HomeVideo; now: Date }) {
         fill
         sizes="(max-width: 1100px) calc(100vw - 32px), 560px"
       />
+      {preview && <VideoPreview src={preview} kind="feature" />}
       <div className="tile__top">
         <span className="badge badge--gold">{video.isVideoOfDay ? 'Vidéo du jour' : 'Dernière vidéo'}</span>
         {duration && (
@@ -73,10 +77,11 @@ function EventTile({ event }: { event: HomeEvent }) {
   const when = `${cap(formatDayLong(event.startDate))}${time === '00:00' ? '' : ` · ${time.replace(':', 'h')}`}`
   return (
     <article className="tile b-sortie" data-reveal style={delay(1)}>
+      {/* affiche d'origine : la déclinaison « card » est déjà coupée en 16:9, l'affiche serait recadrée deux fois.
+          Tailles : largeur de la tuile (une affiche en hauteur la remplit par sa largeur), 460 px de haut en bureau. */}
       <MediaImage
         media={event.poster}
         fallbackSrc="/visuels/t-matin-a.webp"
-        size="card"
         fill
         sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1100px) 50vw, 460px"
       />
