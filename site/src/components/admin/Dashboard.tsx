@@ -222,9 +222,9 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
                   data.missingImages.replays ? plural(data.missingImages.replays, 'replay', 'replays') : null,
                 ]
                   .filter(Boolean)
-                  .join(' et ')} sans image (YouTube était peut-être injoignable) : enregistrez à nouveau ${
+                  .join(' et ')} sans image (vidéo injoignable ou illisible à l’enregistrement) : enregistrez à nouveau ${
                   data.missingImages.videos + data.missingImages.replays > 1 ? 'les fiches' : 'la fiche'
-                } ou ajoutez une image`}
+                } dans quelques minutes, ou ajoutez une image`}
                 href={`${collection(data.missingImages.videos ? 'videos' : 'replays')}?${new URLSearchParams({ 'where[or][0][and][0][thumbnail][exists]': 'false' })}`}
               />
             )}

@@ -7,7 +7,7 @@ import { videoSourceField } from '@/fields/videoSource'
 import { recordLiveBefore } from '@/hooks/live-before'
 import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
 import { top10AfterChange, top10AfterDelete } from '@/hooks/top10'
-import { thumbnailUnlessYoutube, youtubeThumbnail } from '@/hooks/youtubeThumbnail'
+import { thumbnailUnlessAutomatic, videoAutoMedia } from '@/hooks/videoAutoMedia'
 import { VIDEO_CATEGORIES } from '@/lib/categories'
 import { videoUrl } from '@/lib/urls'
 
@@ -17,7 +17,8 @@ export const Videos: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'category', 'publishedAt', 'isVideoOfDay', 'top10Rank'],
-    description: 'Vidéo du jour, Top 10 et vidéos à la demande. Pour une vidéo YouTube, collez simplement son lien : l’image est récupérée toute seule.',
+    description:
+      'Vidéo du jour, Top 10 et vidéos à la demande. Une image et un court aperçu animé sont tirés automatiquement de la vidéo à l’enregistrement ; choisissez une autre image si elle ne convient pas.',
     preview: (doc) => (doc.slug ? videoUrl(doc as { slug: string }) : null),
   },
   access: { read: publishedOrAuthenticated, create: authenticated, update: authenticated, delete: authenticated },
@@ -25,7 +26,7 @@ export const Videos: CollectionConfig = {
   versions: draftVersions,
   defaultSort: '-publishedAt',
   hooks: {
-    beforeValidate: [youtubeThumbnail],
+    beforeValidate: [videoAutoMedia],
     // version en ligne avant l'enregistrement (place du Top 10 libérée, retrait du site) : voir src/hooks/live-before.ts
     beforeChange: [recordLiveBefore],
     // Top 10 sans doublon (les autres vidéos classées se décalent), puis régénération du site
@@ -40,12 +41,15 @@ export const Videos: CollectionConfig = {
       label: 'Image de la vidéo',
       type: 'upload',
       relationTo: 'media',
-      validate: thumbnailUnlessYoutube,
+      validate: thumbnailUnlessAutomatic,
       // images seulement : un MP4 choisi ici donnerait une vignette cassée
       filterOptions: { mimeType: { contains: 'image/' } },
-      admin: { description: 'Facultative pour une vidéo YouTube : son image est récupérée automatiquement à l’enregistrement.' },
+      admin: {
+        description:
+          'Une image est tirée automatiquement de la vidéo à l’enregistrement ; choisissez-en une autre ici si elle ne convient pas. Obligatoire seulement pour une vidéo Bunny Stream.',
+      },
     },
-    // aperçu animé (court extrait muet, MP4) généré automatiquement à partir de la vidéo : voir src/hooks
+    // aperçu animé (court extrait muet, MP4) généré automatiquement à partir de la vidéo : voir src/hooks/videoAutoMedia.ts
     { name: 'preview', label: 'Aperçu animé', type: 'upload', relationTo: 'media', admin: { hidden: true } },
     {
       type: 'row',

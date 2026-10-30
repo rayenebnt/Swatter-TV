@@ -1,6 +1,8 @@
-// Vignette YouTube automatique (src/hooks/youtubeThumbnail.ts) avec le faux YouTube des tests (port de YOUTUBE_THUMB_BASE),
-// tailles de repli, YouTube injoignable, aucun téléchargement pendant un décalage du Top 10 ; puis suppression des fiches
+// Vignette YouTube automatique (src/hooks/videoAutoMedia.ts) avec le faux YouTube des tests (port de YOUTUBE_THUMB_BASE),
+// aperçu animé (diaporama des 3 images de la vidéo, ffmpeg), tailles de repli, YouTube injoignable, aucun téléchargement
+// pendant un décalage du Top 10 ; puis suppression des fiches
 // vides abandonnées par la tâche horaire (src/lib/drafts-cleanup.ts : plus de 24 h, jamais publiées, sans titre).
+import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import path from 'node:path'
@@ -55,12 +57,20 @@ async function youtube(collection: 'videos' | 'replays', youtubeUrl: string, ext
   return track(collection, res.body.doc)
 }
 
-/** Images de la médiathèque téléchargées pour une vidéo YouTube. */
-async function thumbnails(id: string): Promise<Media[]> {
-  const { docs } = await payload.find({ collection: 'media', where: { filename: { like: `youtube-${id}` } }, depth: 0, pagination: false })
+/** Fichiers automatiques de la médiathèque nommés `base` (youtube-<id>, apercu-y<id>…). */
+async function autoFiles(base: string): Promise<Media[]> {
+  const { docs } = await payload.find({ collection: 'media', where: { filename: { like: base } }, depth: 0, pagination: false })
   for (const doc of docs) if (!created.some((c) => c.collection === 'media' && c.id === doc.id)) track('media', doc)
-  return docs.filter((m) => new RegExp(`^youtube-${id}(-\\d+)?\\.\\w+$`).test(m.filename ?? ''))
+  return docs.filter((m) => new RegExp(`^${base}(-\\d+)?\\.\\w+$`).test(m.filename ?? ''))
 }
+
+/** Images de la médiathèque téléchargées pour une vidéo YouTube. */
+const thumbnails = (id: string) => autoFiles(`youtube-${id}`)
+/** Aperçus animés d'une vidéo YouTube. */
+const previews = (id: string) => autoFiles(`apercu-y${id}`)
+
+/** ffmpeg installé sur la machine des tests (sinon, pas d'aperçu animé : les vérifications d'aperçu sont sautées). */
+const hasFfmpeg = spawnSync(process.env.FFMPEG_PATH || 'ffmpeg', ['-version']).status === 0
 
 const stop = (server: Server) =>
   new Promise<void>((resolve) => {
@@ -93,6 +103,22 @@ describe('vignette YouTube automatique (faux YouTube)', () => {
     expect(pub.body.thumbnail.url).toMatch(/\/api\/media\/file\/youtube-/)
   })
 
+  it.runIf(hasFfmpeg)('aperçu animé : diaporama MP4 des 3 images de la vidéo, muet, 16:9, léger, crédité YouTube', async () => {
+    const id = videoId()
+    const video = await youtube('videos', `https://www.youtube.com/watch?v=${id}`)
+    const [preview] = await previews(id)
+    expect(preview).toBeDefined()
+    expect(video.preview).toBe(preview.id)
+    const full = await payload.findByID({ collection: 'media', id: preview.id, depth: 0 })
+    expect(full).toMatchObject({ mimeType: 'video/mp4', credit: 'YouTube', filename: `apercu-y${id}.mp4` })
+    expect(full.filesize).toBeLessThan(1024 * 1024)
+    const probe = spawnSync(process.env.FFPROBE_PATH || 'ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type,codec_name,width,height,pix_fmt:format=duration', '-of', 'json', path.resolve(process.env.MEDIA_DIR!, full.filename!)], { encoding: 'utf8' })
+    const info = JSON.parse(probe.stdout) as { streams: { codec_type: string; codec_name: string; width: number; height: number; pix_fmt: string }[]; format: { duration: string } }
+    expect(info.streams).toEqual([{ codec_type: 'video', codec_name: 'h264', width: 960, height: 540, pix_fmt: 'yuv420p' }])
+    expect(Number(info.format.duration)).toBeGreaterThanOrEqual(4.5)
+    expect(Number(info.format.duration)).toBeLessThanOrEqual(6)
+  })
+
   it('replay YouTube : même règle', async () => {
     const id = videoId()
     const replay = await youtube('replays', `https://youtu.be/${id}`)
@@ -100,13 +126,18 @@ describe('vignette YouTube automatique (faux YouTube)', () => {
     expect(replay.thumbnail).toBe(media.id)
   })
 
-  it('même vidéo en replay et dans « Vidéos » : une seule image, partagée', async () => {
+  it('même vidéo en replay et dans « Vidéos » : une seule image (et un seul aperçu), partagée', async () => {
     const id = videoId()
     const video = await youtube('videos', `https://www.youtube.com/watch?v=${id}`)
     const replay = await youtube('replays', `https://www.youtube.com/live/${id}`)
     const media = await thumbnails(id)
     expect(media).toHaveLength(1)
     expect([video.thumbnail, replay.thumbnail]).toEqual([media[0].id, media[0].id])
+    if (hasFfmpeg) {
+      const anim = await previews(id)
+      expect(anim).toHaveLength(1)
+      expect([video.preview, replay.preview]).toEqual([anim[0].id, anim[0].id])
+    }
   })
 
   it('liens YouTube courants (watch, youtu.be, shorts, embed, live) et identifiant seul', async () => {
@@ -187,7 +218,8 @@ describe('vignette YouTube : tailles de repli', () => {
     await serve({ 'sddefault.jpg': JPEG })
     const id = videoId()
     const video = await youtube('videos', `https://www.youtube.com/watch?v=${id}`)
-    expect(requests).toEqual(['maxresdefault.jpg', 'sddefault.jpg'])
+    // (les images de l'aperçu, maxres1.jpg…, sont demandées à part)
+    expect(requests.filter((name) => name.includes('default'))).toEqual(['maxresdefault.jpg', 'sddefault.jpg'])
     expect(video.thumbnail).toBe((await thumbnails(id))[0].id)
   })
 
@@ -195,7 +227,7 @@ describe('vignette YouTube : tailles de repli', () => {
     await serve({ 'maxresdefault.jpg': JPEG.subarray(0, 1000), 'hqdefault.jpg': JPEG })
     const id = videoId()
     const video = await youtube('videos', `https://www.youtube.com/watch?v=${id}`)
-    expect(requests).toEqual(['maxresdefault.jpg', 'sddefault.jpg', 'hqdefault.jpg'])
+    expect(requests.filter((name) => name.includes('default'))).toEqual(['maxresdefault.jpg', 'sddefault.jpg', 'hqdefault.jpg'])
     expect(video.thumbnail).toBe((await thumbnails(id))[0].id)
   })
 

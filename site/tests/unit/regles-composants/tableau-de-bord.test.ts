@@ -180,7 +180,7 @@ describe('publicités, messages et images manquantes', () => {
     expect((await dashboard({ messages })).messages).toBe(3)
   })
 
-  it('vidéos et replays en ligne sans image (YouTube injoignable à l’enregistrement)', async () => {
+  it('vidéos et replays en ligne sans image (couverture impossible à tirer de la vidéo à l’enregistrement)', async () => {
     const videos = [
       { id: 1, _status: 'published', thumbnail: null },
       { id: 2, _status: 'published', thumbnail: 12 },

@@ -6,7 +6,8 @@
 #
 # Cibles : « runner » (par défaut, le site) et « tools » (CLI Payload : migrations, jeu de démonstration, imports).
 # Avec Docker Compose (docker-compose.yml) : services « app » (runner), « migrate » et « tools » (tools), « cron ».
-# node:22-bookworm-slim (glibc) : binaires précompilés de sharp pris en charge.
+# node:22-bookworm-slim (glibc) : binaires précompilés de sharp pris en charge ; ffmpeg (paquet Debian) ajouté aux étapes
+# « tools » et « runner » pour les couvertures et aperçus tirés des vidéos.
 # Le build demande environ 4 Go de mémoire (voir « build » dans package.json).
 
 ARG NODE_IMAGE=node:22-bookworm-slim
@@ -49,6 +50,8 @@ RUN DATABASE_URI=postgres://build:build@127.0.0.1:1/build \
 FROM builder AS tools
 ENV NODE_ENV=production \
     HOME=/tmp
+# ffmpeg : couverture et aperçu animé tirés des vidéos (src/hooks/ffmpeg.ts), aussi pendant le jeu de démonstration et les imports
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 # Même utilisateur que le site (uid 1001) : les fichiers écrits dans le volume « media » lui appartiennent.
 RUN groupadd --system --gid 1001 nodejs \
  && useradd --system --uid 1001 --gid nodejs --home /tmp nextjs \
@@ -64,6 +67,9 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
+
+# ffmpeg : couverture et aperçu animé tirés des vidéos à l'enregistrement (src/hooks/ffmpeg.ts)
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 
 # Utilisateur non root ; dossier des médias envoyés (à monter en volume)
 RUN groupadd --system --gid 1001 nodejs \
