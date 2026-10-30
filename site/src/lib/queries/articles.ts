@@ -2,7 +2,7 @@
 import { cache } from 'react'
 import type { Where } from 'payload'
 import type { Article } from '@/payload-types'
-import { DEPARTMENTS, type DepartmentSlug } from '../departments'
+import { INFO_ZONES, type InfoZone } from '../departments'
 import { getPayloadClient, isPreview } from '../payload'
 import { safe } from '../safe'
 
@@ -31,15 +31,15 @@ const LIST_SELECT = {
 
 export type ArticlesPage = { docs: ArticleListItem[]; totalDocs: number; totalPages: number; page: number }
 
-/** Articles publiés (date de publication passée), éventuellement d'un département, avec des conditions en plus. */
-function published(department: DepartmentSlug | null, ...extra: Where[]): Where {
+/** Articles publiés (date de publication passée), éventuellement d'un département (ou d'« Autres régions »), avec des conditions en plus. */
+function published(department: InfoZone | null, ...extra: Where[]): Where {
   return {
     and: [{ publishedAt: { less_than_equal: new Date().toISOString() } }, ...(department ? [{ department: { equals: department } }] : []), ...extra],
   }
 }
 
 /** Derniers articles publiés de la région (ou d'un département), sans ceux de `exclude`. */
-export async function getLatestArticles(limit = 30, department: DepartmentSlug | null = null, exclude: number[] = []): Promise<ArticleListItem[]> {
+export async function getLatestArticles(limit = 30, department: InfoZone | null = null, exclude: number[] = []): Promise<ArticleListItem[]> {
   return safe(
     async () => {
       const payload = await getPayloadClient()
@@ -61,7 +61,7 @@ export async function getLatestArticles(limit = 30, department: DepartmentSlug |
 
 /** Une page de la liste des articles (région ou département), sans l'article mis à la une. */
 export const getArticlesPage = cache(
-  async (department: DepartmentSlug | null, page: number, limit: number, excludeId: number | null): Promise<ArticlesPage> =>
+  async (department: InfoZone | null, page: number, limit: number, excludeId: number | null): Promise<ArticlesPage> =>
     safe(
       async () => {
         const payload = await getPayloadClient()
@@ -83,7 +83,7 @@ export const getArticlesPage = cache(
 
 /** Article « À la une » : l'info du jour récente (48 h) de la région ou du département, sinon le dernier article publié. */
 export const getFeaturedArticle = cache(
-  async (department: DepartmentSlug | null): Promise<ArticleListItem | null> =>
+  async (department: InfoZone | null): Promise<ArticleListItem | null> =>
     safe(
       async () => {
         const payload = await getPayloadClient()
@@ -119,15 +119,18 @@ export const getArticleBySlug = cache(
     ),
 )
 
-/** Départements qui ont au moins un article publié, dans l'ordre de DEPARTMENTS (une seule requête au lieu d'un comptage par département). */
+/**
+ * Départements (et « Autres régions ») qui ont au moins un article publié, dans l'ordre d'INFO_ZONES : « Autres régions »
+ * en dernier (une seule requête au lieu d'un comptage par département).
+ */
 export const getDepartmentsWithArticles = cache(
-  async (): Promise<DepartmentSlug[]> =>
+  async (): Promise<InfoZone[]> =>
     safe(
       async () => {
         const payload = await getPayloadClient()
         const res = await payload.findDistinct({ collection: 'articles', field: 'department', where: published(null) })
         const present = new Set<unknown>(res.values.map((v) => v.department))
-        return DEPARTMENTS.map((d) => d.value).filter((d) => present.has(d))
+        return INFO_ZONES.map((d) => d.value).filter((d) => present.has(d))
       },
       [],
       'départements de l’info',

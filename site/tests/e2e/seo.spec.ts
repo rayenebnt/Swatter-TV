@@ -148,6 +148,7 @@ const MAIN: Target[] = [
   { name: 'vidéos', path: '/videos' },
   { name: 'info', path: '/info' },
   { name: 'info d’un département', path: '/info/haute-savoie' },
+  { name: 'info des autres régions', path: '/info/autres-regions' },
   { name: 'un article', path: detail('articles', (d) => `/info/${d.department}/${d.slug}`), types: ['NewsArticle', 'BreadcrumbList'] },
   { name: 'météo', path: '/meteo', types: ['WebPage', 'BreadcrumbList'] },
   { name: 'météo d’un département', path: '/meteo/isere', types: ['WebPage', 'BreadcrumbList'] },

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { expectPlayer, firstDoc, linksMatching, settle, watchErrors } from './helpers'
+import { expectNoHorizontalOverflow, expectPlayer, firstDoc, linksMatching, settle, watchErrors } from './helpers'
 
 // Un test par rubrique : le contenu attendu est bien là (jeu de démonstration : npm run seed).
 
@@ -39,6 +39,27 @@ test('info : toute la région, pages par département et article', async ({ page
   await settle(page)
   await expect(page.locator('h1')).toHaveCount(1)
   await expect(page.locator('main time').first()).toBeAttached()
+  expect(errors, errors.join('\n')).toEqual([])
+})
+
+test('info : catégorie « Autres régions » (Suisse, Vallée d’Aoste), dernier onglet de /info, avec sa page', async ({ page }) => {
+  const errors = watchErrors(page)
+  await page.goto('/info')
+  const tabs = page.getByRole('navigation', { name: 'L’info par département' }).getByRole('link')
+  // toujours proposée, après les départements
+  await expect(tabs.last()).toHaveText('Autres régions')
+  await expect(tabs.last()).toHaveAttribute('href', '/info/autres-regions')
+  await tabs.last().click()
+  await expect(page).toHaveURL(/\/info\/autres-regions$/)
+  await settle(page)
+  await expect(page.locator('h1')).toHaveCount(1)
+  await expect(page.locator('h1')).toHaveText('Autres régions')
+  await expect(page.locator('main')).toContainText('Suisse, Vallée d’Aoste et au-delà')
+  await expect(page.getByRole('navigation', { name: 'Fil d’Ariane' }).first()).toContainText('Autres régions')
+  await expect(tabs.last()).toHaveAttribute('aria-current', 'page')
+  await expectNoHorizontalOverflow(page)
+  // ses articles y sont rangés, et seulement eux
+  for (const href of await linksMatching(page, /^\/info\/[a-z-]+\/[a-z0-9-]+$/)) expect(href, 'article de la page').toMatch(/^\/info\/autres-regions\//)
   expect(errors, errors.join('\n')).toEqual([])
 })
 
@@ -236,9 +257,10 @@ test('page éditoriale et redirections', async ({ page, request }) => {
   const legacy = await request.get('/Le-Direct', { maxRedirects: 0 })
   expect(legacy.status()).toBe(308)
   expect(legacy.headers().location).toMatch(/\/direct$/)
-  // plan de l'ancien site (SiteW) : info d'un département, destination avec paramètre
+  // plan de l'ancien site (SiteW) : info d'un département, de Genève ou d'Aoste (« Autres régions »), destination avec paramètre
   for (const [old, target] of [
     ['/L-info-Haute-Savoie', /\/info\/haute-savoie$/],
+    ['/L-info-Aoste', /\/info\/autres-regions$/],
     ['/Deposer-une-publicite', /\/contact\?sujet=publicite$/],
   ] as const) {
     const res = await request.get(old, { maxRedirects: 0 })

@@ -1,5 +1,5 @@
 // L'Info : préparation des articles pour l'affichage (côté serveur) en données simples, sérialisables vers le client.
-import { departmentLabel, type DepartmentSlug } from '@/lib/departments'
+import { infoZoneLabel, type InfoZone } from '@/lib/departments'
 import { dateChip, formatDate, formatTime } from '@/lib/format'
 import { mediaAlt, mediaFocal, mediaSize, mediaUrl, type MediaRef, type MediaSize } from '@/lib/media'
 import type { ArticleListItem } from '@/lib/queries/articles'
@@ -16,9 +16,9 @@ export type ArticleTeaser = {
   id: number
   title: string
   href: string
-  department: DepartmentSlug
+  department: InfoZone
   departmentLabel: string
-  /** « Annemasse · Faits divers » (commune, ou département à défaut, puis rubrique) */
+  /** « Annemasse · Faits divers » (commune, ou département ou « Autres régions » à défaut, puis rubrique) */
   kicker: string
   excerpt: string | null
   /** ISO 8601 */
@@ -62,9 +62,9 @@ export function articleImage(a: { id: number; image?: MediaRef }, size: MediaSiz
   return { src: fallbackVisual(a.id), unoptimized: false, alt: '', width: 960, height: 540 }
 }
 
-/** Accroche : « Annemasse · Faits divers » (département à défaut de commune). */
+/** Accroche : « Annemasse · Faits divers » (département, ou « Autres régions », à défaut de commune). */
 export function kickerLine(a: { city?: string | null; kicker?: string | null; department?: string | null }): string {
-  return [a.city?.trim() || departmentLabel(a.department), a.kicker?.trim()].filter(Boolean).join('\u00a0· ')
+  return [a.city?.trim() || infoZoneLabel(a.department), a.kicker?.trim()].filter(Boolean).join('\u00a0· ')
 }
 
 /** Typographie française des textes saisis ou importés : espace insécable avant : ; ! ? » et après « (pas de retour à la ligne avant « : »). */
@@ -89,7 +89,7 @@ export function toTeaser(a: ArticleListItem, { image = true, thumb = false, exce
     title: frenchSpaces(a.title),
     href: articleUrl(a),
     department: a.department,
-    departmentLabel: departmentLabel(a.department),
+    departmentLabel: infoZoneLabel(a.department),
     kicker: kickerLine(a),
     excerpt: excerpt && a.excerpt?.trim() ? frenchSpaces(a.excerpt.trim()) : null,
     publishedAt: new Date(a.publishedAt).toISOString(),

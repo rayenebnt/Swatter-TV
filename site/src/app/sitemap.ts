@@ -3,7 +3,7 @@ import type { Where } from 'payload'
 import { parisDateTime, parisDay } from '@/lib/format'
 import { getPayloadClient } from '@/lib/payload'
 import { safe } from '@/lib/safe'
-import { DEPARTMENTS, WEBCAMS_PLUS } from '@/lib/departments'
+import { DEPARTMENTS, INFO_ZONES, WEBCAMS_PLUS } from '@/lib/departments'
 import { meteoHref } from '@/lib/meteo'
 import { absoluteUrl } from '@/lib/site'
 import { articleUrl, departmentUrl, eventUrl, pageUrl, replayUrl, videoUrl } from '@/lib/urls'
@@ -23,8 +23,9 @@ const latest = (docs: { updatedAt: string }[]) => docs.reduce<string | null>((ma
 const withSlug = <T extends Dated>(docs: T[]) => docs.filter((d) => d.slug)
 
 /**
- * Plan du site : adresses fixes, pages éditoriales, articles,
- * départements de l'info, de la météo et des webcams, vidéos, replays et événements à venir. Sans base (build), seules les adresses fixes sortent.
+ * Plan du site : adresses fixes, pages éditoriales, articles, départements (et « Autres régions ») de l'info,
+ * départements de la météo et des webcams, vidéos, replays et événements à venir. Sans base (build), seules les adresses
+ * fixes sortent.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const payload = await safe(() => getPayloadClient(), null, 'sitemap')
@@ -91,7 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ])
     : [[], [], [], [], [], []]
 
-  // Départements qui ont au moins un article publié, avec la date de leur article le plus récent
+  // Départements (et « Autres régions ») qui ont au moins un article publié, avec la date de leur article le plus récent
   const departments = new Map<string, string>()
   for (const a of allArticles) {
     const prev = departments.get(a.department)
@@ -108,7 +109,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/', lastAll),
     entry('/direct'),
     entry('/info', lastInfo),
-    ...[...departments].map(([dept, date]) => entry(departmentUrl(dept), date)),
+    ...INFO_ZONES.filter((z) => departments.has(z.value)).map((z) => entry(departmentUrl(z.value), departments.get(z.value))),
     entry('/meteo'),
     ...DEPARTMENTS.map((d) => entry(meteoHref(d.value))),
     entry('/agenda', lastEvent),

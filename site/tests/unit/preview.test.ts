@@ -79,6 +79,7 @@ describe('previewFocus : page et endroit montrés pour chaque collection', () =>
 
   it('articles : la page de l’article (dans son département, « region » sinon), sinon l’info', () => {
     expect(previewFocus('articles', undefined, { slug: 'un-article', department: 'isere' })).toEqual({ path: '/info/isere/un-article' })
+    expect(previewFocus('articles', undefined, { slug: 'info-de-geneve', department: 'autres-regions' })).toEqual({ path: '/info/autres-regions/info-de-geneve' })
     expect(previewFocus('articles', undefined, { slug: 'un-article', department: null })).toEqual({ path: '/info/region/un-article' })
     expect(previewFocus('articles', undefined, { department: 'isere' })).toEqual({ path: '/info' })
   })

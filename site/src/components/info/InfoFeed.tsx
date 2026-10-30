@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { Seg } from '@/components/ui/Seg'
-import { DEPARTMENTS, isDepartment } from '@/lib/departments'
+import { INFO_ZONES, OTHER_REGIONS, isInfoZone } from '@/lib/departments'
 import { departmentUrl } from '@/lib/urls'
 import { LeadCard } from './LeadCard'
 import { LiveItem } from './LiveItem'
-import { ofPlace } from '@/lib/places'
+import { infoOfPlace } from '@/lib/places'
 import { agoLabel, feedLabel } from './time'
 import { useNow } from './useNow'
 import { useSegFade } from '@/components/ui/useSegFade'
@@ -21,8 +21,9 @@ const delay = (d: number) => ({ '--d': d }) as CSSProperties
 const plural = (n: number) => `${n}\u00a0info${n > 1 ? 's' : ''}`
 
 /**
- * Info de l'accueil (maquette : #dept-filters, .lead, .live-list) : filtre par département,
- * article principal et fil « En continu ». Dates relatives calculées après montage (premier rendu = heure du serveur).
+ * Info de l'accueil (maquette : #dept-filters, .lead, .live-list) : filtre par département (et « Autres régions », en
+ * dernier, quand le fil en contient), article principal et fil « En continu ». Dates relatives calculées après montage
+ * (premier rendu = heure du serveur).
  */
 export function InfoFeed({ items }: { items: ArticleTeaser[] }) {
   const [dept, setDept] = useState(ALL)
@@ -35,14 +36,14 @@ export function InfoFeed({ items }: { items: ArticleTeaser[] }) {
   const options = useMemo(
     () => [
       { value: ALL, label: 'Toute la région' },
-      ...DEPARTMENTS.filter((d) => items.some((i) => i.department === d.value)).map(({ value, label }) => ({ value, label })),
+      ...INFO_ZONES.filter((d) => items.some((i) => i.department === d.value)).map(({ value, label }) => ({ value, label })),
     ],
     [items],
   )
   const list = dept === ALL ? items : items.filter((i) => i.department === dept)
   const [lead, ...rest] = list
   const live = rest.slice(0, LIVE_COUNT)
-  const place = isDepartment(dept) ? dept : null
+  const place = isInfoZone(dept) ? dept : null
 
   const select = (value: string) => {
     const count = value === ALL ? items.length : items.filter((i) => i.department === value).length
@@ -81,7 +82,7 @@ export function InfoFeed({ items }: { items: ArticleTeaser[] }) {
         <div className={`empty${changed ? ' fade-in' : ''}`}>
           <Icon name="news" />
           <p>
-            <b>{place ? 'Pas encore d’info pour ce département' : 'Pas encore d’info pour le moment'}</b>
+            <b>{place === OTHER_REGIONS ? 'Pas encore d’info hors de la région' : place ? 'Pas encore d’info pour ce département' : 'Pas encore d’info pour le moment'}</b>
             {place ? 'Revenez plus tard ou consultez l’actualité de toute la région.' : 'Revenez bientôt\u00a0: l’actualité de la région s’affichera ici.'}
           </p>
         </div>
@@ -112,7 +113,7 @@ export function InfoFeed({ items }: { items: ArticleTeaser[] }) {
 
       <div className="info-feed__more">
         <Link className="btn btn--ghost" href={place ? departmentUrl(place) : '/info'}>
-          Toute l’actualité{place ? ` ${ofPlace(place)}` : ''}
+          Toute l’actualité{place ? ` ${infoOfPlace(place)}` : ''}
           <Icon name="arrow" />
         </Link>
       </div>

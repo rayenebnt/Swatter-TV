@@ -4,7 +4,7 @@ import { notFound, permanentRedirect } from 'next/navigation'
 import type { CSSProperties } from 'react'
 import { ArticleCard } from '@/components/info/ArticleCard'
 import { LiveItem } from '@/components/info/LiveItem'
-import { inPlace, ofPlace } from '@/lib/places'
+import { infoInPlace, infoOfPlace } from '@/lib/places'
 import { RelativeTime } from '@/components/info/RelativeTime'
 import { articleImage, articleShareImage, frenchSpaces, fullDateTime, hasOwnContent, plainText, toTeaser, truncate } from '@/components/info/utils'
 import { AdSlot } from '@/components/layout/AdSlot'
@@ -14,7 +14,7 @@ import { JsonLd } from '@/components/ui/JsonLd'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { RichText } from '@/components/ui/RichText'
 import { SectionHead } from '@/components/ui/SectionHead'
-import { departmentLabel } from '@/lib/departments'
+import { OTHER_REGIONS, infoZoneLabel } from '@/lib/departments'
 import { mediaAlt, mediaSize, mediaUrl } from '@/lib/media'
 import { getArticleBySlug, getLatestArticles } from '@/lib/queries/articles'
 import { absoluteUrl, SITE_NAME } from '@/lib/site'
@@ -40,7 +40,7 @@ const iso = (d: string) => new Date(d).toISOString()
 
 /** Description : champ SEO, sinon chapô, sinon début du texte, sinon phrase générique. */
 function describe(a: Article): string {
-  const text = a.meta?.description?.trim() || a.excerpt?.trim() || plainText(a.content) || `${a.title} : l’info ${inPlace(a.department)} avec Swatter TV Info.`
+  const text = a.meta?.description?.trim() || a.excerpt?.trim() || plainText(a.content) || `${a.title} : l’info ${infoInPlace(a.department)} avec Swatter TV Info.`
   return truncate(text, 200)
 }
 
@@ -51,6 +51,21 @@ function structuredImage(a: Article): { url: string; width: number; height: numb
   if (seo && mediaUrl(seo, 'hero')) return { url: absoluteUrl(mediaUrl(seo, 'hero') ?? ''), ...mediaSize(seo, 'hero'), alt: mediaAlt(seo, a.title) }
   const img = articleImage(a, 'hero')
   return { url: absoluteUrl(img.src), width: img.width, height: img.height, alt: img.alt || a.title }
+}
+
+/**
+ * Lieu de l'article (données structurées) : commune et département, en France. « Autres régions » : la commune seule,
+ * sans adresse (le pays n'est pas connu : Suisse, Italie…), et aucun lieu sans commune.
+ */
+function contentLocation(dept: Article['department'], label: string, city?: string) {
+  if (dept === OTHER_REGIONS) return city ? { contentLocation: { '@type': 'Place', name: city } } : {}
+  return {
+    contentLocation: {
+      '@type': 'Place',
+      name: city ? `${city}, ${label}` : label,
+      address: { '@type': 'PostalAddress', ...(city ? { addressLocality: city } : {}), addressRegion: label, addressCountry: 'FR' },
+    },
+  }
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -76,8 +91,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       description,
       publishedTime: iso(article.publishedAt),
       modifiedTime: iso(article.updatedAt),
-      section: article.kicker?.trim() || departmentLabel(article.department),
-      tags: [departmentLabel(article.department), article.city?.trim()].filter((t): t is string => Boolean(t)),
+      section: article.kicker?.trim() || infoZoneLabel(article.department),
+      tags: [infoZoneLabel(article.department), article.city?.trim()].filter((t): t is string => Boolean(t)),
       images: [image],
     },
   }
@@ -91,7 +106,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
   if (article.department !== departement) permanentRedirect(url)
 
   const dept = article.department
-  const label = departmentLabel(dept)
+  const label = infoZoneLabel(dept)
   const [sameDept, latest] = await Promise.all([getLatestArticles(4, dept, [article.id]), getLatestArticles(13, null, [article.id])])
   // « À lire aussi » : même département, sinon le reste de la région ; « En continu » : les dernières infos, sans doublon
   const sameDeptRelated = sameDept.length > 0
@@ -173,7 +188,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
 
               <div className="art__actions">
                 <Link className="btn btn--ghost btn--sm" href={departmentUrl(dept)}>
-                  Toute l’info {ofPlace(dept)}
+                  Toute l’info {infoOfPlace(dept)}
                   <Icon name="arrow" />
                 </Link>
               </div>
@@ -208,7 +223,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
         <section className="section container" aria-labelledby="art-related-title">
           <SectionHead eyebrow={sameDeptRelated ? label : 'L’Info'} title={sameDeptRelated ? 'À lire aussi' : 'D’autres infos de la région'} titleId="art-related-title">
             <Link className="link-more" href={sameDeptRelated ? departmentUrl(dept) : '/info'}>
-              {sameDeptRelated ? `Toute l’info ${ofPlace(dept)}` : 'Toute l’info'}
+              {sameDeptRelated ? `Toute l’info ${infoOfPlace(dept)}` : 'Toute l’info'}
               <Icon name="arrow" />
             </Link>
           </SectionHead>
@@ -239,11 +254,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
             mainEntityOfPage: { '@type': 'WebPage', '@id': absoluteUrl(url) },
             url: absoluteUrl(url),
             isAccessibleForFree: true,
-            contentLocation: {
-              '@type': 'Place',
-              name: city ? `${city}, ${label}` : label,
-              address: { '@type': 'PostalAddress', ...(city ? { addressLocality: city } : {}), addressRegion: label, addressCountry: 'FR' },
-            },
+            ...contentLocation(dept, label, city),
           },
           {
             '@context': 'https://schema.org',

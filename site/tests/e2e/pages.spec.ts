@@ -7,6 +7,7 @@ const ROUTES = [
   '/direct',
   '/info',
   '/info/haute-savoie',
+  '/info/autres-regions',
   '/contact',
   '/meteo',
   '/meteo/isere',

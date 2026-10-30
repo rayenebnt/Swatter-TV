@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { departmentLabel } from '@/lib/departments'
+import { infoZoneLabel } from '@/lib/departments'
 import { getFlashArticles } from '@/lib/queries/home'
 import { getSettings } from '@/lib/queries/settings'
 import { articleUrl } from '@/lib/urls'
@@ -49,7 +49,7 @@ export async function Ticker() {
       ? []
       : (await getFlashArticles(6)).map((a) => ({
           key: `article-${a.id}`,
-          label: a.city || a.kicker || departmentLabel(a.department),
+          label: a.city || a.kicker || infoZoneLabel(a.department),
           text: a.title,
           href: articleUrl(a),
         }))
