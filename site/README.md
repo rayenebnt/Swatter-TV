@@ -29,6 +29,8 @@ Styles en CSS natif (jetons de la maquette dans `src/styles/globals.css`, un fic
 
 - **Node.js 22 LTS** (20.18.1 au minimum) et npm ;
 - **PostgreSQL 14 ou plus récent** (16 conseillé, c’est la version de `docker-compose.yml`) ;
+- **ffmpeg** (`sudo apt install ffmpeg`, `brew install ffmpeg`) : image et aperçu animé tirés automatiquement des
+  vidéos. Sans lui, le site fonctionne, mais ces fichiers ne sont pas créés (l’image YouTube reste récupérée) ;
 - pour les tests : le navigateur Chromium de Playwright (`npx playwright install --with-deps chromium`) et un compte
   PostgreSQL autorisé à créer des bases (voir « Tests »).
 
@@ -64,6 +66,8 @@ cp .env.example .env
 | `NEXT_PUBLIC_SITE_URL` | oui | adresse publique sans `/` final ; **`http://localhost:3000` en local** (URL canoniques, Open Graph, adresse du serveur Payload). Figée dans l’image Docker au moment du build : sans elle, le build s’arrête ; la changer impose de reconstruire |
 | `CRON_SECRET` | oui en production | secret de la tâche planifiée `GET /api/cron/import` (`openssl rand -hex 16`) |
 | `NEXT_PUBLIC_BUNNY_LIBRARY_ID` | non | bibliothèque Bunny Stream (vidéos de type « Bunny Stream ») |
+| `BUNNY_CDN_HOST` | non | hôte de diffusion de la bibliothèque Bunny Stream (`vz-xxxx.b-cdn.net`) : l’image des vidéos Bunny est alors prise automatiquement ; sinon, elle reste à choisir |
+| `FFMPEG_PATH`, `FFPROBE_PATH` | non | emplacement de ffmpeg et ffprobe (par défaut, ceux du système : `apt install ffmpeg` en développement, déjà installés dans l’image Docker). Ils tirent des vidéos leur image et leur aperçu animé |
 | `YOUTUBE_API_KEY` | non | clé de l’API YouTube Data v3 : l’import de la chaîne reprend **toutes** ses vidéos (et leur durée) ; sans clé, il lit le flux RSS public de la chaîne, limité à ses 15 dernières vidéos |
 | `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | non | médias sur S3 / R2 / Scaleway au lieu du dossier `media/` (activé dès que `S3_BUCKET` est renseigné) |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | oui en production | premier administrateur créé par `src/scripts/init-db.ts` (mot de passe de 12 caractères au moins) |
@@ -249,7 +253,7 @@ Sur un serveur avec Docker Engine et le plugin Compose (2 vCPU et 4 Go de mémoi
 git clone <dépôt> && cd Swatter-TV/site
 cp .env.example .env
 # Renseigner : POSTGRES_PASSWORD, PAYLOAD_SECRET, CRON_SECRET, NEXT_PUBLIC_SITE_URL=https://www.swatter-tv.fr
-# (facultatif : POSTGRES_USER, POSTGRES_DB, APP_PORT, NEXT_PUBLIC_BUNNY_LIBRARY_ID, S3_*). DATABASE_URI est construit par Compose.
+# (facultatif : POSTGRES_USER, POSTGRES_DB, APP_PORT, NEXT_PUBLIC_BUNNY_LIBRARY_ID, BUNNY_CDN_HOST, S3_*). DATABASE_URI est construit par Compose.
 docker compose up -d --build
 docker compose ps              # « app » doit passer à « healthy »
 docker compose logs -f app cron

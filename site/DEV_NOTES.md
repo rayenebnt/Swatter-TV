@@ -43,6 +43,12 @@ scripts/                  sauvegarde.sh (chaque nuit sur le serveur), dev.mjs, t
   (`alternates.canonical`, `openGraph.url`), sinon elle désignerait l'accueil ; les pages non indexées n'en ont pas.
   Nouvelle page indexable : l'ajouter aussi à `src/app/sitemap.ts`.
 - **Images** : `<MediaImage media={doc.image} size="card" sizes="…" />` (next/image, AVIF/WebP). `priority` seulement pour l'image principale.
+- **Image à source mobile** : `<MediaImage … mobile={{ media, size, sizes, fallbackSrc?, position? }} />` rend une `<picture>`
+  (getImageProps) avec une source `MOBILE_MEDIA` (max-width: 760px). Le cadrage de chaque source passe par les variables
+  CSS `--focal` et `--focal-m` (classe `.img-mobile`, globals.css), jamais par un style en ligne, qui vaudrait pour les deux
+  sources. `priority` y donne `loading="eager"` et `fetchPriority="high"`, sans preload : une seule image est téléchargée,
+  celle de la source retenue. Le `sizes` doit refléter la largeur réellement affichée (`coverWidth` : une image qui couvre
+  un cadre plus haut que large est plus large que lui).
 - **Dates** : tout affichage en heure de Paris via `src/lib/format.ts` (`formatTime`, `formatDayLong`, `dateChip`, `timeAgo`, `parisDay`, `parisDateTime`).
 - **Vidéo** : `resolveVideo(source)` (`src/lib/video.ts`) puis `<VideoPlayer video={…} />`.
 - **CSS** : reprendre les classes de la maquette (`.card`, `.media`, `.badge`, `.seg`, `.sec-head`, `.rail`…). Les styles communs sont
@@ -65,7 +71,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `search/SearchOverlay` | recherche plein écran ; s'ouvre au clic sur tout élément `[data-open-search]` ou touche `/` |
 | `home/Hero`, `Ticker`, `Une` | haut de l'accueil |
 | `meteo/MiniMeteo`, `MeteoWidget({variant: 'aside' \| 'full'})` | météo (en `aside`, ne rend rien sans prévision ; `MiniMeteo` non plus) |
-| `video/VideoPlayer({video, poster, title, autoPlay, live})`, `Top10Section`, `VideosSection`, `ReplaySection` | vidéos |
+| `video/VideoPlayer({video, poster, posterPosition, preview, title, autoPlay, live, history})`, `Top10Section`, `VideosSection`, `ReplaySection` | vidéos |
 | `info/InfoSection` | info de l'accueil (contient `MeteoWidget variant="aside"`) |
 | `programme/TvGridSection({variant: 'home' \| 'full', day?})` | grille TV (`day` = AAAA-MM-JJ, page /programme-tv) |
 | `agenda/AgendaSection`, `webcams/WebcamsSection({limit})` | agenda, webcams |
@@ -155,7 +161,10 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   migrations, `init-db` et les contenus de départ, avec de faux YouTube et Open-Meteo. Outils de `tests/e2e/helpers.ts` :
   `watchErrors` (erreurs JavaScript, console, réponses HTTP en erreur), `expectNoHorizontalOverflow`, `expectSeo`,
   `settle`, `linksMatching`, `expectPlayer`, `firstDoc`. Connexion administrateur par l'API, dans un `describe` en série
-  (les sessions Payload d'un même compte s'écrasent). Accessibilité : `@axe-core/playwright`.
+  (les sessions Payload d'un même compte s'écrasent). Accessibilité : `@axe-core/playwright`. Le Chromium de Playwright
+  ne décode pas le H.264 : `apercus.spec.ts` vérifie la demande du fichier d'aperçu, pas l'image animée.
+- **Copie git (worktree) dont `node_modules` est un lien symbolique** : Turbopack refuse de démarrer ; utiliser
+  `npx next dev --webpack -p <port>`.
 - **Variables lues par le site pour les tests** : `MEDIA_DIR` (dossier des médias, `media/` par défaut), `NEXT_DIST_DIR`
   (dossier de construction, `.next` par défaut ; un autre dossier utilise `tsconfig.next-test.json`, pour que la
   construction ne réécrive pas `tsconfig.json`), `MEMBER_RATE_FACTOR`, `OPEN_METEO_URL`, `YOUTUBE_BASE`,
@@ -193,6 +202,19 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   (AVIF/WebP, srcset). Pour une URL absolue (JSON-LD, flux) : `absoluteUrl(mediaUrl(doc.image, 'card'))`
   (`absoluteUrl` laisse intactes les URL déjà absolues). `mediaFocal()` ne renvoie rien pour le centre par défaut (50 % 50 %) :
   le cadrage CSS de chaque rubrique (`object-position`) s'applique tant qu'aucun point focal n'a été choisi.
+  `mediaFocal(m, size)` donne la position du point focal dans la déclinaison affichée : Payload découpe card, poster et og
+  autour de ce point à l'envoi, `focalIn` refait ce calcul ; sans `size`, c'est le point de l'original. `focalCover(m,
+  frameRatio, size?)` centre le point dans un cadre aux proportions connues, collé au bord si nécessaire (carrousel sur
+  téléphone, `heroMobileSource` dans `components/home/heroMedia.ts`).
+  - Texte riche : convertisseur « upload » de `components/ui/RichText.tsx` (logique pure dans `proseUpload.ts`) : image
+    d'origine ou « hero » à ses vraies proportions, `PROSE_SIZES`, crédit en légende, vidéo dans `<video controls>`.
+  - Agenda : vignette mobile des cartes sur l'affiche d'origine (`posterThumbSizes`), encart vedette mobile aux
+    proportions de l'affiche bornées entre 4:5 et 3:2 (`featureRatio`, `--poster-ratio`) ; tuile « Sortie du week-end »
+    d'`Une.tsx` sur l'affiche d'origine.
+  - Webcams : `webcamPoster().position` est appliqué par `--focal` ; le plein écran recentre l'image.
+  - Lecteur vidéo : `posterPosition = mediaFocal(thumbnail, 'hero')`.
+  - Publicités : `.ad__media` doit garder `width: 100%`, sinon un visuel plus petit que l'emplacement rétrécit le bloc
+    après son chargement.
 - **Tuile météo du bento « À la une »** (`components/meteo/MiniMeteo`) : le composant rend **la tuile entière** comme racine,
   `<article className="tile b-meteo" data-reveal style={{ '--d': 3 } as CSSProperties}>`, avec à l'intérieur la structure
   de la maquette (`.mini-meteo` > titre, `.mini-meteo__row` > `svg.wi` + `.mini-meteo__t`, libellé, min/max) et un lien
@@ -202,7 +224,24 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
 - **Classes `.tile` / `.bigplay`** : définies dans `src/styles/une.css`, chargé uniquement sur l'accueil. Ailleurs, utiliser les
   cartes `.card` de globals.css (ou importer `@/styles/une.css` explicitement).
 - **Consentement** (contenus externes YouTube / Bunny / iframes) : `useConsent()`, `openCookieSettings()`, `onConsentChange()`
-  de `@/components/layout/consent` (composants client uniquement).
+  de `@/components/layout/consent` (composants client uniquement). L'aperçu animé est un fichier du site : pas de
+  consentement. Le direct intégré (Twitch, YouTube, Bunny) se charge seul, en muet, avec l'accord « externes » ; les fiches
+  YouTube restent au clic.
+- **Aperçu animé (affichage)** : `src/components/video/VideoPreview.tsx` (îlot `VideoPreview` pour les cartes,
+  `PlayerPreview` pour les fiches) et `preview-director.ts` (logique pure, `tests/unit/apercu-pilotage.test.ts`).
+  - Un seul aperçu à la fois sur la page. À la souris : survol (150 ms) ou focus clavier, en boucle. Écran tactile : carte
+    visible à 60 % la plus proche du centre, 400 ms après l'arrêt du défilement, une fois (5 s au plus), puis rejouée
+    seulement après une sortie et un retour à l'écran. « feature » (Vidéo du jour) : lancée seule une fois visible.
+    « hover » : petites vignettes (recherche, historique). « ambient » : lecteur de fiche, avec un bouton pause.
+  - Un seul IntersectionObserver, défilement écouté en capture, arrêt quand l'onglet est masqué. Rien en
+    prefers-reduced-motion ni avec saveData (`motion.ts`) ; `.vprev` est aussi masqué en CSS.
+  - `<video muted playsInline preload="none" …>` : src posée au premier lancement, fondu à « playing », `play().catch`
+    obligatoire (H.264 non décodé par le Chromium de Playwright), erreur → aperçu retiré.
+  - Ajouter un aperçu à une carte : `{previewUrl(doc.preview) && <VideoPreview src=… />}` juste après l'image du `.media`,
+    et `preview: true` dans le `select` de la requête. Les requêtes de liste ne transmettent que l'adresse (`previewUrl`).
+  - `VideoPlayer` `autoPlay` (direct) : lecture sans le son quand le lecteur est visible à 60 %, bouton « Activer le son ».
+    Twitch, YouTube et Bunny seulement avec l'accord « externes » (`twitchEmbedUrl(…, muted=true)` / `mutedEmbedUrl`) ;
+    jamais en reduced-motion ni avec saveData. Les lectures lancées seules n'entrent pas dans l'historique.
 - **JSX serveur passé en prop à un composant client** et rendu à côté d'autres enfants : lui donner une `key`
   (sinon avertissement React en développement).
 - **`.sr-only` dans un rail à défilement horizontal** : mettre `position: relative` sur la carte, sinon l'élément masqué
@@ -423,10 +462,38 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   (onglet API masqué, bouton « Voir sur le site » pour les collections qui ont `admin.preview`).
 - **Adresses uniques** (`src/fields/slug.ts`) : un titre déjà pris donne `titre-2`, `titre-3`… au lieu d'une erreur
   « valeur unique » ; l'adresse d'un contenu existant ne change pas quand on modifie son titre.
-- **Vignette YouTube** (`src/hooks/youtubeThumbnail.ts`) : vidéo ou replay YouTube enregistré sans image → téléchargement
-  de `maxresdefault`, puis `sddefault`, `hqdefault` dans la médiathèque (`youtube-<id>`), réutilisé s'il existe déjà.
-  En cas d'échec, enregistrement sans image (visuel de repli sur le site) et avertissement dans le journal. Pour tester sans
-  accès à YouTube : `YOUTUBE_THUMB_BASE=http://127.0.0.1:8765/vi` (servir `vi/<id>/maxresdefault.jpg`).
+- **Couverture et aperçu automatiques** (`src/hooks/videoAutoMedia.ts`, hook `beforeValidate` de Videos et Replays ;
+  validateur `thumbnailUnlessAutomatic`) et **ffmpeg** (`src/hooks/ffmpeg.ts`, module serveur : child_process, jamais dans
+  `src/lib`).
+  - Clé de la vidéo : `y<id YouTube>`, `m<n° du média>`, `u<sha1(url) sur 12 hex>`, `b<id Bunny>`. Fichiers créés :
+    couvertures `youtube-<id>`, `video-<clé>`, `bunny-<id>` ; aperçus `apercu-<clé>.mp4`. Réutilisation par nom (like
+    « base. » ou « base- », puis nom vérifié par expression régulière ; les doublons « -1 » sont acceptés).
+  - Changement de clé par rapport à `originalDoc` : l'aperçu est refait ; la couverture n'est remplacée que si elle est
+    vide ou si c'est un fichier automatique d'une autre clé (retirée en cas d'échec) ; une image choisie à la main n'est
+    jamais touchée. Source non prise en charge : `preview` remis à null, couverture laissée. Rien n'est refait quand la
+    clé ne change pas et que la couverture et l'aperçu sont déjà remplis (enregistrement automatique).
+  - YouTube : la couverture n'a pas besoin de ffmpeg (maxresdefault, puis sddefault, puis hqdefault, `YOUTUBE_THUMB_BASE`).
+    L'aperçu est un diaporama de maxres1-3, sinon sd1-3, sinon mq1-3 (recadrées en 16:9, zoom léger, fondus, 5 s).
+  - Fichier envoyé : lu dans `MEDIA_DIR` s'il y est, sinon par son adresse (adresse du site → http://127.0.0.1:PORT, S3
+    direct → telle quelle). Lien direct : http/https seulement (`-protocol_whitelist http,https,tcp,tls,crypto,httpproxy`,
+    `-rw_timeout` 15 s). Bunny : variable facultative `BUNNY_CDN_HOST` (hôte de la zone de diffusion, par ex.
+    vz-xxxx.b-cdn.net) → `https://<hôte>/<id>/thumbnail.jpg`, sans aperçu.
+  - Sorties : couverture JPEG 16:9 de 540 à 1080 de haut (WebP après la Médiathèque) ; aperçu MP4 H.264 yuv420p, profil
+    main, +faststart, sans son, 960×540, 30 im/s au plus, CRF 26, débit plafonné à 1,4 Mbit/s (≈ 875 Ko au pire) ; vidéos
+    verticales ou carrées : bords rognés de 10 % au plus, puis fond flouté de la même image.
+  - Robustesse : jamais d'erreur (avertissement dans le journal) ; pas de nouvel essai pendant 10 min après un échec (cache
+    en mémoire par processus, `RETRY_AFTER_MS`) ; un seul traitement pour deux enregistrements simultanés ; délais de 30 s
+    en local, 45 s à distance, 15 à 20 s pour ffprobe (SIGKILL) ; 2 ffmpeg à la fois au plus ; ffmpeg absent détecté une
+    fois (`ffmpeg -version`) et signalé une fois ; `FFMPEG_PATH` et `FFPROBE_PATH` pour les tests ; `context.top10Reorder`
+    respecté. Le hook tourne dans la transaction de l'enregistrement : une connexion à la base reste ouverte pendant ffmpeg.
+  - ffmpeg : prérequis système en développement (`apt install ffmpeg`) ; installé dans les étapes Docker runner et tools
+    (Debian 12 : ffmpeg 5.1). Sans lui, les tests qui en dépendent sont sautés et `test:complet` le signale.
+  - Le replay d'exemple du jeu de démonstration (fichier envoyé, couverture choisie à la main) reçoit son aperçu pendant
+    le seed.
+- **Envois de fichiers** (`buildConfig.upload`) : 500 Mo par fichier, `useTempFiles` (dossier os.tmpdir()/swatter-envois) ;
+  le fichier reçu va sur le disque puis est copié dans la médiathèque (S3 : flux depuis le fichier temporaire), jamais
+  chargé en mémoire (vérifié avec un envoi réel de 284 Mo). `src/proxy.ts` ne doit jamais viser `/api`, sinon Next
+  mettrait le corps en mémoire jusqu'à `proxyClientMaxBodySize` (10 Mo) et tronquerait les envois.
 - **Grille des programmes** : `src/proxy.ts` (le « middleware » de Next 16) redirige `/admin/collections/schedule` sans
   filtre vers la semaine en cours, côté serveur (un filtre posé côté client entrait en concurrence avec la synchronisation
   d'adresse de Payload et chargeait toute la grille). `ScheduleTools.tsx` (au-dessus du tableau de la liste) filtre par
@@ -445,8 +512,8 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   Sans clé : flux RSS (15 dernières vidéos) ; avec clé : liste « Mises en ligne » (`UU…`) et durées. Synchronisation :
   chaque vidéo lue qui manque dans « Vidéos » / « Replays » (cases `inVideos` / `inReplays`) y est créée, qu'elle soit
   nouvelle ou non ; la présence se vérifie sur les dernières versions (`draft: true`), donc une fiche « retirée du site »
-  n'est pas recréée, une fiche supprimée l'est. Vignette par le hook `youtubeThumbnail` (une seule image par vidéo,
-  partagée par la vidéo et le replay). Tests : `YOUTUBE_BASE`, `YOUTUBE_API_BASE`, `YOUTUBE_THUMB_BASE` remplacent les
+  n'est pas recréée, une fiche supprimée l'est. Couverture et aperçu par le hook `videoAutoMedia` (un seul fichier de
+  chaque par vidéo, partagé par la vidéo et le replay). Tests : `YOUTUBE_BASE`, `YOUTUBE_API_BASE`, `YOUTUBE_THUMB_BASE` remplacent les
   adresses de YouTube. Ne garder que la chaîne : `npm run payload run src/scripts/videos-chaine-seulement.ts`
   (synchronise, puis supprime les vidéos et replays hors chaîne).
 - **Direct sur Twitch** : option `twitch` du champ source (`videoSourceField(…, { twitch: true })`, direct seulement).

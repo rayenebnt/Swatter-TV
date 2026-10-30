@@ -100,6 +100,9 @@ Après la connexion, le **tableau de bord** rassemble l’essentiel :
   week-end, le programme TV, le flash info, les publicités, la météo, la mesure d’audience avec le lien **Voir les
   statistiques** vers Google Analytics). Une pastille **À vérifier** signale un oubli, par
   exemple « Rien de prévu : sam. 24 » pour le programme TV ; le lien **Modifier** mène directement au bon endroit.
+  Une vidéo ou un replay **sans image** est aussi signalé : la vidéo était injoignable ou illisible au moment de
+  l’enregistrement ; enregistrez à nouveau la fiche quelques minutes plus tard (le site attend 10 minutes avant de
+  réessayer), ou choisissez une image.
   « Information indisponible » : la vérification n’a pas pu se faire à cet instant ; rechargez la page ;
 - **Derniers contenus modifiés** : pour reprendre un contenu en un clic ; la mention **À publier** signale des
   modifications que les visiteurs ne voient pas encore ;
@@ -210,10 +213,13 @@ Pour ajouter une vidéo à la main (une vidéo d’une autre chaîne, par exempl
      vidéo YouTube** ;
    - **Sur Bunny Stream** : l’**Identifiant Bunny Stream**, visible dans Bunny Stream › votre vidéo ;
    - **Lien direct vers un fichier MP4 ou un flux .m3u8** : l’adresse du fichier ou du flux ;
-   - **Fichier envoyé dans la médiathèque** : un fichier MP4 (réservé aux vidéos courtes : préférez YouTube ou Bunny
-     Stream, plus légers pour le site).
-3. **Image de la vidéo** : pour une vidéo YouTube, laissez-la vide, l’image de la vidéo est récupérée automatiquement à
-   l’enregistrement. Pour les autres sources, ajoutez une image (voir partie 17).
+   - **Fichier envoyé dans la médiathèque** : un fichier MP4 de 500 Mo au plus (pour les vidéos longues, préférez
+     YouTube ou Bunny Stream, plus légers pour le site).
+3. **Image de la vidéo** : laissez-la vide. À l’enregistrement, le site prend lui-même une image dans la vidéo : l’image
+   de la vidéo YouTube, ou une image du début d’un fichier envoyé ou d’un lien direct. Elle apparaît dans le champ
+   quelques secondes plus tard. Si elle ne vous plaît pas, retirez-la et choisissez une autre image (voir partie 17) :
+   une image que vous avez choisie n’est jamais remplacée. Seule exception : pour une vidéo **Bunny Stream**, ajoutez
+   vous-même une image.
 4. **Catégorie** (Divertissement, Séries-réalité, Séries, Cinéma, Documentaire, Nature, Sport, Info, Magazine) et
    **Durée (facultatif)**, par exemple `02:14` ou `1:34:00`.
 5. **Description** : quelques lignes, affichées sous le lecteur.
@@ -221,8 +227,22 @@ Pour ajouter une vidéo à la main (une vidéo d’une autre chaîne, par exempl
    elle apparaîtra toute seule ce jour-là.
 7. Vérifiez l’aperçu, puis **Publier les modifications**.
 
+**Aperçu animé** : pour chaque vidéo, le site prépare aussi tout seul un court aperçu muet d’environ 5 secondes (pour
+YouTube, un petit diaporama des images de la vidéo). Vous n’avez rien à faire. Si vous changez la vidéo d’une fiche,
+l’aperçu est refait, ainsi que l’image si c’était celle prise automatiquement dans l’ancienne vidéo. Sur le site, les
+vidéos « tournent » ainsi sans qu’on clique, pour donner envie de les regarder :
+
+- sur ordinateur, l’aperçu démarre quand la souris passe sur une vignette ;
+- sur téléphone, c’est la vignette la plus visible à l’écran qui s’anime, une fois, quand on arrête de faire défiler la
+  page ; la **Vidéo du jour** de l’accueil s’anime aussi toute seule une fois quand elle apparaît ;
+- sur la page d’une vidéo, l’aperçu tourne derrière le bouton de lecture ; un petit bouton en haut à droite le met en
+  pause, et **Lire la vidéo** lance toujours la vraie vidéo, avec le son ;
+- les visiteurs qui ont demandé à leur appareil de « réduire les animations » ou d’« économiser les données » voient
+  l’image fixe, comme pour une vidéo sans aperçu (une ancienne vidéo, par exemple).
+
 Les vidéos YouTube, Twitch et Bunny ne se lancent qu’avec l’accord du visiteur pour les « contenus externes » (bandeau
-cookies) : sinon, le lecteur l’invite à modifier son choix.
+cookies) : sinon, le lecteur l’invite à modifier son choix. L’aperçu animé, lui, est servi par le site (jamais par
+YouTube) : il ne demande aucun accord.
 
 ## 5. La vidéo du jour et le Top 10
 
@@ -244,6 +264,9 @@ cookies) : sinon, le lecteur l’invite à modifier son choix.
 2. **Image** : la photo principale, en largeur (format paysage), d’au moins 1200 pixels de large.
 3. **Texte de l’article** : l’éditeur fonctionne comme un traitement de texte (intertitres, gras, listes, liens,
    citations). Sélectionnez un mot pour faire apparaître la barre de mise en forme ; tapez « / » pour insérer un bloc.
+   Pour mettre une photo dans le texte, tapez « / » puis choisissez **Télécharger** (ou glissez l’image dans le texte) :
+   elle s’affiche à la largeur du texte, sans être déformée ni coupée, sur ordinateur comme sur téléphone, avec son
+   crédit photo dessous.
 4. **Département** (obligatoire : l’info couvre toute la région Auvergne-Rhône-Alpes ; il range l’article dans la page
    de son département, par exemple « /info/isere »), **Commune** et **Rubrique** (Sport, Faits divers, Société…).
 5. À droite : **Date de publication**. Une date à venir programme la mise en ligne : une fois publié, l’article
@@ -270,7 +293,7 @@ jour, la plus récente des infos cochées l’emporte, et à défaut le dernier 
 
 Les événements passés disparaissent d’eux-mêmes de l’agenda. **Sortie du week-end** : cochez la case (à droite) sur
 l’événement à mettre en avant dans « À la une » et sur l’accueil ; c’est le prochain événement coché qui est affiché
-(à défaut, le prochain événement de l’agenda).
+(à défaut, le prochain événement de l’agenda). Son affiche y est montrée en entier, même en hauteur.
 
 ## 8. La grille des programmes et les émissions
 
@@ -308,10 +331,11 @@ l’accueil (« en ce moment », « ce soir ») se mettent à jour d’après ce
 
 **Tableau de bord › Mettre un replay en ligne** (ou **Le Replay › Ajouter**) : **Titre**, **Émission** (pour
 regrouper les numéros d’une même émission), **Vidéo** (mêmes sources que pour les vidéos, partie 4), **Image de la
-vidéo** (facultative pour YouTube), **Diffusé le** (le replay apparaît sur le site à partir de cette date), **Durée
+vidéo** (facultative : prise automatiquement dans la vidéo, sauf pour Bunny Stream ; voir partie 4), **Diffusé le** (le replay apparaît sur le site à partir de cette date), **Durée
 (facultatif)** (`52 min`) et **Description**, puis **Publier les modifications**. Les vidéos de la chaîne YouTube y
 arrivent aussi toutes seules (partie 4) ; choisissez leur **Émission** dans leur fiche pour les regrouper. Les replays s’affichent du plus récent au plus ancien, et la page Replay
-peut être filtrée par émission. Le même titre peut servir tous les jours (« Le journal des Alpes »).
+peut être filtrée par émission. Le même titre peut servir tous les jours (« Le journal des Alpes »). Comme les vidéos, chaque replay
+a son aperçu animé (partie 4).
 
 ## 10. Les webcams
 
@@ -344,8 +368,11 @@ flux** (étape 2 ci-dessous), puis **Publier les modifications**. Sur l’accuei
 
 1. **Annonceur / campagne** : un nom pour retrouver la campagne dans la liste.
 2. **Emplacement** : **Accueil — bannière horizontale** ou **Pages intérieures — bannière** (vidéos, info, agenda…).
-3. **Visuel (bureau, 970 × 250)** et, conseillé, **Visuel mobile (facultatif, 320 × 100)** : sans lui, le visuel bureau
-   est réduit sur téléphone et devient peu lisible.
+3. **Visuel (bureau, 1940 × 500 conseillés)** : la bannière en double taille (1940 × 500 pixels pour un format
+   970 × 250), pour qu’elle reste nette sur les écrans haute définition. Le cadre prend les proportions du visuel :
+   gardez un format bannière, car une photo carrée ou 4:3 ferait un très grand bloc. **Visuel mobile (conseillé,
+   1080 × 340)** : affiché sur les téléphones à la place du visuel bureau. Sans lui, la bannière bureau y est réduite à
+   environ 360 × 90 pixels et son texte devient illisible. Mettez peu de texte, en gros.
 4. **Lien (site de l’annonceur)** : l’adresse complète, `https://…`.
 5. **Premier jour** et **Dernier jour** : la bannière s’affiche du premier jour au dernier jour inclus (laissez vide pour
    « dès maintenant » ou « sans date de fin »).
@@ -365,7 +392,12 @@ blanche ») : cliquez sur une diapositive pour la déplier. Pour chaque diaposit
 - **Étiquettes** (3 au maximum) : un **Texte** et un **Style** (**Rouge (direct)**, **Or** ou **Transparent**) ;
 - **Titre — ligne 1 (blanc)** et **Titre — ligne 2 (dorée)** : quelques mots chacun ;
 - **Texte** : une ou deux phrases ;
-- **Image de fond (2400 px de large conseillés)** : une image paysage, sujet plutôt à droite (le texte est à gauche) ;
+- **Image de fond (paysage, 2400 px de large conseillés)** : une photo en largeur, d’au moins 2400 × 1350 pixels. Sur
+  ordinateur, le texte est à gauche : placez plutôt le sujet à droite. Sur téléphone, le carrousel est en hauteur et ne
+  montre qu’une bande verticale de la photo : réglez son **point focal** (partie 17) pour que le sujet y reste au centre ;
+- **Image pour téléphone (facultative, portrait 1080 × 1350 ou plus)** : une autre photo, en hauteur, affichée à la
+  place de l’image de fond sur les téléphones. Mettez le sujet dans la moitié haute : le texte s’affiche en bas. Laissez
+  vide pour utiliser l’image de fond, recadrée autour de son point focal. Vérifiez avec l’aperçu **Téléphone** ;
 - **Libellé court (vignette de navigation)** : « Ce soir », « Ce week-end »… ;
 - **Bouton principal** et **Bouton secondaire** : un texte et un lien (adresse d’une page du site comme
   `/programme-tv`, ou adresse complète).
@@ -385,7 +417,12 @@ nouvelle. Vérifiez l’aperçu de la page d’accueil, puis **Publier les modif
     du navigateur sur Twitch (`https://www.twitch.tv/votre-chaine` ; le nom de la chaîne seul suffit aussi). Le lecteur
     affiche le direct dès que la chaîne est en ligne sur Twitch. Une adresse qui n’est pas celle d’une chaîne Twitch est
     refusée à la publication, avec un message ;
-- **Image affichée avant la lecture** : une belle image de la chaîne.
+- **Image affichée avant la lecture** : une belle image de la chaîne (son point focal est respecté, partie 17).
+
+Sur le site, le direct démarre tout seul, **sans le son**, dès qu’il est visible à l’écran ; un bouton **Activer le
+son** permet de l’écouter. S’il passe par Twitch, YouTube ou Bunny Stream, il ne démarre tout seul que chez les
+visiteurs qui ont accepté les « contenus externes » dans le bandeau des cookies ; les autres voient l’image et un bouton
+de lecture. Jamais de lecture automatique pour qui a demandé à « réduire les animations ».
 
 Comme pour le reste de cette page, les changements ne s’appliquent qu’après **Publier les modifications** : pensez-y
 quand vous coupez ou relancez le direct.
@@ -437,15 +474,22 @@ Conseils :
 - **Format** : JPEG pour les photos (PNG pour les logos). Le site les convertit lui-même en formats modernes et
   légers : inutile de les optimiser à l’excès.
 - **Taille** : 1920 px de large au minimum pour les vignettes et les articles (format paysage 16/9), **2400 px** pour le
-  carrousel de l’accueil, une affiche en hauteur pour les événements, **970 × 250** et **320 × 100** pour les publicités.
-- **Poids** : moins de 2 Mo par image ; pour les vidéos, préférez YouTube ou Bunny Stream à l’envoi de gros fichiers.
+  carrousel de l’accueil (et, si vous le souhaitez, une image en hauteur de **1080 × 1350** pour les téléphones), une
+  affiche en hauteur pour les événements, **1940 × 500** (ordinateur) et **1080 × 340** (téléphone) pour les publicités.
+- **Poids** : moins de 2 Mo par image. Un fichier vidéo peut aller jusqu’à 500 Mo, mais pour les vidéos longues,
+  préférez YouTube ou Bunny Stream.
 - **Description de l’image** : une phrase qui décrit ce que montre l’image (« Le lac d’Annecy au lever du soleil »). Elle
   sert aux personnes malvoyantes et au référencement. Si vous la laissez vide, le nom du fichier est repris : une vraie
   description reste préférable.
 - **Crédit photo (facultatif)** : le nom du photographe ou de l’agence, si besoin.
-- **Point focal** : les images sont recadrées différemment selon l’écran (téléphone, ordinateur, carrousel). Dans la
-  médiathèque, ouvrez l’image, choisissez **Définir le point focal** et cliquez sur le sujet principal (un visage, un
-  sommet) : il restera visible dans tous les cadrages. **Recadrer** permet aussi de couper les bords inutiles.
+- **Point focal** : sur téléphone, les images sont recadrées (carrousel en hauteur, vignettes de l’agenda, cartes,
+  image d’une vidéo avant la lecture). Dans la médiathèque, ouvrez l’image, cliquez sur **Modifier l’image**, puis sur
+  **Point focal**, et cliquez sur le sujet principal (un visage, un sommet, le titre d’une affiche) : il restera
+  visible dans tous les cadrages, et au centre du carrousel sur téléphone. Vérifiez avec l’aperçu **Téléphone**.
+  **Recadrer** coupe l’image partout : réservez-le aux bords inutiles.
+- Les images et aperçus préparés automatiquement à partir des vidéos sont rangés dans la médiathèque sous des noms
+  comme `youtube-…`, `video-…`, `bunny-…` (images) et `apercu-…` (aperçus animés). Ne les supprimez pas : ils servent
+  aux fiches des vidéos.
 
 ## 18. Le référencement Google (facultatif)
 

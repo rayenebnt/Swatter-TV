@@ -5,7 +5,7 @@
 #      PAYLOAD_SECRET        openssl rand -hex 32
 #      CRON_SECRET           openssl rand -hex 16
 #      NEXT_PUBLIC_SITE_URL  adresse publique, ex. https://www.swatter-tv.fr (figée dans l'image : la changer impose de reconstruire)
-#    (facultatif : POSTGRES_DB, POSTGRES_USER, APP_PORT, NEXT_PUBLIC_BUNNY_LIBRARY_ID, YOUTUBE_API_KEY, S3_*)
+#    (facultatif : POSTGRES_DB, POSTGRES_USER, APP_PORT, NEXT_PUBLIC_BUNNY_LIBRARY_ID, BUNNY_CDN_HOST, YOUTUBE_API_KEY, S3_*)
 #    DATABASE_URI est inutile ici : il est construit à partir des variables POSTGRES_*.
 # 2. docker compose up -d --build
 #    → la base démarre, les migrations s'appliquent (service « migrate »), puis le site et la tâche planifiée démarrent.
@@ -34,6 +34,8 @@ x-app-env: &app-env
   SMTP_PASS: ${SMTP_PASS:-}
   SMTP_FROM: ${SMTP_FROM:-contact@swatter-tv.fr}
   NEXT_PUBLIC_BUNNY_LIBRARY_ID: ${NEXT_PUBLIC_BUNNY_LIBRARY_ID:-}
+  # Hôte de diffusion Bunny Stream (vz-xxxx.b-cdn.net) : image des vidéos Bunny prise automatiquement (facultatif)
+  BUNNY_CDN_HOST: ${BUNNY_CDN_HOST:-}
   # Import de la chaîne YouTube : toutes les vidéos avec une clé (facultatif ; sinon les 15 dernières)
   YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
   # Stockage des médias sur S3 / R2 / Scaleway (facultatif ; sinon volume « media »)
