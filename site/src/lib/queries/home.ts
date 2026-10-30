@@ -11,7 +11,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
 
 /* ----- Vidéo du jour ----- */
 
-export type HomeVideo = Pick<Video, 'id' | 'title' | 'slug' | 'category' | 'duration' | 'thumbnail' | 'publishedAt' | 'isVideoOfDay'>
+export type HomeVideo = Pick<Video, 'id' | 'title' | 'slug' | 'category' | 'duration' | 'thumbnail' | 'preview' | 'publishedAt' | 'isVideoOfDay'>
 
 /** Vidéo du jour la plus récente ; à défaut, la dernière vidéo publiée. */
 export const getVideoOfDay = cache(
@@ -28,7 +28,7 @@ export const getVideoOfDay = cache(
             limit: 1,
             depth: 1,
             pagination: false,
-            select: { title: true, slug: true, category: true, duration: true, thumbnail: true, publishedAt: true, isVideoOfDay: true },
+            select: { title: true, slug: true, category: true, duration: true, thumbnail: true, preview: true, publishedAt: true, isVideoOfDay: true },
           })
         const picked = await find({ and: [published, { isVideoOfDay: { equals: true } }] })
         const doc = picked.docs[0] ?? (await find(published)).docs[0]

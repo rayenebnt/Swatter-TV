@@ -68,6 +68,15 @@ async function ready(page: Page) {
   if (!choice) await expect(page.getByRole('dialog', { name: 'Vos choix cookies' })).toBeVisible({ timeout: 15_000 })
 }
 
+/** Vidéo de la médiathèque (clip du jeu d'essai), utilisée comme aperçu animé ; null sans vidéo. */
+async function clipId(admin: AdminApi): Promise<number | null> {
+  const res = await admin.send('GET', '/api/media?limit=1&depth=0&where[mimeType][contains]=video%2F')
+  return ((await res.json()) as { docs: { id: number }[] }).docs[0]?.id ?? null
+}
+
+/** Bouton pause / relance de l'aperçu d'une fiche. */
+const PREVIEW_TOGGLE = /^(Mettre l’aperçu en pause|Relancer l’aperçu)$/
+
 /** Refus des cookies (bouton du bandeau) : le bandeau ne cache plus le bas de la page. */
 async function refuseCookies(page: Page) {
   const banner = page.getByRole('dialog', { name: 'Vos choix cookies' })
@@ -236,9 +245,23 @@ test.describe('accessibilité de la page d’une vidéo (vidéo YouTube créée 
     const video = await admin!.createYoutubeVideo(`Test e2e accessibilité ${unique('video')}`)
     const path = `/videos/${video.slug}`
     try {
+      // aperçu animé derrière le bouton de lecture (clip du jeu d'essai), s'il y a une vidéo dans la médiathèque
+      const clip = await clipId(admin!)
+      if (clip) expect((await admin!.send('PATCH', `/api/videos/${video.id}?depth=0`, { _status: 'published', preview: clip })).ok(), 'aperçu de la vidéo').toBe(true)
+      /** « Réduire les animations » : l'aperçu ne démarre pas (rien de demandé) et n'a donc pas de bouton pause. */
+      const expectStill = async (p: Page) => {
+        if (!clip) return
+        const preview = p.locator('.vp video.vprev')
+        await expect(preview).toHaveCount(1)
+        await p.waitForTimeout(1_000)
+        expect(await preview.getAttribute('src'), 'aperçu non lancé').toBeNull()
+        await expect(p.getByRole('button', { name: PREVIEW_TOGGLE })).toHaveCount(0)
+      }
+
       expect((await page.goto(path))?.status()).toBe(200)
       await ready(page)
       await expect(page.getByRole('button', { name: /lire la vidéo/i })).toBeVisible()
+      await expectStill(page)
       await expectAccessible(page, `une vidéo, bureau (${path})`)
 
       const mobile = await mobileContext(browser, { reducedMotion: 'reduce' })
@@ -247,6 +270,7 @@ test.describe('accessibilité de la page d’une vidéo (vidéo YouTube créée 
         expect((await phone.goto(path))?.status()).toBe(200)
         await ready(phone)
         await expect(phone.getByRole('button', { name: /lire la vidéo/i })).toBeVisible()
+        await expectStill(phone)
         await expectAccessible(phone, `une vidéo, mobile (${path})`)
       } finally {
         await mobile.close()

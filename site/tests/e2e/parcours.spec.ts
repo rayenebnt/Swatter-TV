@@ -684,7 +684,7 @@ withAdmin('lecteur vidéo (vidéo YouTube créée pour le test)', (admin) => {
 })
 
 withAdmin('bannière cookies et contenus tiers (vidéo et webcams créées pour le test)', (admin) => {
-  test('refus : aucun contenu tiers (vidéo, webcam YouTube, lecteur intégré) ; accord : seul le lecteur intégré se charge seul', async ({ page, browser }) => {
+  test('refus : aucun contenu tiers (vidéo, webcam YouTube, lecteur intégré, direct) ; accord : seuls le lecteur intégré et le direct se chargent seuls', async ({ page, browser }) => {
     test.setTimeout(120_000)
     const tag = unique('tiers')
     const video = await admin().createYoutubeVideo(`Test e2e cookies ${tag}`)
@@ -765,6 +765,18 @@ withAdmin('bannière cookies et contenus tiers (vidéo et webcams créées pour 
       await expect(p.getByRole('button', { name: `Afficher la webcam en direct\u00a0: ${youtubeCam.name}` })).toBeVisible()
       await expect.poll(() => third.map((u) => new URL(u).hostname)).toContain('webcam.example')
       expect(third.filter((u) => /youtube|ytimg|google/.test(new URL(u).hostname)), 'rien de YouTube sans clic').toEqual([])
+
+      // le direct démarre seul avec cet accord, sans le son : un fichier du site (jeu d'essai) sans rien demander à un
+      // autre site ; un lecteur YouTube, Twitch ou Bunny se charge seul en muet (voir aussi admin.spec.ts)
+      const settings = (await (await p.request.get('/api/globals/settings?depth=0')).json()) as { liveEnabled?: boolean; live?: { provider?: string | null } }
+      const provider = settings.liveEnabled === false ? null : settings.live?.provider
+      if (provider) {
+        const before = third.length
+        await p.goto('/direct')
+        await settle(p)
+        if (['youtube', 'twitch', 'bunny'].includes(provider)) await expect(p.locator('iframe.vp__frame')).toHaveAttribute('src', /[?&](mute=1|muted=true)(&|$)/)
+        else expect(third.slice(before), 'direct (fichier du site) : rien d’un autre site').toEqual([])
+      }
     } finally {
       await admin().remove('webcams', frameCam.id)
       await admin().remove('webcams', youtubeCam.id)

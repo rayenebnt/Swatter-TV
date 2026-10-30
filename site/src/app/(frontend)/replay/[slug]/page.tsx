@@ -12,11 +12,11 @@ import { VideoPlayer } from '@/components/video/VideoPlayer'
 import { fallbackVisual, renderNow, replayListUrl, spokenDuration, videoLocation, videoObject } from '@/components/video/utils'
 import { labelOf, PROGRAM_GENRES } from '@/lib/categories'
 import { formatDate, formatTime } from '@/lib/format'
-import { mediaAlt, mediaUrl } from '@/lib/media'
+import { mediaAlt, mediaFocal, mediaUrl } from '@/lib/media'
 import { getOtherEpisodes, getOtherReplays, getReplayBySlug, programOf } from '@/lib/queries/replays'
 import { SITE_NAME } from '@/lib/site'
 import { replayUrl } from '@/lib/urls'
-import { resolveVideo } from '@/lib/video'
+import { previewUrl, resolveVideo } from '@/lib/video'
 import '@/styles/video.css'
 import { ogImage } from '@/lib/og'
 
@@ -86,8 +86,16 @@ export default async function ReplayEpisodePage({ params }: { params: Params }) 
         <div className="container">
           <Crumbs items={[{ label: 'Replay', href: '/replay' }, ...(program ? [{ label: program.title, href: replayListUrl(program.slug) }] : []), { label: replay.title }]} />
           <article className="watch__grid" aria-labelledby="watch-title">
-            {/* history : replay ajouté à l'historique du membre connecté au lancement de la lecture */}
-            <VideoPlayer video={resolved} poster={poster} title={replay.title} history={{ kind: 'replay', id: replay.id }} />
+            {/* history : replay ajouté à l'historique du membre connecté au lancement de la lecture ;
+                preview : aperçu animé (chargé avec la fiche, depth 1) derrière le bouton de lecture */}
+            <VideoPlayer
+              video={resolved}
+              poster={poster}
+              posterPosition={mediaFocal(replay.thumbnail)}
+              preview={previewUrl(replay.preview)}
+              title={replay.title}
+              history={{ kind: 'replay', id: replay.id }}
+            />
             <div className="watch__info">
               <p className="kicker">
                 {program ? <Link href={replayListUrl(program.slug)}>{program.title}</Link> : 'Replay'}

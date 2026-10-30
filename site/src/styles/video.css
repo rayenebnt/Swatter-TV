@@ -31,6 +31,32 @@
 .vp__off-ico { width: 42px; height: 42px; margin-bottom: 4px; color: var(--gold); }
 .vp__off-title { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--ink); }
 .vp__off-text { max-width: 42ch; color: var(--ink-2); font-size: 14px; }
+/* Aperçu animé derrière le bouton de lecture : bouton pause / relance (WCAG 2.2.2), en haut à droite */
+.vp__ptoggle { position: absolute; z-index: 3; top: 14px; right: 14px; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: rgba(4, 10, 22, .62); border: 1px solid rgba(255, 255, 255, .35); transition: background .25s, transform .3s var(--ease); }
+.vp__ptoggle:hover { background: rgba(4, 10, 22, .88); transform: scale(1.06); }
+.vp__ptoggle:focus-visible { outline-offset: 3px; }
+.vp__ptoggle svg { width: 18px; height: 18px; }
+/* Direct lancé seul, sans le son */
+.vp__unmute { position: absolute; z-index: 3; top: 14px; right: 14px; display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 16px 0 12px; border-radius: 999px; color: #fff; background: rgba(4, 10, 22, .74); border: 1px solid rgba(255, 255, 255, .35); font-weight: 600; font-size: 14px; transition: background .25s, color .25s, border-color .25s; }
+.vp__unmute:hover { color: var(--on-gold); background: var(--gold-grad); border-color: transparent; }
+.vp__unmute:focus-visible { outline-offset: 3px; }
+.vp__unmute svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* ----- Aperçu animé (VideoPreview) : court extrait muet sur l'image d'une carte ou derrière le bouton de lecture -----
+   Placé juste après l'image : au-dessus d'elle, sous les badges, le dégradé et le lien de la carte (les clics le
+   traversent). Invisible tant qu'il ne tourne pas : apparition en fondu (classe is-on), retour à l'image à l'arrêt. */
+.vprev { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; pointer-events: none; transition: opacity .45s var(--ease), transform 1s var(--ease); }
+.vprev.is-on { opacity: 1; }
+/* même zoom que l'image au survol de la carte */
+.card:hover .media > .vprev { transform: scale(1.07); }
+.top:hover .top__card > .vprev { transform: scale(1.08); }
+@media (hover: none) {
+  .card:hover .media > .vprev, .top:hover .top__card > .vprev { transform: none; }
+}
+/* « Réduire les animations » : jamais d'aperçu (le pilote ne le lance pas non plus) */
+@media (prefers-reduced-motion: reduce) {
+  .vprev { display: none; }
+}
 
 /* ----- Top 10 (grands chiffres dorés) ----- */
 .rail-top { grid-auto-columns: 262px; }
@@ -148,6 +174,8 @@
   .vp__play--native { margin: -33px 0 0 -33px; }
   .vp__overlay { gap: 10px; padding: 14px; }
   .vp__notice { font-size: 12px; padding: 7px 10px; }
+  .vp__ptoggle { top: 10px; right: 10px; width: 38px; height: 38px; }
+  .vp__unmute { top: 10px; right: 10px; min-height: 38px; font-size: 13px; }
   .direct-off { aspect-ratio: auto; min-height: 340px; }
   .pager { gap: 8px; }
   .pager .btn { padding: 0 14px; }

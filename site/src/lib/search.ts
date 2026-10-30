@@ -4,9 +4,10 @@ import { cleanQuery, foldText, splitWords } from '@/components/search/text'
 import { labelOf, PROGRAM_GENRES, VIDEO_CATEGORIES } from './categories'
 import { departmentLabel } from './departments'
 import { formatDate, formatDayLong, parisDateTime, parisDay } from './format'
-import { mediaUrl } from './media'
+import { mediaUrl, type MediaRef } from './media'
 import { safe } from './safe'
 import { articleUrl, eventUrl, programUrl, replayUrl, videoUrl, webcamUrl } from './urls'
+import { previewUrl } from './video'
 
 export type SearchHit = {
   type: 'video' | 'replay' | 'article' | 'event' | 'program' | 'webcam'
@@ -15,6 +16,8 @@ export type SearchHit = {
   subtitle: string
   href: string
   image: string | null
+  /** Vidéos et replays : adresse de l'aperçu animé (absente sans aperçu) */
+  preview?: string
 }
 
 /**
@@ -125,6 +128,11 @@ const line = (...parts: (string | null | undefined | false)[]) => parts.filter(B
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const iso = (ms: number) => new Date(ms).toISOString()
 const time = (d?: string | null) => (d ? Date.parse(d) || 0 : 0)
+/** Aperçu animé d'une vidéo ou d'un replay : clé ajoutée seulement s'il existe (résultat inchangé sinon). */
+const withPreview = (m: MediaRef): { preview?: string } => {
+  const preview = previewUrl(m)
+  return preview ? { preview } : {}
+}
 /** Événement à venir : clé au-dessus de tout contenu passé, les plus proches d'abord. */
 const upcomingKey = (now: number, start: number) => now + (4e12 - start)
 
@@ -142,7 +150,7 @@ async function searchVideos(c: Ctx): Promise<Ranked[]> {
           limit: c.take,
           depth: 1,
           pagination: false,
-          select: { title: true, slug: true, category: true, duration: true, thumbnail: true, publishedAt: true, description: true },
+          select: { title: true, slug: true, category: true, duration: true, thumbnail: true, preview: true, publishedAt: true, description: true },
         })
         .then((r) => r.docs),
     (v) => [v.title, v.description],
@@ -158,6 +166,7 @@ async function searchVideos(c: Ctx): Promise<Ranked[]> {
       subtitle: line(labelOf(VIDEO_CATEGORIES, v.category), formatDate(v.publishedAt), v.duration),
       href: videoUrl(v),
       image: mediaUrl(v.thumbnail, 'thumb'),
+      ...withPreview(v.preview),
     },
   }))
 }
@@ -176,7 +185,7 @@ async function searchReplays(c: Ctx): Promise<Ranked[]> {
           limit: c.take,
           depth: 1,
           pagination: false,
-          select: { title: true, slug: true, program: true, thumbnail: true, broadcastAt: true, duration: true, description: true },
+          select: { title: true, slug: true, program: true, thumbnail: true, preview: true, broadcastAt: true, duration: true, description: true },
           populate: { programs: { title: true } },
         })
         .then((r) => r.docs),
@@ -193,6 +202,7 @@ async function searchReplays(c: Ctx): Promise<Ranked[]> {
       subtitle: line(typeof r.program === 'object' && r.program ? r.program.title : null, formatDate(r.broadcastAt), r.duration),
       href: replayUrl(r),
       image: mediaUrl(r.thumbnail, 'thumb'),
+      ...withPreview(r.preview),
     },
   }))
 }

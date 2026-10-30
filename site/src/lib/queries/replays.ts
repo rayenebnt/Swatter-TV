@@ -5,8 +5,8 @@ import type { Program, Replay } from '@/payload-types'
 import { getPayloadClient, isPreview } from '../payload'
 import { safe } from '../safe'
 
-/** Champs utiles aux cartes et rails (sans la source vidéo). L'émission est chargée (depth 1). */
-export type ReplayListItem = Pick<Replay, 'id' | 'title' | 'slug' | 'program' | 'thumbnail' | 'broadcastAt' | 'duration' | 'description'>
+/** Champs utiles aux cartes et rails (sans la source vidéo ; avec l'aperçu animé). L'émission est chargée (depth 1). */
+export type ReplayListItem = Pick<Replay, 'id' | 'title' | 'slug' | 'program' | 'thumbnail' | 'preview' | 'broadcastAt' | 'duration' | 'description'>
 
 export type ReplaysPage = { docs: ReplayListItem[]; page: number; totalPages: number; totalDocs: number }
 
@@ -15,6 +15,7 @@ const LIST_SELECT = {
   slug: true,
   program: true,
   thumbnail: true,
+  preview: true,
   broadcastAt: true,
   duration: true,
   description: true,

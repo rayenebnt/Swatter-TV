@@ -5,7 +5,9 @@ import { SectionHead } from '@/components/ui/SectionHead'
 import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
 import { getTop10 } from '@/lib/queries/videos'
 import { videoUrl } from '@/lib/urls'
+import { previewUrl } from '@/lib/video'
 import { fallbackVisual } from './utils'
+import { VideoPreview } from './VideoPreview'
 import '@/styles/video.css'
 
 /**
@@ -22,20 +24,25 @@ export async function Top10Section({ priority = false }: { priority?: boolean } 
       </SectionHead>
       <div data-reveal>
         <Rail id="rail-top" className="rail-top" label="Top 10">
-          {videos.map((v, i) => (
-            <Link key={v.id} className="top" href={videoUrl(v)} aria-label={`${i + 1}. ${v.title}`}>
-              <span className="top__n" aria-hidden="true">
-                {i + 1}
-              </span>
-              <div className="top__card">
-                <MediaImage media={v.thumbnail} size="poster" fill sizes="(max-width: 760px) 150px, 176px" alt="" fallbackSrc={fallbackVisual(v.id)} priority={priority && i === 0} />
-                <div className="top__info">
-                  <small>{labelOf(VIDEO_CATEGORIES, v.category)}</small>
-                  <strong>{v.title}</strong>
+          {videos.map((v, i) => {
+            const preview = previewUrl(v.preview)
+            return (
+              <Link key={v.id} className="top" href={videoUrl(v)} aria-label={`${i + 1}. ${v.title}`}>
+                <span className="top__n" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <div className="top__card">
+                  <MediaImage media={v.thumbnail} size="poster" fill sizes="(max-width: 760px) 150px, 176px" alt="" fallbackSrc={fallbackVisual(v.id)} priority={priority && i === 0} />
+                  {/* aperçu 16:9 recadré au centre dans la vignette portrait */}
+                  {preview && <VideoPreview src={preview} />}
+                  <div className="top__info">
+                    <small>{labelOf(VIDEO_CATEGORIES, v.category)}</small>
+                    <strong>{v.title}</strong>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
         </Rail>
       </div>
     </section>

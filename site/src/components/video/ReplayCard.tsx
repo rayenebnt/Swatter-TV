@@ -5,8 +5,10 @@ import { labelOf, PROGRAM_GENRES } from '@/lib/categories'
 import { formatDayLong, formatTime, timeAgo } from '@/lib/format'
 import { programOf, type ReplayListItem } from '@/lib/queries/replays'
 import { replayUrl } from '@/lib/urls'
+import { previewUrl } from '@/lib/video'
 import { CARD_SIZES } from './VideoCard'
 import { fallbackVisual, spokenDuration } from './utils'
+import { VideoPreview } from './VideoPreview'
 import '@/styles/video.css'
 
 /** Carte replay (maquette : .card.vcard du rail « Le Replay ») : genre de l'émission, titre, date de diffusion. */
@@ -21,10 +23,12 @@ export function ReplayCard({
 }) {
   const program = programOf(replay)
   const kicker = (program?.genre && labelOf(PROGRAM_GENRES, program.genre)) || program?.title || 'Replay'
+  const preview = previewUrl(replay.preview)
   return (
     <article className="card vcard">
       <div className="media">
         <MediaImage media={replay.thumbnail} size="card" fill sizes={sizes} alt="" fallbackSrc={fallbackVisual(replay.id)} />
+        {preview && <VideoPreview src={preview} />}
         {replay.duration && (
           <span className="dur">
             <span className="sr-only">Durée&nbsp;: {spokenDuration(replay.duration)}</span>

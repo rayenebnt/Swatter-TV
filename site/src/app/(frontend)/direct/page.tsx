@@ -7,7 +7,7 @@ import { OnAirPanel } from '@/components/video/OnAirPanel'
 import { ReplaySection } from '@/components/video/ReplaySection'
 import { VideoPlayer } from '@/components/video/VideoPlayer'
 import { renderNow, videoObject } from '@/components/video/utils'
-import { mediaUrl } from '@/lib/media'
+import { mediaFocal, mediaUrl } from '@/lib/media'
 import { getOnAir } from '@/lib/queries/schedule'
 import { getSettings } from '@/lib/queries/settings'
 import { SITE_NAME } from '@/lib/site'
@@ -52,7 +52,15 @@ export default async function DirectPage() {
       <section className="container direct" aria-label="Le direct de Swatter TV Info">
         <div className="direct__grid" data-preview="live">
           {live ? (
-            <VideoPlayer video={live} poster={poster} title={current ? `Swatter TV Info en direct\u00a0: ${current.title}` : 'Swatter TV Info en direct'} live />
+            // autoPlay : le direct d\u00e9marre seul, sans le son, quand il est visible (lecteurs tiers : contenus externes accept\u00e9s)
+            <VideoPlayer
+              video={live}
+              poster={poster}
+              posterPosition={mediaFocal(settings?.livePoster)}
+              title={current ? `Swatter TV Info en direct\u00a0: ${current.title}` : 'Swatter TV Info en direct'}
+              live
+              autoPlay
+            />
           ) : (
             <LiveOff poster={settings?.livePoster} next={onAir.next[0] ?? null} now={now} fallbackSrc={FALLBACK_POSTER} />
           )}

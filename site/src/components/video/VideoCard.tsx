@@ -5,7 +5,9 @@ import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
 import { formatDate, timeAgo } from '@/lib/format'
 import type { VideoListItem } from '@/lib/queries/videos'
 import { videoUrl } from '@/lib/urls'
+import { previewUrl } from '@/lib/video'
 import { fallbackVisual, spokenDuration } from './utils'
+import { VideoPreview } from './VideoPreview'
 import '@/styles/video.css'
 
 /** Moins de 24 h : badge « Nouveau ». */
@@ -31,10 +33,12 @@ export function VideoCard({
   sizes?: string
 }) {
   const isNew = now - new Date(video.publishedAt).getTime() < NEW_MS
+  const preview = previewUrl(video.preview)
   return (
     <article className="card vcard" data-cat={video.category}>
       <div className="media">
         <MediaImage media={video.thumbnail} size="card" fill sizes={sizes} alt="" fallbackSrc={fallbackVisual(video.id)} />
+        {preview && <VideoPreview src={preview} />}
         {isNew && <span className="badge badge--new">Nouveau</span>}
         {video.duration && (
           <span className="dur">
