@@ -1,6 +1,6 @@
 // Aperçu en direct : page du site et endroit de la page qui montrent ce que l'on modifie, adresse d'activation du mode aperçu.
 import type { PayloadRequest } from 'payload'
-import { parisDay } from './format'
+import { eveningOf } from './broadcast'
 import { articleUrl, eventUrl, pageUrl, programUrl, replayUrl, videoUrl } from './urls'
 import { SITE_URL } from './site'
 
@@ -35,8 +35,8 @@ const SETTINGS_FIELDS: Record<string, keyof typeof SETTINGS_SPOTS> = {
   socials: 'footer',
 }
 
-/** Jour de la grille d'un créneau (la nuit jusqu'à 2 h appartient à la veille, comme sur le site). */
-const tvDayOf = (iso: string) => parisDay(new Date(Date.parse(iso) - 2 * 60 * 60 * 1000))
+/** Jour de la grille d'un créneau (jusqu'à 0 h 30, la soirée de la veille, comme sur le site : eveningOf). */
+const tvDayOf = (iso: string) => eveningOf(new Date(iso))
 
 /**
  * Où montrer, dans l'aperçu, ce que l'on modifie. Sans indice (ouverture de la fiche), la page du contenu ; un onglet ou

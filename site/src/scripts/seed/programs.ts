@@ -1,5 +1,6 @@
-// Émissions et grille des programmes par défaut : quatre émissions « (exemple) » et une journée type répétée sur 8 jours,
-// pour que le programme TV et l'accueil soient remplis en attendant la vraie grille du client.
+// Émissions et grille des programmes par défaut : quatre émissions « (exemple) » et une soirée type (18 h – 0 h 30, les
+// horaires d'antenne) répétée sur 8 jours, pour que le programme TV et l'accueil soient remplis en attendant la vraie
+// grille du client.
 import type { Program } from '@/payload-types'
 
 export type SeedProgram = {
@@ -20,28 +21,23 @@ export const PROGRAMS: SeedProgram[] = [
   { key: 'documentaire', title: 'Votre documentaire (exemple)', genre: 'documentaire', image: 'hero-crepuscule', synopsis: `${EDIT} Ici : le programme de la soirée.` },
 ]
 
-/** Un créneau de la grille : heure locale (Paris), émission, titre spécifique facultatif. */
-export type DaySlot = { time: string; program: string; title?: string }
+/** Un créneau de la soirée : heure locale (Paris), le lendemain si `nextDay` (après minuit), émission, titre facultatif. */
+export type EveningSlot = { time: string; nextDay?: true; program: string; title?: string }
 
 /**
- * Créneaux d'une journée type (heure de Paris), du plus tôt au plus tard. La durée de chaque créneau
- * est calculée jusqu'au début du suivant : la grille est continue, sans trou ni chevauchement,
- * y compris les jours de changement d'heure (aucun créneau ne commence entre 2 h et 3 h).
+ * Créneaux d'une soirée type (heure de Paris), de 18 h à 0 h 30 (horaires d'antenne, src/lib/broadcast.ts), du plus tôt
+ * au plus tard. La durée de chaque créneau est calculée jusqu'au début du suivant, le dernier jusqu'à 0 h 30 : la soirée
+ * est continue, sans trou ni chevauchement (aucun changement d'heure entre 18 h et 0 h 30).
  */
-export function daySlots(): DaySlot[] {
+export function eveningSlots(): EveningSlot[] {
   return [
-    { time: '00:00', program: 'documentaire', title: 'Votre documentaire (exemple) — rediffusion' },
-    { time: '06:00', program: 'journal' },
-    { time: '06:30', program: 'meteo' },
-    { time: '06:40', program: 'magazine' },
-    { time: '12:00', program: 'journal' },
-    { time: '12:30', program: 'meteo' },
-    { time: '12:40', program: 'magazine' },
     { time: '18:00', program: 'journal' },
     { time: '18:30', program: 'magazine' },
     { time: '19:45', program: 'journal' },
     { time: '20:30', program: 'meteo' },
     { time: '20:45', program: 'documentaire' },
     { time: '22:30', program: 'magazine', title: 'Votre magazine (exemple) — rediffusion' },
+    { time: '23:30', program: 'journal', title: 'Le journal (exemple) — dernière édition' },
+    { time: '00:00', nextDay: true, program: 'documentaire', title: 'Votre documentaire (exemple) — rediffusion' },
   ]
 }

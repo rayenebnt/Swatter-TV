@@ -12,6 +12,7 @@ import path from 'path'
 import { getPayload, type CollectionSlug } from 'payload'
 import { fileURLToPath } from 'url'
 
+import { eveningWindow, slotOutsideBroadcast } from '@/lib/broadcast'
 import { formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
 import { importMeteo } from '@/lib/import/meteo'
 import { slugify } from '@/lib/slugify'
@@ -24,7 +25,7 @@ import { MEDIA } from './seed/media'
 import { demoForecast } from './seed/meteo'
 import { PAGES } from './seed/pages'
 import { WEBCAMS } from './seed/webcams'
-import { daySlots, PROGRAMS } from './seed/programs'
+import { eveningSlots, PROGRAMS } from './seed/programs'
 import { EXAMPLE_REPLAY } from './seed/replay'
 
 if (process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== '1') {
@@ -128,7 +129,7 @@ const upload = (clip: string) => ({ provider: 'upload' as const, file: mediaId(c
 log(`${media.size} médias importés.`)
 
 // ---------------------------------------------------------------------------------------------
-// 3. Émissions et grille des programmes (8 jours à partir d'hier 00:00, heure de Paris)
+// 3. Émissions et grille des programmes (8 soirées de 18 h à 0 h 30 à partir d'hier, heure de Paris)
 // ---------------------------------------------------------------------------------------------
 const programs = new Map<string, number>()
 for (const p of PROGRAMS) {
@@ -147,20 +148,19 @@ const programId = (key: string): number => {
 }
 
 const firstDay = addDays(today, -1)
-const gridEnd = parisDateTime(addDays(firstDay, 8), '00:00')
-const slots = Array.from({ length: 8 }, (_, i) => {
+const schedule = Array.from({ length: 8 }, (_, i) => {
   const day = addDays(firstDay, i)
-  return daySlots().map((s) => ({ ...s, start: parisDateTime(day, s.time) }))
+  const evening = eveningSlots().map((s) => ({ ...s, start: parisDateTime(s.nextDay ? addDays(day, 1) : day, s.time) }))
+  const close = eveningWindow(day).end
+  return evening.map((s, j) => {
+    const end = j + 1 < evening.length ? evening[j + 1].start : close
+    const durationMinutes = Math.round((end.getTime() - s.start.getTime()) / 60_000)
+    if (slotOutsideBroadcast(s.start, durationMinutes) || durationMinutes <= 0) throw new Error(`Créneau invalide à ${s.start.toISOString()} (${durationMinutes} min)`)
+    return { _status: 'published' as const, startsAt: s.start.toISOString(), durationMinutes, program: programId(s.program), titleOverride: s.title }
+  })
 }).flat()
-
-const schedule = slots.map((s, i) => {
-  const end = i + 1 < slots.length ? slots[i + 1].start : gridEnd
-  const durationMinutes = Math.round((end.getTime() - s.start.getTime()) / 60_000)
-  if (durationMinutes <= 0 || durationMinutes > 600) throw new Error(`Créneau invalide à ${s.start.toISOString()} (${durationMinutes} min)`)
-  return { _status: 'published' as const, startsAt: s.start.toISOString(), durationMinutes, program: programId(s.program), titleOverride: s.title }
-})
 await inBatches(schedule, 8, (data) => payload.create({ collection: 'schedule', data, overrideAccess: true, context }))
-log(`${schedule.length} créneaux de grille créés (${firstDay} → ${addDays(firstDay, 7)}).`)
+log(`${schedule.length} créneaux de grille créés (soirées du ${firstDay} au ${addDays(firstDay, 7)}, 18 h – 0 h 30).`)
 
 // ---------------------------------------------------------------------------------------------
 // 4. Vidéos et replays

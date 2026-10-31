@@ -1,5 +1,6 @@
 // Programme TV : constantes, types et calculs partagés par le serveur et le client (aucune dépendance serveur).
 import { dateChip, formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
+import { BROADCAST_END, eveningOf, shiftDay } from '@/lib/broadcast'
 import type { Slot } from '@/lib/queries/schedule'
 
 /** Frise horaire : de 6 h à 2 h du lendemain (heure de Paris). Aucun changement d'heure ne tombe dans cet intervalle. */
@@ -39,23 +40,19 @@ export type GridSlot = {
 export type GridDay = { key: string; start: string; slots: GridSlot[] }
 export type GridData = { today: string; days: GridDay[]; programs: GridProgram[] }
 
-/** Jour civil AAAA-MM-JJ décalé de n jours (calcul calendaire pur, indépendant du fuseau). */
-export function shiftDay(day: string, n: number): string {
-  const [y, m, d] = day.split('-').map(Number)
-  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
-}
+export { shiftDay }
 
 /**
- * Journée TV en cours (AAAA-MM-JJ, heure de Paris) : elle commence à 6 h, mais la nuit jusqu'à 2 h appartient
- * encore à la veille (fin de la frise) ; entre 0 h et 2 h, « Aujourd'hui » reste donc la grille de la veille.
+ * Journée TV en cours (AAAA-MM-JJ) : la soirée d'antenne en cours ou à venir (eveningOf de src/lib/broadcast.ts). De 0 h
+ * à 0 h 30, la soirée de la veille est encore à l'antenne ; à partir de 0 h 30, « aujourd'hui » est la soirée de 18 h.
  */
-export const tvDay = (d: Date = new Date()) => parisDay(new Date(d.getTime() - 2 * 60 * 60 * 1000))
+export const tvDay = (d: Date = new Date()) => eveningOf(d)
 
 /**
- * Début de la journée TV `day` : minuit à Paris plus deux heures réelles, la définition de `tvDay`. La nuit du passage à
- * l'heure d'hiver, 2 h sonne deux fois : la journée commence au premier passage (pas au second, que donnerait 2 h à Paris).
+ * Début de la journée TV `day` : 0 h 30 ce jour-là (fin de la soirée de la veille), heure jamais ambiguë (les
+ * changements d'heure ont lieu à 2 h / 3 h). Une journée TV va de 0 h 30 à 0 h 30 le lendemain et contient la soirée.
  */
-export const tvDayStart = (day: string) => new Date(parisDateTime(day).getTime() + 2 * 60 * 60 * 1000)
+export const tvDayStart = (day: string) => parisDateTime(day, BROADCAST_END)
 
 /** Les jours proposés à partir d'aujourd'hui (journée TV en cours). */
 export const programmeDays = (today: string) => Array.from({ length: PROGRAMME_DAYS }, (_, i) => shiftDay(today, i))
