@@ -48,7 +48,23 @@ scripts/                  sauvegarde.sh (chaque nuit sur le serveur), dev.mjs, t
   CSS `--focal` et `--focal-m` (classe `.img-mobile`, globals.css), jamais par un style en ligne, qui vaudrait pour les deux
   sources. `priority` y donne `loading="eager"` et `fetchPriority="high"`, sans preload : une seule image est téléchargée,
   celle de la source retenue. Le `sizes` doit refléter la largeur réellement affichée (`coverWidth` : une image qui couvre
-  un cadre plus haut que large est plus large que lui).
+  un cadre plus haut que large est plus large que lui ; en photo entière, la largeur du cadre).
+- **Photo entière sur fond flou** : `<MediaImage … fill whole />` (ou `whole="phone"` : sous 760 px seulement ; avec une
+  source `mobile`, c'est l'image pour téléphone qui compte) rend `WholeFrame` : `<span class="whole" data-o>` avec deux
+  `<img>` aux mêmes srcset/sizes/src (fond `.whole__bg` décoratif et différé, photo `.whole__fg`), donc un seul fichier
+  téléchargé. Requêtes de conteneur de globals.css : selon l'orientation de la photo (`data-o` : l ≥ 1,6, m ≥ 1,2,
+  s ≥ 0,85, p ≥ 0,7, t ; `ratioOrientation`) et les proportions réelles du cadre, la photo couvre le cadre (cadrage
+  `--focal`) ou, quand il en couperait plus de 40 % environ, s'affiche entière (`object-fit: contain`, cadrage
+  `--whole-pos`, centré par défaut) sur une version floutée et assombrie d'elle-même. Seuils : `WHOLE_FRAMES` de
+  `lib/media.ts`, identiques aux requêtes de conteneur (test images-mobile). Utiliser une taille qui garde les
+  proportions (« hero » ou l'original), jamais card/poster. Le visuel de repli couvre toujours son cadre. Cadre aux
+  proportions fixes rendu côté client (lecteur 16:9) : `wholeOrientation(m, 16 / 9, 'hero')` → prop `posterOrientation`
+  de `VideoPlayer` ; `WholeFrame` est exporté pour les images en adresse simple (`ArticleImage whole`). Le cadre parent
+  doit être positionné et `overflow: hidden` ; un sélecteur `.parent > img` ne vise plus l'image (ajouter
+  `.parent > .whole`, voir une.css). Utilisé par : Top 10 (`--whole-pos: 50% 28%`, aperçu 16:9 entier au même endroit),
+  tuiles « À la une », image principale d'un article, article principal de l'Info (LeadCard), agenda (vignette des cartes
+  sur téléphone `whole="phone"`, `--whole-pos: 50% 100%` ; encart vedette), affiche du lecteur (photo en hauteur ou
+  carrée), direct coupé. Les cartes 16:9 gardent la découpe « card ».
 - **Dates** : tout affichage en heure de Paris via `src/lib/format.ts` (`formatTime`, `formatDayLong`, `dateChip`, `timeAgo`, `parisDay`, `parisDateTime`).
 - **Vidéo** : `resolveVideo(source)` (`src/lib/video.ts`) puis `<VideoPlayer video={…} />`.
 - **CSS** : reprendre les classes de la maquette (`.card`, `.media`, `.badge`, `.seg`, `.sec-head`, `.rail`…). Les styles communs sont
@@ -102,7 +118,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 |---|---|
 | `/` | accueil |
 | `/direct` | le direct |
-| `/info`, `/info/[departement]`, `/info/[departement]/[slug]` | l'info de toute la région, par département (12 départements d'Auvergne-Rhône-Alpes, `src/lib/departments.ts` ; un autre est en 404), article |
+| `/info`, `/info/[departement]`, `/info/[departement]/[slug]` | l'info de toute la région, par département (12 départements d'Auvergne-Rhône-Alpes, plus `autres-regions` pour la Suisse, la Vallée d'Aoste et le reste hors région ; `src/lib/departments.ts` ; un autre est en 404), article |
 | `/meteo/[departement]`, `/webcams/[departement]`, `/agenda?departement=` | météo (ville du département), webcams et agenda d'un département |
 | `/contact` | formulaire « Proposer une info » (`?sujet=publicite` présélectionne la publicité) |
 | `/meteo` | la météo |
@@ -162,7 +178,9 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   `watchErrors` (erreurs JavaScript, console, réponses HTTP en erreur), `expectNoHorizontalOverflow`, `expectSeo`,
   `settle`, `linksMatching`, `expectPlayer`, `firstDoc`. Connexion administrateur par l'API, dans un `describe` en série
   (les sessions Payload d'un même compte s'écrasent). Accessibilité : `@axe-core/playwright`. Le Chromium de Playwright
-  ne décode pas le H.264 : `apercus.spec.ts` vérifie la demande du fichier d'aperçu, pas l'image animée.
+  ne décode pas le H.264 : `apercus.spec.ts` vérifie la demande du fichier d'aperçu ; pour la lecture réelle (plusieurs
+  aperçus, plafond, boucle, pause), il sert à la place une mire WebM VP9 fabriquée par ffmpeg (`context.route`), et ce
+  test est sauté sans ffmpeg.
 - **Copie git (worktree) dont `node_modules` est un lien symbolique** : Turbopack refuse de démarrer ; utiliser
   `npx next dev --webpack -p <port>`.
 - **Variables lues par le site pour les tests** : `MEDIA_DIR` (dossier des médias, `media/` par défaut), `NEXT_DIST_DIR`
@@ -206,6 +224,15 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   autour de ce point à l'envoi, `focalIn` refait ce calcul ; sans `size`, c'est le point de l'original. `focalCover(m,
   frameRatio, size?)` centre le point dans un cadre aux proportions connues, collé au bord si nécessaire (carrousel sur
   téléphone, `heroMobileSource` dans `components/home/heroMedia.ts`).
+  - Carrousel de l'accueil (`HeroImage.tsx`, `heroWhole` et `heroMobileSource` de `components/home/heroMedia.ts`) :
+    `data-whole` de la diapositive, « phone » (téléphone : image pour téléphone, sinon image de fond, en largeur ou
+    carrée) et « tall » (largeur > 760 px tenue en hauteur : image de fond en largeur). La photo `.slide__photo` passe
+    dans le flux (diapositive en colonne flex, `.slide__media` et `<picture>` en `display: contents`), pleine largeur
+    sous l'en-tête et au-dessus des textes, au plus 46 % de la hauteur, plus petite si les textes ont besoin de la place
+    (proportions `--ratio` / `--ratio-m`, largeur en `cqw` : `.hero` est un conteneur en largeur) ; fond
+    `.slide__backdrop` (mêmes sources, flou et assombri, immobile). Sinon, image qui couvre le cadre comme avant (source
+    « téléphone » de largeur `heroMobileSizes`, cadrage `--focal` / `--focal-m`). `<picture>` seulement si le téléphone
+    affiche un autre fichier ou une autre largeur ; première diapositive en eager + fetchPriority high.
   - Texte riche : convertisseur « upload » de `components/ui/RichText.tsx` (logique pure dans `proseUpload.ts`) : image
     d'origine ou « hero » à ses vraies proportions, `PROSE_SIZES`, crédit en légende, vidéo dans `<video controls>`.
   - Agenda : vignette mobile des cartes sur l'affiche d'origine (`posterThumbSizes`), encart vedette mobile aux
@@ -229,14 +256,21 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   YouTube restent au clic.
 - **Aperçu animé (affichage)** : `src/components/video/VideoPreview.tsx` (îlot `VideoPreview` pour les cartes,
   `PlayerPreview` pour les fiches) et `preview-director.ts` (logique pure, `tests/unit/apercu-pilotage.test.ts`).
-  - Un seul aperçu à la fois sur la page. À la souris : survol (150 ms) ou focus clavier, en boucle. Écran tactile : carte
-    visible à 60 % la plus proche du centre, 400 ms après l'arrêt du défilement, une fois (5 s au plus), puis rejouée
-    seulement après une sortie et un retour à l'écran. « feature » (Vidéo du jour) : lancée seule une fois visible.
-    « hover » : petites vignettes (recherche, historique). « ambient » : lecteur de fiche, avec un bouton pause.
-  - Un seul IntersectionObserver, défilement écouté en capture, arrêt quand l'onglet est masqué. Rien en
+  - En continu, sans geste (demande du client) : toute carte qui a un aperçu le lance seule, en boucle et sans le son,
+    quand elle est visible à 30 % (`CARD_RATIO`) depuis 300 ms (`SETTLE_MS` : un défilement rapide ne charge rien), puis
+    le garde jusqu'à sa sortie complète de l'écran (pause aussitôt). Plusieurs aperçus tournent ensemble, au plus
+    `previewLimit()` : 6 (`MAX_PLAYING`), 3 sur petit écran ≤ 760 px ou avec `navigator.deviceMemory` ≤ 2
+    (`MAX_PLAYING_SMALL`). Au-delà, les plus proches du centre de l'écran et les moins coupés par ses bords
+    (`screenDistance`), avec 48 px d'avance (`KEEP_PX`) pour celui qui tourne déjà ; les autres gardent leur image. Choix
+    regroupé, au plus un toutes les 150 ms (`EVAL_MS`) ; le défilement n'est écouté que quand le plafond est atteint.
+  - « ambient » : lecteur d'une fiche, en boucle dès 60 % visible (`VISIBLE_RATIO`, aussi utilisé par le direct de
+    `VideoPlayer`) tant qu'il reste à l'écran, avec un bouton pause qui garde le focus ; servi avant les cartes dans le
+    plafond.
+  - Un seul IntersectionObserver (seuils 0, 30 % et 60 %) ; arrêt quand l'onglet est masqué, reprise au retour. Rien en
     prefers-reduced-motion ni avec saveData (`motion.ts`) ; `.vprev` est aussi masqué en CSS.
-  - `<video muted playsInline preload="none" …>` : src posée au premier lancement, fondu à « playing », `play().catch`
-    obligatoire (H.264 non décodé par le Chromium de Playwright), erreur → aperçu retiré.
+  - `<video muted loop playsInline preload="none" …>` : src posée à la première apparition, reprise là où l'extrait
+    s'était arrêté, fondu à « playing », `play().catch` obligatoire (H.264 non décodé par le Chromium de Playwright),
+    erreur → aperçu retiré, sa place revient à un autre.
   - Ajouter un aperçu à une carte : `{previewUrl(doc.preview) && <VideoPreview src=… />}` juste après l'image du `.media`,
     et `preview: true` dans le `select` de la requête. Les requêtes de liste ne transmettent que l'adresse (`previewUrl`).
   - `VideoPlayer` `autoPlay` (direct) : lecture sans le son quand le lecteur est visible à 60 %, bouton « Activer le son ».
@@ -257,7 +291,7 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
 - **Open Graph** : une page qui définit `openGraph` sans `images` perd l'image par défaut (`opengraph-image` du groupe
   `(frontend)`, dont l'adresse est suffixée) : reprendre `images: (await parent).openGraph?.images ?? []` ou fournir une image.
 - **Redirections** : les anciennes adresses sont dans `next.config.ts` (`redirects()`), à recopier dans `LEGACY` de
-  `[...slug]/legacy.ts` (un test le vérifie) ; les variantes qui ne diffèrent que par la casse ou les accents passent par
+  `[...slug]/legacy.ts` (un test le vérifie ; /L-info-Geneve et /L-info-Aoste mènent à /info/autres-regions) ; les variantes qui ne diffèrent que par la casse ou les accents passent par
   `[...slug]` (la correspondance de `next.config.ts` est insensible à la casse et bouclerait). À eux deux, ils couvrent les
   39 adresses du plan de l’ancien site (sitemap.xml de SiteW, octobre 2026).
   Limite connue : ces variantes perdent leurs paramètres (`/Agenda?quand=week-end` → `/agenda`), car la page attrape-tout
@@ -301,6 +335,15 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   « en Isère / dans le Rhône » dans `src/lib/places.ts`) ; la météo suit une ville par département.
   Une restriction à la seule Haute-Savoie a été essayée puis abandonnée à la demande du client : les adresses
   `/info/<département>` restent celles d'origine.
+- **L'Info, « Autres régions »** : le champ « Département » des articles (`departmentField(description, INFO_ZONES)`)
+  accepte en plus `autres-regions` (Suisse, Vallée d'Aoste, hors Auvergne-Rhône-Alpes ; `OTHER_REGIONS`, `INFO_ZONES`,
+  `isInfoZone`, `infoZoneLabel` dans `src/lib/departments.ts`, tournures `infoInPlace` / `infoOfPlace` dans
+  `src/lib/places.ts`), avec sa page `/info/autres-regions`, toujours proposée en dernier onglet de /info (dans le plan du
+  site seulement si elle a des articles ; dans le filtre de l'accueil si le fil en contient). « Toute la région » (/info,
+  accueil) inclut ces articles. Agenda, webcams et météo n'en veulent pas : `isDepartment` et `departmentLabel` restent
+  limités aux 12 départements (« Auvergne-Rhône-Alpes » pour toute autre valeur). JSON-LD d'un article « Autres
+  régions » : lieu = commune seule, sans adresse. Migration `20261030_225851_autres_regions_info` (ALTER TYPE … ADD VALUE
+  IF NOT EXISTS ; le retour arrière reclasse en Haute-Savoie puis recrée les types).
 - **Webcams** : leur champ « Département » accepte en plus `plus` (« Web Cams + », vues hors région : Suisse, Aoste ;
   `WEBCAMS_PLUS`, `WEBCAM_ZONES` dans `src/lib/departments.ts`), avec sa page `/webcams/plus` et sa section sous la
   grille de `/webcams`. Lien du flux et image facultatifs : sans lien, la webcam s'affiche « Bientôt en direct »
@@ -437,6 +480,15 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   du site, comptes, redirections) n'est affichée qu'aux administrateurs ; ces collections gardent `admin.hidden: hiddenForEditors`
   (l'API garde ses propres règles d'accès). Liens sans préchargement (`prefetch={false}`) : le préchargement de dizaines de
   vues de l'administration ralentissait la navigation.
+- **Menu sur téléphone et tablette (≤ 1024 px)** : Payload rangeait le menu ouvert dans une colonne de la grille
+  `.template-default` (100vw sur téléphone) ; le contenu, poussé hors de l'écran, élargissait la page et le navigateur
+  dézoomait. `custom.scss` place donc le menu en position fixe par-dessus le contenu, qui garde toute la largeur : plein
+  écran sur téléphone, tiroir de 320 px sur un voile (`::before` de `.template-default__wrap`) sur tablette ; page bloquée
+  sous le menu ouvert. `useModalNav` (`NavLinks.tsx`, appelé par `NavStart`) le ferme à l'arrivée et au retour par
+  « Précédent », et le referme au toucher d'un lien du menu ou du voile et avec Échap (focus rendu au bouton du menu) ;
+  Payload, lui, ne le referme qu'au changement d'adresse et seulement sous 768 px. Seuil commun : `MODAL_NAV_QUERY`
+  (`menu.ts`), point de rupture « m » de `@payloadcms/ui`. Sur ordinateur, rien ne change. Barre des fiches cochées des
+  listes : ramenée dans l'écran, boutons sur deux lignes.
 - **Aperçu en direct** (`admin.livePreview`, config) : ouvert d'office sur les fiches à brouillons et sur « Accueil et
   direct » (aperçu de l'accueil) ; adresse calculée par `previewPath()` puis `previewUrl()` (`src/lib/preview.ts`, URL
   absolue d'après l'hôte de la requête, exigée par `postMessage`). Le bouton de l'aperçu est restylé avec un libellé
@@ -552,6 +604,7 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   et le menu allume la rubrique cliquée aussitôt ; sur le site, `NavProgress` affiche une barre dorée si la page
   suivante tarde plus de 150 ms. Mesurer les temps de réponse avec `npm run build && npm start`
   (en production : 0,2 à 0,4 s par clic dans l'administration).
-- Tests : `tests/e2e/admin.spec.ts` (brouillon invisible des visiteurs, aperçu, aperçu en direct, identifiants `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`, par défaut ceux du poste de
+- Tests : `tests/e2e/admin.spec.ts` (brouillon invisible des visiteurs, aperçu, aperçu en direct, menu sur téléphone
+  (390 px) et tablette (820 px) dans des contextes mobiles ouverts dans le `describe` en série, identifiants `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`, par défaut ceux du poste de
   développement ; ignorés si la connexion échoue).
 

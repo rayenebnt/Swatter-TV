@@ -109,7 +109,9 @@ Après la connexion, le **tableau de bord** rassemble l’essentiel :
 - **Les plus regardées par les membres (7 derniers jours)**, dès que des visiteurs ont créé un compte : les 5 vidéos
   ou replays regardés par le plus de membres connectés (partie 21).
 
-Le **menu** s’ouvre avec le bouton ☰ en haut à gauche (il reste ouvert sur un grand écran). Ses rubriques sont
+Le **menu** s’ouvre avec le bouton ☰ en haut à gauche (il reste ouvert sur un grand écran). Sur **téléphone**, il
+s’ouvre en plein écran, par-dessus la page : touchez une rubrique pour y aller, la croix le referme. Sur **tablette**, il
+s’ouvre sur le côté : touchez la partie assombrie de la page pour le refermer. Ses rubriques sont
 **dans le même ordre que le menu du site** :
 
 - **Tableau de bord**, tout en haut, pour revenir à l’accueil de l’administration ;
@@ -231,11 +233,13 @@ Pour ajouter une vidéo à la main (une vidéo d’une autre chaîne, par exempl
 YouTube, un petit diaporama des images de la vidéo). Vous n’avez rien à faire : les vidéos déjà sur le site reçoivent aussi le leur, ainsi
 qu’une image si elles n’en avaient pas. Si vous changez la vidéo d’une fiche, l’aperçu est refait, ainsi que l’image si
 c’était celle prise automatiquement dans l’ancienne vidéo. Sur le site, les
-vidéos « tournent » ainsi sans qu’on clique, pour donner envie de les regarder :
+vidéos « tournent » ainsi toutes seules, sans qu’on clique ni qu’on passe dessus, pour donner envie de les regarder :
 
-- sur ordinateur, l’aperçu démarre quand la souris passe sur une vignette ;
-- sur téléphone, c’est la vignette la plus visible à l’écran qui s’anime, une fois, quand on arrête de faire défiler la
-  page ; la **Vidéo du jour** de l’accueil s’anime aussi toute seule une fois quand elle apparaît ;
+- sur ordinateur comme sur téléphone, chaque vignette qui a un aperçu s’anime en boucle dès qu’elle apparaît à l’écran,
+  et s’arrête quand elle en sort. Pour ne pas ralentir les téléphones et les ordinateurs anciens, quelques-unes
+  seulement s’animent en même temps (6 sur ordinateur, 3 sur téléphone : celles du milieu de l’écran) ; les autres
+  gardent leur image jusqu’à ce qu’une place se libère. La **Vidéo du jour** de l’accueil, les résultats de recherche et
+  « Mon espace » font de même ;
 - sur la page d’une vidéo, l’aperçu tourne derrière le bouton de lecture ; un petit bouton en haut à droite le met en
   pause, et **Lire la vidéo** lance toujours la vraie vidéo, avec le son ;
 - les visiteurs qui ont demandé à leur appareil de « réduire les animations » ou d’« économiser les données » voient
@@ -269,13 +273,21 @@ YouTube) : il ne demande aucun accord.
    elle s’affiche à la largeur du texte, sans être déformée ni coupée, sur ordinateur comme sur téléphone, avec son
    crédit photo dessous.
 4. **Département** (obligatoire : l’info couvre toute la région Auvergne-Rhône-Alpes ; il range l’article dans la page
-   de son département, par exemple « /info/isere »), **Commune** et **Rubrique** (Sport, Faits divers, Société…).
+   de son département, par exemple « /info/isere »). Pour une info de **Suisse**, de la **Vallée d’Aoste** ou de tout
+   autre endroit hors Auvergne-Rhône-Alpes, choisissez **Autres régions**, tout en bas de la liste : l’article est rangé
+   dans la page « Autres régions » (/info/autres-regions), dernier onglet de L’Info. Remplissez ensuite **Commune**
+   (par exemple Genève, Aoste) et **Rubrique** (Sport, Faits divers, Société…).
 5. À droite : **Date de publication**. Une date à venir programme la mise en ligne : une fois publié, l’article
    apparaîtra tout seul à cette date.
 6. Vérifiez l’aperçu, puis **Publier les modifications**.
 
 **Info du jour** : cochez **Info du jour** (à droite) pour placer l’article dans « À la une ». Comme pour la vidéo du
 jour, la plus récente des infos cochées l’emporte, et à défaut le dernier article publié est mis en avant.
+
+**Articles déjà publiés sur la Suisse ou Aoste** : ils sont restés en Haute-Savoie, car le site ne devine pas leur
+région. Pour les déplacer : **L’Info**, ouvrez l’article, **Département** › **Autres régions**, puis **Publier les
+modifications**. L’article passe dans la page « Autres régions » ; son ancienne adresse (/info/haute-savoie/…) mène
+automatiquement à la nouvelle. Ces articles restent aussi visibles dans « Toute la région » et dans l’info de l’accueil.
 
 ## 7. Annoncer un événement et la sortie du week-end
 
@@ -394,11 +406,13 @@ blanche ») : cliquez sur une diapositive pour la déplier. Pour chaque diaposit
 - **Titre — ligne 1 (blanc)** et **Titre — ligne 2 (dorée)** : quelques mots chacun ;
 - **Texte** : une ou deux phrases ;
 - **Image de fond (paysage, 2400 px de large conseillés)** : une photo en largeur, d’au moins 2400 × 1350 pixels. Sur
-  ordinateur, le texte est à gauche : placez plutôt le sujet à droite. Sur téléphone, le carrousel est en hauteur et ne
-  montre qu’une bande verticale de la photo : réglez son **point focal** (partie 17) pour que le sujet y reste au centre ;
+  ordinateur, le texte est à gauche : placez plutôt le sujet à droite. Sur téléphone, la photo s’affiche **en entier**
+  en haut du carrousel, sous le logo, sur un fond flou tiré de la même photo : rien n’est coupé, vous n’avez rien à
+  régler ;
 - **Image pour téléphone (facultative, portrait 1080 × 1350 ou plus)** : une autre photo, en hauteur, affichée à la
-  place de l’image de fond sur les téléphones. Mettez le sujet dans la moitié haute : le texte s’affiche en bas. Laissez
-  vide pour utiliser l’image de fond, recadrée autour de son point focal. Vérifiez avec l’aperçu **Téléphone** ;
+  place de l’image de fond sur les téléphones, où elle remplit tout l’écran. Mettez le sujet dans la moitié haute : le
+  texte s’affiche en bas. Ne la remplissez que si vous préférez une photo en hauteur sur les téléphones ; laissée vide,
+  c’est l’image de fond, entière, qui s’affiche. Vérifiez avec l’aperçu **Téléphone** ;
 - **Libellé court (vignette de navigation)** : « Ce soir », « Ce week-end »… ;
 - **Bouton principal** et **Bouton secondaire** : un texte et un lien (adresse d’une page du site comme
   `/programme-tv`, ou adresse complète).
@@ -483,10 +497,13 @@ Conseils :
   sert aux personnes malvoyantes et au référencement. Si vous la laissez vide, le nom du fichier est repris : une vraie
   description reste préférable.
 - **Crédit photo (facultatif)** : le nom du photographe ou de l’agence, si besoin.
-- **Point focal** : sur téléphone, les images sont recadrées (carrousel en hauteur, vignettes de l’agenda, cartes,
-  image d’une vidéo avant la lecture). Dans la médiathèque, ouvrez l’image, cliquez sur **Modifier l’image**, puis sur
+- **Photo entière** : quand un cadre du site couperait trop une photo (carrousel sur téléphone, Top 10, « À la une »,
+  image d’un article, agenda, lecteur vidéo), elle s’affiche entière sur un fond flou tiré d’elle-même : vous n’avez
+  rien à faire.
+- **Point focal** : ailleurs, les images sont recadrées pour remplir leur cadre (cartes, vignettes, image en hauteur
+  du carrousel sur téléphone). Dans la médiathèque, ouvrez l’image, cliquez sur **Modifier l’image**, puis sur
   **Point focal**, et cliquez sur le sujet principal (un visage, un sommet, le titre d’une affiche) : il restera
-  visible dans tous les cadrages, et au centre du carrousel sur téléphone. Vérifiez avec l’aperçu **Téléphone**.
+  visible dans tous les cadrages. Vérifiez avec l’aperçu **Téléphone**.
   **Recadrer** coupe l’image partout : réservez-le aux bords inutiles.
 - Les images et aperçus préparés automatiquement à partir des vidéos sont rangés dans la médiathèque sous des noms
   comme `youtube-…`, `video-…`, `bunny-…` (images) et `apercu-…` (aperçus animés). Ne les supprimez pas : ils servent
