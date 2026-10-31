@@ -61,12 +61,14 @@ test.describe('carrousel de l’accueil sur téléphone', () => {
         const header = document.querySelector('.hdr__in')!.getBoundingClientRect()
         // position dans le carrousel (l'en-tête fixe le recouvre sur sa hauteur)
         const bg = el.closest('.slide')!.querySelector<HTMLImageElement>('.slide__backdrop')!
+        const content = el.closest('.slide')!.querySelector('.slide__content')!.getBoundingClientRect()
         const style = getComputedStyle(el)
         return {
           left: r.left,
           right: r.right,
           topInHero: r.top - hero.top,
           bottom: r.bottom,
+          gapToText: content.top - r.bottom,
           width: r.width,
           shown: r.width / r.height,
           natural: el.naturalWidth / el.naturalHeight,
@@ -86,9 +88,15 @@ test.describe('carrousel de l’accueil sur téléphone', () => {
       expect(g.left, label).toBeGreaterThanOrEqual(-0.5)
       expect(g.right, label).toBeLessThanOrEqual(g.viewport + 0.5)
       expect(g.bottom, label).toBeLessThanOrEqual(g.heroBottom + 0.5)
-      // sous l'en-tête (logo et boutons ne la masquent pas) ; photo en largeur (16:9 des contenus de départ) : pleine largeur
+      // sous l'en-tête (logo et boutons ne la masquent pas), jamais sous les textes
       expect(g.topInHero, `${label} : sous l'en-tête`).toBeGreaterThanOrEqual(g.headerHeight - 0.5)
-      if (g.natural >= 1.6) expect(g.width, `${label} : pleine largeur`).toBeGreaterThanOrEqual(g.viewport - 1)
+      expect(g.gapToText, `${label} : au-dessus des textes`).toBeGreaterThanOrEqual(-0.5)
+      // photo en largeur (16:9 des contenus de départ) : pleine largeur, sauf si les textes ont besoin de la place (la
+      // diapositive du direct affiche le programme en cours selon l'heure) : elle rétrécit alors jusqu'à les toucher
+      if (g.natural >= 1.6 && g.width < g.viewport - 1) {
+        expect(g.gapToText, `${label} : photo rétrécie (${g.width.toFixed(0)} px) sans que les textes en aient besoin`).toBeLessThanOrEqual(15)
+        expect(g.width, `${label} : photo rétrécie, mais lisible`).toBeGreaterThanOrEqual(g.viewport * 0.6)
+      }
       // fond flou affiché, tiré du même fichier, téléchargé une seule fois
       expect(g.bgDisplay).not.toBe('none')
       expect(g.bgSrc, `${label} : fond et photo, même fichier`).toBe(g.src)
