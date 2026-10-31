@@ -63,7 +63,7 @@ avant l’ouverture :
 | **L’Info** | 3 articles « Exemple — … » |
 | **Agenda** | 3 événements « Exemple — … », dont la sortie du week-end |
 | **Replays** | 1 replay « Exemple — Un replay à remplacer » (vos vidéos longues YouTube arriveront ici toutes seules) |
-| **Émissions** et **Programme TV** | 4 émissions « (exemple) » et une grille type répétée chaque jour : remplacez-les par vos émissions et votre vraie grille (voir partie 8) |
+| **Émissions** et **Programme TV** | 4 émissions « (exemple) » et une soirée type (18 h – 0 h 30) répétée chaque jour : remplacez-les par vos émissions et votre vraie grille (voir partie 8) |
 | **Webcams** | vos 14 webcams (une par département, plus Suisse et Aoste dans « Web Cams + »), encore sans lien : elles s’affichent « Bientôt en direct » ; collez le lien de chacune |
 | **Accueil et direct** › **Carrousel** | les textes des 3 diapositives (« Texte d’exemple… », « Votre émission de ce soir », « Votre sortie du week-end ») |
 | **Accueil et direct** › **Le direct** | la vidéo d’exemple du direct : remplacez-la par votre flux (YouTube, Twitch, lien de diffusion…) |
@@ -99,7 +99,8 @@ Après la connexion, le **tableau de bord** rassemble l’essentiel :
 - **Sur le site en ce moment** : ce que voient les visiteurs (le direct, la vidéo du jour, l’info du jour, la sortie du
   week-end, le programme TV, le flash info, les publicités, la météo, la mesure d’audience avec le lien **Voir les
   statistiques** vers Google Analytics). Une pastille **À vérifier** signale un oubli, par
-  exemple « Rien de prévu : sam. 24 » pour le programme TV ; le lien **Modifier** mène directement au bon endroit.
+  exemple « Rien de prévu : ce soir, sam. 24 » ou « mar. 27 : 1 h 15 sans programme » pour le programme TV ; le lien
+  **Modifier** mène directement au bon endroit.
   Une vidéo ou un replay **sans image** est aussi signalé : la vidéo était injoignable ou illisible au moment de
   l’enregistrement ; enregistrez à nouveau la fiche quelques minutes plus tard (le site attend 10 minutes avant de
   réessayer), ou choisissez une image.
@@ -319,16 +320,23 @@ Météo, Documentaire, Magazine, Agenda, Divertissement, Sport, Série, Cinéma)
 ensuite dans la grille et dans les replays.
 
 **Programme TV** (dans le menu ou sur le tableau de bord) : la grille des programmes, une ligne, appelée **créneau**, par
-diffusion.
+diffusion. **Swatter TV Info diffuse tous les jours de 18 h à 0 h 30** (heure de Paris) ; le reste du temps, il ne se
+passe rien. Une soirée appartient au jour où elle commence.
 
-- La liste s’ouvre sur **la semaine en cours** (« Semaine du lundi 12 au dimanche 18 octobre »). Les boutons
+- La liste s’ouvre sur **la semaine en cours** (« Soirées du lundi 12 au dimanche 18 octobre »). Les boutons
   **Semaine précédente**, **Cette semaine** et **Semaine suivante** changent de semaine ; les boutons des jours
-  (**Lun. 12**, **Mar. 13**…) n’affichent qu’une journée ; **Toute la grille** affiche tout.
-- Pour ajouter un créneau : **Ajouter**, puis **Jour et heure de début** (heure de Paris), **Durée (minutes)**,
-  **Émission** (choisissez-la dans la liste) et, si besoin, **Titre spécifique (facultatif)** (par exemple « Le journal
-  des Alpes — Soir » ; sinon, le titre de l’émission est utilisé). **Publier les modifications**.
-- Comme sur le site, la nuit jusqu’à 2 h appartient à la journée de la veille : un créneau du mardi à 1 h du matin
-  apparaît dans la journée du lundi.
+  (**Lun. 12**, **Mar. 13**…, la soirée en cours ou à venir marquée **ce soir**) n’affichent qu’une soirée ;
+  **Toute la grille** affiche tout.
+- Pour ajouter un créneau : **Ajouter**, puis **Jour et heure de début** (heure de Paris, entre 18:00 et 00:25),
+  **Durée (minutes)**, **Émission** (choisissez-la dans la liste) et, si besoin, **Titre spécifique (facultatif)** (par
+  exemple « Le journal des Alpes — Soir » ; sinon, le titre de l’émission est utilisé). **Publier les modifications**.
+- **Après minuit** : un créneau entre 0 h et 0 h 30 se saisit **à la date du lendemain** (par exemple mardi 00:15) : il
+  appartient à la soirée du lundi. Dans la liste, il est daté du mardi et la mention « soirée du lun. 12 » le rappelle.
+- Un créneau en dehors des horaires d’antenne est **refusé à la publication**, avec la raison sous le champ : début
+  avant 18 h ou à partir de 0 h 30, ou fin après 0 h 30 (par exemple 23:45 + 60 minutes : 45 minutes au plus).
+- Les anciens créneaux saisis avant ces horaires (6 h, 12 h…) ne sont plus montrés aux visiteurs. Dans la liste, ils
+  portent la mention **hors antenne** (ou **finit après 0 h 30**) : corrigez leur heure ou leur durée, ou supprimez-les
+  (votre prestataire peut aussi les retirer tous d’un coup).
 
 **Gagnez du temps : recopiez une semaine entière.** Remplissez une semaine type, puis cliquez sur **Recopier sur la
 semaine suivante** : tous les créneaux sont recopiés, directement en ligne, aux mêmes jours et aux mêmes heures la
@@ -337,11 +345,19 @@ semaine d’après (les changements d’heure sont pris en compte). Il ne vous r
 - Si la semaine suivante contient déjà des créneaux, la copie est refusée et rien n’est effacé ; cochez **Remplacer ce
   qui est déjà saisi** pour les remplacer.
 - Sur une semaine vide, le bouton devient **Reprendre la semaine précédente**.
-- Après avoir choisi un jour, les mêmes boutons recopient une seule journée (par exemple **Recopier sur le mercredi
-  28 octobre**, ou **Reprendre le mercredi 14 octobre** sur une journée vide).
+- Après avoir choisi un jour, les mêmes boutons recopient une seule soirée (par exemple **Recopier sur le mercredi
+  28 octobre**, ou **Reprendre le mercredi 14 octobre** sur une soirée vide).
+- Les anciens créneaux hors antenne ne sont pas recopiés : le message de fin de copie indique combien ont été laissés
+  de côté.
 
-Le tableau de bord signale les jours sans aucune émission parmi les 7 prochains jours. La page « Programme TV » et
-l’accueil (« en ce moment », « ce soir ») se mettent à jour d’après cette grille.
+Le tableau de bord vérifie les 7 prochaines soirées (de 18 h à 0 h 30) : il signale les soirées vides, les soirées
+incomplètes (« mar. 27 : 1 h 15 sans programme ») et les créneaux en dehors des horaires d’antenne.
+
+Sur le site, la page « Programme TV » présente le programme soirée par soirée, de 18 h à 0 h 30 : onglets « Ce soir »,
+« Demain soir », puis « Sam. 18 »… Une émission diffusée après minuit (par exemple à 00:15) apparaît à la fin de la
+soirée de la veille, avec la mention « après minuit ». En dehors des heures d’antenne, la page l’indique d’elle-même
+(« Hors antenne · reprise ce soir à 18 h »). L’accueil (« en ce moment », « ce soir ») et la page « Le direct » se
+mettent aussi à jour d’après cette grille et ces horaires.
 
 ## 9. Les replays
 
@@ -404,7 +420,12 @@ Une seule bannière par emplacement : la plus récente des campagnes actives et 
 maximum, 3 conseillées). Les diapositives sont repliées, chacune avec son titre (« Diapositive 2 : Ce soir — La Vallée
 blanche ») : cliquez sur une diapositive pour la déplier. Pour chaque diapositive :
 
-- **Type** : **Le direct** (affiche « En direct » et la progression du programme en cours) ou **Mise en avant libre** ;
+- **Type** : **Le direct** ou **Mise en avant libre**. Une diapositive **Le direct** suit les horaires de la chaîne
+  (tous les soirs de 18 h à 0 h 30) sans que vous ayez rien à changer. Pendant l’antenne, elle affiche « En direct »
+  et la progression du programme en cours. Le reste du temps, l’étiquette rouge devient « Ce soir dès 18 h » et la
+  ligne du programme devient « Ce soir à 18:00 · » suivi du premier programme de la soirée (ou « Reprise ce soir à
+  18 h » si la grille est vide). Le libellé court « En direct » devient « Ce soir ». Vos autres textes restent tels
+  quels ;
 - **Étiquettes** (3 au maximum) : un **Texte** et un **Style** (**Rouge (direct)**, **Or** ou **Transparent**) ;
 - **Titre — ligne 1 (blanc)** et **Titre — ligne 2 (dorée)** : quelques mots chacun ;
 - **Texte** : une ou deux phrases ;
@@ -427,8 +448,14 @@ nouvelle. Vérifiez l’aperçu de la page d’accueil, puis **Publier les modif
 
 **Accueil et direct** › onglet **Le direct** :
 
-- **Direct actif** : décochez-le pendant une interruption ; la page « Le direct » affiche alors « Le direct reprend
-  bientôt » ;
+- **Horaires** : la chaîne est à l’antenne tous les soirs de **18 h à 0 h 30** (heure de Paris). Le site le sait tout
+  seul : le lecteur du direct n’apparaît sur la page « Le direct » qu’à ces heures. Il s’affiche à 18 h et s’efface à
+  0 h 30, même sur une page restée ouverte. En dehors de ces heures, la page annonce « Le direct reprend ce soir à
+  18 h » et le premier programme de la soirée. Le point rouge de « Le Direct » dans le menu ne s’allume que pendant
+  l’antenne ;
+- **Direct actif** : ne le décochez que pour couper le direct exceptionnellement ; la page « Le direct » affiche alors
+  « Le direct reprend bientôt » à toute heure, et l’accueil n’affiche plus « En direct ». Inutile de le décocher
+  chaque nuit ;
 - **Flux du direct** › **Où se trouve la vidéo ?** : **Sur YouTube**, **Sur Twitch**, **Sur Bunny Stream**, **Lien
   direct** (flux `.m3u8` de votre diffuseur) ou fichier envoyé ;
   - **Sur Twitch** : collez dans **Lien de la chaîne Twitch** l’adresse de votre chaîne, copiée depuis la barre d’adresse

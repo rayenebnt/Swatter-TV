@@ -125,8 +125,9 @@ npm run dev
 | `npm run maj-pages` | remplace le texte des pages mentions légales, crédits, vie privée et le groupe par celui de `src/scripts/seed/pages.ts`, sans toucher au reste ; l’ancien texte reste dans l’historique de la page. `npm run maj-pages -- mentions-legales` pour une seule page ; **`npm run maj-pages -- vie-privee`** applique le texte de la page Vie privée qui décrit l’espace membres sur une base existante (sans écraser les autres pages, peut-être déjà complétées par le client) |
 | `npm run reinit` | **après un `git pull` qui change la structure des données** : remet la base locale à neuf sans aucune question (garde les comptes de l’équipe et leurs mots de passe, efface les membres, vide la médiathèque, recharge les contenus « Exemple »). Arrêtez `npm run dev` avant. Refusé en production |
 | `npm run import` | import manuel de la météo et des vidéos de la chaîne YouTube (même traitement que la tâche planifiée) |
+| `npm run grille:hors-antenne` | liste les anciens créneaux de la grille en dehors des horaires d’antenne (18 h – 0 h 30, heure de Paris), sans rien modifier ; `npm run grille:hors-antenne -- --supprimer` supprime ceux qui commencent hors antenne et raccourcit à 0 h 30 ceux qui finissent après |
 | `npm run payload run src/scripts/init-db.ts` | tables + premier administrateur |
-| `npm run payload run src/scripts/publish-existing.ts` | une seule fois, sur une base de développement remplie avant l’arrivée des brouillons : publie les contenus existants (sinon invisibles sur le site) |
+| `npm run payload run src/scripts/publish-existing.ts` | une seule fois, sur une base de développement remplie avant l’arrivée des brouillons : publie les contenus existants (sinon invisibles sur le site), sauf les créneaux de la grille hors des horaires d’antenne, qu’il signale |
 | `npm run generate:types` | régénère `src/payload-types.ts` après une modification des collections ou des globals |
 | `npm run generate:importmap` | régénère `src/app/(payload)/admin/importMap.js` après l’ajout d’un composant d’administration |
 | `npm run payload migrate:create <nom>` | crée une migration à partir des changements de schéma |
@@ -153,7 +154,8 @@ src/
                         espace membres (members/ : API, sessions, mots de passe, e-mails)
   app/(frontend)/apercu/ mode aperçu (brouillons visibles, réservé aux personnes connectées)
   proxy.ts              grille des programmes de l’administration ouverte sur la semaine en cours
-  scripts/              init-db.ts, seed.ts (+ seed/ : contenus de départ), import.ts, publish-existing.ts
+  scripts/              init-db.ts, seed.ts (+ seed/ : contenus de départ), import.ts, publish-existing.ts,
+                        grille-hors-antenne.ts
   styles/               globals.css (jetons et composants communs) + un fichier par rubrique
 seed/assets/            clip vidéo d’exemple du direct (contenus de départ)
 public/visuels/         visuels de repli quand un contenu n’a pas d’image
@@ -406,8 +408,9 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - Espace membres et sécurité : validation des champs, mots de passe, jetons et sessions signées, limites anti-abus,
     retours après la connexion et sortie de l’aperçu (près de 300 tentatives de redirection vers un autre site), e-mails,
     export CSV (formules de tableur neutralisées).
-  - Dates en heure de Paris (changements d’heure, minuit, 29 février), programme TV et journées TV de 2 h à 2 h, recopie
-    de la grille.
+  - Dates en heure de Paris (changements d’heure, minuit, 29 février), programme TV en soirées de 18 h à 0 h 30 (0 h – 0 h 30 dans la
+    soirée de la veille, créneaux rognés ou ignorés hors antenne, parties de la soirée), « à l’antenne » (accueil, direct,
+    point rouge) à toute heure, saisie refusée hors antenne, recopie de la grille et tableau de bord en soirées.
   - Météo (lecture et import d’Open-Meteo, bulletins), sources vidéo (YouTube, Twitch, Bunny), import de la chaîne
     YouTube, recherche (classement, accents).
   - Règles d’accès de chaque collection, tableau de bord, agenda, info, webcams, bandeau cookies, menus, médias, anciennes
@@ -433,9 +436,13 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
     horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
     canonique et JSON-LD valides ; administration et API joignables ; tâche planifiée refusée sans secret ;
+  - `antenne.spec.ts` : la chaîne à l’antenne de 18 h à 0 h 30 (horloge du navigateur fixée) : page « Le direct » à 21 h
+    et à 10 h, bascule dans un onglet ouvert à 18 h et à 0 h 30, carrousel de l’accueil « En direct » ou « Ce soir dès
+    18 h », point rouge du menu jamais dans le HTML du serveur ;
   - `rubriques.spec.ts` : contenu de chaque rubrique (accueil complet, info, météo, programme TV, agenda, webcams,
     vidéos, replay, direct, recherche, page éditoriale et redirections ; onglet et page « Autres régions » de l’info) ;
-  - `parcours.spec.ts` : parcours d’un visiteur (météo, programme TV au clavier, recherche au clavier, filtres et pages de
+  - `parcours.spec.ts` : parcours d’un visiteur (météo, programme TV au clavier, bascules de 18 h et de 0 h 30 avec l’horloge du
+    navigateur fixée, recherche au clavier, filtres et pages de
     l’agenda et de l’info, lecteur vidéo, plein écran des webcams, « Ma liste », refus des cookies) ;
   - `accessibilite.spec.ts` : audit axe-core (WCAG 2.1, niveaux A et AA) de 22 pages et de leurs états ouverts (bandeau
     cookies, recherche, menu mobile, formulaires en erreur, « Mon espace ») ;

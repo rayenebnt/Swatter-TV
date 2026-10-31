@@ -95,7 +95,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `meteo/MiniMeteo`, `MeteoWidget({variant: 'aside' \| 'full'})` | météo (en `aside`, ne rend rien sans prévision ; `MiniMeteo` non plus) |
 | `video/VideoPlayer({video, poster, posterPosition, preview, title, autoPlay, live, history})`, `Top10Section`, `VideosSection`, `ReplaySection` | vidéos |
 | `info/InfoSection` | info de l'accueil (contient `MeteoWidget variant="aside"`) |
-| `programme/TvGridSection({variant: 'home' \| 'full', day?})` | grille TV (`day` = AAAA-MM-JJ, page /programme-tv) |
+| `programme/TvGridSection({variant: 'home' \| 'full', day?})` | grille TV des soirées (18 h – 0 h 30 ; `day` = AAAA-MM-JJ, soirée affichée d'abord, page /programme-tv) ; état « hors antenne » transmis au rendu (`onAirAtRender`) puis recalculé dans le navigateur |
 | `agenda/AgendaSection`, `webcams/WebcamsSection({limit})` | agenda, webcams |
 | `lib/import/meteo.ts → importMeteo(payload)`, `lib/import/youtube.ts → importYoutube(payload)` | imports (appelés par `GET /api/cron/import`) |
 | `lib/search.ts → search(payload, q, limit)` | recherche (appelée par `GET /api/search?q=`) |
@@ -105,7 +105,10 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 
 | Fichier | Contenu |
 |---|---|
-| `lib/queries/schedule.ts` | `Slot`, `toSlot`, `getScheduleBetween(from, to)`, `getOnAir(now, n)` : créneaux de la grille (sérialisables) |
+| `lib/broadcast.ts` | horaires d'antenne, source unique : `BROADCAST_START` / `BROADCAST_END` / `BROADCAST_MINUTES` (18:00, 00:30, 390), `eveningOf`, `eveningWindow(day)`, `currentEvening`, `isOnAir`, `broadcastEvening`, `slotOutsideBroadcast` (message de refus d'un créneau) |
+| `lib/queries/schedule.ts` | `Slot`, `toSlot`, `getScheduleBetween(from, to)` : créneaux de la grille (sérialisables) ; `getOnAirData(now)` → `{at, evening, slots}` (soirée en cours ou à venir et la suivante, créneaux rognés à 18 h – 0 h 30, hors antenne ignorés) ; `getOnAir(now, n)` → `{current, next}` (en cours seulement pendant l'antenne) |
+| `lib/on-air.ts` | logique pure de l'antenne (serveur et navigateur) : `eveningSpan`, `clipToEvening`, `eveningSlots`, `onAirState(slots, now)`, `eveningLabel`/`eveningPhrase` (« Ce soir », « Demain soir », « Hier soir », « Ven. 13 » ; de 0 h à 0 h 30, « Mercredi soir » pour la soirée suivante), `upcomingGroups` (« Fin des programmes à 0 h 30 » + nom de la soirée), `slotEvening` |
+| `video/useOnAir.ts` | `useOnAir()` (null au rendu serveur et à l'hydratation, puis `isOnAir`), `useAirNow(at)` (instant du rendu serveur au premier rendu, puis l'heure du navigateur) |
 | `lib/urls.ts` | `articleUrl`, `videoUrl`, `replayUrl`, `eventUrl`, `webcamUrl`, `programUrl`, `pageUrl`, `departmentUrl` : **toujours** les utiliser pour les liens |
 | `lib/meteo-types.ts` | `Forecast`, `ForecastDay`, `ForecastCity`, `WeatherKind`, `isForecast` : format du champ `forecast` du global météo |
 | `components/ui/RichText` | rendu du contenu riche Lexical (classe `.prose`) |
@@ -116,7 +119,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `lib/queries/events.ts` | `upcomingWhere`, `getUpcomingEvents`, `getAgendaHighlights`, `getEventBySlug` |
 | `lib/queries/webcams.ts` | `getActiveWebcams` |
 | `search/rubriques.ts` | `RUBRIQUES` (liste des rubriques et icônes), `searchPageUrl(q)` |
-| `programme/model.ts` | `tvDay()` (journée TV : la nuit jusqu'à 2 h appartient à la veille), `programmeDayUrl(day, today)` |
+| `programme/model.ts` | `tvDay()` (soirée en cours ou à venir : de 0 h à 0 h 30, encore celle de la veille), `tvDayStart(day)` (journée TV de 0 h 30 à 0 h 30), `slotsOfEvening(slots, day)` (créneaux d'une soirée 18 h – 0 h 30, rognés aux bornes, hors antenne ignorés : frise, liste et JSON-LD), `eveningPart` / `EVENING_PARTS` (« Début de soirée » 18 h – 21 h, « Soirée » 21 h – 0 h 30), `isAfterMidnight`, `dayLabel` (« Ce soir », « Demain soir », « Hier soir », « Sam. 18 »), `programmeDayUrl(day, today)` |
 
 ## Adresses du site
 
@@ -328,6 +331,33 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   pied de page restent affichés. `src/app/global-error.tsx` est la page de dernier recours.
 - **Fiche d'émission par ancre** (`/programme-tv#slug`) : à la fermeture, l'ancre est retirée de l'adresse (un nouveau lien
   vers la même émission la rouvre).
+- **Programme TV, soirées de 18 h à 0 h 30** : la frise dure 390 min (`GRID_MINUTES`, 7 graduations `RULER_HOURS`, largeur
+  `GRID_HOURS` = 6,5 h). Un créneau d'avant la règle des horaires qui déborde est rogné aux bornes (bords découpés), un
+  créneau entièrement hors antenne n'est jamais montré (frise, liste, JSON-LD). Hors antenne (décidé dans le navigateur
+  après hydratation, avec `useNow`, pour les pages en cache et les onglets restés ouverts ; premier rendu = rendu du
+  serveur via `onAirAtRender`) : bandeau « Hors antenne · reprise ce soir à 18 h », bouton « Début de soirée » au lieu
+  de « Maintenant », pas de ligne « maintenant ».
+- **Antenne (18 h – 0 h 30) hors de la page Programme TV** :
+  - Les pages sont en ISR (`revalidate = 60`) et les onglets restent ouverts. Le serveur ne fournit donc que des données
+    (`getOnAirData` : instant du rendu `at`, soirée, créneaux de deux soirées) ; l'état « à l'antenne » se décide aussi
+    dans le navigateur. Le premier rendu reprend `at`, sans écart d'hydratation. La bascule a ensuite lieu à 18 h et à
+    0 h 30, au pas de 15 s de `useNow`.
+  - Page Direct : `DirectStage` affiche `VideoPlayer` pendant l'antenne et `LiveOff` en dehors (« Le direct reprend ce
+    soir à 18 h » + « Au programme : X à 18:00 »). Direct coupé (`liveEnabled`) ou sans flux : « Le direct reprend
+    bientôt » à toute heure. `OnAirPanel` affiche, hors antenne, le bloc « Hors antenne · Reprise ce soir à 18 h » ; à
+    l'antenne sans créneau, « En direct jusqu'à 0 h 30 ». Le JSON-LD BroadcastEvent couvre la soirée en cours ou à venir.
+  - Accueil : `liveView` (`components/home/liveSlide.ts`) recalcule dans `HeroClient` les diapositives « direct ». Hors
+    antenne, les badges `live` deviennent « Ce soir dès 18 h » (glass), la ligne devient « Ce soir à 18:00 · … » et la
+    vignette « En direct » devient « Ce soir ». `liveOn` = `liveEnabled` ET flux résolu, comme sur /direct (direct
+    coupé : la diapositive « live » perd ses badges rouges, vignette « Le direct »). `getEveningProgram` : prime time de
+    20 h à 0 h 30, soirées par `eveningOf`.
+  - Point rouge « Le Direct » (MainNav, MobileMenu, TabBar) : `useOnAir() === true` seulement, jamais dans le HTML du
+    serveur.
+  - Tests indépendants de l'heure. Unitaires : `tests/unit/antenne-horaires.test.ts`, `antenne-direct.test.ts`. E2E :
+    `tests/e2e/antenne.spec.ts`, avec `atParisTime(page, 'HH:MM')` / `parisToday()` de `tests/e2e/helpers.ts` (horloge
+    du navigateur par `page.clock` ; le serveur garde l'heure réelle). Les tests de la grille fixent l'horloge sur la
+    soirée que rend le serveur (`currentEvening(new Date())`). Les tests qui attendent le lecteur du direct règlent le
+    navigateur à 21 h.
 - **Contenus programmés** : articles, vidéos (date de publication) et replays (date de diffusion) dans le futur restent
   invisibles sur le site et dans l'API publique ; l'équipe connectée les voit dans l'administration.
 - **Brouillons** (`versions: draftVersions`, `src/fields/drafts.ts`) : toutes les collections du site (vidéos, articles,
@@ -338,7 +368,8 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   collections ajoutent `_status = published` ; en aperçu, `find` et `findGlobal` passent `draft: true` (dernière version).
   Les règles d'accès anonymes (`src/access`) exigent aussi `_status = published` (API publique). Création par script ou
   import : passer `_status: 'published'` (la valeur par défaut est « brouillon »). Base créée avant les brouillons :
-  `npm run payload run src/scripts/publish-existing.ts` publie les contenus qui n'ont encore aucune version.
+  `npm run payload run src/scripts/publish-existing.ts` publie les contenus qui n'ont encore aucune version. Il laisse
+  en brouillon (et signale) les créneaux de la grille en dehors des horaires d'antenne, dont la publication serait refusée.
   Avec l'enregistrement automatique, Payload crée la fiche dès l'ouverture de « Ajouter » (ce qui permet l'aperçu dès
   la première saisie) : `UntitledTitle.tsx` l'intitule « Nouvelle fiche : … » au lieu de son numéro, et la tâche horaire
   supprime les brouillons jamais publiés restés sans titre plus de 24 h (`src/lib/drafts-cleanup.ts`). Tant qu'une fiche
@@ -595,12 +626,32 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
     fichiers temporaires de plus de 2 h (`purgeUploadTmp` : envois de l'équipe refusés, stockage S3).
   - Node coupe une requête non reçue en 5 min (`requestTimeout`) : `http-timeouts.cjs` (chargé par
     `node --require ./http-timeouts.cjs server.js` dans le Dockerfile et `test:complet`) porte ce délai à 30 min.
-- **Grille des programmes** : `src/proxy.ts` (le « middleware » de Next 16) redirige `/admin/collections/schedule` sans
-  filtre vers la semaine en cours, côté serveur (un filtre posé côté client entrait en concurrence avec la synchronisation
-  d'adresse de Payload et chargeait toute la grille). `ScheduleTools.tsx` (au-dessus du tableau de la liste) filtre par
-  jour et appelle `POST /api/schedule/copy-week` `{ from, days: 7 | 1, replace }` (`src/lib/schedule-copy.ts`) : recopie à
-  la même heure de Paris sept jours plus tard, dans une transaction (tout ou rien), refus (409) si l'arrivée n'est pas vide
-  sans `replace`. Semaines et journées TV de 2 h à 2 h (`src/lib/schedule-week.ts`, partagé client / serveur).
+- **Grille des programmes** : la chaîne diffuse tous les jours de 18 h à 0 h 30, heure de Paris (`src/lib/broadcast.ts`,
+  source unique : `BROADCAST_START`, `BROADCAST_END`, `BROADCAST_MINUTES` = 390, `broadcastEvening`, `slotOutsideBroadcast`).
+  - Saisie : `Schedule.ts` contrôle `startsAt` (début de 18:00 à 00:25, sinon le message de `slotOutsideBroadcast`) et
+    `durationMinutes` (1 à 390, fin à 0 h 30 au plus tard). Le contrôle de la durée lit le début dans `siblingData`, que
+    Payload complète par la fiche enregistrée lors d'un PATCH partiel.
+  - Brouillons enregistrés automatiquement : pas de contrôle (Payload) ; le refus a lieu à la publication. `label` d'un
+    créneau après minuit : « Soirée du JJ/MM/AAAA, 00:15 — Titre » (`slotWhen`).
+  - `src/proxy.ts` (le « middleware » de Next 16) redirige `/admin/collections/schedule` sans filtre vers la semaine en
+    cours, côté serveur (un filtre posé côté client entrait en concurrence avec la synchronisation d'adresse de Payload
+    et chargeait toute la grille).
+  - `ScheduleTools.tsx` (au-dessus du tableau de la liste) filtre par soirée, rappelle les horaires d'antenne et compte
+    les créneaux hors antenne de la liste affichée ; `SlotTimeCell.tsx` rappelle la soirée d'un créneau après minuit et
+    marque « hors antenne ».
+  - Recopie : `POST /api/schedule/copy-week` `{ from, days: 7 | 1, replace }` (`src/lib/schedule-copy.ts`), à la même
+    heure de Paris sept jours plus tard, dans une transaction (tout ou rien). Refus (409) si l'arrivée n'est pas vide sans
+    `replace`. Les créneaux hors antenne sont ignorés et comptés : réponse `{ copied, skipped, replaced, target }` ; un
+    refus des contrôles de Payload (`ValidationError`) donne un 400 avec sa raison.
+  - Semaines et soirées : journées TV de 0 h 30 à 0 h 30 (`tvDayStart`, `src/lib/schedule-week.ts`, partagé client /
+    serveur). Les bornes sont larges (et non 18 h → 0 h 30) pour que la liste montre aussi les anciens créneaux hors
+    antenne.
+  - Tableau de bord (`dashboard-data.ts`, `evenings` et `programmeSummary`) : les 7 soirées à partir de la soirée en cours
+    ou à venir ; soirées vides, minutes sans programme (`uncoveredMinutes`, créneaux rognés aux horaires d'antenne),
+    créneaux hors antenne.
+  - Anciennes données : `npm run grille:hors-antenne` (`src/scripts/grille-hors-antenne.ts`) liste les créneaux hors
+    antenne ; `-- --supprimer` supprime ceux qui commencent hors antenne et raccourcit à 0 h 30 ceux qui finissent après.
+    Le script npm se termine par `--` : sans lui, `payload run` (minimist) avale le drapeau `--supprimer`.
 - **Top 10** (`src/hooks/top10.ts`) : places uniques, comme une liste qu'on réordonne. Une vidéo placée à une place
   prise décale le bloc de places occupées qui suit (au-delà de 10 : sortie du classement) ; une place libérée fait remonter
   le bloc suivant ; une place vide arrête le décalage. Les décalages passent `context.top10Reorder` (pas de cascade, pas de
