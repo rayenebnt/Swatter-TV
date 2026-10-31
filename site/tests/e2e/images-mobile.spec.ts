@@ -6,8 +6,8 @@ import { AdminApi, mobileContext, presetConsent, unique } from './outils-contenu
  * Images adaptées au téléphone (390 px) : photo insérée dans le texte d'un article affichée à ses vraies proportions
  * (ni étirée ni découpée en vignette 16:9), carrousel de l'accueil dont les photos en largeur (visuels des contenus de
  * départ) s'affichent entières sous l'en-tête, sur un fond flou tiré du même fichier (une seule image téléchargée par
- * diapositive), sans débordement horizontal ; les diapositives qui couvrent le cadre (visuel de repli du direct) gardent
- * leurs textes juste au-dessus des barres de navigation, sous l'en-tête.
+ * diapositive), sans débordement horizontal ; les diapositives qui couvrent le cadre (visuel de repli du direct, image en
+ * hauteur) gardent leurs textes juste au-dessus des barres de navigation, sous l'en-tête.
  */
 
 /** Proportions affichées et naturelles d'une image, une fois chargée. */
@@ -23,8 +23,6 @@ async function ratios(page: Page, selector: string) {
 
 test.describe('carrousel de l’accueil sur téléphone', () => {
   test.skip(({ isMobile }) => !isMobile, 'cadre portrait du carrousel : projet mobile')
-  // le dernier test change les diapositives (réglages) le temps de ses mesures : les autres ne doivent pas le croiser
-  test.describe.configure({ mode: 'serial' })
 
   test('photo en largeur entière sous l’en-tête, sur un fond flou du même fichier (une image par diapositive), première diapositive prioritaire', async ({ page }) => {
     const errors = watchErrors(page)
@@ -144,50 +142,39 @@ test.describe('carrousel de l’accueil sur téléphone', () => {
     expect(errors, errors.join('\n')).toEqual([])
   })
 
-  test('diapositive qui couvre le cadre (direct sur le visuel de repli) : textes juste au-dessus des barres de navigation, jamais sous l’en-tête', async ({ page }) => {
-    const admin = await AdminApi.open()
-    test.skip(!admin, 'identifiants administrateur indisponibles (E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD)')
-    // Carrousel par défaut (aucune diapositive saisie) : la diapositive du direct n'a pas d'image, son visuel de repli
-    // couvre toujours le cadre (jamais de photo entière). Seules les diapositives des réglages changent, remises ensuite.
-    const { heroSlides } = (await (await admin!.send('GET', '/api/globals/settings?depth=0')).json()) as { heroSlides?: unknown[] }
-    try {
-      const res = await admin!.send('POST', '/api/globals/settings?depth=0', { heroSlides: [], _status: 'published' })
-      expect(res.ok(), `carrousel par défaut : ${res.status()}`).toBe(true)
-      const errors = watchErrors(page)
-      await presetConsent(page.context())
-      for (const viewport of [{ width: 375, height: 667 }, { width: 390, height: 844 }]) {
-        await page.setViewportSize(viewport)
-        await page.goto('/')
-        await settle(page)
-        const header = await page.locator('.hdr__in').evaluate((el) => el.getBoundingClientRect().height)
-        const slides = page.locator('.hero .slide')
-        const count = await slides.count()
-        let checked = 0
-        for (let i = 0; i < count; i++) {
-          const slide = slides.nth(i)
-          if (((await slide.getAttribute('data-whole')) ?? '').split(' ').includes('phone')) continue
-          const g = await slide.evaluate((el) => {
-            const hero = el.closest('.hero')!.getBoundingClientRect()
-            const content = el.querySelector('.slide__content')!.getBoundingClientRect()
-            const nav = el.closest('.hero')!.querySelector('.hnav')?.getBoundingClientRect()
-            return { top: content.top - hero.top, bottom: content.bottom - hero.top, height: hero.height, navTop: nav ? nav.top - hero.top : null }
-          })
-          const label = `${viewport.width} × ${viewport.height}, diapositive ${i + 1}`
-          expect(g.top, `${label} : textes sous l'en-tête`).toBeGreaterThanOrEqual(header - 0.5)
-          if (g.navTop !== null) expect(g.bottom, `${label} : textes au-dessus des barres de navigation`).toBeLessThanOrEqual(g.navTop + 0.5)
-          // posés en bas du cadre (96 px), pas à la hauteur prévue pour l'ordinateur (170 px et plus)
-          expect(g.height - g.bottom, `${label} : marge sous les textes`).toBeGreaterThanOrEqual(50)
-          expect(g.height - g.bottom, `${label} : marge sous les textes`).toBeLessThanOrEqual(120)
-          checked++
-        }
-        expect(checked, `${viewport.width} × ${viewport.height} : diapositives qui couvrent le cadre`).toBeGreaterThan(0)
-      }
-      await expectNoHorizontalOverflow(page)
-      expect(errors, errors.join('\n')).toEqual([])
-    } finally {
-      await admin!.send('POST', '/api/globals/settings?depth=0', { heroSlides, _status: 'published' })
-      await admin!.dispose()
+  test('diapositive qui couvre le cadre (sans photo entière) : textes juste au-dessus des barres de navigation, jamais sous l’en-tête', async ({ page }) => {
+    // Visuel de repli du direct, image en hauteur : la diapositive n'a pas de data-whole et son image couvre le cadre.
+    // Simulé sur le carrousel des contenus de départ en retirant data-whole (les règles de hero.css n'en dépendent que
+    // par cet attribut) : rien n'est modifié dans les réglages, que les autres tests lisent en même temps.
+    const errors = watchErrors(page)
+    await presetConsent(page.context())
+    for (const viewport of [{ width: 375, height: 667 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(viewport)
+      await page.goto('/')
+      await settle(page)
+      const header = await page.locator('.hdr__in').evaluate((el) => el.getBoundingClientRect().height)
+      const slides = await page.locator('.hero').evaluate((hero) => {
+        for (const slide of hero.querySelectorAll('.slide')) slide.removeAttribute('data-whole')
+        const box = hero.getBoundingClientRect()
+        const nav = hero.querySelector('.hnav')?.getBoundingClientRect()
+        return [...hero.querySelectorAll('.slide')].map((slide) => {
+          // diapositives masquées (opacity 0) : mises en page comme la diapositive affichée
+          const content = slide.querySelector('.slide__content')!.getBoundingClientRect()
+          return { top: content.top - box.top, bottom: content.bottom - box.top, height: box.height, navTop: nav ? nav.top - box.top : null }
+        })
+      })
+      expect(slides.length, `${viewport.width} × ${viewport.height} : diapositives`).toBeGreaterThan(0)
+      slides.forEach((g, i) => {
+        const label = `${viewport.width} × ${viewport.height}, diapositive ${i + 1}`
+        expect(g.top, `${label} : textes sous l'en-tête`).toBeGreaterThanOrEqual(header - 0.5)
+        if (g.navTop !== null) expect(g.bottom, `${label} : textes au-dessus des barres de navigation`).toBeLessThanOrEqual(g.navTop + 0.5)
+        // posés en bas du cadre (96 px), pas à la hauteur prévue pour l'ordinateur (170 px et plus)
+        expect(g.height - g.bottom, `${label} : marge sous les textes`).toBeGreaterThanOrEqual(50)
+        expect(g.height - g.bottom, `${label} : marge sous les textes`).toBeLessThanOrEqual(120)
+      })
     }
+    await expectNoHorizontalOverflow(page)
+    expect(errors, errors.join('\n')).toEqual([])
   })
 })
 

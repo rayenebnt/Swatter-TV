@@ -414,7 +414,8 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
     adresses, comportements automatiques (régénération du site, Top 10, couverture et aperçu animé tirés des vidéos,
     arguments de ffmpeg), formulaire de contact, mesure d’audience (Google Analytics : chargement, arrêt, cookies).
   - Aperçu animé (en continu dès qu’une carte est visible, 6 aperçus à la fois au plus, 3 sur téléphone, les plus proches
-    du centre, pause hors de l’écran et onglet masqué, « réduire les animations »), images adaptées au téléphone (texte
+    du centre, pause hors de l’écran et onglet masqué, reprise du lecteur d’une fiche, « réduire les animations »,
+    commande « Arrêter les aperçus animés » : choix lu, écrit, stockage indisponible, autres onglets), images adaptées au téléphone (texte
     riche, carrousel, photo entière sur fond flou, point focal), zones de l’Info (« Autres régions »), gros envois
     réservés à l’équipe et ménage des fichiers temporaires.
 - **Tests d’intégration** (`tests/integration/`, 424 tests, environ 3 min 30) : Payload complet sur la base de test.
@@ -446,14 +447,18 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
     connexion, pages lisibles sur mobile ;
   - `apercus.spec.ts` : aperçu animé des cartes (lancé sans survol ni toucher dès que la carte est à l’écran, rien de
     demandé hors de l’écran, en boucle et sans le son ; lecture réelle d’une mire WebM : plusieurs à la fois, 3 au plus
-    sur téléphone, pause hors de l’écran et onglet masqué ; lien toujours cliquable, aucune requête vers un autre site,
-    rien en « réduire les animations ») et des fiches (bouton pause) ;
+    sur téléphone en portrait et en paysage, pause hors de l’écran et onglet masqué, commande « Arrêter les aperçus
+    animés » du pied de page (plus rien ne joue, choix gardé au rechargement, relance) ; lien toujours cliquable, aucune
+    requête vers un autre site, rien en « réduire les animations ») ; des fiches (bouton pause, arrêt par la commande) ;
+    de la « Vidéo du jour » (même cadrage que la photo de 1000 à 1440 px) ;
   - `images-mobile.spec.ts` : carrousel sur téléphone (photo en largeur entière sous l’en-tête sur son fond flou, une
-    seule requête par image, sans zoom), photo du texte d’un article à ses vraies proportions à 390 px ;
+    seule requête par image, sans zoom ; sur un petit téléphone 375 × 667, photo assez grande et textes en dessous ;
+    textes d’une diapositive sans photo entière au-dessus des barres de navigation), photo du texte d’un article à ses vraies proportions à 390 px ;
   - `mesure-audience.spec.ts` (projet `mesure-audience`, lancé après les autres) : Google Analytics chargé seulement après
     l’accord du bandeau cookies, jamais après un refus ou un choix expiré, arrêté et cookies effacés au retrait de l’accord ;
   - `admin.spec.ts` (bureau, en série) : tableau de bord, aide, menu sur téléphone et tablette (par-dessus le contenu,
-    fermé à l’arrivée, refermé par un lien, le voile ou Échap), grille et recopie de semaine, Top 10, éditeurs,
+    fermé à l’arrivée, ni voile ni page bloquée avant l’hydratation, contenu derrière inerte, refermé par un lien, le
+    voile ou Échap) et sur ordinateur (ni voile ni contenu inerte), grille et recopie de semaine, Top 10, éditeurs,
     brouillons et aperçu en direct, direct Twitch, import YouTube (faux YouTube), blocage après 5 mauvais mots de passe,
     parcours complet d’un membre et sa gestion dans « Membres du site ».
 

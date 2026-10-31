@@ -237,13 +237,16 @@ vidéos « tournent » ainsi toutes seules, sans qu’on clique ni qu’on passe
 
 - sur ordinateur comme sur téléphone, chaque vignette qui a un aperçu s’anime en boucle dès qu’elle apparaît à l’écran,
   et s’arrête quand elle en sort. Pour ne pas ralentir les téléphones et les ordinateurs anciens, quelques-unes
-  seulement s’animent en même temps (6 sur ordinateur, 3 sur téléphone : celles du milieu de l’écran) ; les autres
-  gardent leur image jusqu’à ce qu’une place se libère. La **Vidéo du jour** de l’accueil, les résultats de recherche et
+  seulement s’animent en même temps (6 sur ordinateur, 3 sur téléphone, même tenu à l’horizontale : celles du milieu
+  de l’écran) ; les autres gardent leur image jusqu’à ce qu’une place se libère. La **Vidéo du jour** de l’accueil, les résultats de recherche et
   « Mon espace » font de même ;
 - sur la page d’une vidéo, l’aperçu tourne derrière le bouton de lecture ; un petit bouton en haut à droite le met en
   pause, et **Lire la vidéo** lance toujours la vraie vidéo, avec le son ;
 - les visiteurs qui ont demandé à leur appareil de « réduire les animations » ou d’« économiser les données » voient
-  l’image fixe, comme pour une vidéo sans aperçu (une ancienne vidéo, par exemple).
+  l’image fixe, comme pour une vidéo sans aperçu (une ancienne vidéo, par exemple) ;
+- en bas de chaque page, le bouton **Arrêter les aperçus animés** (à côté de **Gestion des cookies**) les arrête tous,
+  sur tout le site, pour ce visiteur ; le navigateur s’en souvient, et **Relancer les aperçus animés** les remet en
+  route. C’est une obligation d’accessibilité : un mouvement qui démarre tout seul doit pouvoir être arrêté.
 
 Les vidéos YouTube, Twitch et Bunny ne se lancent qu’avec l’accord du visiteur pour les « contenus externes » (bandeau
 cookies) : sinon, le lecteur l’invite à modifier son choix. L’aperçu animé, lui, est servi par le site (jamais par
@@ -497,8 +500,8 @@ Conseils :
   sert aux personnes malvoyantes et au référencement. Si vous la laissez vide, le nom du fichier est repris : une vraie
   description reste préférable.
 - **Crédit photo (facultatif)** : le nom du photographe ou de l’agence, si besoin.
-- **Photo entière** : quand un cadre du site couperait trop une photo (carrousel sur téléphone, Top 10, « À la une »,
-  image d’un article, agenda, lecteur vidéo), elle s’affiche entière sur un fond flou tiré d’elle-même : vous n’avez
+- **Photo entière** : quand un cadre du site couperait trop une photo (carrousel sur téléphone, Top 10, « À la une »
+  de l’accueil, article à la une de L’Info, image d’un article, agenda, lecteur vidéo), elle s’affiche entière sur un fond flou tiré d’elle-même : vous n’avez
   rien à faire.
 - **Point focal** : ailleurs, les images sont recadrées pour remplir leur cadre (cartes, vignettes, image en hauteur
   du carrousel sur téléphone). Dans la médiathèque, ouvrez l’image, cliquez sur **Modifier l’image**, puis sur

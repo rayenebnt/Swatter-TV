@@ -61,10 +61,16 @@ scripts/                  sauvegarde.sh (chaque nuit sur le serveur), dev.mjs, t
   proportions fixes rendu côté client (lecteur 16:9) : `wholeOrientation(m, 16 / 9, 'hero')` → prop `posterOrientation`
   de `VideoPlayer` ; `WholeFrame` est exporté pour les images en adresse simple (`ArticleImage whole`). Le cadre parent
   doit être positionné et `overflow: hidden` ; un sélecteur `.parent > img` ne vise plus l'image (ajouter
-  `.parent > .whole`, voir une.css). Utilisé par : Top 10 (`--whole-pos: 50% 28%`, aperçu 16:9 entier au même endroit),
-  tuiles « À la une », image principale d'un article, article principal de l'Info (LeadCard), agenda (vignette des cartes
-  sur téléphone `whole="phone"`, `--whole-pos: 50% 100%` ; encart vedette), affiche du lecteur (photo en hauteur ou
-  carrée), direct coupé. Les cartes 16:9 gardent la découpe « card ».
+  `.parent > .whole`, voir une.css). Utilisé par : Top 10 (`--whole-pos: 50% 28%`, aperçu 16:9 entier au même endroit,
+  sous `@supports (container-type: size)` : Safari 15.4 à 15.8 connaît :has() sans les requêtes de conteneur ; `sizes`
+  calculé par vidéo, `top10Sizes`), tuiles « À la une » (« Vidéo du jour » : sur ordinateur ≥ 1101 px, conteneur `tile`
+  sur `.b-video`, aperçu en contain quand la photo « l » y est entière, sous 1,05, une.css), image principale d'un
+  article, article principal de l'Info (LeadCard : image d'origine par `toTeaser(a, { lead: true })` ; sur l'accueil,
+  `feedTeasers` ne la donne qu'aux articles qui peuvent devenir l'article principal ; `ArticleImage whole` laisse le
+  visuel de repli, marqué `ImageData.fallback`, couvrir son cadre), agenda (vignette des cartes sur téléphone
+  `whole="phone"`, `--whole-pos: 50% 100%` ; encart vedette), affiche du lecteur (photo en hauteur ou carrée), direct
+  coupé (lecteur « Vidéo indisponible » et direct coupé : l'atténuation porte sur tout le cadre `.whole`, fond flou
+  compris, video.css). Les cartes 16:9 gardent la découpe « card ».
 - **Dates** : tout affichage en heure de Paris via `src/lib/format.ts` (`formatTime`, `formatDayLong`, `dateChip`, `timeAgo`, `parisDay`, `parisDateTime`).
 - **Vidéo** : `resolveVideo(source)` (`src/lib/video.ts`) puis `<VideoPlayer video={…} />`.
 - **CSS** : reprendre les classes de la maquette (`.card`, `.media`, `.badge`, `.seg`, `.sec-head`, `.rail`…). Les styles communs sont
@@ -231,7 +237,8 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
     sous l'en-tête et au-dessus des textes, au plus 46 % de la hauteur, plus petite si les textes ont besoin de la place
     (proportions `--ratio` / `--ratio-m`, largeur en `cqw` : `.hero` est un conteneur en largeur) ; fond
     `.slide__backdrop` (mêmes sources, flou et assombri, immobile). Sinon, image qui couvre le cadre comme avant (source
-    « téléphone » de largeur `heroMobileSizes`, cadrage `--focal` / `--focal-m`). `<picture>` seulement si le téléphone
+    « téléphone » de largeur `heroMobileSizes`, cadrage `--focal` / `--focal-m`), textes à 96 px du bas sur téléphone,
+    juste au-dessus des barres de navigation (test images-mobile). `<picture>` seulement si le téléphone
     affiche un autre fichier ou une autre largeur ; première diapositive en eager + fetchPriority high.
   - Texte riche : convertisseur « upload » de `components/ui/RichText.tsx` (logique pure dans `proseUpload.ts`) : image
     d'origine ou « hero » à ses vraies proportions, `PROSE_SIZES`, crédit en légende, vidéo dans `<video controls>`.
@@ -259,15 +266,25 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   - En continu, sans geste (demande du client) : toute carte qui a un aperçu le lance seule, en boucle et sans le son,
     quand elle est visible à 30 % (`CARD_RATIO`) depuis 300 ms (`SETTLE_MS` : un défilement rapide ne charge rien), puis
     le garde jusqu'à sa sortie complète de l'écran (pause aussitôt). Plusieurs aperçus tournent ensemble, au plus
-    `previewLimit()` : 6 (`MAX_PLAYING`), 3 sur petit écran ≤ 760 px ou avec `navigator.deviceMemory` ≤ 2
-    (`MAX_PLAYING_SMALL`). Au-delà, les plus proches du centre de l'écran et les moins coupés par ses bords
+    `previewLimit()` : 6 (`MAX_PLAYING`), 3 sur petit écran (`SMALL_SCREEN` de motion.ts : ≤ 760 px de large ou ≤ 500 px
+    de haut, donc aussi un téléphone en paysage) ou avec `navigator.deviceMemory` ≤ 2 (`MAX_PLAYING_SMALL`). Au-delà, les plus proches du centre de l'écran et les moins coupés par ses bords
     (`screenDistance`), avec 48 px d'avance (`KEEP_PX`) pour celui qui tourne déjà ; les autres gardent leur image. Choix
     regroupé, au plus un toutes les 150 ms (`EVAL_MS`) ; le défilement n'est écouté que quand le plafond est atteint.
   - « ambient » : lecteur d'une fiche, en boucle dès 60 % visible (`VISIBLE_RATIO`, aussi utilisé par le direct de
-    `VideoPlayer`) tant qu'il reste à l'écran, avec un bouton pause qui garde le focus ; servi avant les cartes dans le
-    plafond.
+    `VideoPlayer`) tant qu'il reste à l'écran (indicateur `ready`, comme les cartes : il reprend après un onglet masqué,
+    une préférence ou la commande du pied de page, même visible à moins de 60 % ; « Relancer l'aperçu » le pose aussi),
+    avec un bouton pause qui garde le focus ; servi avant les cartes dans le plafond.
   - Un seul IntersectionObserver (seuils 0, 30 % et 60 %) ; arrêt quand l'onglet est masqué, reprise au retour. Rien en
     prefers-reduced-motion ni avec saveData (`motion.ts`) ; `.vprev` est aussi masqué en CSS.
+  - Commande « Arrêter les aperçus animés » / « Relancer les aperçus animés » (WCAG 2.2.2) : `PreviewsToggle.tsx`, dans le
+    pied de page après « Gestion des cookies ». Choix dans localStorage `swatter-apercus` (`arretes`), lu et écrit dans un
+    try/catch (stockage refusé : vaut pour la page). `setPreviewsStopped()` émet `swatter:apercus` ;
+    `onAutoplayPrefsChange` écoute cet événement et `storage` (autres onglets), et le pilote reçoit `previewsAllowed()`
+    (= `autoplayAllowed() && !previewsStopped()`) : cartes, tuiles et lecteur d'une fiche s'arrêtent aussitôt.
+    `autoplayAllowed()` reste limité aux préférences du système, car elle sert aussi au direct lancé seul, qui ne dépend
+    pas de la commande. Bouton rendu après l'hydratation seulement (`usePreviewsStopped`, instantané serveur false),
+    masqué en reduced-motion ou saveData ; libellé qui dit l'action, sans aria-pressed (même modèle que le bouton pause
+    du lecteur).
   - `<video muted loop playsInline preload="none" …>` : src posée à la première apparition, reprise là où l'extrait
     s'était arrêté, fondu à « playing », `play().catch` obligatoire (H.264 non décodé par le Chromium de Playwright),
     erreur → aperçu retiré, sa place revient à un autre.
@@ -484,8 +501,13 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   `.template-default` (100vw sur téléphone) ; le contenu, poussé hors de l'écran, élargissait la page et le navigateur
   dézoomait. `custom.scss` place donc le menu en position fixe par-dessus le contenu, qui garde toute la largeur : plein
   écran sur téléphone, tiroir de 320 px sur un voile (`::before` de `.template-default__wrap`) sur tablette ; page bloquée
-  sous le menu ouvert. `useModalNav` (`NavLinks.tsx`, appelé par `NavStart`) le ferme à l'arrivée et au retour par
-  « Précédent », et le referme au toucher d'un lien du menu ou du voile et avec Échap (focus rendu au bouton du menu) ;
+  sous le menu ouvert. Voile et blocage demandent `--nav-hydrated` en plus de `--nav-open` : le HTML du serveur arrive
+  menu ouvert (défaut de Payload), alors que le menu reste masqué jusqu'à l'hydratation. `useModalNav` (`NavLinks.tsx`,
+  appelé par `NavStart`) le ferme à l'arrivée et au retour par « Précédent », et le referme au toucher d'un lien du menu
+  ou du voile et avec Échap (focus rendu au bouton du menu) ; tant qu'il est ouvert, les enfants de
+  `.template-default__wrap` sont inertes (`inert` : ni Tab ni VoiceOver ne sortent du menu ; pas le wrap lui-même, dont
+  le voile doit rester touchable). Ils sont libérés à la fermeture, au démontage, au passage à la taille d'un ordinateur
+  et, sur Échap, avant de rendre le focus (focus() ne fait rien sur un élément encore inerte) ;
   Payload, lui, ne le referme qu'au changement d'adresse et seulement sous 768 px. Seuil commun : `MODAL_NAV_QUERY`
   (`menu.ts`), point de rupture « m » de `@payloadcms/ui`. Sur ordinateur, rien ne change. Barre des fiches cochées des
   listes : ramenée dans l'écran, boutons sur deux lignes.
@@ -605,6 +627,8 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   suivante tarde plus de 150 ms. Mesurer les temps de réponse avec `npm run build && npm start`
   (en production : 0,2 à 0,4 s par clic dans l'administration).
 - Tests : `tests/e2e/admin.spec.ts` (brouillon invisible des visiteurs, aperçu, aperçu en direct, menu sur téléphone
-  (390 px) et tablette (820 px) dans des contextes mobiles ouverts dans le `describe` en série, identifiants `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`, par défaut ceux du poste de
+  (390 px : aussi le HTML du serveur sans JavaScript, sans voile ni page bloquée, et le contenu inerte sous le menu
+  ouvert au clavier) et tablette (820 px) dans des contextes mobiles ouverts dans le `describe` en série, menu sur
+  ordinateur (1280 et 1600 px : ni voile ni contenu inerte), identifiants `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`, par défaut ceux du poste de
   développement ; ignorés si la connexion échoue).
 
