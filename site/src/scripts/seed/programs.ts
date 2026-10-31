@@ -1,6 +1,8 @@
 // Émissions et grille des programmes par défaut : quatre émissions « (exemple) » et une soirée type (18 h – 0 h 30, les
 // horaires d'antenne) répétée sur 8 jours, pour que le programme TV et l'accueil soient remplis en attendant la vraie
 // grille du client.
+import { eveningWindow, shiftDay, slotOutsideBroadcast } from '@/lib/broadcast'
+import { parisDateTime } from '@/lib/format'
 import type { Program } from '@/payload-types'
 
 export type SeedProgram = {
@@ -40,4 +42,19 @@ export function eveningSlots(): EveningSlot[] {
     { time: '23:30', program: 'journal', title: 'Le journal (exemple) — dernière édition' },
     { time: '00:00', nextDay: true, program: 'documentaire', title: 'Votre documentaire (exemple) — rediffusion' },
   ]
+}
+
+/**
+ * Créneaux à créer pour la soirée type du jour `day` (AAAA-MM-JJ) : chacun dure jusqu'au début du suivant, le dernier
+ * jusqu'à 0 h 30. `programId` : numéro de l'émission d'exemple (clé de PROGRAMS). Vérifiés avec les règles de la saisie.
+ */
+export function eveningScheduleData(day: string, programId: (key: string) => number) {
+  const evening = eveningSlots().map((s) => ({ ...s, start: parisDateTime(s.nextDay ? shiftDay(day, 1) : day, s.time) }))
+  const close = eveningWindow(day).end
+  return evening.map((s, j) => {
+    const end = j + 1 < evening.length ? evening[j + 1].start : close
+    const durationMinutes = Math.round((end.getTime() - s.start.getTime()) / 60_000)
+    if (slotOutsideBroadcast(s.start, durationMinutes) || durationMinutes <= 0) throw new Error(`Créneau invalide à ${s.start.toISOString()} (${durationMinutes} min)`)
+    return { _status: 'published' as const, startsAt: s.start.toISOString(), durationMinutes, program: programId(s.program), titleOverride: s.title }
+  })
 }

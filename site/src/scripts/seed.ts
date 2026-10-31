@@ -12,7 +12,6 @@ import path from 'path'
 import { getPayload, type CollectionSlug } from 'payload'
 import { fileURLToPath } from 'url'
 
-import { eveningWindow, slotOutsideBroadcast } from '@/lib/broadcast'
 import { formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
 import { importMeteo } from '@/lib/import/meteo'
 import { slugify } from '@/lib/slugify'
@@ -25,7 +24,7 @@ import { MEDIA } from './seed/media'
 import { demoForecast } from './seed/meteo'
 import { PAGES } from './seed/pages'
 import { WEBCAMS } from './seed/webcams'
-import { eveningSlots, PROGRAMS } from './seed/programs'
+import { eveningScheduleData, PROGRAMS } from './seed/programs'
 import { EXAMPLE_REPLAY } from './seed/replay'
 
 if (process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== '1') {
@@ -148,17 +147,7 @@ const programId = (key: string): number => {
 }
 
 const firstDay = addDays(today, -1)
-const schedule = Array.from({ length: 8 }, (_, i) => {
-  const day = addDays(firstDay, i)
-  const evening = eveningSlots().map((s) => ({ ...s, start: parisDateTime(s.nextDay ? addDays(day, 1) : day, s.time) }))
-  const close = eveningWindow(day).end
-  return evening.map((s, j) => {
-    const end = j + 1 < evening.length ? evening[j + 1].start : close
-    const durationMinutes = Math.round((end.getTime() - s.start.getTime()) / 60_000)
-    if (slotOutsideBroadcast(s.start, durationMinutes) || durationMinutes <= 0) throw new Error(`Créneau invalide à ${s.start.toISOString()} (${durationMinutes} min)`)
-    return { _status: 'published' as const, startsAt: s.start.toISOString(), durationMinutes, program: programId(s.program), titleOverride: s.title }
-  })
-}).flat()
+const schedule = Array.from({ length: 8 }, (_, i) => eveningScheduleData(addDays(firstDay, i), programId)).flat()
 await inBatches(schedule, 8, (data) => payload.create({ collection: 'schedule', data, overrideAccess: true, context }))
 log(`${schedule.length} créneaux de grille créés (soirées du ${firstDay} au ${addDays(firstDay, 7)}, 18 h – 0 h 30).`)
 

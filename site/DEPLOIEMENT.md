@@ -83,6 +83,7 @@ provisoire y mènent. Déclarez enfin le site dans **Google Search Console** ave
 | voir si tout tourne | `cd ~/Swatter-TV/site && docker compose ps` |
 | lire les messages d’erreur du site | `cd ~/Swatter-TV/site && docker compose logs app` |
 | donner leur image et leur aperçu animé aux vidéos qui n’en ont pas (lancé seul, en arrière-plan, par la mise à jour) | `cd ~/Swatter-TV/site && docker compose run --rm tools npm run apercus` |
+| remettre la grille des programmes à zéro avec une semaine d’exemple (lundi au dimanche, 18 h – 0 h 30) que le client n’a plus qu’à modifier : la première commande montre ce qui sera fait, la seconde le fait (tous les créneaux existants sont supprimés) | `cd ~/Swatter-TV/site && docker compose run --rm tools npm run grille:exemple` puis `cd ~/Swatter-TV/site && docker compose run --rm tools npm run grille:exemple -- --confirmer` |
 | lister les anciens créneaux de la grille en dehors des horaires d’antenne (18 h – 0 h 30), sans rien modifier | `cd ~/Swatter-TV/site && docker compose run --rm tools npm run grille:hors-antenne` |
 | puis les supprimer (ceux qui finissent après 0 h 30 sont raccourcis à 0 h 30) ; la sauvegarde de la nuit les garde | `cd ~/Swatter-TV/site && docker compose run --rm tools npm run grille:hors-antenne -- --supprimer` |
 

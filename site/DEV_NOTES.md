@@ -660,6 +660,9 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
     raccourcir dont un brouillon plus récent attend d'être publié n'est pas touché (l'enregistrer publierait ce
     brouillon) ; le raccourcissement renvoie les valeurs de la fiche publiée (dont `_status`). Une erreur sur un créneau
     n'arrête pas les autres : les créneaux non traités sont listés à la fin (code de sortie 1).
+  - Semaine d'exemple : `npm run grille:exemple [-- AAAA-MM-JJ] -- --confirmer` (`src/scripts/grille-exemple.ts`) supprime
+    tous les créneaux et crée la soirée type des contenus de départ (`eveningScheduleData` de `seed/programs.ts`, partagé
+    avec le seed) du lundi au dimanche, dans une transaction ; sans `--confirmer`, n'affiche que ce qui sera fait.
 - **Top 10** (`src/hooks/top10.ts`) : places uniques, comme une liste qu'on réordonne. Une vidéo placée à une place
   prise décale le bloc de places occupées qui suit (au-delà de 10 : sortie du classement) ; une place libérée fait remonter
   le bloc suivant ; une place vide arrête le décalage. Les décalages passent `context.top10Reorder` (pas de cascade, pas de
