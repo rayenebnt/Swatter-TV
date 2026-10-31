@@ -402,7 +402,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 
 ### Ce qui est vérifié
 
-- **Tests unitaires** (`tests/unit/`, 966 tests, quelques secondes) : la logique pure du site.
+- **Tests unitaires** (`tests/unit/`, 989 tests, quelques secondes) : la logique pure du site.
   - Espace membres et sécurité : validation des champs, mots de passe, jetons et sessions signées, limites anti-abus,
     retours après la connexion et sortie de l’aperçu (près de 300 tentatives de redirection vers un autre site), e-mails,
     export CSV (formules de tableur neutralisées).
@@ -428,7 +428,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - API de l’espace membres (inscription, connexion et blocage, sessions, mot de passe oublié, historique, « Ma liste »,
     export, suppression), formulaire de contact, recherche, tâche planifiée, imports, recopie de la grille, export de la
     lettre d’info.
-- **Tests de bout en bout** (`tests/e2e/`, 154 tests, environ 7 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
+- **Tests de bout en bout** (`tests/e2e/`, 164 tests, environ 7 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
   390 × 844, tactile ; ceux qui ne dépendent pas de l’écran, comme le référencement et l’administration, une seule fois) :
   - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
     horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
