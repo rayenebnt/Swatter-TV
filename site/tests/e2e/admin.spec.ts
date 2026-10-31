@@ -755,8 +755,9 @@ test.describe('administration', () => {
       await expect(page.locator('.template-default__wrap > [inert]')).toHaveCount(0)
       await expectFitsScreen(page, width)
 
-      // fiche d'une vidéo : formulaire à la largeur de l'écran, menu ouvert compris
-      const videos = (await (await page.request.get('/api/videos?limit=1&depth=0&draft=true', { headers: await auth() })).json()) as { docs: { id: number }[] }
+      // fiche d'une vidéo : formulaire à la largeur de l'écran, menu ouvert compris. La plus ancienne (contenus de départ) :
+      // une vidéo créée par un autre test peut disparaître pendant celui-ci (aperçu en direct de la fiche alors en 404)
+      const videos = (await (await page.request.get('/api/videos?limit=1&depth=0&draft=true&sort=createdAt', { headers: await auth() })).json()) as { docs: { id: number }[] }
       test.skip(!videos.docs.length, 'aucune vidéo (lancez npm run seed)')
       await page.goto(`/admin/collections/videos/${videos.docs[0].id}`)
       await expect(page.getByText('Où se trouve la vidéo ?')).toBeVisible()

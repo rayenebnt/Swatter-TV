@@ -237,9 +237,11 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
     sous l'en-tête et au-dessus des textes, au plus 46 % de la hauteur, plus petite si les textes ont besoin de la place
     (proportions `--ratio` / `--ratio-m`, largeur en `cqw` : `.hero` est un conteneur en largeur) ; fond
     `.slide__backdrop` (mêmes sources, flou et assombri, immobile). Sinon, image qui couvre le cadre comme avant (source
-    « téléphone » de largeur `heroMobileSizes`, cadrage `--focal` / `--focal-m`), textes à 96 px du bas sur téléphone,
-    juste au-dessus des barres de navigation (test images-mobile). `<picture>` seulement si le téléphone
-    affiche un autre fichier ou une autre largeur ; première diapositive en eager + fetchPriority high.
+    « téléphone » de largeur `heroMobileSizes`, cadrage `--focal` / `--focal-m`) ; sur téléphone, toutes les diapositives
+    sont dans le flux, empilées dans la même case de grille (le carrousel prend la hauteur de la plus haute) : textes
+    calés à 96 px du bas, juste au-dessus des barres de navigation, marge haute sous l'en-tête (test images-mobile).
+    `<picture>` seulement si le téléphone affiche un autre fichier ou une autre largeur ; première diapositive en eager +
+    fetchPriority high.
   - Texte riche : convertisseur « upload » de `components/ui/RichText.tsx` (logique pure dans `proseUpload.ts`) : image
     d'origine ou « hero » à ses vraies proportions, `PROSE_SIZES`, crédit en légende, vidéo dans `<video controls>`.
   - Agenda : vignette mobile des cartes sur l'affiche d'origine (`posterThumbSizes`), encart vedette mobile aux
