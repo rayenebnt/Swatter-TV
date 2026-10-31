@@ -453,25 +453,50 @@ describe('grille des programmes', () => {
   type CopyResult = { copied?: number; replaced?: number; target?: string; error?: string }
   const copy = (body: Record<string, unknown>, token = editor) => apiJson<CopyResult>('/schedule/copy-week', { method: 'POST', token, body })
 
-  it('titre de la fiche : « jour heure — émission » en heure de Paris, ou le titre spécifique', async () => {
+  it('titre de la fiche : « jour heure — émission » en heure de Paris, ou le titre spécifique ; après minuit, la soirée de la veille', async () => {
     ranges.push(['2031-11-01T00:00:00.000Z', '2031-11-10T00:00:00.000Z'])
     const winter = await slot('2031-11-05T19:30:00.000Z')
     expect(winter.label).toBe(`05/11/2031 20:30 — ${program.title}`)
-    const special = await slot('2031-11-06T05:00:00.000Z', { titleOverride: 'Le journal des Alpes — Matin' })
-    expect(special.label).toBe('06/11/2031 06:00 — Le journal des Alpes — Matin')
+    const special = await slot('2031-11-06T17:00:00.000Z', { titleOverride: 'Le journal des Alpes — Soir' })
+    expect(special.label).toBe('06/11/2031 18:00 — Le journal des Alpes — Soir')
     // déplacé : le titre suit la nouvelle date
     const moved = await apiJson<{ doc: Doc }>(`/schedule/${winter.id}`, { method: 'PATCH', token: editor, body: { startsAt: '2031-11-08T22:15:00.000Z' } })
     expect(moved.body.doc.label).toBe(`08/11/2031 23:15 — ${program.title}`)
+    // dimanche 9 à 0 h 15 (heure d'hiver) : fin de la soirée du samedi 8
+    const night = await apiJson<{ doc: Doc }>(`/schedule/${winter.id}`, {
+      method: 'PATCH',
+      token: editor,
+      body: { startsAt: '2031-11-08T23:15:00.000Z', durationMinutes: 15 },
+    })
+    expect(night.status, JSON.stringify(night.body)).toBe(200)
+    expect(night.body.doc.label).toBe(`Soirée du 08/11/2031, 00:15 — ${program.title}`)
   })
 
-  it('contrôles : durée de 1 à 600 minutes, émission obligatoire à la publication', async () => {
+  it('contrôles : horaires d’antenne (18 h – 0 h 30), durée de 1 à 390 minutes, émission obligatoire à la publication', async () => {
     ranges.push(['2031-12-01T00:00:00.000Z', '2031-12-02T00:00:00.000Z'])
-    for (const durationMinutes of [0, 601]) {
-      const body = { startsAt: '2031-12-01T10:00:00.000Z', durationMinutes, program: program.id, _status: 'published' }
+    // lundi 1er décembre 2031, 19 h à Paris : seule la durée est en cause
+    for (const durationMinutes of [0, 391]) {
+      const body = { startsAt: '2031-12-01T18:00:00.000Z', durationMinutes, program: program.id, _status: 'published' }
       const res = await apiJson('/schedule', { method: 'POST', token: editor, body })
       expect(res.status, String(durationMinutes)).toBe(400)
     }
-    const orphan = { startsAt: '2031-12-01T10:00:00.000Z', durationMinutes: 30, _status: 'published' }
+    // 11 h : hors antenne, refusé avec un message en français (le champ et sa raison)
+    const morning = await apiJson<{ errors?: { data?: { errors?: { path: string; message: string }[] } }[] }>('/schedule', {
+      method: 'POST',
+      token: editor,
+      body: { startsAt: '2031-12-01T10:00:00.000Z', durationMinutes: 30, program: program.id, _status: 'published' },
+    })
+    expect(morning.status).toBe(400)
+    expect(morning.body.errors?.[0]?.data?.errors).toEqual([expect.objectContaining({ path: 'startsAt', message: expect.stringMatching(/entre 18:00 et 00:25/) })])
+    // 23 h 45 + 60 min : finirait à 0 h 45
+    const late = await apiJson('/schedule', {
+      method: 'POST',
+      token: editor,
+      body: { startsAt: '2031-12-01T22:45:00.000Z', durationMinutes: 60, program: program.id, _status: 'published' },
+    })
+    expect(late.status).toBe(400)
+    expect(JSON.stringify(late.body)).toMatch(/après la fin de l'antenne \(0 h 30\)/)
+    const orphan = { startsAt: '2031-12-01T18:00:00.000Z', durationMinutes: 30, _status: 'published' }
     const noProgram = await apiJson('/schedule', { method: 'POST', token: editor, body: orphan })
     expect(noProgram.status).toBe(400)
     expect(await slotsBetween('2031-12-01T00:00:00.000Z', '2031-12-02T00:00:00.000Z')).toEqual([])
@@ -492,19 +517,19 @@ describe('grille des programmes', () => {
   })
 
   it('recopie de semaine : même jour et même heure de Paris sept jours plus tard, passage à l’heure d’hiver compris', async () => {
-    // semaine TV du lundi 20 octobre 2031 à 2 h au lundi 27 à 2 h ; heure d’hiver le dimanche 26
+    // semaine TV du lundi 20 octobre 2031 à 0 h 30 au lundi 27 à 0 h 30 ; heure d’hiver le dimanche 26 à 3 h
     ranges.push(['2031-10-19T00:00:00.000Z', '2031-11-04T00:00:00.000Z'])
-    await slot('2031-10-19T23:30:00.000Z') // lundi 20 à 1 h 30 : nuit du dimanche, semaine précédente
+    await slot('2031-10-19T22:15:00.000Z', { durationMinutes: 15 }) // lundi 20 à 0 h 15 : fin de la soirée du dimanche, semaine précédente
     await slot('2031-10-20T18:30:00.000Z', { titleOverride: 'Lundi soir' }) // lundi 20 à 20 h 30 (UTC+2)
-    await slot('2031-10-20T23:00:00.000Z', { titleOverride: 'Nuit du lundi', durationMinutes: 45 }) // mardi 21 à 1 h : journée TV du lundi
+    await slot('2031-10-20T22:00:00.000Z', { titleOverride: 'Nuit du lundi' }) // mardi 21 à 0 h : soirée du lundi
     await slot('2031-10-26T19:30:00.000Z', { titleOverride: 'Dimanche soir' }) // dimanche 26 à 20 h 30 (UTC+1)
     const res = await copy({ from: '2031-10-22' })
     expect(res.status).toBe(200)
-    expect(res.body).toEqual({ copied: 3, replaced: 0, target: '2031-10-27' })
-    const copies = await slotsBetween('2031-10-27T01:00:00.000Z', '2031-11-04T00:00:00.000Z')
+    expect(res.body).toEqual({ copied: 3, skipped: 0, replaced: 0, target: '2031-10-27' })
+    const copies = await slotsBetween('2031-10-26T23:30:00.000Z', '2031-11-04T00:00:00.000Z')
     expect(copies.map((s) => [s.startsAt, s.titleOverride, s.durationMinutes, s._status])).toEqual([
       ['2031-10-27T19:30:00.000Z', 'Lundi soir', 30, 'published'], // lundi 27 à 20 h 30 (UTC+1)
-      ['2031-10-28T00:00:00.000Z', 'Nuit du lundi', 45, 'published'], // mardi 28 à 1 h
+      ['2031-10-27T23:00:00.000Z', 'Nuit du lundi', 30, 'published'], // mardi 28 à 0 h (UTC+1)
       ['2031-11-02T19:30:00.000Z', 'Dimanche soir', 30, 'published'],
     ])
     expect(copies.every((s) => s.program === program.id)).toBe(true)
@@ -536,10 +561,10 @@ describe('grille des programmes', () => {
     expect((await slotsBetween('2032-02-09T01:00:00.000Z', '2032-02-16T01:00:00.000Z')).map((s) => s.titleOverride)).toEqual(['Source'])
   })
 
-  it('recopie d’une seule journée (journée TV de 2 h à 2 h) sur le même jour de la semaine suivante', async () => {
+  it('recopie d’une seule soirée (de 18 h à 0 h 30) sur le même jour de la semaine suivante', async () => {
     ranges.push(['2032-03-02T00:00:00.000Z', '2032-03-12T00:00:00.000Z'])
     await slot('2032-03-03T19:00:00.000Z', { titleOverride: 'Mercredi soir' })
-    await slot('2032-03-04T00:30:00.000Z', { titleOverride: 'Nuit de mercredi' }) // jeudi 4 à 1 h 30
+    await slot('2032-03-03T23:15:00.000Z', { titleOverride: 'Nuit de mercredi', durationMinutes: 15 }) // jeudi 4 à 0 h 15
     await slot('2032-03-04T19:00:00.000Z', { titleOverride: 'Jeudi soir' })
     const res = await copy({ from: '2032-03-03', days: 1 })
     expect(res.status).toBe(200)
@@ -560,8 +585,9 @@ describe('grille des programmes', () => {
     const spy = vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined)
     const res = await copy({ from: '2032-04-05', replace: true })
     spy.mockRestore()
-    expect(res.status).toBeGreaterThanOrEqual(400)
-    expect(res.body.error).toBeTruthy()
+    // refus des contrôles de la grille (émission introuvable) : 400 avec la raison, pas une panne à « réessayer »
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/ne peut pas être recopié/)
     expect((await slotsBetween('2032-04-12T01:00:00.000Z', '2032-04-19T01:00:00.000Z')).map((s) => s.id)).toEqual([kept.id])
   })
 })

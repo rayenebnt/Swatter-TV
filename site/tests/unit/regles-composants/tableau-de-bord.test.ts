@@ -3,7 +3,8 @@
 // signalés, derniers contenus modifiés, chiffres de l'espace membres, et résistance aux requêtes en échec.
 import type { Payload } from 'payload'
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
-import { getDashboardData } from '@/components/admin/dashboard-data'
+import { getDashboardData, programmeSummary } from '@/components/admin/dashboard-data'
+import { parisDateTime } from '@/lib/format'
 import { loadItems, type MemberItem } from '@/lib/members/items'
 import { matches, sortDocs, type Doc } from './outils'
 
@@ -137,27 +138,101 @@ describe('sortie du week-end', () => {
   })
 })
 
-describe('programme TV : jours sans émission parmi les 7 prochains (journées TV de 2 h à 2 h)', () => {
-  const slot = (id: number, startsAt: string, status = 'published') => ({ id, startsAt, _status: status })
-
-  it('signale les journées vides, la nuit jusqu’à 2 h comptant pour la veille', async () => {
-    const schedule = [
-      slot(1, '2026-10-20T23:00:00.000Z'), // mercredi 21, 1 h : journée TV du mardi 20 (hors période)
-      slot(2, '2026-10-21T18:00:00.000Z'), // mercredi 21, 20 h
-      slot(3, '2026-10-22T23:30:00.000Z'), // vendredi 23, 1 h 30 : journée TV du jeudi 22
-      slot(4, '2026-10-24T08:00:00.000Z'), // samedi 24, 10 h
-      slot(5, '2026-10-25T12:00:00.000Z', 'draft'), // dimanche 25 : brouillon, pas sur le site
-      slot(6, '2026-10-27T00:00:00.000Z'), // mardi 27, 1 h (heure d'hiver) : journée TV du lundi 26
-      slot(7, '2026-10-28T00:00:00.000Z'), // mercredi 28, 1 h : journée TV du mardi 27
-      slot(8, '2026-10-28T02:00:00.000Z'), // mercredi 28, 3 h : au-delà des 7 jours
-    ]
-    expect((await dashboard({ schedule })).emptyDays).toEqual(['2026-10-23', '2026-10-25'])
+describe('programme TV : les 7 prochaines soirées (18 h – 0 h 30) à partir de la soirée en cours ou à venir', () => {
+  /** Créneau au jour et à l'heure de Paris donnés (un créneau de 0 h à 0 h 30 est daté du lendemain de sa soirée). */
+  const at = (id: number, day: string, time: string, durationMinutes: number, status = 'published') => ({
+    id,
+    startsAt: parisDateTime(day, time).toISOString(),
+    durationMinutes,
+    _status: status,
   })
 
-  it('grille vide : les 7 jours, à partir de la journée TV en cours (avant 2 h, c’est encore la veille)', async () => {
-    expect((await dashboard({})).emptyDays).toEqual(['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27'])
-    vi.setSystemTime(new Date('2026-10-21T23:30:00.000Z')) // jeudi 22, 1 h 30 à Paris
-    expect((await dashboard({})).emptyDays?.[0]).toBe('2026-10-21')
+  it('soirées vides, incomplètes (minutes sans programme) et anciens créneaux hors antenne ; brouillons et autres soirées ignorés', async () => {
+    const schedule = [
+      at(1, '2026-10-20', '20:00', 60), // soirée de la veille : hors période
+      at(2, '2026-10-21', '18:00', 360), // ce soir, de 18 h à minuit…
+      at(3, '2026-10-22', '00:00', 30), // … puis de minuit à 0 h 30 (daté du jeudi) : soirée complète
+      at(4, '2026-10-22', '18:00', 390), // jeudi 22 : complète
+      at(5, '2026-10-23', '06:00', 60), // vendredi 23 à 6 h : ancien créneau hors antenne, la soirée reste vide
+      at(6, '2026-10-24', '18:00', 390), // samedi 24 : complète
+      at(7, '2026-10-25', '18:00', 390), // dimanche 25 (passage à l'heure d'hiver la nuit précédente) : complète
+      at(8, '2026-10-26', '18:00', 390, 'draft'), // lundi 26 : brouillon, pas sur le site, soirée vide
+      at(9, '2026-10-27', '18:00', 315), // mardi 27 : jusqu'à 23 h 15, il manque 1 h 15
+      at(10, '2026-10-28', '18:00', 390), // mercredi 28 : au-delà des 7 soirées
+    ]
+    expect((await dashboard({ schedule })).evenings).toEqual({
+      today: '2026-10-21',
+      empty: ['2026-10-23', '2026-10-26'],
+      incomplete: [{ day: '2026-10-27', missingMinutes: 75 }],
+      offAir: { count: 1, firstDay: '2026-10-23' },
+    })
+  })
+
+  it('créneau qui finit après 0 h 30 (ancienne donnée) : compté hors antenne, seule sa partie jusqu’à 0 h 30 couvre la soirée', async () => {
+    const schedule = [at(1, '2026-10-21', '18:00', 345), at(2, '2026-10-21', '23:45', 60), at(3, '2026-10-21', '17:30', 60)]
+    const evenings = (await dashboard({ schedule })).evenings
+    expect(evenings?.incomplete).toEqual([])
+    expect(evenings?.empty).not.toContain('2026-10-21')
+    // 23 h 45 + 60 min (fin à 0 h 45) et 17 h 30 (début avant 18 h)
+    expect(evenings?.offAir).toEqual({ count: 2, firstDay: '2026-10-21' })
+  })
+
+  it('grille vide : les 7 soirées, à partir de la soirée en cours (jusqu’à 0 h 30) ou à venir', async () => {
+    expect((await dashboard({})).evenings?.empty).toEqual(['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27'])
+    vi.setSystemTime(parisDateTime('2026-10-22', '00:15')) // jeudi 0 h 15 : la soirée de mercredi est encore à l'antenne
+    expect((await dashboard({})).evenings?.empty[0]).toBe('2026-10-21')
+    vi.setSystemTime(parisDateTime('2026-10-22', '00:30')) // 0 h 30 pile : fin d'antenne, place à la soirée de jeudi
+    expect((await dashboard({})).evenings?.empty[0]).toBe('2026-10-22')
+    vi.setSystemTime(parisDateTime('2026-10-22', '18:00'))
+    expect((await dashboard({})).evenings).toMatchObject({ today: '2026-10-22', incomplete: [], offAir: { count: 0, firstDay: null } })
+  })
+
+  it('le créneau de 0 h 15 de la dernière soirée (daté du lendemain) compte bien pour elle', async () => {
+    const schedule = [at(1, '2026-10-27', '18:00', 375), at(2, '2026-10-28', '00:15', 15)]
+    expect((await dashboard({ schedule })).evenings?.incomplete).toEqual([])
+  })
+})
+
+describe('programme TV : la ligne du tableau de bord', () => {
+  const base = { today: '2026-10-21', empty: [], incomplete: [], offAir: { count: 0, firstDay: null } }
+
+  it('tout est saisi : « Les 7 prochaines soirées sont complètes »', () => {
+    expect(programmeSummary(base)).toEqual({ tone: 'ok', value: 'Les 7 prochaines soirées sont complètes (18 h – 0 h 30)', first: null })
+  })
+
+  it('requête en échec : ni « complet » ni « vide » inventé', () => {
+    expect(programmeSummary(null)).toEqual({ tone: 'warn', value: expect.stringMatching(/indisponible/), first: null })
+  })
+
+  it('rien de prévu sur les 7 soirées : un seul message, lien vers la semaine', () => {
+    const days = ['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27']
+    expect(programmeSummary({ ...base, empty: days })).toEqual({ tone: 'warn', value: 'Aucune émission prévue pour les 7 prochaines soirées', first: null })
+  })
+
+  it('soirées vides (« ce soir », « sam. 24 »), incomplètes (« mar. 27 : 1 h 15 sans programme ») et créneaux hors antenne', () => {
+    const summary = programmeSummary({
+      ...base,
+      empty: ['2026-10-22', '2026-10-24'],
+      incomplete: [
+        { day: '2026-10-21', missingMinutes: 30 },
+        { day: '2026-10-27', missingMinutes: 75 },
+      ],
+      offAir: { count: 3, firstDay: '2026-10-23' },
+    })
+    expect(summary).toEqual({
+      tone: 'warn',
+      value:
+        'Rien de prévu : demain soir, sam. 24 · Soirées incomplètes (18 h – 0 h 30) : ce soir : 30 min sans programme, mar. 27 : 1 h 15 sans programme · 3 créneaux en dehors des horaires d’antenne : corrigez leur heure ou leur durée, ou supprimez-les',
+      first: '2026-10-21',
+    })
+    expect(programmeSummary({ ...base, offAir: { count: 1, firstDay: '2026-10-25' } })).toEqual({
+      tone: 'warn',
+      value: '1 créneau en dehors des horaires d’antenne : corrigez son heure ou sa durée, ou supprimez-le',
+      first: '2026-10-25',
+    })
+    expect(programmeSummary({ ...base, incomplete: [{ day: '2026-10-27', missingMinutes: 75 }] }).value).toBe(
+      'Soirée incomplète (18 h – 0 h 30) : mar. 27 : 1 h 15 sans programme',
+    )
   })
 })
 
@@ -356,7 +431,7 @@ describe('une requête en échec n’empêche pas le tableau de bord de s’affi
       infoOfDay: null,
       weekendPick: null,
       flash: { messages: 0, auto: true },
-      emptyDays: null,
+      evenings: null,
       ads: null,
       messages: null,
       meteo: { auto: true, updatedAt: null },
