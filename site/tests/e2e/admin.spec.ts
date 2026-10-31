@@ -682,6 +682,26 @@ test.describe('administration', () => {
       await login(page, ADMIN)
       // menu laissé ouvert sur un ordinateur (préférence de Payload) : sur téléphone, il ne s'ouvre pas tout seul
       expect((await preference('POST')).ok()).toBe(true)
+
+      // HTML du serveur, avant l'hydratation (sans JavaScript, il ne change jamais) : il arrive menu ouvert, mais tant
+      // que le menu reste masqué, ni voile sur la page ni défilement bloqué
+      const noScript = await mobileContext(browser, { javaScriptEnabled: false })
+      try {
+        await noScript.addCookies(await context.cookies())
+        const raw = await noScript.newPage()
+        await raw.goto('/admin')
+        await expect(raw.locator('.template-default')).toHaveClass(/template-default--nav-open/)
+        await expect(raw.locator('.template-default')).not.toHaveClass(/template-default--nav-hydrated/)
+        const beforeHydration = await raw.evaluate(() => ({
+          veil: getComputedStyle(document.querySelector('.template-default__wrap')!, '::before').opacity,
+          scroll: getComputedStyle(document.body).overflowY,
+        }))
+        expect(beforeHydration.veil, 'voile avant l’hydratation').toBe('0')
+        expect(beforeHydration.scroll, 'défilement avant l’hydratation').not.toBe('hidden')
+      } finally {
+        await noScript.close()
+      }
+
       await page.goto('/admin')
       await expect(page.locator('.template-default--nav-hydrated')).toBeAttached()
       await expectClosed()
@@ -708,15 +728,31 @@ test.describe('administration', () => {
       // fermeture : la croix, puis Échap, puis un lien du menu (navigation)
       await page.locator('.nav__mobile-close').click()
       await expectClosed()
-      await openNav(page, toggler)
+      // ouvert au clavier : le focus entre dans le menu et le contenu derrière (en-tête, page) est inerte, si bien que
+      // Tab ne mène jamais à la page cachée ; le contenu lui-même ne l'est pas (son voile reste touchable)
+      const behind = page.locator('.template-default__wrap > *')
+      const focusIn = (selector: string) => page.evaluate((s) => Boolean(document.activeElement?.closest(s)), selector)
+      await page.locator(toggler).focus()
+      await page.keyboard.press('Enter')
+      await expect(page.locator('aside.nav')).toHaveClass(/nav--nav-open/)
+      await expect.poll(() => focusIn('aside.nav'), 'focus dans le menu').toBe(true)
+      expect(await behind.count()).toBeGreaterThan(0)
+      for (const el of await behind.all()) await expect(el).toHaveAttribute('inert', '')
+      await expect(page.locator('.template-default__wrap')).not.toHaveAttribute('inert')
+      for (let i = 0; i < 30; i++) {
+        await page.keyboard.press('Tab')
+        expect(await focusIn('.template-default__wrap'), `Tab n°${i + 1} : focus dans la page cachée`).toBe(false)
+      }
+      // Échap libère le contenu et le focus revient au bouton du menu affiché (celui de l'en-tête sur téléphone)
       await page.keyboard.press('Escape')
       await expectClosed()
-      // le focus revient au bouton du menu affiché (celui de l'en-tête sur téléphone)
+      await expect(page.locator('.template-default__wrap > [inert]')).toHaveCount(0)
       await expect(page.locator(toggler)).toBeFocused()
       await openNav(page, toggler)
       await page.locator('aside.nav').getByRole('link', { name: 'Vidéos', exact: true }).click()
       await expectClosed()
       await expect(page).toHaveURL(/\/admin\/collections\/videos/)
+      await expect(page.locator('.template-default__wrap > [inert]')).toHaveCount(0)
       await expectFitsScreen(page, width)
 
       // fiche d'une vidéo : formulaire à la largeur de l'écran, menu ouvert compris
@@ -766,5 +802,31 @@ test.describe('administration', () => {
     } finally {
       await context.close()
     }
+  })
+
+  test('ordinateur : le menu ouvert reste à côté du contenu, sans voile ni contenu inerte', async ({ page }) => {
+    const nav = page.locator('aside.nav')
+    const behindState = () =>
+      page.evaluate(() => ({
+        inert: document.querySelectorAll('.template-default__wrap > [inert]').length,
+        veil: getComputedStyle(document.querySelector('.template-default__wrap')!, '::before').opacity,
+        scroll: getComputedStyle(document.body).overflowY,
+      }))
+    await login(page, ADMIN)
+    for (const width of [1280, 1600]) {
+      await page.setViewportSize({ width, height: 900 })
+      await page.goto('/admin')
+      await expect(page.locator('.template-default--nav-hydrated')).toBeAttached()
+      if (!(await nav.evaluate((el) => el.classList.contains('nav--nav-open')))) await page.locator('.template-default__nav-toggler').click()
+      await expect(nav).toHaveClass(/nav--nav-open/)
+      expect(await behindState(), `${width} px`).toEqual({ inert: 0, veil: '0', scroll: expect.not.stringMatching(/^hidden$/) })
+    }
+
+    // menu ouvert sur un écran étroit (contenu inerte), puis fenêtre agrandie : le contenu est aussitôt libéré
+    await page.setViewportSize({ width: 390, height: 844 })
+    await openNav(page, '.app-header__mobile-nav-toggler')
+    await expect(page.locator('.template-default__wrap > [inert]')).not.toHaveCount(0)
+    await page.setViewportSize({ width: 1600, height: 900 })
+    await expect.poll(behindState).toEqual({ inert: 0, veil: '0', scroll: expect.not.stringMatching(/^hidden$/) })
   })
 })
