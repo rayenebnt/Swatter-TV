@@ -7,7 +7,7 @@ import { DocumentTitle } from '@/components/ui/DocumentTitle'
 import { Icon } from '@/components/ui/Icon'
 import { PageHeader, type Crumb } from '@/components/ui/PageHeader'
 import { SectionHead } from '@/components/ui/SectionHead'
-import { DEPARTMENTS, departmentLabel, type DepartmentSlug } from '@/lib/departments'
+import { DEPARTMENTS, INFO_ZONES, OTHER_REGIONS, infoZoneLabel, type DepartmentSlug, type InfoZone } from '@/lib/departments'
 import { ogImage } from '@/lib/og'
 import { inPlace, ofPlace } from '@/lib/places'
 import { getArticlesPage, getDepartmentsWithArticles, getFeaturedArticle, type ArticleListItem, type ArticlesPage } from '@/lib/queries/articles'
@@ -34,13 +34,23 @@ export function parsePage(sp: Record<string, string | string[] | undefined>): nu
   return Number.isInteger(n) && n > 1 ? n : 1
 }
 
-/** Adresse d'une page de liste : /info, /info/haute-savoie, /info?page=2… */
-export const listHref = (dept: DepartmentSlug | null, page = 1) => `${dept ? departmentUrl(dept) : '/info'}${page > 1 ? `?page=${page}` : ''}`
+/** Adresse d'une page de liste : /info, /info/haute-savoie, /info/autres-regions, /info?page=2… */
+export const listHref = (dept: InfoZone | null, page = 1) => `${dept ? departmentUrl(dept) : '/info'}${page > 1 ? `?page=${page}` : ''}`
 
 const deptCode = (d: DepartmentSlug) => DEPARTMENTS.find((x) => x.value === d)?.code ?? ''
 
-/** Textes de la page (visibles et métadonnées), pour la région ou un département. */
-function texts(dept: DepartmentSlug | null) {
+/** Textes de la page (visibles et métadonnées), pour la région, un département ou « Autres régions ». */
+function texts(dept: InfoZone | null) {
+  if (dept === OTHER_REGIONS) {
+    return {
+      eyebrow: 'L’Info · Hors région',
+      h1: 'Autres régions',
+      lede: 'Suisse, Vallée d’Aoste et au-delà : l’actualité de nos voisins, hors Auvergne-Rhône-Alpes.',
+      title: 'L’info des autres régions : Suisse, Vallée d’Aoste et au-delà',
+      description:
+        'L’actualité hors Auvergne-Rhône-Alpes en continu : Suisse, Vallée d’Aoste et au-delà, avec Swatter TV Info, la chaîne régionale d’Auvergne-Rhône-Alpes.',
+    }
+  }
   if (!dept) {
     return {
       eyebrow: '7j/7 · 24h/24',
@@ -60,23 +70,26 @@ function texts(dept: DepartmentSlug | null) {
   }
 }
 
-export type Listing = { featured: ArticleListItem | null; list: ArticlesPage; departments: DepartmentSlug[] }
+export type Listing = { featured: ArticleListItem | null; list: ArticlesPage; departments: InfoZone[] }
 
-/** Données d'une page de liste : article à la une, page d'articles (sans lui) et départements qui ont de l'info. */
-export async function loadListing(dept: DepartmentSlug | null, page: number): Promise<Listing> {
+/**
+ * Données d'une page de liste : article à la une, page d'articles (sans lui) et filtres : les départements qui ont de
+ * l'info, puis « Autres régions », toujours proposée (c'est là qu'on cherche l'info de Suisse ou de la Vallée d'Aoste).
+ */
+export async function loadListing(dept: InfoZone | null, page: number): Promise<Listing> {
   const [featured, withInfo] = await Promise.all([getFeaturedArticle(dept), getDepartmentsWithArticles()])
   const list = await getArticlesPage(dept, page, PER_PAGE, featured?.id ?? null)
-  return { featured, list, departments: DEPARTMENTS.map((d) => d.value).filter((v) => withInfo.includes(v) || v === dept) }
+  return { featured, list, departments: INFO_ZONES.map((d) => d.value).filter((v) => v === OTHER_REGIONS || withInfo.includes(v) || v === dept) }
 }
 
 /** Titre d'une page de liste (sans le nom du site), avec le numéro de page au-delà de la première. */
-const listingTitle = (dept: DepartmentSlug | null, page: number) => {
+const listingTitle = (dept: InfoZone | null, page: number) => {
   const { title } = texts(dept)
   return page > 1 ? `${title} (page ${page})` : title
 }
 
 /** Métadonnées d'une page de liste : titre, description, adresse canonique (avec ?page=), image de l'article à la une. */
-export async function listingMetadata(dept: DepartmentSlug | null, page: number): Promise<Metadata> {
+export async function listingMetadata(dept: InfoZone | null, page: number): Promise<Metadata> {
   const { description } = texts(dept)
   const fullTitle = listingTitle(dept, page)
   const url = listHref(dept, page)
@@ -97,18 +110,18 @@ export async function listingMetadata(dept: DepartmentSlug | null, page: number)
   }
 }
 
-/** Page Info (région ou département) : en-tête, filtres, article à la une (première page), grille paginée. */
-export function InfoListing({ dept, page, data }: { dept: DepartmentSlug | null; page: number; data: Listing }) {
+/** Page Info (région, département ou « Autres régions ») : en-tête, filtres, article à la une (première page), grille paginée. */
+export function InfoListing({ dept, page, data }: { dept: InfoZone | null; page: number; data: Listing }) {
   const { featured, list, departments } = data
   const t = texts(dept)
-  const label = dept ? departmentLabel(dept) : null
+  const label = dept ? infoZoneLabel(dept) : null
   const crumbs: Crumb[] = label ? [{ label: 'L’Info', href: '/info' }, { label }] : [{ label: 'L’Info' }]
   const lead = page === 1 && featured ? toTeaser(featured) : null
   const items = list.docs.map((a) => toTeaser(a))
   const total = list.totalDocs + (featured ? 1 : 0)
   const links = [
     { href: '/info', label: 'Toute la région', current: !dept },
-    ...departments.map((d) => ({ href: departmentUrl(d), label: departmentLabel(d), current: d === dept })),
+    ...departments.map((d) => ({ href: departmentUrl(d), label: infoZoneLabel(d), current: d === dept })),
   ]
 
   return (
@@ -157,7 +170,7 @@ export function InfoListing({ dept, page, data }: { dept: DepartmentSlug | null;
             <div className="empty">
               <Icon name="news" />
               <div>
-                <b>{dept ? 'Pas encore d’info pour ce département' : 'Pas encore d’info pour le moment'}</b>
+                <b>{dept === OTHER_REGIONS ? 'Pas encore d’info hors de la région' : dept ? 'Pas encore d’info pour ce département' : 'Pas encore d’info pour le moment'}</b>
                 {dept ? (
                   <>
                     Revenez plus tard ou consultez <Link href="/info">l’actualité de toute la région</Link>.

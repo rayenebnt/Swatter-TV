@@ -40,8 +40,8 @@ const OLD_ADDRESSES: [string, string][] = [
   ['/L-info-Puy-De-Dome', '/info/puy-de-dome'],
   ['/L-info-Cantal', '/info/cantal'],
   ['/L-info-Allier', '/info/allier'],
-  ['/L-info-Geneve', '/info'],
-  ['/L-info-Aoste', '/info'],
+  ['/L-info-Geneve', '/info/autres-regions'],
+  ['/L-info-Aoste', '/info/autres-regions'],
   ['/Nos-videos-du-jour', '/videos'],
   ['/Le-tirage-au-sort-Video-du-jour', '/videos'],
   ['/Le-Cinema-Films', '/videos?categorie=cinema'],
@@ -59,7 +59,7 @@ const OLD_ADDRESSES: [string, string][] = [
 
 /** Adresses actuelles du site : jamais redirigées. */
 const CURRENT = [
-  ...['/', '/direct', '/info', '/info/savoie', '/meteo', '/meteo/isere', '/programme-tv', '/agenda', '/agenda/fete-du-lac'],
+  ...['/', '/direct', '/info', '/info/savoie', '/info/autres-regions', '/meteo', '/meteo/isere', '/programme-tv', '/agenda', '/agenda/fete-du-lac'],
   ...['/videos', '/replay', '/webcams', '/webcams/plus', '/recherche', '/contact', '/compte', '/admin', '/api/videos'],
 ]
 

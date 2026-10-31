@@ -324,7 +324,7 @@ export interface Article {
     [k: string]: unknown;
   } | null;
   /**
-   * Range l’article dans la page de son département (par exemple « /info/isere »).
+   * Range l’article dans la page de son département (par exemple « /info/isere »). Suisse, Vallée d’Aoste et tout ce qui est hors Auvergne-Rhône-Alpes : choisir « Autres régions ».
    */
   department:
     | 'haute-savoie'
@@ -338,7 +338,8 @@ export interface Article {
     | 'ardeche'
     | 'puy-de-dome'
     | 'cantal'
-    | 'allier';
+    | 'allier'
+    | 'autres-regions';
   city?: string | null;
   kicker?: string | null;
   /**

@@ -1,7 +1,7 @@
 // Espace membres : contenus de l'historique et de « Ma liste » (vidéos, replays, articles, événements), prêts à afficher.
 import type { Payload, Where } from 'payload'
 import { fallbackVisual } from '@/components/video/utils'
-import { departmentLabel } from '@/lib/departments'
+import { infoZoneLabel } from '@/lib/departments'
 import { formatDate } from '@/lib/format'
 import { mediaUrl, type MediaRef } from '@/lib/media'
 import { articleUrl, eventUrl, replayUrl, videoUrl } from '@/lib/urls'
@@ -64,7 +64,7 @@ export async function loadItems(payload: Payload, refs: Ref[], { publicOnly = tr
       ...preview(r.preview),
     })
   for (const a of articles?.docs ?? [])
-    add({ kind: 'article', id: a.id, title: a.title, href: articleUrl(a), image: image(a.image, a.id), meta: meta('article', a.city || departmentLabel(a.department)) })
+    add({ kind: 'article', id: a.id, title: a.title, href: articleUrl(a), image: image(a.image, a.id), meta: meta('article', a.city || infoZoneLabel(a.department)) })
   for (const e of events?.docs ?? [])
     add({ kind: 'event', id: e.id, title: e.title, href: eventUrl(e), image: image(e.poster, e.id), meta: meta('event', e.startDate ? formatDate(e.startDate) : null, e.city) })
   return out

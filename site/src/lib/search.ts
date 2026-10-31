@@ -2,7 +2,7 @@
 import type { Payload, Where } from 'payload'
 import { cleanQuery, foldText, splitWords } from '@/components/search/text'
 import { labelOf, PROGRAM_GENRES, VIDEO_CATEGORIES } from './categories'
-import { departmentLabel } from './departments'
+import { infoZoneLabel } from './departments'
 import { formatDate, formatDayLong, parisDateTime, parisDay } from './format'
 import { mediaUrl, type MediaRef } from './media'
 import { safe } from './safe'
@@ -234,7 +234,7 @@ async function searchArticles(c: Ctx): Promise<Ranked[]> {
       type: 'article',
       typeLabel: 'Info',
       title: a.title,
-      subtitle: line(a.city || departmentLabel(a.department), formatDate(a.publishedAt)),
+      subtitle: line(a.city || infoZoneLabel(a.department), formatDate(a.publishedAt)),
       href: articleUrl(a),
       image: mediaUrl(a.image, 'thumb'),
     },

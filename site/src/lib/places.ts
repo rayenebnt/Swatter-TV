@@ -1,5 +1,5 @@
 // Noms des départements dans une phrase (Info, Agenda, Webcams, Météo) (« L'info en Haute-Savoie », « Toute l'actualité de l'Isère »).
-import type { DepartmentSlug } from '@/lib/departments'
+import { OTHER_REGIONS, type DepartmentSlug, type InfoZone } from '@/lib/departments'
 
 const PHRASES: Record<DepartmentSlug, { in: string; of: string }> = {
   'haute-savoie': { in: 'en Haute-Savoie', of: 'de la Haute-Savoie' },
@@ -21,3 +21,9 @@ export const inPlace = (d: DepartmentSlug | null) => (d ? PHRASES[d].in : 'en Au
 
 /** « de la Haute-Savoie » (« de toute la région » pour toute la région) */
 export const ofPlace = (d: DepartmentSlug | null) => (d ? PHRASES[d].of : 'de toute la région')
+
+/** L'Info : comme inPlace, et « hors Auvergne-Rhône-Alpes » pour « Autres régions » (« l'info hors Auvergne-Rhône-Alpes »). */
+export const infoInPlace = (z: InfoZone | null) => (z === OTHER_REGIONS ? 'hors Auvergne-Rhône-Alpes' : inPlace(z))
+
+/** L'Info : comme ofPlace, et « des autres régions » pour « Autres régions » (« Toute l'info des autres régions »). */
+export const infoOfPlace = (z: InfoZone | null) => (z === OTHER_REGIONS ? 'des autres régions' : ofPlace(z))

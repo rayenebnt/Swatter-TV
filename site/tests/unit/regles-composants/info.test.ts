@@ -1,8 +1,13 @@
 // Rubrique L'Info (src/components/info/time.ts et utils.ts) : libellés de date du fil « En continu » en heure de Paris,
-// cartes d'articles (images, accroche, typographie française), texte brut du contenu riche, coupe des textes, partage.
+// cartes d'articles (images, accroche, typographie française), texte brut du contenu riche, coupe des textes, partage ;
+// champ « Département » des articles (« Autres régions », réservé à l'Info).
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import type { CollectionConfig, Field } from 'payload'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { Articles } from '@/collections/Articles'
+import { Events } from '@/collections/Events'
+import { Webcams } from '@/collections/Webcams'
 import { agoLabel, feedLabel } from '@/components/info/time'
 import {
   articleImage,
@@ -19,6 +24,7 @@ import {
   truncate,
 } from '@/components/info/utils'
 import { frenchSpaces as agendaFrenchSpaces } from '@/components/agenda/utils'
+import { DEPARTMENTS } from '@/lib/departments'
 import type { ArticleListItem } from '@/lib/queries/articles'
 import { SITE_URL } from '@/lib/site'
 import type { Article, Media } from '@/payload-types'
@@ -190,6 +196,12 @@ describe('textes des cartes', () => {
     expect(kickerLine({ department: 'morbihan', kicker: ' ' })).toBe('Auvergne-Rhône-Alpes')
   })
 
+  it('kickerLine : « Autres régions » à défaut de commune (Suisse, Vallée d’Aoste…)', () => {
+    expect(kickerLine({ department: 'autres-regions' })).toBe('Autres régions')
+    expect(kickerLine({ department: 'autres-regions', kicker: 'Sport' })).toBe(`Autres régions${NBSP}· Sport`)
+    expect(kickerLine({ city: 'Genève', kicker: 'Société', department: 'autres-regions' })).toBe(`Genève${NBSP}· Société`)
+  })
+
   // même règle dans L'Info et dans l'agenda
   for (const [name, fn] of [['info', frenchSpaces], ['agenda', agendaFrenchSpaces]] as const) {
     it(`frenchSpaces (${name}) : espace insécable avant : ; ! ? » et après «`, () => {
@@ -255,6 +267,16 @@ describe('toTeaser : article prêt pour les cartes (données simples envoyées a
     expect(t.image).toBeNull()
     expect(t.excerpt).toBeNull()
     expect(t.thumb).toMatchObject({ src: '/api/media/file/lac-480x270.webp', width: 480, height: 270 })
+  })
+
+  it('article des « Autres régions » : rangé dans /info/autres-regions, libellé « Autres régions »', () => {
+    const t = toTeaser(article({ slug: 'derby-a-geneve', department: 'autres-regions', city: '' }))
+    expect(t).toMatchObject({
+      href: '/info/autres-regions/derby-a-geneve',
+      department: 'autres-regions',
+      departmentLabel: 'Autres régions',
+      kicker: `Autres régions${NBSP}· Culture`,
+    })
   })
 
   it('chapô vide ou blanc : null ; article sans image : visuel de repli', () => {
@@ -324,5 +346,38 @@ describe('truncate : texte coupé sur un mot, terminé par « … »', () => {
     expect(cut.endsWith('…')).toBe(true)
     // aucune moitié de paire de substitution isolée (elle s'afficherait « � »)
     expect(cut).not.toMatch(/[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/)
+  })
+})
+
+describe('champ « Département » des articles : « Autres régions » en plus, pour l’Info seulement', () => {
+  type SelectField = { options: { value: string; label: string }[]; defaultValue?: unknown; required?: boolean; admin?: { description?: unknown } }
+  /** Champ de premier niveau, ou rangé dans une rangée (row) ou un onglet. */
+  const findField = (fields: readonly Field[], name: string): Field | undefined => {
+    for (const f of fields) {
+      if ('name' in f && f.name === name) return f
+      const inner = 'fields' in f ? f.fields : 'tabs' in f ? f.tabs.flatMap((t) => t.fields) : []
+      const found = findField(inner, name)
+      if (found) return found
+    }
+    return undefined
+  }
+  const department = (config: CollectionConfig) => findField(config.fields, 'department') as unknown as SelectField
+  const values = (config: CollectionConfig) => department(config).options.map((o) => o.value)
+
+  it('articles : les 12 départements puis « Autres régions », en dernier ; Haute-Savoie par défaut, obligatoire', () => {
+    const field = department(Articles)
+    expect(field.options).toEqual([...DEPARTMENTS.map(({ value, label }) => ({ value, label })), { value: 'autres-regions', label: 'Autres régions' }])
+    expect(field.defaultValue).toBe('haute-savoie')
+    expect(field.required).toBe(true)
+  })
+
+  it('la description du champ dit quand choisir « Autres régions » (Suisse, Vallée d’Aoste, hors de la région)', () => {
+    const description = String(department(Articles).admin?.description)
+    for (const words of ['« Autres régions »', 'Suisse', 'Vallée d’Aoste', 'hors Auvergne-Rhône-Alpes']) expect(description).toContain(words)
+  })
+
+  it('agenda et webcams : pas d’« Autres régions » (les webcams gardent « Web Cams + »)', () => {
+    expect(values(Events)).toEqual(DEPARTMENTS.map((d) => d.value))
+    expect(values(Webcams)).toEqual([...DEPARTMENTS.map((d) => d.value), 'plus'])
   })
 })

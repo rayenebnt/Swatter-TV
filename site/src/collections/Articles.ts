@@ -5,6 +5,7 @@ import { departmentField } from '@/fields/department'
 import { draftVersions } from '@/fields/drafts'
 import { slugField } from '@/fields/slug'
 import { revalidateHooks } from '@/hooks/revalidate'
+import { INFO_ZONES } from '@/lib/departments'
 import { articleUrl } from '@/lib/urls'
 
 export const Articles: CollectionConfig = {
@@ -29,7 +30,10 @@ export const Articles: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        departmentField('Range l’article dans la page de son département (par exemple « /info/isere »).'),
+        departmentField(
+          'Range l’article dans la page de son département (par exemple « /info/isere »). Suisse, Vallée d’Aoste et tout ce qui est hors Auvergne-Rhône-Alpes : choisir « Autres régions ».',
+          INFO_ZONES,
+        ),
         { name: 'city', label: 'Commune', type: 'text' },
         { name: 'kicker', label: 'Rubrique', type: 'text', admin: { placeholder: 'Sport, Faits divers, Société…' } },
       ],

@@ -1,8 +1,23 @@
-// Départements d'Auvergne-Rhône-Alpes (src/lib/departments.ts : liste, libellés, zones des webcams et « Web Cams + ») et
-// tournures dans une phrase (src/lib/places.ts : « en Isère », « de l’Isère »… pour chaque département).
+// Départements d'Auvergne-Rhône-Alpes (src/lib/departments.ts : liste, libellés, zones des webcams et « Web Cams + », zones
+// de l'Info et « Autres régions ») et tournures dans une phrase (src/lib/places.ts : « en Isère », « de l’Isère »… pour
+// chaque département, « hors Auvergne-Rhône-Alpes », « des autres régions »).
 import { describe, expect, it } from 'vitest'
-import { DEPARTMENTS, WEBCAMS_PLUS, WEBCAM_ZONES, departmentLabel, isDepartment, isWebcamZone, webcamZoneLabel, type DepartmentSlug } from '@/lib/departments'
-import { inPlace, ofPlace } from '@/lib/places'
+import {
+  DEPARTMENTS,
+  INFO_ZONES,
+  OTHER_REGIONS,
+  OTHER_REGIONS_LABEL,
+  WEBCAMS_PLUS,
+  WEBCAM_ZONES,
+  departmentLabel,
+  infoZoneLabel,
+  isDepartment,
+  isInfoZone,
+  isWebcamZone,
+  webcamZoneLabel,
+  type DepartmentSlug,
+} from '@/lib/departments'
+import { infoInPlace, infoOfPlace, inPlace, ofPlace } from '@/lib/places'
 import { slugify } from '@/lib/slugify'
 
 /** Les 12 départements de la région, avec leur numéro officiel et leurs tournures. */
@@ -33,12 +48,12 @@ describe('départements de la région', () => {
 
   it('departmentLabel : le nom du département, « Auvergne-Rhône-Alpes » sinon', () => {
     for (const d of EXPECTED) expect(departmentLabel(d.value)).toBe(d.label)
-    for (const v of [null, undefined, '', 'region', 'plus', 'paris', 'Isère']) expect(departmentLabel(v), String(v)).toBe('Auvergne-Rhône-Alpes')
+    for (const v of [null, undefined, '', 'region', 'plus', 'autres-regions', 'paris', 'Isère']) expect(departmentLabel(v), String(v)).toBe('Auvergne-Rhône-Alpes')
   })
 
-  it('isDepartment : seulement les 12 valeurs (ni libellé, ni numéro, ni « plus »)', () => {
+  it('isDepartment : seulement les 12 valeurs (ni libellé, ni numéro, ni « plus », ni « autres-regions »)', () => {
     for (const d of DEPARTMENTS) expect(isDepartment(d.value)).toBe(true)
-    for (const v of ['Haute-Savoie', 'HAUTE-SAVOIE', '74', 'plus', 'region', '', ' ain', 'ain ', 'toString', '__proto__']) {
+    for (const v of ['Haute-Savoie', 'HAUTE-SAVOIE', '74', 'plus', 'autres-regions', 'region', '', ' ain', 'ain ', 'toString', '__proto__']) {
       expect(isDepartment(v), v).toBe(false)
     }
   })
@@ -52,12 +67,54 @@ describe('zones des webcams : départements et « Web Cams + »', () => {
 
   it('isWebcamZone : un département ou « plus »', () => {
     for (const z of WEBCAM_ZONES) expect(isWebcamZone(z.value), z.value).toBe(true)
-    for (const v of ['PLUS', 'Plus', 'web-cams-plus', 'region', '', 'Isère', 'suisse']) expect(isWebcamZone(v), v).toBe(false)
+    for (const v of ['PLUS', 'Plus', 'web-cams-plus', 'autres-regions', 'region', '', 'Isère', 'suisse']) expect(isWebcamZone(v), v).toBe(false)
   })
 
   it('webcamZoneLabel : « Web Cams + » ou le nom du département', () => {
     expect(webcamZoneLabel('plus')).toBe('Web Cams +')
     for (const d of EXPECTED) expect(webcamZoneLabel(d.value)).toBe(d.label)
+  })
+})
+
+describe('zones de l’Info : départements et « Autres régions »', () => {
+  it('les 12 départements dans le même ordre, puis « Autres régions » (Suisse, Vallée d’Aoste, hors de la région) en dernier', () => {
+    expect(OTHER_REGIONS).toBe('autres-regions')
+    expect(OTHER_REGIONS_LABEL).toBe('Autres régions')
+    expect(INFO_ZONES).toEqual([...DEPARTMENTS.map(({ value, label }) => ({ value, label })), { value: 'autres-regions', label: 'Autres régions' }])
+    // l'adresse /info/autres-regions vient du libellé, comme celle des départements
+    expect(OTHER_REGIONS).toBe(slugify(OTHER_REGIONS_LABEL))
+    expect(new Set(INFO_ZONES.map((z) => z.value)).size).toBe(13)
+  })
+
+  it('isInfoZone : un département ou « autres-regions » (ni libellé, ni « plus » des webcams)', () => {
+    for (const z of INFO_ZONES) expect(isInfoZone(z.value), z.value).toBe(true)
+    for (const v of ['Autres régions', 'AUTRES-REGIONS', 'autres-régions', 'autres_regions', 'plus', 'region', '', 'suisse', 'aoste', 'toString']) {
+      expect(isInfoZone(v), v).toBe(false)
+    }
+  })
+
+  it('infoZoneLabel : « Autres régions », le nom du département, « Auvergne-Rhône-Alpes » sinon', () => {
+    expect(infoZoneLabel('autres-regions')).toBe('Autres régions')
+    for (const d of EXPECTED) expect(infoZoneLabel(d.value)).toBe(d.label)
+    for (const v of [null, undefined, '', 'region', 'plus', 'Autres régions']) expect(infoZoneLabel(v), String(v)).toBe('Auvergne-Rhône-Alpes')
+  })
+
+  it('réservé à l’Info : l’agenda, les webcams et la météo ne connaissent pas « autres-regions »', () => {
+    expect(DEPARTMENTS.map((d) => d.value)).not.toContain('autres-regions')
+    expect(WEBCAM_ZONES.map((z) => z.value)).not.toContain('autres-regions')
+    expect(isDepartment('autres-regions')).toBe(false)
+    expect(isWebcamZone('autres-regions')).toBe(false)
+    expect(departmentLabel('autres-regions')).toBe('Auvergne-Rhône-Alpes')
+  })
+
+  it('tournures de l’Info : « hors Auvergne-Rhône-Alpes », « des autres régions » ; celles des départements sinon', () => {
+    expect(infoInPlace('autres-regions')).toBe('hors Auvergne-Rhône-Alpes')
+    expect(infoOfPlace('autres-regions')).toBe('des autres régions')
+    for (const d of [...DEPARTMENTS.map((x) => x.value), null]) {
+      expect(infoInPlace(d), String(d)).toBe(inPlace(d))
+      expect(infoOfPlace(d), String(d)).toBe(ofPlace(d))
+    }
+    expect(`Toute l’info ${infoOfPlace('autres-regions')}`).toBe('Toute l’info des autres régions')
   })
 })
 

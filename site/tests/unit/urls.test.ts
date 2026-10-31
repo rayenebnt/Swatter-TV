@@ -1,7 +1,7 @@
 // Adresses publiques des contenus (src/lib/urls.ts) : une par rubrique, conformes au plan du site (DEV_NOTES, « Adresses
 // du site ») ; utilisées par les liens, le plan du site, la recherche et les données structurées.
 import { describe, expect, it } from 'vitest'
-import { DEPARTMENTS } from '@/lib/departments'
+import { INFO_ZONES } from '@/lib/departments'
 import { articleUrl, departmentUrl, eventUrl, pageUrl, programUrl, replayUrl, videoUrl, webcamUrl } from '@/lib/urls'
 
 describe('adresses des contenus', () => {
@@ -15,6 +15,9 @@ describe('adresses des contenus', () => {
   it('article : rangé dans son département, ou dans « region » pour toute la région', () => {
     expect(articleUrl({ slug: 'un-article', department: 'isere' })).toBe('/info/isere/un-article')
     expect(articleUrl({ slug: 'un-article', department: 'haute-savoie' })).toBe('/info/haute-savoie/un-article')
+    // Suisse, Vallée d'Aoste… : « Autres régions »
+    expect(articleUrl({ slug: 'un-article', department: 'autres-regions' })).toBe('/info/autres-regions/un-article')
+    expect(departmentUrl('autres-regions')).toBe('/info/autres-regions')
     for (const department of [null, undefined, '']) expect(articleUrl({ slug: 'un-article', department }), String(department)).toBe('/info/region/un-article')
     expect(articleUrl({ slug: 'un-article' })).toBe('/info/region/un-article')
   })
@@ -24,8 +27,8 @@ describe('adresses des contenus', () => {
     expect(programUrl({ slug: 'le-journal' })).toBe('/programme-tv#le-journal')
   })
 
-  it('info d’un département : /info/<département>, et l’article y est rangé', () => {
-    for (const d of DEPARTMENTS) {
+  it('info d’un département (ou des « Autres régions ») : /info/<département>, et l’article y est rangé', () => {
+    for (const d of INFO_ZONES) {
       expect(departmentUrl(d.value)).toBe(`/info/${d.value}`)
       expect(articleUrl({ slug: 'x', department: d.value }).startsWith(`${departmentUrl(d.value)}/`)).toBe(true)
     }
