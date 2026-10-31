@@ -1,11 +1,20 @@
 'use client'
 
 import { useEffect, useState, type CSSProperties } from 'react'
+import { ON_AIR_UNTIL_END } from '@/lib/on-air'
+import type { LiveLine } from './liveSlide'
 
-/** Créneau du direct, sérialisable (horaires déjà formatés en heure de Paris côté serveur). */
-export type LiveSlot = { title: string; start: string; end: string; startLabel: string; endLabel: string }
-
-const REFRESH_MS = 30_000
+/** Créneau du direct, sérialisable (horaires déjà formatés en heure de Paris côté serveur, après rognage à l'antenne). */
+export type LiveSlot = {
+  title: string
+  start: string
+  end: string
+  startLabel: string
+  endLabel: string
+  /** Diapositive par défaut : genre et résumé du programme en cours */
+  genreLabel?: string
+  synopsis?: string | null
+}
 
 function remainingLabel(minutes: number): string {
   if (minutes < 60) return `Il reste ${Math.max(1, minutes)} min`
@@ -15,55 +24,58 @@ function remainingLabel(minutes: number): string {
 }
 
 /**
- * Programme en cours sur la diapositive « direct » : titre, horaires et barre de progression.
- * Au rendu serveur (et à l'hydratation) la barre est vide ; la progression est calculée après montage,
- * puis toutes les 30 s (et au retour sur l'onglet). Passe au créneau suivant quand le programme se termine.
+ * Ligne de la diapositive « direct » (voir liveView) :
+ * - à l'antenne, programme en cours : titre, horaires et barre de progression. Au rendu serveur (et à l'hydratation) la
+ *   barre est vide ; la progression est mesurée à l'image suivante (la barre s'anime depuis zéro), puis suit `now`
+ *   (horloge partagée useNow, toutes les 15 s et au retour sur l'onglet) ;
+ * - à l'antenne sans programme saisi : « À l'antenne jusqu'à 0 h 30 », sans barre ;
+ * - hors antenne : « Ce soir à 18:00 · Le journal » (ou « Reprise ce soir à 18 h » sans grille).
  */
-export function LiveProgress({
-  slots,
-  current,
-  showTitle,
-  className,
-  style,
-}: {
-  /** slots[0] : programme en cours au moment du rendu serveur (si `current`), puis les suivants */
-  slots: LiveSlot[]
-  current: boolean
-  showTitle: boolean
-  className?: string
-  style?: CSSProperties
-}) {
-  const [now, setNow] = useState<number | null>(null)
+export function LiveProgress({ line, now, className, style }: { line: LiveLine; now: number | null; className?: string; style?: CSSProperties }) {
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const update = () => {
-      if (!document.hidden) setNow(Date.now())
-    }
-    // Première mesure à l'image suivante : la barre s'anime depuis zéro, comme dans la maquette
-    const raf = requestAnimationFrame(update)
-    const timer = window.setInterval(update, REFRESH_MS)
-    document.addEventListener('visibilitychange', update)
-    return () => {
-      cancelAnimationFrame(raf)
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', update)
-    }
+    const raf = requestAnimationFrame(() => setReady(true))
+    return () => cancelAnimationFrame(raf)
   }, [])
 
-  const slot =
-    now === null ? (current ? slots[0] : undefined) : slots.find((s) => Date.parse(s.start) <= now && now < Date.parse(s.end))
-  if (!slot) return null
+  const cls = (extra = '') => `progress${extra}${className ? ` ${className}` : ''}`
+  if (line.kind === 'until') {
+    return (
+      <div className={cls(' progress--line')} style={style}>
+        <p className="progress__now">
+          <b>{ON_AIR_UNTIL_END}</b>
+        </p>
+      </div>
+    )
+  }
+  if (line.kind === 'off') {
+    return (
+      <div className={cls(' progress--line')} style={style} data-onair="hors-antenne">
+        <p className="progress__now">
+          {line.title ? (
+            <>
+              <span>{line.label} ·</span>
+              <b>{line.title}</b>
+            </>
+          ) : (
+            <b>{line.label}</b>
+          )}
+        </p>
+      </div>
+    )
+  }
 
+  const { slot, showTitle } = line
+  const t = ready ? now : null
   const start = Date.parse(slot.start)
   const end = Date.parse(slot.end)
-  const ratio = now === null || end <= start ? 0 : Math.min(1, Math.max(0, (now - start) / (end - start)))
-  const remaining = now === null ? null : remainingLabel(Math.ceil((end - now) / 60_000))
-  // Le titre est déjà celui de la diapositive par défaut ; on l'affiche dès que le programme a changé
-  const withTitle = showTitle || slot !== slots[0]
+  const ratio = t === null || end <= start ? 0 : Math.min(1, Math.max(0, (t - start) / (end - start)))
+  const remaining = t === null ? null : remainingLabel(Math.ceil((end - t) / 60_000))
 
   return (
-    <div className={className ? `progress ${className}` : 'progress'} style={style}>
-      {withTitle && (
+    <div className={cls()} style={style}>
+      {showTitle && (
         <p className="progress__now">
           <span>À l’antenne</span>
           <b>{slot.title}</b>
@@ -75,7 +87,7 @@ export function LiveProgress({
         aria-label={`Progression du programme en cours : ${slot.title}`}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={now === null ? undefined : Math.round(ratio * 100)}
+        aria-valuenow={t === null ? undefined : Math.round(ratio * 100)}
         aria-valuetext={remaining ?? undefined}
       >
         <span style={{ '--p': ratio.toFixed(4) } as CSSProperties} />

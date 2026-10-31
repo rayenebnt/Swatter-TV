@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { currentEvening } from '../../src/lib/broadcast'
-import { expectNoHorizontalOverflow, expectPlayer, firstDoc, linksMatching, settle, watchErrors } from './helpers'
+import { atParisTime, expectNoHorizontalOverflow, expectPlayer, firstDoc, linksMatching, settle, watchErrors } from './helpers'
 
 // Un test par rubrique : le contenu attendu est bien là (jeu de démonstration : npm run seed).
 
@@ -221,10 +221,13 @@ test('replay : liste et page replay avec son lecteur', async ({ page }) => {
   expect(errors, errors.join('\n')).toEqual([])
 })
 
-test('direct : le lecteur du direct est présent', async ({ page, request }) => {
+test('direct : le lecteur du direct est présent pendant l’antenne', async ({ page, request }) => {
   const settings = (await (await request.get('/api/globals/settings?depth=0')).json()) as { liveEnabled?: boolean }
   test.skip(settings.liveEnabled === false, 'direct désactivé dans les réglages')
   const errors = watchErrors(page)
+  // le lecteur n'est affiché que de 18 h à 0 h 30 (décidé aussi dans le navigateur) : horloge du navigateur à 21 h
+  // (hors antenne : voir antenne.spec.ts)
+  await atParisTime(page, '21:00')
   await page.goto('/direct')
   await settle(page)
   await expectPlayer(page)

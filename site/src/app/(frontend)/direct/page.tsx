@@ -1,14 +1,16 @@
 import type { Metadata } from 'next'
 import { AdSlot } from '@/components/layout/AdSlot'
 import { JsonLd } from '@/components/ui/JsonLd'
+import { MediaImage } from '@/components/ui/MediaImage'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { LiveOff } from '@/components/video/LiveOff'
+import { DirectStage } from '@/components/video/DirectStage'
 import { OnAirPanel } from '@/components/video/OnAirPanel'
 import { ReplaySection } from '@/components/video/ReplaySection'
-import { VideoPlayer } from '@/components/video/VideoPlayer'
 import { renderNow, videoObject } from '@/components/video/utils'
+import { BROADCAST_HOURS_LABEL } from '@/lib/broadcast'
 import { mediaFocal, mediaUrl, wholeOrientation } from '@/lib/media'
-import { getOnAir } from '@/lib/queries/schedule'
+import { onAirState } from '@/lib/on-air'
+import { getOnAirData } from '@/lib/queries/schedule'
 import { getSettings } from '@/lib/queries/settings'
 import { SITE_NAME } from '@/lib/site'
 import { resolveVideo } from '@/lib/video'
@@ -17,7 +19,8 @@ import { ogImage } from '@/lib/og'
 
 export const revalidate = 60
 
-const DESCRIPTION = 'Regardez Swatter TV Info en direct et gratuitement\u00a0: l’info, la météo, les magazines et les documentaires d’Auvergne-Rhône-Alpes.'
+const DESCRIPTION =
+  'Regardez Swatter TV Info en direct et gratuitement, tous les soirs de 18 h à 0 h 30 : l’info, la météo, les magazines et les documentaires d’Auvergne-Rhône-Alpes.'
 const FALLBACK_POSTER = '/visuels/hero-crepuscule.webp'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -39,33 +42,42 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function DirectPage() {
-  const now = renderNow()
-  const [settings, onAir] = await Promise.all([getSettings(), getOnAir(new Date(now), 6)])
+  const now = new Date(renderNow())
+  const [settings, onAir] = await Promise.all([getSettings(), getOnAirData(now)])
   const live = settings?.liveEnabled ? resolveVideo(settings.live) : null
   const poster = mediaUrl(settings?.livePoster, 'hero') ?? (live?.kind === 'youtube' ? live.thumbnail : null) ?? FALLBACK_POSTER
-  const current = onAir.current
+  // Programme en cours au rendu, pour les données structurées seulement : le lecteur ou l'écran hors antenne, et
+  // « En ce moment / À suivre », se décident aussi dans le navigateur (page en cache, onglet resté ouvert)
+  const { current } = onAirState(onAir.slots, now.getTime())
 
   return (
     <>
-      <PageHeader eyebrow="Swatter TV Info · 24 h/24" title="Le direct" description={DESCRIPTION} crumbs={[{ label: 'Le direct' }]} />
+      <PageHeader eyebrow={`Swatter TV Info · tous les soirs, ${BROADCAST_HOURS_LABEL}`} title="Le direct" description={DESCRIPTION} crumbs={[{ label: 'Le direct' }]} />
 
       <section className="container direct" aria-label="Le direct de Swatter TV Info">
         <div className="direct__grid" data-preview="live">
-          {live ? (
-            // autoPlay : le direct d\u00e9marre seul, sans le son, quand il est visible (lecteurs tiers : contenus externes accept\u00e9s)
-            <VideoPlayer
-              video={live}
-              poster={poster}
-              posterPosition={mediaFocal(settings?.livePoster)}
-              posterOrientation={wholeOrientation(settings?.livePoster, 16 / 9, 'hero')}
-              title={current ? `Swatter TV Info en direct\u00a0: ${current.title}` : 'Swatter TV Info en direct'}
+          <DirectStage
+            data={onAir}
+            player={
               live
-              autoPlay
-            />
-          ) : (
-            <LiveOff poster={settings?.livePoster} next={onAir.next[0] ?? null} now={now} fallbackSrc={FALLBACK_POSTER} />
-          )}
-          <OnAirPanel current={current} next={onAir.next} />
+                ? { video: live, poster, posterPosition: mediaFocal(settings?.livePoster), posterOrientation: wholeOrientation(settings?.livePoster, 16 / 9, 'hero') }
+                : null
+            }
+            poster={
+              <MediaImage
+                media={settings?.livePoster}
+                size="hero"
+                fill
+                whole
+                sizes="(max-width: 1100px) 100vw, 900px"
+                alt=""
+                className="vp__poster"
+                fallbackSrc={FALLBACK_POSTER}
+                priority
+              />
+            }
+          />
+          <OnAirPanel data={onAir} />
         </div>
       </section>
 
@@ -81,12 +93,19 @@ export default async function DirectPage() {
             name: current ? `${current.title} — Swatter TV Info en direct` : 'Swatter TV Info en direct',
             description: current?.synopsis || DESCRIPTION,
             thumbnail: poster,
-            uploadDate: current?.start ?? settings?.updatedAt ?? new Date(now).toISOString(),
+            uploadDate: current?.start ?? settings?.updatedAt ?? now.toISOString(),
             url: '/direct',
             video: live,
-            extra: current
-              ? { publication: { '@type': 'BroadcastEvent', name: current.title, isLiveBroadcast: true, startDate: current.start, endDate: current.end } }
-              : undefined,
+            // la soirée d'antenne en cours ou à venir (18 h – 0 h 30), qu'un programme soit saisi ou non
+            extra: {
+              publication: {
+                '@type': 'BroadcastEvent',
+                name: current?.title ?? 'Swatter TV Info en direct',
+                isLiveBroadcast: true,
+                startDate: onAir.evening.start,
+                endDate: onAir.evening.end,
+              },
+            },
           })}
         />
       )}

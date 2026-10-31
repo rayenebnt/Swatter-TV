@@ -3,15 +3,17 @@ import { MediaImage } from '@/components/ui/MediaImage'
 import { formatDayLong, formatNumber, formatTime } from '@/lib/format'
 import type { MediaRef } from '@/lib/media'
 import { getEveningProgram, getWeekendEvent, type EveningProgram, type HomeEvent } from '@/lib/queries/home'
-import { getOnAir, type Slot } from '@/lib/queries/schedule'
+import { getOnAirData, type Slot } from '@/lib/queries/schedule'
 import { getSettings } from '@/lib/queries/settings'
 import { eventUrl, programUrl } from '@/lib/urls'
+import { resolveVideo } from '@/lib/video'
 import type { Setting } from '@/payload-types'
 import { CountUp } from './CountUp'
 import { heroWhole } from './heroMedia'
 import { HeroClient, type HeroBadge, type HeroLink, type HeroLive, type HeroSlide } from './HeroClient'
 import { HeroImage } from './HeroImage'
 import type { LiveSlot } from './LiveProgress'
+import { cutBadges, cutNavLabel, splitTitle } from './liveSlide'
 import '@/styles/hero.css'
 
 type ConfiguredSlide = NonNullable<Setting['heroSlides']>[number]
@@ -41,12 +43,6 @@ const WEEKEND_DAYS = new Set(['vendredi', 'samedi', 'dimanche'])
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
-/** « La Démontagnée, le grand retour » → ligne blanche « La Démontagnée, » + ligne dorée « le grand retour ». */
-function splitTitle(title: string): [string, string | null] {
-  const m = title.match(/^(.{3,}?(?:\s:|,|\s[–—]))\s+(.{2,})$/)
-  return m ? [m[1], m[2]] : [title, null]
-}
-
 /** Icône des boutons saisis dans l'administration, déduite du lien et du texte (comme dans la maquette). */
 function linkIcon(href: string, label: string, primary: boolean): IconName | null {
   if (/\d{1,2}\s?[:h]\s?\d{2}/.test(label)) return 'clock'
@@ -63,24 +59,39 @@ function configuredLink(label: string | null | undefined, href: string | null | 
   return l && h ? { label: l, href: h, icon: linkIcon(h, l, primary) } : null
 }
 
-const toLiveSlot = (s: Slot): LiveSlot => ({ title: s.title, start: s.start, end: s.end, startLabel: formatTime(s.start), endLabel: formatTime(s.end) })
+const toLiveSlot = (s: Slot): LiveSlot => ({
+  title: s.title,
+  start: s.start,
+  end: s.end,
+  startLabel: formatTime(s.start),
+  endLabel: formatTime(s.end),
+  genreLabel: s.genreLabel,
+  synopsis: s.synopsis,
+})
 
-/** Diapositives saisies dans les réglages (onglet « Accueil (carrousel) »). */
-function fromSettings(slides: ConfiguredSlide[], live: Omit<HeroLive, 'showTitle'> | null): Draft[] {
+/**
+ * Diapositives saisies dans les réglages (onglet « Accueil (carrousel) »). Diapositive « direct » : textes saisis
+ * conservés, badge rouge et ligne du programme selon l'antenne (liveView, dans le navigateur) ; `live` null (direct coupé
+ * dans les réglages, ou sans flux) : ni badge rouge ni « En direct ».
+ */
+function fromSettings(slides: ConfiguredSlide[], live: HeroLive | null): Draft[] {
   return slides.map((s, i) => {
     const isLive = s.kind === 'live'
+    const cut = isLive && !live
     const fb = FALLBACKS[i % FALLBACKS.length]
+    const badges = (s.badges ?? []).map((b): HeroBadge => ({ label: b.label, style: b.style ?? 'glass' }))
+    const navLabel = s.navLabel?.trim() || s.badges?.[0]?.label || (isLive ? 'En direct' : 'À la une')
     return {
       key: s.id || `diapositive-${i}`,
-      badges: (s.badges ?? []).map((b): HeroBadge => ({ label: b.label, style: b.style ?? 'glass' })),
+      badges: cut ? cutBadges(badges) : badges,
       line1: s.titleLine1,
       line2: s.titleLine2?.trim() || null,
       description: s.description?.trim() || null,
-      navLabel: s.navLabel?.trim() || s.badges?.[0]?.label || (isLive ? 'En direct' : 'À la une'),
+      navLabel: cut ? cutNavLabel(navLabel) : navLabel,
       navTitle: [s.titleLine1, s.titleLine2].filter(Boolean).join(' '),
       primary: configuredLink(s.primaryLabel, s.primaryHref, true),
       secondary: configuredLink(s.secondaryLabel, s.secondaryHref, false),
-      live: isLive && live ? { ...live, showTitle: true } : null,
+      live: isLive ? live : null,
       image: s.image,
       imageMobile: s.imageMobile,
       heroFallback: fb.hero,
@@ -90,21 +101,23 @@ function fromSettings(slides: ConfiguredSlide[], live: Omit<HeroLive, 'showTitle
   })
 }
 
-/** Diapositive « direct » par défaut : le programme en cours sur le visuel du crépuscule. */
-function liveDraft(current: Slot | null, live: Omit<HeroLive, 'showTitle'> | null, tagline: string | null): Draft {
-  const [line1, line2] = current ? splitTitle(current.title) : ['Swatter TV Info', 'en direct']
+/**
+ * Diapositive « direct » par défaut, sur le visuel du crépuscule : à l'antenne, le programme en cours (titre, genre,
+ * résumé) ; hors antenne, « Ce soir dès 18 h ». Ces textes suivent l'heure du visiteur (liveView, live.auto) ; ceux
+ * d'ici ne sont que la base commune.
+ */
+function liveDraft(live: HeroLive): Draft {
   return {
     key: 'direct',
-    badges: [{ label: 'En direct', style: 'live' }, ...(current?.genreLabel ? [{ label: current.genreLabel, style: 'glass' } as const] : [])],
-    line1,
-    line2,
-    description: current?.synopsis || tagline,
+    badges: [{ label: 'En direct', style: 'live' }],
+    line1: 'Swatter TV Info',
+    line2: 'en direct',
+    description: live.auto?.tagline ?? null,
     navLabel: 'En direct',
-    navTitle: current?.title ?? 'Swatter TV Info en direct',
+    navTitle: 'Swatter TV Info en direct',
     primary: { label: 'Regarder le direct', href: '/direct', icon: 'play' },
     secondary: { label: 'Programme TV', href: '/programme-tv', icon: 'cal' },
-    // Le titre du programme est déjà le titre de la diapositive
-    live: live ? { ...live, showTitle: !current } : null,
+    live,
     image: null,
     imageMobile: null,
     heroFallback: FALLBACKS[0].hero,
@@ -113,9 +126,8 @@ function liveDraft(current: Slot | null, live: Omit<HeroLive, 'showTitle'> | nul
   }
 }
 
-/** Diapositive « programme de soirée » par défaut. */
-function eveningDraft({ slot, image, tonight }: EveningProgram): Draft {
-  const when = tonight ? 'Ce soir' : 'Demain soir'
+/** Diapositive « programme de soirée » par défaut (« Ce soir », « Demain soir », ou entre 0 h et 0 h 30 « Samedi soir »). */
+function eveningDraft({ slot, image, when }: EveningProgram): Draft {
   const time = formatTime(slot.start)
   const [line1, line2] = splitTitle(slot.title)
   const kind: HeroBadge | null = slot.isPremiere ? { label: 'Inédit', style: 'gold' } : slot.genreLabel ? { label: slot.genreLabel, style: 'gold' } : null
@@ -242,25 +254,29 @@ export async function Hero() {
   const now = new Date()
   const settings = await getSettings()
   const configured = (settings?.heroSlides ?? []).filter((s) => s.titleLine1?.trim())
-  const liveOn = settings?.liveEnabled !== false
+  // Même règle que la page Direct : direct actif ET flux renseigné, sinon « Le direct reprend bientôt » là-bas
+  const liveOn = Boolean(settings?.liveEnabled && resolveVideo(settings.live))
   const useDefaults = configured.length === 0
   const needOnAir = liveOn && (useDefaults || configured.some((s) => s.kind === 'live'))
 
   const [onAir, evening, event] = await Promise.all([
-    needOnAir ? getOnAir(now, 3) : Promise.resolve({ current: null, next: [] as Slot[] }),
+    needOnAir ? getOnAirData(now) : Promise.resolve(null),
     useDefaults ? getEveningProgram(now) : Promise.resolve(null),
     useDefaults ? getWeekendEvent() : Promise.resolve(null),
   ])
 
-  const slots = [onAir.current, ...onAir.next].filter((s): s is Slot => s !== null)
-  const live = slots.length ? { slots: slots.map(toLiveSlot), current: onAir.current !== null } : null
   const tagline = settings?.tagline?.trim() || null
+  // Programme de l'antenne (soirée en cours ou à venir et la suivante) : la diapositive « direct » se recalcule à l'heure
+  // du visiteur, y compris à 18 h et à 0 h 30 sur une page servie depuis le cache
+  const live = (auto: boolean): HeroLive | null =>
+    onAir ? { at: onAir.at, evening: onAir.evening, slots: onAir.slots.map(toLiveSlot), auto: auto ? { tagline } : null } : null
 
   let drafts: Draft[]
-  if (!useDefaults) drafts = fromSettings(configured, live)
+  if (!useDefaults) drafts = fromSettings(configured, live(false))
   else {
     drafts = []
-    if (liveOn) drafts.push(liveDraft(onAir.current, live, tagline))
+    const direct = live(true)
+    if (direct) drafts.push(liveDraft(direct))
     if (evening) drafts.push(eveningDraft(evening))
     if (event) drafts.push(eventDraft(event, now))
     if (!drafts.length) drafts.push(brandDraft(tagline))

@@ -1,5 +1,5 @@
 import { expect, request as apiRequest, test, type APIRequestContext, type Page } from '@playwright/test'
-import { settle, watchErrors } from './helpers'
+import { atParisTime, settle, watchErrors } from './helpers'
 import { mobileContext, presetConsent, recordThirdParty } from './outils-contenus'
 import { MOCK_PROGRAM, MOCK_VIDEOS, startYoutubeMock } from './youtube-mock'
 
@@ -364,6 +364,8 @@ test.describe('administration', () => {
       const saved = await request.post('/api/globals/settings', { headers, data: { liveEnabled: true, live: { provider: 'twitch', twitchUrl: 'https://www.twitch.tv/SwatterTV' } } })
       expect(saved.ok()).toBe(true)
       await recordThirdParty(page.context())
+      // lecteur affiché seulement pendant l'antenne (18 h – 0 h 30, décidé aussi dans le navigateur) : horloge à 21 h
+      await atParisTime(page, '21:00')
       await page.goto('/direct')
       // sans accord aux contenus externes : façade, rien n'est chargé depuis Twitch avant le clic
       await expect(page.locator('.vp__notice')).toContainText('lecteur Twitch')
@@ -384,6 +386,7 @@ test.describe('administration', () => {
         await presetConsent(accepted, { audience: false, externes: true })
         await recordThirdParty(accepted)
         const visit = await accepted.newPage()
+        await atParisTime(visit, '21:00')
         await visit.goto('/direct')
         const frame = visit.locator('iframe.vp__frame')
         await expect(frame).toHaveAttribute('src', /^https:\/\/player\.twitch\.tv\//)
@@ -403,6 +406,7 @@ test.describe('administration', () => {
         await presetConsent(calm, { audience: false, externes: true })
         const third = await recordThirdParty(calm)
         const visit = await calm.newPage()
+        await atParisTime(visit, '21:00')
         await visit.goto('/direct')
         await expect(visit.locator('.vp__play')).toBeVisible()
         await visit.waitForTimeout(1_500)

@@ -27,6 +27,43 @@ export function watchErrors(page: Page): string[] {
   return errors
 }
 
+const parisParts = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Paris',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+})
+/** Heure murale de Paris à l'instant `t` (ms), relue comme si elle était UTC : sert à mesurer le décalage horaire. */
+function parisWall(t: number): number {
+  const p = Object.fromEntries(parisParts.formatToParts(new Date(t)).map((x) => [x.type, x.value]))
+  return Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute), Number(p.second))
+}
+
+/**
+ * Instant d'aujourd'hui (jour civil de Paris au moment du test, décalé de `dayOffset` jours) à `time` (« HH:MM:SS » ou
+ * « HH:MM », heure de Paris), changements d'heure compris.
+ */
+export function parisToday(time: string, dayOffset = 0): Date {
+  const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date()).split('-').map(Number)
+  const [hh, mm, ss = 0] = time.split(':').map(Number)
+  const guess = Date.UTC(y, m - 1, d + dayOffset, hh, mm, ss)
+  const first = guess - (parisWall(guess) - guess)
+  return new Date(guess - (parisWall(first) - first))
+}
+
+/**
+ * Fige l'horloge du navigateur à `time` aujourd'hui (heure de Paris). L'antenne (18 h – 0 h 30) se décide aussi dans le
+ * navigateur (pages en cache, onglets ouverts) : le serveur rend avec l'heure réelle, le navigateur bascule ensuite selon
+ * son heure. À appeler avant page.goto : « à l'antenne » / « hors antenne » sans dépendre de l'heure du test.
+ */
+export async function atParisTime(page: Page, time: string) {
+  await page.clock.setFixedTime(parisToday(time))
+}
+
 /** Vérifie qu'aucun élément ne provoque de défilement horizontal. */
 export async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => {
