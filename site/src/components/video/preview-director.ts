@@ -22,7 +22,10 @@ export const MAX_PLAYING_SMALL = 3
  */
 export const KEEP_PX = 48
 
-/** Plafond selon l'appareil : petit écran (≤ 760 px) ou mémoire de 2 Go au plus (navigator.deviceMemory, Chrome). */
+/**
+ * Plafond selon l'appareil : petit écran (≤ 760 px de large ou ≤ 500 px de haut : téléphone, y compris en paysage) ou
+ * mémoire de 2 Go au plus (navigator.deviceMemory, Chrome).
+ */
 export function previewLimit(smallScreen: boolean, memoryGb?: number): number {
   return smallScreen || (memoryGb !== undefined && memoryGb <= 2) ? MAX_PLAYING_SMALL : MAX_PLAYING
 }
@@ -64,8 +67,8 @@ export type PreviewSlot = {
 }
 
 /**
- * Contexte : aperçus permis (ni « réduire les animations » ni économie de données), onglet masqué, plafond d'aperçus lus
- * en même temps (previewLimit).
+ * Contexte : aperçus permis (ni « réduire les animations », ni économie de données, ni aperçus arrêtés par l'internaute),
+ * onglet masqué, plafond d'aperçus lus en même temps (previewLimit).
  */
 export type PreviewEnv = { allowed: boolean; hidden: boolean; limit: number }
 
@@ -74,7 +77,10 @@ type Entry = {
   slot: PreviewSlot
   /** Part visible (IntersectionObserver), 0 hors écran */
   ratio: number
-  /** Carte restée visible SETTLE_MS : elle peut tourner jusqu'à sa sortie de l'écran */
+  /**
+   * Carte restée visible SETTLE_MS, lecteur apparu à 60 % (ou relancé par son bouton) : il peut tourner jusqu'à sa sortie
+   * de l'écran. Survit à un arrêt (onglet masqué, préférence) : l'aperçu reprend au retour sans nouveau rappel de visibilité.
+   */
   ready: boolean
   settleTimer: ReturnType<typeof setTimeout> | null
   /** Lecteur : aperçu mis en pause par l'internaute */
@@ -155,6 +161,11 @@ export class PreviewDirector {
           this.schedule()
         }, SETTLE_MS)
       }
+    } else if (ratio >= VISIBLE_RATIO) {
+      // lecteur : lancé à 60 % visible, il tourne ensuite tant qu'il reste à l'écran
+      entry.ready = true
+    } else if (ratio <= 0) {
+      entry.ready = false
     }
     if (ratio <= 0 && entry.playing) {
       this.stop(entry)
@@ -174,8 +185,10 @@ export class PreviewDirector {
     entry.paused = paused
     if (paused) {
       if (entry.playing) this.stop(entry)
-    } else if (this.canRun && !entry.playing) {
-      this.start(entry)
+    } else {
+      // relance demandée : il tourne tant qu'il reste à l'écran, même revenu à moins de 60 % depuis la pause
+      if (entry.ratio > 0) entry.ready = true
+      if (this.canRun && !entry.playing) this.start(entry)
     }
     this.evaluate()
   }
@@ -235,12 +248,10 @@ export class PreviewDirector {
     if (this.canRun) {
       const cards: Entry[] = []
       for (const entry of this.slots.values()) {
-        if (entry.slot.kind === 'ambient') {
-          // lancé à 60 % visible, il continue tant qu'il reste à l'écran
-          if (!entry.paused && entry.ratio > 0 && (entry.ratio >= VISIBLE_RATIO || entry.playing)) chosen.add(entry)
-        } else if (entry.ready && entry.ratio > 0) {
-          cards.push(entry)
-        }
+        if (!entry.ready || entry.ratio <= 0) continue
+        if (entry.slot.kind === 'card') cards.push(entry)
+        // lecteur : servi avant les cartes, sauf pause demandée par son bouton
+        else if (!entry.paused) chosen.add(entry)
       }
       const room = Math.max(0, this.env.limit - chosen.size)
       this.crowded = cards.length > room

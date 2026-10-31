@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test'
 import { settle, watchErrors } from './helpers'
 import { AdminApi, mobileContext, presetConsent, recordThirdParty, SITE, unique } from './outils-contenus'
@@ -9,9 +10,10 @@ import { AdminApi, mobileContext, presetConsent, recordThirdParty, SITE, unique 
  * le bouton « Lire la vidéo » des fiches. Vérifié : chaque carte visible lance son aperçu seule, en boucle et sans le
  * son, sans survol ni toucher, sur ordinateur comme sur téléphone ; une carte hors de l'écran ne demande rien
  * (preload="none", pas de src) jusqu'à son arrivée à l'écran ; plusieurs aperçus tournent ensemble, dans la limite du
- * plafond (3 sur téléphone) ; pause hors de l'écran et onglet masqué ; jamais en « réduire les animations » ; aucune
- * requête vers un autre site ; le lien de la carte reste cliquable ; sur la fiche, bouton pause, façade et consentement
- * du lecteur YouTube inchangés.
+ * plafond (3 sur téléphone, en portrait comme en paysage) ; pause hors de l'écran et onglet masqué ; jamais en « réduire
+ * les animations » ; commande « Arrêter les aperçus animés » du pied de page (WCAG 2.2.2 : cartes et fiche, choix gardé
+ * au rechargement) ; aucune requête vers un autre site ; le lien de la carte reste cliquable ; sur la fiche, bouton
+ * pause, façade et consentement du lecteur YouTube inchangés.
  *
  * Les vidéos de test (YouTube, identifiants fictifs) reçoivent pour aperçu le clip de démonstration de la médiathèque
  * (npm run seed). C'est un MP4 H.264 que le Chromium de Playwright ne décode pas : la lecture échoue en silence. Les
@@ -102,6 +104,13 @@ const cardOf = (page: Page, slug: string) => page.locator('.vgrid article.vcard'
 const playing = (previews: Locator) =>
   previews.evaluateAll((els) => els.filter((el) => !(el as HTMLVideoElement).paused && el.classList.contains('is-on')).length)
 
+/** Aucun aperçu de la page ne joue (tous en pause). */
+const allPaused = (page: Page) => page.locator('video.vprev').evaluateAll((els) => els.every((el) => (el as HTMLVideoElement).paused))
+
+/** Commande du pied de page qui arrête ou relance tous les aperçus animés du site. */
+const stopButton = (page: Page) => page.locator('footer').getByRole('button', { name: 'Arrêter les aperçus animés', exact: true })
+const relaunchButton = (page: Page) => page.locator('footer').getByRole('button', { name: 'Relancer les aperçus animés', exact: true })
+
 /** Aperçus visibles au moins à moitié parmi ceux désignés. */
 const halfVisible = (previews: Locator) =>
   previews.evaluateAll(
@@ -112,6 +121,33 @@ const halfVisible = (previews: Locator) =>
         return r.width * r.height > 0 && shown / (r.width * r.height) >= 0.5
       }).length,
   )
+
+/** Image 16:9 de la médiathèque (visuels des contenus de départ), comme les couvertures automatiques ; null sans elle. */
+async function wideImage(admin: AdminApi): Promise<number | null> {
+  const res = await admin.send('GET', '/api/media?limit=200&depth=0&where[mimeType][contains]=image%2F')
+  const { docs } = (await res.json()) as { docs: (Media & { width?: number | null; height?: number | null })[] }
+  return docs.find((m) => m.width && m.height && Math.abs(m.width / m.height - 16 / 9) < 0.01)?.id ?? null
+}
+
+/**
+ * Cadrage de la photo et de l'aperçu d'une tuile : object-fit et rectangle affiché dans la tuile (x, y, largeur, hauteur,
+ * au pixel près), d'après les dimensions propres de l'image et de la vidéo ; proportions de la tuile.
+ */
+const framing = (tile: Locator) =>
+  tile.evaluate((el) => {
+    const shown = (media: HTMLImageElement | HTMLVideoElement, w: number, h: number) => {
+      const r = media.getBoundingClientRect()
+      const css = getComputedStyle(media)
+      const scale = css.objectFit === 'contain' ? Math.min(r.width / w, r.height / h) : Math.max(r.width / w, r.height / h)
+      const [x, y] = css.objectPosition.split(' ').map((v) => parseFloat(v) / 100)
+      const box = [Math.max(0, (r.width - w * scale) * x), Math.max(0, (r.height - h * scale) * y), Math.min(r.width, w * scale), Math.min(r.height, h * scale)]
+      return { fit: css.objectFit, box: box.map(Math.round) }
+    }
+    const photo = el.querySelector<HTMLImageElement>('.whole__fg')!
+    const video = el.querySelector<HTMLVideoElement>(':scope > .vprev')!
+    const r = el.getBoundingClientRect()
+    return { ratio: r.width / r.height, photo: shown(photo, photo.naturalWidth, photo.naturalHeight), video: shown(video, video.videoWidth, video.videoHeight) }
+  })
 
 /** Balise présente, rien de demandé, décorative. */
 async function expectIdle(preview: Locator) {
@@ -188,18 +224,24 @@ withAdmin('aperçus animés des cartes et des fiches (vidéos créées pour le t
     }
   })
 
-  test('lecture réelle (extrait WebM) : plusieurs aperçus tournent ensemble et en boucle, sans geste, 3 au plus sur téléphone ; pause hors de l’écran et onglet masqué', async ({ browser }) => {
+  test('lecture réelle (extrait WebM) : plusieurs aperçus tournent ensemble et en boucle, sans geste, 3 au plus sur téléphone (aussi en paysage) ; pause hors de l’écran et onglet masqué ; commande « Arrêter les aperçus animés »', async ({ browser }) => {
     const body = webmClip()
     test.skip(!body, 'ffmpeg absent : extrait WebM non fabriqué')
+    // trois navigateurs, rechargements : plus long que les autres tests
+    test.slow()
     // quatre autres vidéos à aperçu, juste après la première dans la grille
     others = []
     for (let i = 0; i < 4; i++) others.push(await videoWithPreview(admin(), clip!, unique(`grille-${i}`), 2 + i))
     const desk = await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: { width: 1440, height: 900 } })
     const mobile = await mobileContext(browser)
+    // téléphone en paysage (iPhone Pro Max) : plus de 760 px de large, mais petit écran par sa hauteur ; trois colonnes
+    // de cartes, plus de trois aperçus à l'écran
+    const landscape = await mobileContext(browser, { viewport: { width: 932, height: 430 } })
     try {
       for (const [context, cap] of [
         [desk, 6],
         [mobile, 3],
+        [landscape, 3],
       ] as const) {
         await presetConsent(context)
         await serveWebm(context, clip!, body!)
@@ -209,7 +251,13 @@ withAdmin('aperçus animés des cartes et des fiches (vidéos créées pour le t
         await settle(page)
         const ours = [video!, ...others].map((v) => cardOf(page, v.slug).locator('.media > video.vprev'))
         const grid = page.locator('.vgrid video.vprev')
-        await cardOf(page, video!.slug).evaluate((el) => el.scrollIntoView({ block: 'start' }))
+        if (context === landscape) {
+          // 430 px de haut : première rangée de cartes en haut de l'écran, la deuxième aux deux tiers (sans cela, la
+          // marge laissée pour l'en-tête n'en laisse voir que le tiers)
+          await ours[0].evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top))
+        } else {
+          await cardOf(page, video!.slug).evaluate((el) => el.scrollIntoView({ block: 'start' }))
+        }
         const shown = await halfVisible(grid)
         expect(shown, 'plusieurs cartes à aperçu visibles').toBeGreaterThan(cap === 3 ? 3 : 1)
 
@@ -218,6 +266,11 @@ withAdmin('aperçus animés des cartes et des fiches (vidéos créées pour le t
         else await expect.poll(() => playing(grid), 'plusieurs aperçus en même temps').toBeGreaterThanOrEqual(Math.min(shown, cap))
         await page.waitForTimeout(1_000)
         expect(await playing(page.locator('video.vprev')), 'jamais plus que le plafond').toBeLessThanOrEqual(cap)
+        if (context === landscape) {
+          // en paysage, seul le plafond est vérifié (le reste l'est en portrait)
+          expect(errors, errors.join('\n')).toEqual([])
+          continue
+        }
 
         // en continu : un extrait de 2 s qui tourne tourne encore 2,5 s plus tard (boucle), et son image avance
         const continuous = await grid.evaluateAll(async (els) => {
@@ -246,11 +299,42 @@ withAdmin('aperçus animés des cartes et des fiches (vidéos créées pour le t
         await expect.poll(() => playing(page.locator('video.vprev')), 'onglet masqué : tout est en pause').toBe(0)
         await setHidden(false)
         await expect.poll(() => playing(grid), 'onglet revenu : reprise').toBeGreaterThan(0)
+
+        // commande du pied de page (WCAG 2.2.2) : tous les aperçus s'arrêtent, et ne repartent pas une fois revenus à
+        // l'écran ; le bouton garde le focus et dit comment les relancer
+        const backToGrid = () => cardOf(page, video!.slug).evaluate((el) => el.scrollIntoView({ block: 'start' }))
+        await stopButton(page).click()
+        await expect(relaunchButton(page)).toBeFocused()
+        await backToGrid()
+        await page.waitForTimeout(1_500)
+        expect(await allPaused(page), 'aperçus arrêtés : aucun ne joue, même à l’écran').toBe(true)
+        expect(await playing(page.locator('video.vprev'))).toBe(0)
+        if (context === desk) {
+          // le bouton dans l'audit axe (accessibilite.spec.ts audite en « réduire les animations », où il est masqué)
+          const { violations } = await new AxeBuilder({ page }).include('footer').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+          expect(violations.filter((v) => v.impact === 'critical' || v.impact === 'serious').map((v) => v.id)).toEqual([])
+        }
+
+        // choix gardé dans le navigateur : au rechargement, rien ne tourne ni n'est demandé
+        await page.reload()
+        await settle(page)
+        await expect(relaunchButton(page)).toBeVisible()
+        await backToGrid()
+        await page.waitForTimeout(1_500)
+        expect(await allPaused(page), 'aperçus toujours arrêtés après rechargement').toBe(true)
+        for (const preview of ours) expect(await preview.getAttribute('src'), 'aucun fichier d’aperçu demandé').toBeNull()
+
+        // relance : ils repartent
+        await relaunchButton(page).click()
+        await expect(stopButton(page)).toBeFocused()
+        await backToGrid()
+        await expect.poll(() => playing(grid), 'aperçus relancés').toBeGreaterThan(0)
         expect(errors, errors.join('\n')).toEqual([])
       }
     } finally {
       await desk.close()
       await mobile.close()
+      await landscape.close()
     }
   })
 
@@ -330,6 +414,18 @@ withAdmin('aperçus animés des cartes et des fiches (vidéos créées pour le t
       await resume.click()
       await expect(player.getByRole('button', { name: 'Mettre l’aperçu en pause' })).toBeFocused()
       await expect.poll(() => preview.evaluate((v: HTMLVideoElement) => !v.paused)).toBe(true)
+
+      // commande du pied de page : l'aperçu du lecteur s'arrête aussi (son bouton disparaît), même revenu à l'écran ;
+      // relance : il repart
+      await stopButton(page).click()
+      await page.evaluate(() => window.scrollTo(0, 0))
+      await page.waitForTimeout(1_000)
+      expect(await preview.evaluate((v: HTMLVideoElement) => v.paused), 'aperçu de la fiche arrêté').toBe(true)
+      await expect(player.getByRole('button', { name: PREVIEW_TOGGLE })).toHaveCount(0)
+      await relaunchButton(page).click()
+      await page.evaluate(() => window.scrollTo(0, 0))
+      await expect.poll(() => preview.evaluate((v: HTMLVideoElement) => !v.paused), 'aperçu de la fiche relancé').toBe(true)
+      await expect(player.getByRole('button', { name: 'Mettre l’aperçu en pause' })).toBeVisible()
     } else {
       test.info().annotations.push({ type: 'info', description: 'aperçu non décodé par ce navigateur (H.264) : bouton pause non vérifié' })
       await expect(player.getByRole('button', { name: PREVIEW_TOGGLE })).toHaveCount(0)
@@ -342,6 +438,50 @@ withAdmin('aperçus animés des cartes et des fiches (vidéos créées pour le t
     expect(await frame.getAttribute('src')).not.toMatch(/mute=1/)
     await expect(frame).toBeFocused()
     await expect(player.locator('video.vprev')).toHaveCount(0)
+    expect(errors, errors.join('\n')).toEqual([])
+  })
+
+  test('« Vidéo du jour » (accueil) : l’aperçu a le cadrage de la photo, entière sur fond flou dans une tuile à peine plus large que haute, couvrante ailleurs', async ({ page }) => {
+    const body = webmClip()
+    test.skip(!body, 'ffmpeg absent : extrait WebM non fabriqué')
+    const thumb = await wideImage(admin())
+    test.skip(!thumb, 'aucune image 16:9 dans la médiathèque (lancez npm run seed)')
+    const errors = watchErrors(page)
+    const tag = unique('tuile')
+    // vidéo du jour la plus récente (couverture 16:9, comme les couvertures automatiques) ; sortie à venir : mosaïque
+    // 5 + 4 + 3 sur ordinateur, où la tuile vidéo est à peine plus large que haute de 1101 à 1290 px de large environ
+    const day = await admin().create<Video>('videos', {
+      title: `Test e2e aperçu ${tag}`,
+      source: { provider: 'youtube', youtubeUrl: 'https://www.youtube.com/watch?v=e2eSwatTV03' },
+      thumbnail: thumb,
+      preview: clip!.id,
+      category: 'nature',
+      isVideoOfDay: true,
+      description: 'Vidéo créée par un test automatique, supprimée à la fin du test.',
+      publishedAt: new Date(Date.now() - 30 * 1000).toISOString(),
+    })
+    await admin().create('events', { title: `Test e2e aperçu sortie ${tag}`, city: 'Annecy', startDate: new Date(Date.now() + 2 * 86_400_000).toISOString() })
+    await presetConsent(page.context())
+    await serveWebm(page.context(), clip!, body!)
+    await page.goto('/')
+    await settle(page)
+    const tile = page.locator('.bento > .b-video')
+    await expect(tile.locator(`a[href="/videos/${day.slug}"]`), 'vidéo du jour créée pour le test').toHaveCount(1)
+    await tile.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    await expect(tile.locator('.vprev'), 'aperçu de la tuile lancé').toHaveClass(/\bis-on\b/)
+    await expect.poll(() => tile.locator('.whole__fg').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
+
+    // 1263 : portable 1920 × 1080 à 150 % avec sa barre de défilement ; sous 1101 px, tuile en pleine largeur
+    for (const width of [1440, 1263, 1180, 1101, 1000]) {
+      await page.setViewportSize({ width, height: 900 })
+      await tile.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+      const { ratio, photo, video } = await framing(tile)
+      const whole = ratio < 1.05
+      if (width === 1180) expect(whole, `mosaïque 5 + 4 + 3 : tuile vidéo plus haute que large à ${width} px (${ratio.toFixed(2)})`).toBe(true)
+      expect(photo.fit, `${width} px : photo ${whole ? 'entière' : 'couvrante'}`).toBe(whole ? 'contain' : 'cover')
+      expect(video.fit, `${width} px : aperçu cadré comme la photo`).toBe(photo.fit)
+      for (let i = 0; i < 4; i++) expect(Math.abs(video.box[i] - photo.box[i]), `${width} px : même rectangle (${video.box} / ${photo.box})`).toBeLessThanOrEqual(2)
+    }
     expect(errors, errors.join('\n')).toEqual([])
   })
 })

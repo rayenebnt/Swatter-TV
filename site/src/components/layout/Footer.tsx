@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Fragment } from 'react'
 import { Icon, Logo } from '@/components/ui/Icon'
+import { PreviewsToggle } from '@/components/video/PreviewsToggle'
 import { parisDay } from '@/lib/format'
 import { getPayloadClient } from '@/lib/payload'
 import { getSettings } from '@/lib/queries/settings'
@@ -125,6 +126,8 @@ export async function Footer() {
               <li>
                 <CookieSettingsButton />
               </li>
+              {/* « Arrêter les aperçus animés » (WCAG 2.2.2), après l'hydratation seulement */}
+              <PreviewsToggle />
             </ul>
           </div>
         </div>

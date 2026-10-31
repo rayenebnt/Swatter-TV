@@ -19,6 +19,16 @@
 /* Aperçu animé de la « Vidéo du jour » (VideoPreview) : au même plan que l'image, sous le dégradé et le texte */
 .tile > .vprev { z-index: -2; transition: opacity .45s var(--ease), transform 1.2s var(--ease); }
 .tile:hover > .vprev { transform: scale(1.06); }
+/* Ordinateur : tuile à peine plus large que haute (de 1101 à 1290 px de large environ) où la photo 16:9 (data-o « l »)
+   s'affiche entière sur fond flou (seuil 1,05 de globals.css, WHOLE_FRAMES) : l'aperçu 16:9, entier lui aussi, prend sa
+   place exacte, sur le même fond flou (bandes transparentes de la vidéo). Conteneur limité à l'ordinateur, où la taille
+   de la tuile vient de la grille (sur téléphone, elle vient de son aspect-ratio). */
+@media (min-width: 1101px) {
+  .b-video { container: tile / size; }
+}
+@container tile (aspect-ratio < 1.05) {
+  .b-video:has(> .whole[data-o='l']) > .vprev { object-fit: contain; object-position: var(--whole-pos, 50% 50%); }
+}
 .tile::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(4, 10, 22, .25) 0%, rgba(4, 10, 22, 0) 30%, rgba(4, 10, 22, .55) 62%, rgba(4, 10, 22, .95) 100%); }
 .tile__top { position: absolute; top: 18px; left: 18px; right: 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .tile__body { position: absolute; left: 22px; right: 22px; bottom: 20px; }
