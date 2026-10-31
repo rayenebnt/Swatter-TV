@@ -405,5 +405,5 @@ const users = (await payload.count({ collection: 'users', overrideAccess: true }
 console.log('\n✔ Contenus de départ créés (titres « Exemple » à remplacer) :')
 console.table(recap)
 console.log(`  Utilisateurs conservés : ${users}${users === 0 ? ' (créez un administrateur : npm run payload run src/scripts/init-db.ts)' : ''}`)
-console.log(`  Grille : ${firstDay} 00:00 → ${addDays(firstDay, 8)} 00:00 (heure de Paris) · Sortie du week-end : ${formatDayLong(weekendPickDate)}`)
+console.log(`  Grille : soirées du ${firstDay} au ${addDays(firstDay, 7)}, 18 h – 0 h 30 (heure de Paris) · Sortie du week-end : ${formatDayLong(weekendPickDate)}`)
 process.exit(0)
