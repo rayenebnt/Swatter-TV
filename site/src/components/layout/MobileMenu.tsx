@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Icon, Logo } from '@/components/ui/Icon'
+import { useOnAir } from '@/components/video/useOnAir'
 import { useMemberHint } from '@/lib/members/browser'
 import { loginHref } from '@/lib/members/shared'
 import { DRAWER_STATE_EVENT, isActive, OPEN_DRAWER_EVENT, type DrawerStateDetail, type NavItem, type OpenDrawerDetail } from './nav'
@@ -19,6 +20,8 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
  */
 export function MobileMenu({ items }: { items: NavItem[] }) {
   const pathname = usePathname()
+  // Point rouge de « Le Direct » : seulement à l'antenne (18 h – 0 h 30), jamais au rendu serveur
+  const onAir = useOnAir()
   const member = useMemberHint()
   const [open, setOpen] = useState(false)
   const [path, setPath] = useState(pathname)
@@ -123,7 +126,7 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
             aria-current={isActive(pathname, it.href) ? 'page' : undefined}
             onClick={close}
           >
-            {it.live && <span className="dot-live" aria-hidden="true" />}
+            {it.live && onAir && <span className="dot-live" aria-hidden="true" />}
             {it.label}
             <Icon name="right" className="drawer__chev" />
           </Link>

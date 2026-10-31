@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
-import { firstDoc } from './helpers'
+import { atParisTime, firstDoc } from './helpers'
 import { AdminApi, deleteMember, mobileContext, signupMember, unique } from './outils-contenus'
 
 /**
@@ -84,7 +84,8 @@ async function refuseCookies(page: Page) {
   await expect(banner).toBeHidden()
 }
 
-type Target = { name: string; path: string | ((request: APIRequestContext) => Promise<string | null>); status?: number }
+/** `clock` : heure de Paris du navigateur (« HH:MM ») des pages qui changent avec l'antenne (18 h – 0 h 30). */
+type Target = { name: string; path: string | ((request: APIRequestContext) => Promise<string | null>); status?: number; clock?: string }
 
 type Slugged = { slug?: string | null; department?: string | null }
 
@@ -95,8 +96,10 @@ const detail = (collection: string, url: (d: Slugged) => string) => async (reque
 }
 
 const PAGES: Target[] = [
-  { name: 'accueil', path: '/' },
-  { name: 'direct', path: '/direct' },
+  { name: 'accueil (à l’antenne, 21 h)', path: '/', clock: '21:00' },
+  { name: 'accueil (hors antenne, 10 h)', path: '/', clock: '10:00' },
+  { name: 'direct (à l’antenne, 21 h)', path: '/direct', clock: '21:00' },
+  { name: 'direct (hors antenne, 10 h)', path: '/direct', clock: '10:00' },
   { name: 'vidéos', path: '/videos' },
   { name: 'info', path: '/info' },
   { name: 'info d’un département', path: '/info/haute-savoie' },
@@ -120,10 +123,11 @@ const PAGES: Target[] = [
 ]
 
 test.describe('accessibilité des pages principales', () => {
-  for (const { name, path, status = 200 } of PAGES) {
+  for (const { name, path, status = 200, clock } of PAGES) {
     test(`${name} : aucune violation grave (WCAG 2.1 A et AA)`, async ({ page, request }) => {
       const url = typeof path === 'string' ? path : await path(request)
       test.skip(!url, `aucun contenu pour « ${name} » (lancez npm run seed)`)
+      if (clock) await atParisTime(page, clock)
       const response = await page.goto(url!)
       expect(response?.status(), `statut de ${url}`).toBe(status)
       await ready(page)

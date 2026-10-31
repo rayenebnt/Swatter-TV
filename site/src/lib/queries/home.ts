@@ -2,12 +2,12 @@
 import { cache } from 'react'
 import type { Where } from 'payload'
 import type { Article, Event, Media, Video } from '@/payload-types'
-import { parisDateTime, parisDay } from '../format'
+import { eveningOf, eveningWindow, shiftDay } from '../broadcast'
+import { parisDateTime } from '../format'
+import { eveningLabel } from '../on-air'
 import { getPayloadClient } from '../payload'
 import { safe } from '../safe'
 import { toSlot, type Slot } from './schedule'
-
-const DAY_MS = 24 * 60 * 60 * 1000
 
 /* ----- Vidéo du jour ----- */
 
@@ -130,32 +130,32 @@ export type EveningProgram = {
   slot: Slot
   /** Image de l'émission (objet média complet, pour la taille « hero ») */
   image: Media | null
-  /** true : ce soir ; false : demain soir */
-  tonight: boolean
+  /** Soirée du créneau (AAAA-MM-JJ, jour où elle commence) */
+  day: string
+  /** « Ce soir », « Demain soir », ou entre 0 h et 0 h 30 le nom du jour (« Samedi soir ») : voir eveningLabel */
+  when: string
 }
 
 // Genres trop courts ou récurrents pour être mis en avant en soirée
 const SKIPPED_GENRES = new Set(['info', 'meteo'])
+/** Début du « prime time » mis en avant (heure de Paris) ; la soirée finit avec l'antenne, à 0 h 30. */
+const PRIME_TIME = '20:00'
 
 /**
- * Prochaine émission de soirée (début entre 20 h et minuit, heure de Paris) : ce soir, sinon demain soir.
- * Les journaux, la météo et les créneaux de moins de 25 min sont ignorés.
+ * Prochaine émission de soirée (début entre 20 h et la fin de l'antenne à 0 h 30, heure de Paris) : la soirée en cours
+ * ou à venir (eveningOf : jusqu'à 0 h 30, celle de la veille), sinon la suivante. Les journaux, la météo et les créneaux
+ * de moins de 25 min sont ignorés, comme tout créneau hors antenne.
  */
 export async function getEveningProgram(now = new Date()): Promise<EveningProgram | null> {
   return safe(
     async () => {
-      const today = parisDay(now)
-      const dayAt = (offset: number) => parisDay(new Date(parisDateTime(today, '12:00').getTime() + offset * DAY_MS))
-      const tomorrow = dayAt(1)
-      const windows = [
-        [parisDateTime(today, '20:00'), parisDateTime(tomorrow)],
-        [parisDateTime(tomorrow, '20:00'), parisDateTime(dayAt(2))],
-      ] as const
-      const from = new Date(Math.max(now.getTime(), windows[0][0].getTime()))
+      const first = eveningOf(now)
+      const windows = [first, shiftDay(first, 1)].map((day) => ({ day, from: parisDateTime(day, PRIME_TIME), to: eveningWindow(day).end }))
+      const from = new Date(Math.max(now.getTime(), windows[0].from.getTime()))
       const payload = await getPayloadClient()
       const res = await payload.find({
         collection: 'schedule',
-        where: { and: [{ startsAt: { greater_than_equal: from.toISOString() } }, { startsAt: { less_than: windows[1][1].toISOString() } }] },
+        where: { and: [{ startsAt: { greater_than_equal: from.toISOString() } }, { startsAt: { less_than: windows[1].to.toISOString() } }] },
         sort: 'startsAt',
         limit: 60,
         depth: 2,
@@ -164,10 +164,10 @@ export async function getEveningProgram(now = new Date()): Promise<EveningProgra
       for (const doc of res.docs) {
         const start = new Date(doc.startsAt).getTime()
         const program = typeof doc.program === 'object' && doc.program ? doc.program : null
-        const inWindow = windows.some(([a, b]) => start >= a.getTime() && start < b.getTime())
-        if (!inWindow || (doc.durationMinutes || 0) < 25 || (program?.genre && SKIPPED_GENRES.has(program.genre))) continue
+        const win = windows.find((w) => start >= w.from.getTime() && start < w.to.getTime())
+        if (!win || (doc.durationMinutes || 0) < 25 || (program?.genre && SKIPPED_GENRES.has(program.genre))) continue
         const image = program && typeof program.image === 'object' && program.image ? program.image : null
-        return { slot: toSlot(doc), image, tonight: start < windows[0][1].getTime() }
+        return { slot: toSlot(doc), image, day: win.day, when: eveningLabel(win.day, now.getTime()) }
       }
       return null
     },

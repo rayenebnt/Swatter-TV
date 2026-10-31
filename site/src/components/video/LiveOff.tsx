@@ -1,32 +1,33 @@
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { Icon } from '@/components/ui/Icon'
-import { MediaImage } from '@/components/ui/MediaImage'
-import { formatDayLong, formatTime, parisDay } from '@/lib/format'
-import type { MediaRef } from '@/lib/media'
+import { formatTime } from '@/lib/format'
+import { slotEvening, type OnAirState } from '@/lib/on-air'
 import type { Slot } from '@/lib/queries/schedule'
 import '@/styles/video.css'
 
-const DAY_MS = 24 * 60 * 60 * 1000
-
-/** « aujourd'hui », « demain » ou « le samedi 17 octobre » (heure de Paris). */
-function dayLabel(iso: string, now: number) {
-  const day = parisDay(iso)
-  if (day === parisDay(new Date(now))) return 'aujourd’hui'
-  if (day === parisDay(new Date(now + DAY_MS))) return 'demain'
-  return `le ${formatDayLong(iso)}`
-}
-
-/** Direct coupé ou flux absent (composant serveur) : message d'attente, prochaine émission et lien vers la grille. */
-export function LiveOff({ poster, next, now, fallbackSrc }: { poster: MediaRef; next: Slot | null; now: number; fallbackSrc: string }) {
+/**
+ * Écran de la page Direct quand le lecteur n'est pas affiché (rendu par DirectStage, dans le navigateur comme au serveur) :
+ * - hors antenne (de 0 h 30 à 18 h) : « Le direct reprend ce soir à 18 h » et le premier programme de la soirée ;
+ * - direct coupé dans les réglages, ou sans flux : « Le direct reprend bientôt » et la prochaine émission.
+ * `poster` : image de fond rendue côté serveur (MediaImage).
+ */
+export function LiveOff({ poster, state, now, cut }: { poster: ReactNode; state: OnAirState<Slot>; now: number; cut: boolean }) {
+  const next = state.upcoming[0] ?? null
+  // direct coupé : la soirée est toujours précisée (« ce soir », « demain soir »…) ; hors antenne, « à 18:00 » suffit pour celle qui vient
+  const evening = next ? slotEvening(next, state, now, cut) : null
   return (
-    <div className="vp vp--off direct-off">
-      <MediaImage media={poster} size="hero" fill whole sizes="(max-width: 1100px) 100vw, 900px" alt="" className="vp__poster" fallbackSrc={fallbackSrc} priority />
+    <div className="vp vp--off direct-off" data-onair={cut ? 'coupe' : 'hors-antenne'}>
+      {poster}
       <div className="vp__overlay">
         <Icon name="tv" className="vp__off-ico" />
-        <h2>Le direct reprend bientôt</h2>
+        <h2>{cut ? 'Le direct reprend bientôt' : 'Le direct reprend ce soir à 18 h'}</h2>
         {next ? (
           <p>
-            Prochaine émission&nbsp;: <b>{next.title}</b>, {dayLabel(next.start, now)} à <time dateTime={next.start}>{formatTime(next.start)}</time>.
+            {cut ? 'Prochaine émission' : 'Au programme'}&nbsp;: <b>{next.title}</b>
+            {cut ? ', ' : ' '}
+            {evening ? `${evening} à ` : 'à '}
+            <time dateTime={next.start}>{formatTime(next.start)}</time>.
           </p>
         ) : (
           <p>En attendant, retrouvez nos émissions en replay et nos dernières vidéos.</p>

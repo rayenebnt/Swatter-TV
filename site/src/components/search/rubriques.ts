@@ -4,7 +4,7 @@ import type { IconName } from '@/components/ui/Icon'
 export type Rubrique = { href: string; label: string; hint: string; icon: IconName }
 
 export const RUBRIQUES: Rubrique[] = [
-  { href: '/direct', label: 'Le Direct', hint: 'Swatter TV Info en direct', icon: 'tv' },
+  { href: '/direct', label: 'Le Direct', hint: 'En direct chaque soir, 18 h – 0 h 30', icon: 'tv' },
   { href: '/programme-tv', label: 'Programme TV', hint: 'La grille des programmes', icon: 'clock' },
   { href: '/meteo', label: 'La Météo', hint: 'Les prévisions de la région', icon: 'now' },
   { href: '/info', label: 'L’Info', hint: 'L’actualité régionale', icon: 'news' },

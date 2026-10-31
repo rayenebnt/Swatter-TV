@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Icon, type IconName } from '@/components/ui/Icon'
+import { useOnAir } from '@/components/video/useOnAir'
 import { isActive, onDrawerState, openDrawer } from './nav'
 import '@/styles/shell.css'
 
@@ -19,12 +20,14 @@ export function TabBar() {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   useEffect(() => onDrawerState(setMenuOpen), [])
+  // Point rouge de « Direct » : seulement à l'antenne (18 h – 0 h 30), jamais au rendu serveur
+  const onAir = useOnAir()
 
   return (
     <nav className="tabbar" aria-label="Navigation mobile">
       {TABS.map((t) => (
         <Link key={t.href} href={t.href} aria-current={isActive(pathname, t.href) ? 'page' : undefined}>
-          {t.live && <span className="dot-live" aria-hidden="true" />}
+          {t.live && onAir && <span className="dot-live" aria-hidden="true" />}
           <Icon name={t.icon} />
           {t.label}
         </Link>

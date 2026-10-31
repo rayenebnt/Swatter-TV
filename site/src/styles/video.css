@@ -165,6 +165,11 @@
 .onair__item time { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--gold-light); font-variant-numeric: tabular-nums; }
 .onair__item strong { display: block; font-family: var(--font-display); font-weight: 600; font-size: 15px; line-height: 1.25; }
 .onair__item span { display: block; margin-top: 2px; color: var(--muted); font-size: 12.5px; }
+/* « À suivre » : fin de l'antenne (« Fin des programmes à 0 h 30 »), puis nom de la soirée suivante (« Demain soir ») */
+.onair__sep { padding: 12px 0 0; border-top: 1px solid var(--line); font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.onair__sep:first-child, .onair__sep--end + .onair__sep, .onair__sep:not(.onair__sep--end) + .onair__item { border-top: 0; }
+.onair__sep--end { padding-bottom: 12px; color: var(--muted); font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.onair__sep--end + .onair__sep { padding-top: 0; }
 .onair__empty { margin-top: 12px; color: var(--ink-2); font-size: 14px; }
 .onair .link-more { margin-top: 16px; }
 

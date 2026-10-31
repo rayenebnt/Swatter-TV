@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test'
-import { firstDoc, linksMatching, settle, watchErrors } from './helpers'
+import { atParisTime, firstDoc, linksMatching, settle, watchErrors } from './helpers'
 import { AdminApi, deleteMember, mobileContext, presetConsent, recordThirdParty, signupMember, SITE, unique } from './outils-contenus'
 
 /**
@@ -772,6 +772,8 @@ withAdmin('bannière cookies et contenus tiers (vidéo et webcams créées pour 
       const provider = settings.liveEnabled === false ? null : settings.live?.provider
       if (provider) {
         const before = third.length
+        // le lecteur n'est affiché que pendant l'antenne (18 h – 0 h 30, décidé aussi dans le navigateur) : horloge à 21 h
+        await atParisTime(p, '21:00')
         await p.goto('/direct')
         await settle(p)
         if (['youtube', 'twitch', 'bunny'].includes(provider)) await expect(p.locator('iframe.vp__frame')).toHaveAttribute('src', /[?&](mute=1|muted=true)(&|$)/)

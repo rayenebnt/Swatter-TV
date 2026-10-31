@@ -117,7 +117,7 @@ describe('previewFocus : page et endroit montrés pour chaque collection', () =>
   })
 })
 
-describe('previewFocus : créneau de la grille (journée TV de 2 h à 2 h, heure de Paris)', () => {
+describe('previewFocus : créneau de la grille (soirée de 18 h à 0 h 30, journée TV de 0 h 30 à 0 h 30, heure de Paris)', () => {
   const slot = (startsAt: string | null, id: number | string | null = 12) => previewFocus('schedule', undefined, { id, startsAt })
 
   it('le jour du créneau dans la grille, et le créneau lui-même', () => {
@@ -125,34 +125,36 @@ describe('previewFocus : créneau de la grille (journée TV de 2 h à 2 h, heure
     expect(slot('2026-10-21T18:30:00.000Z', '12')).toEqual({ path: '/programme-tv?jour=2026-10-21', target: 'slot-12' })
   })
 
-  it('la nuit jusqu’à 2 h appartient à la veille (heure d’été)', () => {
-    // 01:59 et 02:00 à Paris (UTC+2) le 22 octobre 2026
-    expect(slot('2026-10-21T23:59:00.000Z').path).toBe('/programme-tv?jour=2026-10-21')
-    expect(slot('2026-10-22T00:00:00.000Z').path).toBe('/programme-tv?jour=2026-10-22')
-    expect(slot('2026-10-22T01:30:00+02:00').path).toBe('/programme-tv?jour=2026-10-21')
+  it('de 0 h à 0 h 30, la soirée de la veille (heure d’été)', () => {
+    // 00:00, 00:29 et 00:30 à Paris (UTC+2) le 22 octobre 2026
+    expect(slot('2026-10-21T22:00:00.000Z').path).toBe('/programme-tv?jour=2026-10-21')
+    expect(slot('2026-10-21T22:29:00.000Z').path).toBe('/programme-tv?jour=2026-10-21')
+    expect(slot('2026-10-22T00:15:00+02:00').path).toBe('/programme-tv?jour=2026-10-21')
+    expect(slot('2026-10-21T22:30:00.000Z').path).toBe('/programme-tv?jour=2026-10-22')
   })
 
-  it('la nuit jusqu’à 2 h appartient à la veille (heure d’hiver, passage à l’année suivante)', () => {
-    // 00:30 et 02:00 à Paris (UTC+1) le 1er janvier 2027
-    expect(slot('2026-12-31T23:30:00.000Z').path).toBe('/programme-tv?jour=2026-12-31')
-    expect(slot('2027-01-01T00:59:00.000Z').path).toBe('/programme-tv?jour=2026-12-31')
-    expect(slot('2027-01-01T01:00:00.000Z').path).toBe('/programme-tv?jour=2027-01-01')
+  it('de 0 h à 0 h 30, la soirée de la veille (heure d’hiver, passage à l’année suivante)', () => {
+    // 00:15, 00:29 et 00:30 à Paris (UTC+1) le 1er janvier 2027 : soirée du 31 décembre jusqu'à 0 h 30
+    expect(slot('2026-12-31T23:15:00.000Z').path).toBe('/programme-tv?jour=2026-12-31')
+    expect(slot('2026-12-31T23:29:00.000Z').path).toBe('/programme-tv?jour=2026-12-31')
+    expect(slot('2026-12-31T23:30:00.000Z').path).toBe('/programme-tv?jour=2027-01-01')
   })
 
   it('nuit du passage à l’heure d’hiver (25 octobre 2026, 3 h → 2 h)', () => {
-    // 01:30 (heure d'été) : encore le 24 ; 02:30 vécu deux fois (été puis hiver) : le 25 ; 01:30 le 26 : encore le 25
-    expect(slot('2026-10-24T23:30:00.000Z').path).toBe('/programme-tv?jour=2026-10-24')
-    expect(slot('2026-10-25T00:30:00.000Z').path).toBe('/programme-tv?jour=2026-10-25')
+    // 00:15 (heure d'été, UTC+2) : encore le 24 ; 00:30 : le 25 ; 02:30 vécu deux fois : le 25 ; 00:15 le 26 (UTC+1) : encore le 25
+    expect(slot('2026-10-24T22:15:00.000Z').path).toBe('/programme-tv?jour=2026-10-24')
+    expect(slot('2026-10-24T22:30:00.000Z').path).toBe('/programme-tv?jour=2026-10-25')
     expect(slot('2026-10-25T01:30:00.000Z').path).toBe('/programme-tv?jour=2026-10-25')
-    expect(slot('2026-10-26T00:30:00.000Z').path).toBe('/programme-tv?jour=2026-10-25')
-    expect(slot('2026-10-26T01:00:00.000Z').path).toBe('/programme-tv?jour=2026-10-26')
+    expect(slot('2026-10-25T23:15:00.000Z').path).toBe('/programme-tv?jour=2026-10-25')
+    expect(slot('2026-10-25T23:30:00.000Z').path).toBe('/programme-tv?jour=2026-10-26')
   })
 
   it('nuit du passage à l’heure d’été (29 mars 2026, 2 h → 3 h)', () => {
-    // 01:59 (heure d'hiver) : encore le 28 ; 03:00 (heure d'été, juste après le saut) : le 29 ; 01:30 le 30 : encore le 29
-    expect(slot('2026-03-29T00:59:00.000Z').path).toBe('/programme-tv?jour=2026-03-28')
+    // 00:29 (heure d'hiver, UTC+1) : encore le 28 ; 00:30 : le 29 ; 00:15 le 30 (heure d'été, UTC+2) : encore le 29
+    expect(slot('2026-03-28T23:29:00.000Z').path).toBe('/programme-tv?jour=2026-03-28')
+    expect(slot('2026-03-28T23:30:00.000Z').path).toBe('/programme-tv?jour=2026-03-29')
     expect(slot('2026-03-29T01:00:00.000Z').path).toBe('/programme-tv?jour=2026-03-29')
-    expect(slot('2026-03-29T23:30:00.000Z').path).toBe('/programme-tv?jour=2026-03-29')
+    expect(slot('2026-03-29T22:15:00.000Z').path).toBe('/programme-tv?jour=2026-03-29')
   })
 
   it('sans date valide : le programme ; sans identifiant : pas de créneau visé', () => {
@@ -209,7 +211,7 @@ describe('previewPath : page ouverte avec l’aperçu', () => {
   it('la page de previewFocus, sans tenir compte de l’onglet ni du champ', () => {
     expect(previewPath('videos', undefined, { slug: 'ma-video' })).toBe('/videos/ma-video')
     expect(previewPath('articles', undefined, {})).toBe('/info')
-    expect(previewPath('schedule', undefined, { id: 4, startsAt: '2026-10-21T23:30:00.000Z' })).toBe('/programme-tv?jour=2026-10-21')
+    expect(previewPath('schedule', undefined, { id: 4, startsAt: '2026-10-21T22:15:00.000Z' })).toBe('/programme-tv?jour=2026-10-21')
     expect(previewPath('webcams', undefined, { slug: 'x' })).toBe('/webcams')
     expect(previewPath(undefined, 'settings', {})).toBe('/')
     expect(previewPath(undefined, 'meteo', {})).toBe('/meteo')

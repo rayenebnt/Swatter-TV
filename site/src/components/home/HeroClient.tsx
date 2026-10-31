@@ -3,13 +3,15 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type ReactNode, type TouchEvent } from 'react'
 import { Icon, type IconName } from '@/components/ui/Icon'
-import { LiveProgress, type LiveSlot } from './LiveProgress'
+import { useNow } from '@/components/video/useNow'
+import { LiveProgress } from './LiveProgress'
+import { liveView, type HeroLive, type LiveView } from './liveSlide'
 import { Snow } from './Snow'
 import { useHydrated, usePageHidden, useReducedMotion } from './useMotion'
 
 export type HeroBadge = { label: string; style: 'live' | 'gold' | 'glass' }
 export type HeroLink = { label: string; href: string; icon: IconName | null }
-export type HeroLive = { slots: LiveSlot[]; current: boolean; showTitle: boolean }
+export type { HeroLive }
 
 /** Diapositive prête à l'affichage (textes sérialisables + images rendues côté serveur). */
 export type HeroSlide = {
@@ -22,6 +24,7 @@ export type HeroSlide = {
   navTitle: string
   primary: HeroLink | null
   secondary: HeroLink | null
+  /** Diapositive « direct » : programme de l'antenne (textes recalculés selon l'heure, voir liveView) */
   live: HeroLive | null
   /** Image de fond (HeroImage : photo, précédée de son fond flou quand elle s'affiche entière) */
   media: ReactNode
@@ -73,6 +76,8 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
   const [focused, setFocused] = useState(false)
   const hydrated = useHydrated()
   const reduced = useReducedMotion()
+  // Antenne (18 h – 0 h 30) : au premier rendu, l'instant du rendu serveur ; ensuite l'heure du navigateur (pas de 15 s)
+  const clock = useNow()
   const hidden = usePageHidden()
   // En pause tant que la page n'est pas hydratée : la barre ne peut pas finir avant que l'on écoute sa fin
   const paused = !hydrated || reduced || hidden || !visible || hovering || focused
@@ -176,6 +181,10 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
     if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.2) go(cur + (dx < 0 ? 1 : -1))
   }
 
+  // Textes des diapositives « direct » à l'heure du visiteur (badges, titre, ligne de programme, vignette)
+  const views: (LiveView | null)[] = slides.map((s) => (s.live ? liveView(s, s.live, clock ?? Date.parse(s.live.at)) : null))
+  const shown = slides.map((s, i) => ({ ...s, ...views[i] }))
+
   return (
     <section
       data-preview="hero"
@@ -191,8 +200,9 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
     >
       {/* Région annoncée poliment quand la lecture automatique est arrêtée (changement voulu par l'utilisateur) */}
       <div className="hero__slides" aria-live={paused ? 'polite' : 'off'}>
-        {slides.map((s, i) => {
+        {shown.map((s, i) => {
           const active = i === cur
+          const view = views[i]
           const Title = i === 0 ? 'h1' : 'h2'
           return (
             <div
@@ -203,6 +213,7 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
               role="group"
               aria-roledescription="diapositive"
               aria-label={`${i + 1} sur ${n}`}
+              data-onair={view ? (view.onAir ? 'antenne' : 'hors-antenne') : undefined}
               inert={!active}
             >
               <div className="slide__media">{s.media}</div>
@@ -236,15 +247,7 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
                       {s.description}
                     </p>
                   )}
-                  {s.live && (
-                    <LiveProgress
-                      slots={s.live.slots}
-                      current={s.live.current}
-                      showTitle={s.live.showTitle}
-                      className="fx"
-                      style={{ '--i': 2 } as CSSProperties}
-                    />
-                  )}
+                  {view && <LiveProgress line={view.line} now={clock} className="fx" style={{ '--i': 2 } as CSSProperties} />}
                   {(s.primary || s.secondary) && (
                     <div className="hero__cta fx" style={{ '--i': s.live ? 3 : 2 } as CSSProperties}>
                       {s.primary && <Cta link={s.primary} variant="gold" />}
@@ -276,7 +279,7 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
                 onPointerEnter={() => setHovering(true)}
                 onPointerLeave={() => setHovering(false)}
               >
-                {slides.map((s, i) => (
+                {shown.map((s, i) => (
                   <button
                     key={s.key}
                     ref={(el) => {

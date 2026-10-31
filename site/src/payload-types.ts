@@ -1463,7 +1463,7 @@ export interface Setting {
       }[]
     | null;
   /**
-   * Décochez pour couper le direct : la page « Direct » affiche alors « Le direct reprend bientôt ».
+   * Le direct ne s’affiche que pendant l’antenne, de 18 h à 0 h 30 (heure de Paris), automatiquement : en dehors, la page « Direct » annonce « Le direct reprend ce soir à 18 h ». Décochez seulement pour couper le direct exceptionnellement : la page « Direct » affiche alors « Le direct reprend bientôt ».
    */
   liveEnabled?: boolean | null;
   live?: {

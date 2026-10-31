@@ -1,11 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useRef, type CSSProperties } from 'react'
+import { Fragment, useRef, type CSSProperties } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { formatTime } from '@/lib/format'
+import { BROADCAST_END_LABEL, onAirState, RESUME_TONIGHT, upcomingGroups, type OnAirData } from '@/lib/on-air'
 import type { Slot } from '@/lib/queries/schedule'
 import { programUrl } from '@/lib/urls'
+import { useAirNow } from './useOnAir'
 import { useNow } from './useNow'
 import { useOffscreen } from './useOffscreen'
 
@@ -19,31 +21,31 @@ function SlotTitle({ slot }: { slot: Slot }) {
 
 /**
  * « En ce moment / À suivre » de la page Direct.
- * Premier rendu identique au serveur (créneaux calculés au rendu de la page) ; après l'hydratation,
- * le programme en cours, la progression et le temps restant suivent l'heure du navigateur (page servie depuis le cache).
+ * Premier rendu identique au serveur (instant du rendu, OnAirData.at) ; après l'hydratation, l'antenne, le programme en
+ * cours, la progression et le temps restant suivent l'heure du navigateur (page servie depuis le cache, onglet ouvert).
+ * Hors antenne (de 0 h 30 à 18 h) : « Hors antenne · Reprise ce soir à 18 h » ; à l'antenne sans programme saisi :
+ * « En direct jusqu'à 0 h 30 ». Dans « À suivre », la fin de l'antenne est annoncée avant les créneaux d'une autre soirée,
+ * nommée (« Demain soir », « Ce soir »…).
  */
-export function OnAirPanel({ current, next, max = 3 }: { current: Slot | null; next: Slot[]; max?: number }) {
-  const now = useNow()
+export function OnAirPanel({ data, max = 3 }: { data: OnAirData<Slot>; max?: number }) {
+  const now = useAirNow(data.at)
+  // progression et temps restant : seulement dans le navigateur (au rendu serveur, barre vide)
+  const hydrated = useNow() !== null
   const root = useRef<HTMLElement>(null)
   // Point « en direct » (animation en boucle) en pause hors écran
   const paused = useOffscreen(root)
-  let cur = current
-  let upcoming = next
-  if (now !== null) {
-    const all = current ? [current, ...next] : next
-    cur = all.find((s) => ms(s.start) <= now && ms(s.end) > now) ?? null
-    upcoming = all.filter((s) => ms(s.start) > now)
-  }
-  const progress = cur && now !== null ? Math.min(1, Math.max(0, (now - ms(cur.start)) / (ms(cur.end) - ms(cur.start) || 1))) : null
-  const remaining = cur && now !== null ? Math.max(1, Math.ceil((ms(cur.end) - now) / 60_000)) : null
-  const shown = upcoming.slice(0, max)
+  const state = onAirState(data.slots, now)
+  const cur = state.current
+  const progress = cur && hydrated ? Math.min(1, Math.max(0, (now - ms(cur.start)) / (ms(cur.end) - ms(cur.start) || 1))) : null
+  const remaining = cur && hydrated ? Math.max(1, Math.ceil((ms(cur.end) - now) / 60_000)) : null
+  const groups = upcomingGroups(state, now, max)
 
   return (
-    <aside ref={root} className={`onair${paused ? ' is-paused' : ''}`} aria-labelledby="onair-title">
+    <aside ref={root} className={`onair${paused ? ' is-paused' : ''}`} aria-labelledby="onair-title" data-onair={state.onAir ? 'antenne' : 'hors-antenne'}>
       <h2 id="onair-title" className="onair__title">
         Au programme
       </h2>
-      {cur && (
+      {cur ? (
         <div className="onair__now">
           <p className="onair__label">
             <span className="dot-live" aria-hidden="true" />
@@ -73,26 +75,42 @@ export function OnAirPanel({ current, next, max = 3 }: { current: Slot | null; n
             <span>{formatTime(cur.end)}</span>
           </p>
         </div>
+      ) : (
+        // à l'antenne entre deux créneaux (ou sans grille), ou hors antenne : jamais de vide à la place du programme en cours
+        <div className="onair__now">
+          <p className="onair__label">
+            {state.onAir && <span className="dot-live" aria-hidden="true" />}
+            {state.onAir ? 'En ce moment' : 'Hors antenne'}
+          </p>
+          <h3 className="onair__now-title">{state.onAir ? `En direct jusqu’à ${BROADCAST_END_LABEL}` : RESUME_TONIGHT}</h3>
+          <p className="onair__sub">Swatter TV Info, tous les soirs de 18 h à {BROADCAST_END_LABEL}</p>
+        </div>
       )}
-      {shown.length > 0 && (
+      {groups.length > 0 && (
         <>
           <h3 className="onair__label">À suivre</h3>
           <ol className="onair__list">
-            {shown.map((s) => (
-              <li key={s.id} className="onair__item">
-                <time dateTime={s.start}>{formatTime(s.start)}</time>
-                <div>
-                  <strong>
-                    <SlotTitle slot={s} />
-                  </strong>
-                  <span>{[s.genreLabel, minutes(s.durationMinutes), s.isPremiere ? 'Inédit' : ''].filter(Boolean).join(' · ')}</span>
-                </div>
-              </li>
+            {groups.map((g) => (
+              <Fragment key={g.day}>
+                {g.endBefore && <li className="onair__sep onair__sep--end">Fin des programmes à {BROADCAST_END_LABEL}</li>}
+                {g.heading && <li className="onair__sep">{g.heading}</li>}
+                {g.slots.map((s) => (
+                  <li key={s.id} className="onair__item">
+                    <time dateTime={s.start}>{formatTime(s.start)}</time>
+                    <div>
+                      <strong>
+                        <SlotTitle slot={s} />
+                      </strong>
+                      <span>{[s.genreLabel, minutes(s.durationMinutes), s.isPremiere ? 'Inédit' : ''].filter(Boolean).join(' · ')}</span>
+                    </div>
+                  </li>
+                ))}
+              </Fragment>
             ))}
           </ol>
         </>
       )}
-      {!cur && !shown.length && <p className="onair__empty">La grille des programmes sera bientôt disponible.</p>}
+      {!groups.length && <p className="onair__empty">La grille des prochaines soirées sera bientôt disponible.</p>}
       <Link className="link-more" href="/programme-tv">
         Voir la grille complète <Icon name="arrow" />
       </Link>

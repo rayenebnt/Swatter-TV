@@ -1,5 +1,5 @@
 // Tests unitaires des données du programme TV, sans base : créneaux sérialisables (toSlot), créneaux d’un intervalle,
-// programme en cours et suivants (getOnAir) et semaine de la page Programme TV (getProgrammeWeek), avec un faux
+// programme en cours et suivants pendant l’antenne de 18 h à 0 h 30 (getOnAir, getOnAirData) et semaine de la page Programme TV (getProgrammeWeek), avec un faux
 // client Payload qui applique lui-même le filtre de dates demandé.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { parisDateTime } from '@/lib/format'
@@ -8,7 +8,7 @@ import type { Media, Program, Schedule } from '@/payload-types'
 vi.mock('@/lib/payload', () => ({ getPayloadClient: vi.fn() }))
 
 const { getPayloadClient } = await import('@/lib/payload')
-const { getOnAir, getScheduleBetween, toSlot } = await import('@/lib/queries/schedule')
+const { getOnAir, getOnAirData, getScheduleBetween, toSlot } = await import('@/lib/queries/schedule')
 const { getProgrammeWeek } = await import('@/components/programme/data')
 
 type Bound = { greater_than_equal?: string; less_than?: string }
@@ -144,9 +144,9 @@ describe('getOnAir : programme en cours et suivants', () => {
     const onAir = await getOnAir(now, 3)
     expect(onAir.current?.id).toBe(current.id)
     expect(onAir.next.map((s) => s.id)).toEqual(next.slice(0, 3).map((s) => s.id))
-    // fenêtre de 24 h à partir de maintenant
+    // créneaux demandés jusqu'à la fin de la soirée suivante (0 h 30 le surlendemain)
     const where = find.mock.calls[0][0].where.and
-    expect(where[1].startsAt.less_than).toBe(new Date(now.getTime() + 24 * 3600_000).toISOString())
+    expect(where[1].startsAt.less_than).toBe(parisDateTime('2026-10-23', '00:30').toISOString())
   })
 
   it('un créneau qui se termine à l’instant n’est plus en cours ; celui qui commence à l’instant l’est', async () => {
@@ -169,6 +169,64 @@ describe('getOnAir : programme en cours et suivants', () => {
   it('grille vide : ni programme en cours ni suivant', async () => {
     useSchedule([])
     await expect(getOnAir(now, 3)).resolves.toEqual({ current: null, next: [] })
+  })
+})
+
+describe('getOnAir / getOnAirData : seulement l’antenne, de 18 h à 0 h 30 (heure de Paris)', () => {
+  // soirées du 21 et du 22 octobre 2026 (heure d'été), plus d'anciens créneaux de journée
+  const docs = () => {
+    const morning = scheduleDoc('2026-10-22', '10:00', 60)
+    const s18 = scheduleDoc('2026-10-21', '18:00', 30)
+    const s00 = scheduleDoc('2026-10-22', '00:00', 60) // déborde jusqu'à 1 h : rogné à 0 h 30
+    const n18 = scheduleDoc('2026-10-22', '18:00', 30)
+    const n20 = scheduleDoc('2026-10-22', '20:00', 60)
+    return { morning, s18, s00, n18, n20, all: [morning, s18, s00, n18, n20] }
+  }
+
+  it('10 h : hors antenne, rien « en cours » (pas même un ancien créneau de 10 h), la soirée à venir', async () => {
+    const d = docs()
+    useSchedule(d.all)
+    const onAir = await getOnAir(parisDateTime('2026-10-22', '10:15'), 3)
+    expect(onAir.current).toBeNull()
+    expect(onAir.next.map((s) => s.id)).toEqual([d.n18.id, d.n20.id])
+  })
+
+  it('0 h 20 : encore la soirée de la veille, programme en cours rogné à 0 h 30', async () => {
+    const d = docs()
+    useSchedule(d.all)
+    const onAir = await getOnAir(parisDateTime('2026-10-22', '00:20'), 3)
+    expect(onAir.current?.id).toBe(d.s00.id)
+    expect(onAir.current?.end).toBe(parisDateTime('2026-10-22', '00:30').toISOString())
+    expect(onAir.current?.durationMinutes).toBe(30)
+    // à suivre : la soirée suivante, l'ancien créneau de 10 h ignoré
+    expect(onAir.next.map((s) => s.id)).toEqual([d.n18.id, d.n20.id])
+  })
+
+  it('0 h 30 pile : plus rien en cours (le créneau qui débordait non plus)', async () => {
+    const d = docs()
+    useSchedule(d.all)
+    const onAir = await getOnAir(parisDateTime('2026-10-22', '00:30'), 3)
+    expect(onAir.current).toBeNull()
+    expect(onAir.next[0]?.id).toBe(d.n18.id)
+  })
+
+  it('soirée sans grille : la suivante est annoncée, même à plus de 24 h', async () => {
+    const later = scheduleDoc('2026-10-23', '18:00', 30)
+    useSchedule([later])
+    const onAir = await getOnAir(parisDateTime('2026-10-22', '01:00'), 3)
+    expect(onAir).toEqual({ current: null, next: [expect.objectContaining({ id: later.id })] })
+  })
+
+  it('données pour le navigateur : instant du rendu, soirée en cours ou à venir, créneaux des deux soirées rognés', async () => {
+    const d = docs()
+    const find = useSchedule(d.all)
+    const now = parisDateTime('2026-10-21', '12:00')
+    const data = await getOnAirData(now)
+    expect(data.at).toBe(now.toISOString())
+    expect(data.evening).toEqual({ day: '2026-10-21', start: '2026-10-21T16:00:00.000Z', end: '2026-10-21T22:30:00.000Z' })
+    expect(data.slots.map((s) => s.id)).toEqual([d.s18.id, d.s00.id, d.n18.id, d.n20.id])
+    expect(data.slots[1].end).toBe('2026-10-21T22:30:00.000Z')
+    expect(find.mock.calls[0][0].where.and[1].startsAt.less_than).toBe('2026-10-22T22:30:00.000Z')
   })
 })
 

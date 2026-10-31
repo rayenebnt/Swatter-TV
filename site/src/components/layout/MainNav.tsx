@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
+import { useOnAir } from '@/components/video/useOnAir'
 import { isActive, type NavItem } from './nav'
 
 /** Place un indicateur (pastille ou soulignement) sous un lien, à `inset` px des bords. */
@@ -29,6 +30,8 @@ function rest(root: HTMLElement) {
 export function MainNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname()
   const ref = useRef<HTMLElement>(null)
+  // Point rouge de « Le Direct » : seulement à l'antenne (18 h – 0 h 30), jamais au rendu serveur (layout en cache)
+  const onAir = useOnAir()
 
   // Survol : la pastille et le soulignement suivent le pointeur ; mise en page recalculée au redimensionnement
   useEffect(() => {
@@ -73,13 +76,18 @@ export function MainNav({ items }: { items: NavItem[] }) {
     return () => cancelAnimationFrame(raf)
   }, [pathname])
 
+  // Point rouge apparu ou retiré (bascule de 18 h / 0 h 30) : les liens suivants se décalent, le soulignement les suit
+  useEffect(() => {
+    if (ref.current) rest(ref.current)
+  }, [onAir])
+
   return (
     <nav ref={ref} className="nav" aria-label="Navigation principale">
       <span className="nav__pill" aria-hidden="true" />
       <span className="nav__bar" aria-hidden="true" />
       {items.map((it) => (
         <Link key={it.href} href={it.href} aria-current={isActive(pathname, it.href) ? 'page' : undefined}>
-          {it.live && <span className="dot-live" aria-hidden="true" />}
+          {it.live && onAir && <span className="dot-live" aria-hidden="true" />}
           {it.label}
         </Link>
       ))}

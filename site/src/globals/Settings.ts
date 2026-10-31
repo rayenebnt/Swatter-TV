@@ -45,7 +45,10 @@ export const Settings: GlobalConfig = {
                   required: true,
                   defaultValue: 'custom',
                   options: [
-                    { label: 'Le direct (affiche « En direct » et la progression du programme en cours)', value: 'live' },
+                    {
+                      label: 'Le direct (« En direct » et la progression du programme en cours pendant l’antenne, de 18 h à 0 h 30 ; « Ce soir dès 18 h » le reste du temps)',
+                      value: 'live',
+                    },
                     { label: 'Mise en avant libre', value: 'custom' },
                   ],
                 },
@@ -118,7 +121,16 @@ export const Settings: GlobalConfig = {
         {
           label: 'Le direct',
           fields: [
-            { name: 'liveEnabled', label: 'Direct actif', type: 'checkbox', defaultValue: true, admin: { description: 'Décochez pour couper le direct : la page « Direct » affiche alors « Le direct reprend bientôt ».' } },
+            {
+              name: 'liveEnabled',
+              label: 'Direct actif',
+              type: 'checkbox',
+              defaultValue: true,
+              admin: {
+                description:
+                  'Le direct ne s’affiche que pendant l’antenne, de 18 h à 0 h 30 (heure de Paris), automatiquement : en dehors, la page « Direct » annonce « Le direct reprend ce soir à 18 h ». Décochez seulement pour couper le direct exceptionnellement : la page « Direct » affiche alors « Le direct reprend bientôt ».',
+              },
+            },
             videoSourceField('live', 'Flux du direct', false, { twitch: true }),
             { name: 'livePoster', label: 'Image affichée avant la lecture', type: 'upload', relationTo: 'media' },
           ],
