@@ -1,10 +1,9 @@
 import type { AdminViewServerProps } from 'payload'
 import { Gutter, Link } from '@payloadcms/ui'
-import { dayLabel, tvDay } from '@/components/programme/model'
 import { formatDayLong, formatTime, timeAgo } from '@/lib/format'
 import { KIND_LABELS } from '@/lib/members/shared'
 import { rangeSearch } from '@/lib/schedule-week'
-import { getDashboardData, type Featured, type MembersStats, type RecentCollection } from './dashboard-data'
+import { getDashboardData, programmeSummary, type Featured, type MembersStats, type RecentCollection } from './dashboard-data'
 import { scheduleSearch } from './menu'
 import { AdminIcon, type IconName } from './icons'
 
@@ -45,7 +44,7 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
   const hour = Number(formatTime(now).slice(0, 2))
   const greeting = `${hour >= 18 ? 'Bonsoir' : 'Bonjour'}${firstName ? ` ${firstName}` : ''}`
   const todayLabel = formatDayLong(now)
-  const today = tvDay(now)
+  const programme = programmeSummary(data.evenings)
 
   // dans l'ordre du menu du site (L'Info, Agenda, Le Replay, Vidéos…), comme le menu de l'administration
   const publish: { href: string; icon: IconName; title: string; text: string }[] = [
@@ -154,7 +153,7 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
               tone={data.live.enabled && data.live.configured ? 'ok' : data.live.enabled ? 'warn' : 'off'}
               value={
                 data.live.enabled && data.live.configured
-                  ? 'Activé'
+                  ? 'Activé · à l’antenne de 18 h à 0 h 30'
                   : data.live.enabled
                     ? 'Activé, mais aucun flux vidéo n’est renseigné'
                     : 'Désactivé : la page « Direct » affiche « Le direct reprend bientôt »'
@@ -193,17 +192,9 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
             <StatusRow
               icon="grid"
               label="Programme TV"
-              tone={data.emptyDays === null || data.emptyDays.length ? 'warn' : 'ok'}
-              value={
-                data.emptyDays === null
-                  ? UNAVAILABLE
-                  : data.emptyDays.length === 0
-                    ? 'Rempli pour les 7 prochains jours'
-                    : data.emptyDays.length === 7
-                      ? 'Aucune émission prévue pour les 7 prochains jours'
-                      : `Rien de prévu : ${data.emptyDays.map((d) => dayLabel(d, today).toLowerCase()).join(', ')}`
-              }
-              href={data.emptyDays?.length && data.emptyDays.length < 7 ? `${collection('schedule')}${rangeSearch(data.emptyDays[0], 1)}` : collection('schedule')}
+              tone={programme.tone}
+              value={programme.value}
+              href={programme.first ? `${collection('schedule')}${rangeSearch(programme.first, 1)}` : `${collection('schedule')}${scheduleSearch()}`}
             />
             <StatusRow
               icon="star"

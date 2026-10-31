@@ -180,6 +180,9 @@ test.describe('administration', () => {
     }
     await expect(page.getByRole('heading', { name: 'Sur le site en ce moment' })).toBeVisible()
     expect(await page.locator('.sw-status__row').count()).toBeGreaterThanOrEqual(8)
+    // grille contrôlée soirée par soirée (18 h – 0 h 30), quelle que soit l'heure du test ; direct annoncé à ses horaires
+    await expect(page.locator('.sw-status__row').filter({ hasText: 'Programme TV' })).toContainText(/soirée|Soirée|Rien de prévu|horaires d’antenne/)
+    await expect(page.locator('.sw-status__row').filter({ hasText: 'Le direct' })).toContainText(/Activé · à l’antenne de 18 h à 0 h 30|Activé, mais|Désactivé/)
     // mesure d'audience : sans ID de mesure (contenus de départ), rien n'est mesuré et le lien vers les réglages est proposé
     const audience = page.locator('.sw-status__row').filter({ hasText: 'Mesure d’audience' })
     await expect(audience).toContainText('Aucun ID de mesure')
@@ -222,18 +225,53 @@ test.describe('administration', () => {
     expect(errors).toEqual([])
   })
 
-  test('grille des programmes : semaine en cours et filtre par jour', async ({ page }) => {
+  test('grille des programmes : semaine en cours, horaires d’antenne et filtre par soirée', async ({ page }) => {
     const errors = watchErrors(page)
     await login(page, ADMIN)
     await page.goto('/admin/collections/schedule')
     await expect(page).toHaveURL(/where/)
-    await expect(page.locator('.sw-week__title')).toHaveText(/^Semaine du lundi/)
+    await expect(page.locator('.sw-week__title')).toHaveText(/^Soirées du lundi/)
     await expect(page.locator('.sw-week__count')).toContainText(/créneau/)
+    await expect(page.locator('.sw-week__hours')).toHaveText(
+      'Antenne : tous les jours de 18 h à 0 h 30. Les créneaux de 0 h à 0 h 30 se saisissent à la date du lendemain et comptent dans la soirée de la veille.',
+    )
+    // la semaine en cours contient toujours la soirée en cours ou à venir
+    await expect(page.locator('.sw-day__today')).toHaveText('ce soir')
     const wednesday = page.locator('.sw-day').nth(3)
     await wednesday.click()
     await expect(wednesday).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.locator('.sw-week__count')).toContainText(/mercredi/)
+    await expect(page.locator('.sw-week__count')).toContainText(/Soirée du mercredi/)
     expect(errors).toEqual([])
+  })
+
+  test('grille : un créneau hors des horaires d’antenne est refusé à l’enregistrement, avec la raison en français', async ({ request }) => {
+    const headers = await adminHeaders(request)
+    const program = ((await (await request.get('/api/programs?limit=1&depth=0', { headers })).json()) as { docs: { id: number }[] }).docs[0]
+    test.skip(!program, 'aucune émission (lancez npm run seed)')
+    // dates lointaines : rien n'arrive sur la grille du site, même si un contrôle manquait
+    const created: number[] = []
+    try {
+      const post = (startsAt: string, durationMinutes = 30) =>
+        request.post('/api/schedule', { headers, data: { startsAt, durationMinutes, program: program.id, _status: 'published' } })
+      const fieldErrors = async (res: Awaited<ReturnType<typeof post>>) =>
+        ((await res.json()) as { errors?: { data?: { errors?: { path: string; message: string }[] } }[] }).errors?.[0]?.data?.errors ?? []
+      // mardi 6 juin 2051, 10 h à Paris (UTC+2)
+      const morning = await post('2051-06-06T08:00:00.000Z')
+      expect(morning.status()).toBe(400)
+      expect(await fieldErrors(morning)).toEqual([expect.objectContaining({ path: 'startsAt', message: expect.stringMatching(/entre 18:00 et 00:25/) })])
+      // 23 h 45 + 60 min : finirait à 0 h 45
+      const late = await post('2051-06-06T21:45:00.000Z', 60)
+      expect(late.status()).toBe(400)
+      expect(await fieldErrors(late)).toEqual([expect.objectContaining({ path: 'durationMinutes', message: expect.stringMatching(/45 min au plus/) })])
+      // mercredi 7 à 0 h 15 : fin de la soirée du mardi, accepté et intitulé d'après sa soirée
+      const night = await post('2051-06-06T22:15:00.000Z', 15)
+      expect(night.status()).toBe(201)
+      const doc = ((await night.json()) as { doc: { id: number; label: string } }).doc
+      created.push(doc.id)
+      expect(doc.label).toMatch(/^Soirée du 06\/06\/2051, 00:15 — /)
+    } finally {
+      for (const id of created) await request.delete(`/api/schedule/${id}`, { headers })
+    }
   })
 
   test('recopie de semaine : refus clairs sans compte ou sans créneau à recopier', async ({ request }) => {

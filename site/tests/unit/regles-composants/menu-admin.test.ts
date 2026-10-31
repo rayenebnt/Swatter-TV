@@ -103,20 +103,22 @@ describe('lien de la grille des programmes : semaine TV en cours', () => {
     expect(withSearch[0].search).toBe(scheduleSearch)
   })
 
-  it('du lundi 2 h au lundi suivant 2 h (heure de Paris), changement d’heure compris', () => {
+  it('du lundi 0 h 30 au lundi suivant 0 h 30 (heure de Paris), changement d’heure compris', () => {
     // mercredi 21 octobre 2026 : semaine du lundi 19 ; le dimanche 25, passage à l'heure d'hiver
-    expect(search('2026-10-21T10:00:00.000Z')).toEqual({ [FROM]: '2026-10-19T00:00:00.000Z', [TO]: '2026-10-26T01:00:00.000Z' })
+    expect(search('2026-10-21T10:00:00.000Z')).toEqual({ [FROM]: '2026-10-18T22:30:00.000Z', [TO]: '2026-10-25T23:30:00.000Z' })
     expect(scheduleSearch().startsWith('?')).toBe(true)
   })
 
-  it('la nuit jusqu’à 2 h appartient à la veille : lundi 1 h 30, c’est encore la semaine précédente', () => {
-    // lundi 26 octobre 2026, 1 h 30 à Paris (0 h 30 UTC)
-    expect(search('2026-10-26T00:30:00.000Z')).toEqual({ [FROM]: '2026-10-19T00:00:00.000Z', [TO]: '2026-10-26T01:00:00.000Z' })
-    // lundi 26 octobre 2026, 2 h à Paris : nouvelle semaine
-    expect(search('2026-10-26T01:00:00.000Z')).toEqual({ [FROM]: '2026-10-26T01:00:00.000Z', [TO]: '2026-11-02T01:00:00.000Z' })
+  it('jusqu’au lundi 0 h 30, la soirée du dimanche est encore à l’antenne : c’est encore la semaine précédente', () => {
+    // lundi 26 octobre 2026, 0 h 15 à Paris (heure d'hiver : 23 h 15 UTC la veille)
+    expect(search('2026-10-25T23:15:00.000Z')).toEqual({ [FROM]: '2026-10-18T22:30:00.000Z', [TO]: '2026-10-25T23:30:00.000Z' })
+    // lundi 26 octobre 2026, 0 h 30 pile : nouvelle semaine
+    expect(search('2026-10-25T23:30:00.000Z')).toEqual({ [FROM]: '2026-10-25T23:30:00.000Z', [TO]: '2026-11-01T23:30:00.000Z' })
+    // lundi 26, 18 h : la première soirée de la nouvelle semaine
+    expect(search('2026-10-26T17:00:00.000Z')[FROM]).toBe('2026-10-25T23:30:00.000Z')
   })
 
   it('dimanche soir : toujours la semaine en cours', () => {
-    expect(search('2026-10-25T21:00:00.000Z')[FROM]).toBe('2026-10-19T00:00:00.000Z')
+    expect(search('2026-10-25T21:00:00.000Z')[FROM]).toBe('2026-10-18T22:30:00.000Z')
   })
 })

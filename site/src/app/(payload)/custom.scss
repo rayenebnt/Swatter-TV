@@ -858,6 +858,59 @@ html[data-theme='dark'] {
   }
 }
 
+/* horaires d'antenne (rappel permanent) et créneaux hors antenne de la liste affichée */
+.sw-week__hours,
+.sw-week__offair {
+  margin: 0;
+  padding: 10px 18px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sw-week__hours {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-top: 1px solid var(--theme-elevation-150);
+}
+
+.sw-week__hours-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--swatter-accent);
+}
+
+.sw-week__offair {
+  border-top: 1px solid var(--theme-elevation-150);
+  background: var(--sw-warn-bg);
+  color: var(--sw-warn);
+}
+
+/* cellule « Jour et heure de début » : soirée de rattachement après minuit, créneau hors antenne */
+.sw-slot-time {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+
+  &__evening {
+    color: var(--theme-elevation-500);
+    font-size: 12px;
+  }
+
+  &__off {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--sw-warn-bg);
+    color: var(--sw-warn);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: help;
+  }
+}
+
 html[data-theme='dark'] .sw-day[aria-pressed='true'] {
   border-color: var(--swatter-gold);
   background: var(--swatter-gold);

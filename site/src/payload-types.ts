@@ -521,14 +521,20 @@ export interface Program {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Une ligne par émission diffusée : le jour et l’heure, l’émission, la durée.
+ * Une ligne par émission diffusée : le jour et l’heure, l’émission, la durée. Diffusion tous les jours de 18 h à 0 h 30 (heure de Paris). Un créneau entre 0 h et 0 h 30 se saisit à la date du lendemain (ex. mardi 00:15) : il apparaît dans la soirée du lundi.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "schedule".
  */
 export interface Schedule {
   id: number;
+  /**
+   * Diffusion tous les jours de 18 h à 0 h 30 (heure de Paris). Un créneau entre 0 h et 0 h 30 se saisit à la date du lendemain (ex. mardi 00:15) : il apparaît dans la soirée du lundi.
+   */
   startsAt: string;
+  /**
+   * Le créneau finit à 0 h 30 au plus tard.
+   */
   durationMinutes: number;
   program: number | Program;
   /**

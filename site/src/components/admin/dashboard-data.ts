@@ -3,6 +3,8 @@
 import type { Payload, Where } from 'payload'
 import { runningAdsWhere } from '@/access'
 import { shiftDay, tvDay, tvDayStart } from '@/components/programme/model'
+import { BROADCAST_HOURS_LABEL, BROADCAST_MINUTES, slotOutsideBroadcast } from '@/lib/broadcast'
+import { durationLabel, eveningShortLabel, uncoveredMinutes } from '@/lib/schedule-week'
 import { loadItems } from '@/lib/members/items'
 import type { HistoryKind } from '@/lib/members/shared'
 import { isMeasurementId } from '@/lib/analytics'
@@ -16,9 +18,8 @@ export type DashboardData = {
   infoOfDay: Featured
   weekendPick: Featured
   flash: { messages: number; auto: boolean }
-  /** jours TV (AAAA-MM-JJ) sans aucun créneau, parmi aujourd'hui et les 6 suivants ; null : requête en échec (jamais
-   * « Rempli » par défaut) */
-  emptyDays: string[] | null
+  /** grille des 7 prochaines soirées ; null : requête en échec (jamais « Complet » par défaut) */
+  evenings: EveningsStatus | null
   /** campagnes en cours ; null : requête en échec */
   ads: number | null
   /** messages du formulaire de contact pas encore traités ; null : requête en échec (jamais « Aucun message » par défaut) */
@@ -32,6 +33,22 @@ export type DashboardData = {
   recent: RecentItem[]
   /** espace membres ; null : aucun compte (le tableau de bord n'en parle pas) */
   members: MembersStats | null
+}
+
+/**
+ * État de la grille des 7 soirées proposées sur le site (18 h – 0 h 30), à partir de la soirée en cours ou à venir, en ne
+ * comptant que les créneaux publiés et ce que voient les visiteurs (créneaux rognés aux horaires d'antenne).
+ */
+export type EveningsStatus = {
+  /** soirée en cours ou à venir (AAAA-MM-JJ, tvDay) : la première des 7 */
+  today: string
+  /** soirées sans aucun programme entre 18 h et 0 h 30 */
+  empty: string[]
+  /** soirées en partie seulement couvertes : minutes sans programme entre 18 h et 0 h 30 */
+  incomplete: { day: string; missingMinutes: number }[]
+  /** anciens créneaux publiés en dehors des horaires d'antenne (début avant 18 h ou à partir de 0 h 30, fin après 0 h 30)
+   * dans ces 7 journées TV ; `firstDay` : la journée TV du premier (lien vers la grille) */
+  offAir: { count: number; firstDay: string | null }
 }
 
 export type MembersStats = {
@@ -81,9 +98,13 @@ async function weekendPick(payload: Payload): Promise<Featured> {
   return doc ? { id: doc.id, title: doc.title, picked: Boolean(picked) } : null
 }
 
-/** Jours sans programme parmi les 7 jours proposés sur le site (journées TV de 2 h à 2 h). */
-async function emptyDays(payload: Payload): Promise<string[]> {
-  const today = tvDay()
+/**
+ * Soirées vides ou incomplètes et créneaux hors antenne parmi les 7 soirées proposées sur le site. Requête sur les journées
+ * TV (de 0 h 30 à 0 h 30 : chaque soirée entière, ses créneaux de 0 h à 0 h 30 datés du lendemain compris, et les anciens
+ * créneaux hors antenne de la journée). De 0 h à 0 h 30, la soirée de la veille est encore en cours : elle est la première.
+ */
+async function evenings(payload: Payload, now = new Date()): Promise<EveningsStatus> {
+  const today = tvDay(now)
   const days = Array.from({ length: 7 }, (_, i) => shiftDay(today, i))
   const { docs } = await payload.find({
     collection: 'schedule',
@@ -94,12 +115,47 @@ async function emptyDays(payload: Payload): Promise<string[]> {
         { startsAt: { less_than: tvDayStart(shiftDay(today, 7)).toISOString() } },
       ],
     },
+    sort: 'startsAt',
     depth: 0,
     pagination: false,
-    select: { startsAt: true },
+    select: { startsAt: true, durationMinutes: true },
   })
-  const filled = new Set(docs.map((d) => tvDay(new Date(d.startsAt))))
-  return days.filter((d) => !filled.has(d))
+  const offAir = docs.filter((d) => slotOutsideBroadcast(new Date(d.startsAt), d.durationMinutes) !== null)
+  const missing = days.map((day) => ({ day, missingMinutes: uncoveredMinutes(day, docs) }))
+  return {
+    today,
+    empty: missing.filter((m) => m.missingMinutes >= BROADCAST_MINUTES).map((m) => m.day),
+    incomplete: missing.filter((m) => m.missingMinutes > 0 && m.missingMinutes < BROADCAST_MINUTES),
+    offAir: { count: offAir.length, firstDay: offAir.length ? tvDay(new Date(offAir[0].startsAt)) : null },
+  }
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
+
+/**
+ * Ligne « Programme TV » : soirées vides (« Rien de prévu : ce soir, sam. 24 »), incomplètes (« mar. 27 : 1 h 15 sans
+ * programme ») et anciens créneaux hors antenne, sinon « Les 7 prochaines soirées sont complètes ». `first` : la première
+ * soirée à reprendre (lien vers sa grille) ; null si tout va bien ou si tout est vide (lien vers la semaine).
+ */
+export function programmeSummary(e: EveningsStatus | null): { tone: 'ok' | 'warn'; value: string; first: string | null } {
+  if (!e) return { tone: 'warn', value: 'Information indisponible pour le moment : rechargez la page dans un instant', first: null }
+  const label = (d: string) => eveningShortLabel(d, e.today)
+  const parts: string[] = []
+  if (e.empty.length === 7) parts.push('Aucune émission prévue pour les 7 prochaines soirées')
+  else if (e.empty.length) parts.push(`Rien de prévu : ${e.empty.map(label).join(', ')}`)
+  if (e.incomplete.length) {
+    const list = e.incomplete.map((m) => `${label(m.day)} : ${durationLabel(m.missingMinutes)} sans programme`).join(', ')
+    parts.push(`Soirée${e.incomplete.length > 1 ? 's' : ''} incomplète${e.incomplete.length > 1 ? 's' : ''} (${BROADCAST_HOURS_LABEL}) : ${list}`)
+  }
+  if (e.offAir.count) {
+    const n = e.offAir.count
+    parts.push(
+      `${plural(n, 'créneau', 'créneaux')} en dehors des horaires d’antenne : ${n > 1 ? 'corrigez leur heure ou leur durée, ou supprimez-les' : 'corrigez son heure ou sa durée, ou supprimez-le'}`,
+    )
+  }
+  if (!parts.length) return { tone: 'ok', value: `Les 7 prochaines soirées sont complètes (${BROADCAST_HOURS_LABEL})`, first: null }
+  const days = [...e.empty, ...e.incomplete.map((m) => m.day), ...(e.offAir.firstDay ? [e.offAir.firstDay] : [])].sort()
+  return { tone: 'warn', value: parts.join(' · '), first: e.empty.length === 7 ? null : (days[0] ?? null) }
 }
 
 async function recent(payload: Payload): Promise<RecentItem[]> {
@@ -179,13 +235,13 @@ async function membersStats(payload: Payload): Promise<Omit<MembersStats, 'signu
 
 export async function getDashboardData(payload: Payload): Promise<DashboardData> {
   const noImage: Where = { and: [LIVE, { thumbnail: { exists: false } }] }
-  const [settings, meteo, videoOfDay, infoOfDay, pick, empty, ads, messages, videosNoImage, replaysNoImage, recentItems, members] = await Promise.all([
+  const [settings, meteo, videoOfDay, infoOfDay, pick, grid, ads, messages, videosNoImage, replaysNoImage, recentItems, members] = await Promise.all([
     attempt(() => payload.findGlobal({ slug: 'settings', depth: 0 }), null),
     attempt(() => payload.findGlobal({ slug: 'meteo', depth: 0 }), null),
     attempt(() => featured(payload, 'videos', 'isVideoOfDay'), null),
     attempt(() => featured(payload, 'articles', 'isInfoOfDay'), null),
     attempt(() => weekendPick(payload), null),
-    attempt<string[] | null>(() => emptyDays(payload), null),
+    attempt<EveningsStatus | null>(() => evenings(payload), null),
     attempt<number | null>(async () => (await payload.count({ collection: 'ads', where: { and: [LIVE, runningAdsWhere()] } })).totalDocs, null),
     attempt<number | null>(async () => (await payload.count({ collection: 'messages', where: { handled: { not_equals: true } } })).totalDocs, null),
     attempt(async () => (await payload.count({ collection: 'videos', where: noImage })).totalDocs, 0),
@@ -205,7 +261,7 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     infoOfDay,
     weekendPick: pick,
     flash: { messages: settings?.flashItems?.length ?? 0, auto: settings?.flashAuto !== false },
-    emptyDays: empty,
+    evenings: grid,
     ads,
     messages,
     // heure de l'import, lue dans les prévisions (la date de modification de la fiche change aussi avec un bulletin)
