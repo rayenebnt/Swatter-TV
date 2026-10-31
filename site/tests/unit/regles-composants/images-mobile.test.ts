@@ -2,7 +2,8 @@
 // orientation et seuils, mêmes valeurs que les requêtes de conteneur de globals.css ; WholeFrame de MediaImage : deux images
 // aux mêmes sources), carrousel de l'accueil (src/components/home/heroMedia.ts et HeroImage.tsx : photo entière ou image qui
 // couvre le cadre portrait, largeur réellement affichée), fichiers insérés dans un texte riche
-// (src/components/ui/proseUpload.ts), affiches de l'agenda (vignette et encart vedette) et point focal des vignettes de webcams.
+// (src/components/ui/proseUpload.ts), affiches de l'agenda (vignette et encart vedette), vignettes du Top 10 (largeur
+// affichée), lecteur coupé (video.css) et point focal des vignettes de webcams.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createElement } from 'react'
@@ -13,6 +14,7 @@ import { HeroImage } from '@/components/home/HeroImage'
 import { heroMobilePosition, heroMobileSizes, heroMobileSource, heroWhole } from '@/components/home/heroMedia'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { PROSE_SIZES, proseUpload } from '@/components/ui/proseUpload'
+import { top10Sizes } from '@/components/video/Top10Section'
 import { webcamPoster } from '@/components/webcams/utils'
 import { coverShare, mediaOrientation, ratioOrientation, WHOLE_FRAMES, wholeIn, wholeOrientation, type Orientation } from '@/lib/media'
 import type { WebcamItem } from '@/lib/queries/webcams'
@@ -113,6 +115,47 @@ describe('photo entière sur fond flou : orientation de la photo et proportions 
     expect(wholeOrientation(media({ width: 1600, height: 1600, sizes: {} }), 16 / 9, 'hero')).toBe('s')
     expect(wholeOrientation(media(), 16 / 9, 'hero')).toBeUndefined()
     expect(wholeOrientation(null, 16 / 9)).toBeUndefined()
+  })
+})
+
+describe('lecteur « Vidéo indisponible » et direct coupé : affiche entière atténuée (video.css)', () => {
+  /** Déclarations des règles de video.css qui visent ce sélecteur (« opacity: .3; filter: … »), commentaires retirés. */
+  const rule = (selector: string) => {
+    const css = readFileSync(join(process.cwd(), 'src/styles/video.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter(([, selectors]) => selectors.split(',').some((x) => x.trim().replace(/\s+/g, ' ') === selector))
+      .map(([, , body]) => body.trim())
+      .join(' ')
+  }
+
+  it('tout le cadre est atténué, fond flou compris, comme une affiche simple ; la photo ne l’est pas une seconde fois', () => {
+    // affiche simple (elle couvre le cadre) : la photo seule est atténuée, sur le fond sombre du lecteur
+    expect(rule('.vp--off .vp__poster')).toContain('opacity: .3')
+    expect(rule('.direct-off .vp__poster')).toContain('opacity: .45')
+    // photo entière (WholeFrame) : le cadre .whole porte l'atténuation, sans quoi le fond flou resterait à pleine luminosité
+    expect(rule('.vp--off .whole')).toContain('opacity: .3')
+    expect(rule('.vp--off .whole')).toContain('filter: grayscale(.5)')
+    expect(rule('.direct-off .whole')).toContain('opacity: .45')
+    expect(rule('.vp--off .whole .vp__poster')).toMatch(/opacity: 1;.*filter: none/)
+  })
+})
+
+describe('Top 10 : largeur affichée de la vignette (attribut sizes)', () => {
+  it('photo en largeur (16:9, 4:3) : entière sur fond flou, à la largeur de la vignette (176 px, 150 px sur téléphone)', () => {
+    expect(top10Sizes(media())).toBe('(max-width: 760px) 150px, 176px')
+    expect(top10Sizes(media({ width: 1600, height: 1200, sizes: {} }))).toBe('(max-width: 760px) 150px, 176px')
+  })
+
+  it('photo carrée ou en hauteur : elle couvre la vignette par sa hauteur, plus large qu’elle (sinon image floue)', () => {
+    expect(top10Sizes(media({ width: 1600, height: 1600, sizes: {} }))).toBe('(max-width: 760px) 225px, 264px')
+    expect(top10Sizes(media({ width: 1080, height: 1350, sizes: {} }))).toBe('(max-width: 760px) 180px, 211px')
+    // très haute (9:16) : plus étroite que la vignette, elle la couvre par sa largeur
+    expect(top10Sizes(media({ width: 1080, height: 1920, sizes: {} }))).toBe('(max-width: 760px) 150px, 176px')
+  })
+
+  it('sans vignette : le visuel de repli (16:9) couvre la vignette par sa hauteur', () => {
+    expect(top10Sizes(null)).toBe('(max-width: 760px) 400px, 469px')
+    expect(top10Sizes(12)).toBe('(max-width: 760px) 400px, 469px')
   })
 })
 

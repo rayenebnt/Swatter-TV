@@ -7,7 +7,9 @@ import type { ImageData } from './utils'
 /**
  * Image d'article via next/image (utilisable côté serveur et client).
  * Par défaut l'image remplit son parent positionné (`.media`) ; avec `width`/`height`, taille fixe (vignettes).
- * `whole` : photo entière sur fond flou quand le cadre en couperait trop (WholeFrame, cadres aux proportions variables).
+ * `whole` : photo entière sur fond flou quand le cadre en couperait trop (WholeFrame, cadres aux proportions variables) ;
+ * l'image doit garder les proportions de la photo (« hero », pas la découpe « card »). Le visuel de repli couvre toujours
+ * son cadre.
  */
 export function ArticleImage({
   image,
@@ -36,7 +38,7 @@ export function ArticleImage({
     style: image.position ? { objectPosition: image.position } : undefined,
   }
   const text = alt ?? image.alt
-  if (whole && !(width && height)) {
+  if (whole && !image.fallback && !(width && height)) {
     // Deux images aux mêmes sources : chargement immédiat et prioritaire plutôt qu'un préchargement
     const urgency = priority ? ({ loading: 'eager', fetchPriority: 'high' } as const) : {}
     const img = getImageProps({ src: image.src, unoptimized: image.unoptimized, alt: text, fill: true, sizes, ...urgency }).props

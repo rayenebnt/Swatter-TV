@@ -107,6 +107,9 @@
   /* Cadre portrait : image pour téléphone (centrée), ou image de fond centrée sur son point focal (heroMedia.ts) ;
      sans point focal, cadrage par défaut des visuels paysage, dont le sujet est un peu à droite */
   .slide__photo { object-position: var(--focal-m, 62% 50%); }
+  /* Diapositive qui couvre le cadre (sans photo entière : visuel de repli, image en hauteur) : textes posés juste
+     au-dessus des barres de navigation, assez bas pour ne jamais passer sous l'en-tête (maquette) */
+  .slide__content { bottom: 96px; }
   /* Photo entière (data-whole « phone », heroWhole) : colonne photo puis textes, la photo sous l'en-tête et les textes
      juste en dessous (jamais masquée par eux, boutons au plus haut sur un petit écran), sans zoom ni débord (rien n'est
      coupé) ; en pleine largeur (au plus 46 % de la hauteur : photo carrée centrée), plus petite si les textes ont besoin

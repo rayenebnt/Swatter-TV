@@ -1,18 +1,23 @@
 // Rubrique L'Info (src/components/info/time.ts et utils.ts) : libellés de date du fil « En continu » en heure de Paris,
-// cartes d'articles (images, accroche, typographie française), texte brut du contenu riche, coupe des textes, partage ;
-// champ « Département » des articles (« Autres régions », réservé à l'Info).
+// cartes d'articles (images, accroche, typographie française), article principal (LeadCard : image d'origine pour la
+// photo entière), texte brut du contenu riche, coupe des textes, partage ; champ « Département » des articles
+// (« Autres régions », réservé à l'Info).
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import type { CollectionConfig, Field } from 'payload'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Articles } from '@/collections/Articles'
 import { Events } from '@/collections/Events'
 import { Webcams } from '@/collections/Webcams'
+import { LeadCard } from '@/components/info/LeadCard'
 import { agoLabel, feedLabel } from '@/components/info/time'
 import {
   articleImage,
   articleShareImage,
   fallbackVisual,
+  feedTeasers,
   frenchSpaces,
   fullDateTime,
   hasOwnContent,
@@ -153,9 +158,19 @@ describe('images des articles', () => {
     })
   })
 
-  it('articleImage : sans média chargé, visuel de repli décoratif en 16/9', () => {
+  it('articleImage : point focal placé dans la déclinaison affichée (« card » est découpée autour de lui à l’envoi)', () => {
+    // photo en hauteur 1080 × 1350, point aux deux tiers : la découpe 16:9 garde une bande centrée sur lui ; point en
+    // haut : bande collée au bord du haut (le point n'y est plus au centre, mais aux 44 %)
+    const portrait = media({ width: 1080, height: 1350, focalX: 40, focalY: 20 })
+    expect(articleImage({ id: 1, image: media({ width: 1080, height: 1350, focalX: 40, focalY: 66 }) }, 'card').position).toBe('40% 50%')
+    expect(articleImage({ id: 1, image: portrait }, 'card').position).toBe('40% 44.4%')
+    // image d'origine : le point tel qu'il a été choisi
+    expect(articleImage({ id: 1, image: portrait }, 'hero').position).toBe('40% 20%')
+  })
+
+  it('articleImage : sans média chargé, visuel de repli décoratif en 16/9, marqué comme tel (il couvre toujours son cadre)', () => {
     for (const image of [null, undefined, 42]) {
-      expect(articleImage({ id: 5, image }, 'card')).toEqual({ src: fallbackVisual(5), unoptimized: false, alt: '', width: 960, height: 540 })
+      expect(articleImage({ id: 5, image }, 'card')).toEqual({ src: fallbackVisual(5), unoptimized: false, alt: '', width: 960, height: 540, fallback: true })
     }
     // média sans fichier (envoi interrompu)
     expect(articleImage({ id: 5, image: media({ url: null, sizes: {} }) }, 'card').src).toBe(fallbackVisual(5))
@@ -282,7 +297,82 @@ describe('toTeaser : article prêt pour les cartes (données simples envoyées a
   it('chapô vide ou blanc : null ; article sans image : visuel de repli', () => {
     expect(toTeaser(article({ excerpt: '   ' })).excerpt).toBeNull()
     expect(toTeaser(article({ excerpt: null })).excerpt).toBeNull()
-    expect(toTeaser(article({ image: null })).image).toMatchObject({ src: fallbackVisual(31), alt: '' })
+    expect(toTeaser(article({ image: null })).image).toMatchObject({ src: fallbackVisual(31), alt: '', fallback: true })
+  })
+})
+
+describe('article principal (LeadCard) : image d’origine, entière sur fond flou quand le cadre en couperait trop', () => {
+  // photo en hauteur (1800 × 2400) : Payload en tire une découpe 16:9 « card » de 960 × 540 ; pas de « hero » (photo
+  // moins large que cette déclinaison) : l'original
+  const portrait = media({
+    id: 9,
+    url: `${SITE_URL}/api/media/file/portrait.webp`,
+    width: 1800,
+    height: 2400,
+    sizes: { card: { url: `${SITE_URL}/api/media/file/portrait-960x540.webp`, width: 960, height: 540 } },
+  })
+  const article = (over: Partial<ArticleListItem> = {}): ArticleListItem => ({
+    id: 40,
+    title: 'Derby à Genève',
+    slug: 'derby-a-geneve',
+    excerpt: 'Le derby lémanique en images.',
+    department: 'autres-regions',
+    city: 'Genève',
+    kicker: 'Sport',
+    image: portrait,
+    publishedAt: '2026-10-16T14:34:00.000Z',
+    updatedAt: '2026-10-16T15:00:00.000Z',
+    isInfoOfDay: false,
+    ...over,
+  })
+  const render = (item: ReturnType<typeof toTeaser>) => renderToStaticMarkup(createElement(LeadCard, { item, time: createElement('time', null, '16:34') }))
+
+  it('toTeaser « lead » : image d’origine à ses vraies proportions ; les cartes gardent la découpe 16:9 « card »', () => {
+    expect(toTeaser(article(), { lead: true }).image).toMatchObject({ src: '/api/media/file/portrait.webp', width: 1800, height: 2400 })
+    expect(toTeaser(article()).image).toMatchObject({ src: '/api/media/file/portrait-960x540.webp', width: 960, height: 540 })
+    // déclinaison « hero » quand elle existe
+    expect(toTeaser({ ...article(), image: media() }, { lead: true }).image?.src).toBe('/api/media/file/lac.webp')
+    expect(toTeaser({ ...article(), image: media({ sizes: { hero: { url: `${SITE_URL}/api/media/file/lac-2400x1350.webp`, width: 2400, height: 1350 } } }) }, { lead: true }).image?.src).toBe(
+      '/api/media/file/lac-2400x1350.webp',
+    )
+  })
+
+  it('LeadCard : photo en hauteur rendue avec son orientation (entière dans le cadre allongé du téléphone), pas la bande 16:9', () => {
+    const html = render(toTeaser(article(), { lead: true }))
+    expect(html).toContain('<span class="whole" data-o="p">')
+    expect(html).not.toContain('960x540')
+    // photo et fond flou : un seul fichier
+    expect(html.match(/<img /g)).toHaveLength(2)
+  })
+
+  it('LeadCard : le visuel de repli couvre son cadre (image simple, jamais de fond flou)', () => {
+    const html = render(toTeaser(article({ image: null }), { lead: true }))
+    expect(html).not.toContain('whole')
+    expect(html.match(/<img /g)).toHaveLength(1)
+    expect(html).toContain(path.basename(fallbackVisual(40), '.webp'))
+  })
+
+  it('fil de l’accueil : l’article principal de chaque filtre a l’image d’origine ; les autres n’emportent pas de grande image', () => {
+    const docs = [
+      article({ id: 1, department: 'haute-savoie' }),
+      article({ id: 2, department: 'savoie', image: media() }),
+      article({ id: 3, department: 'haute-savoie' }),
+      article({ id: 4, department: 'autres-regions' }),
+      article({ id: 5, department: 'savoie', image: null }),
+    ]
+    const items = feedTeasers(docs)
+    // InfoFeed : l'article principal est le premier de la liste, entière ou filtrée par département ; les suivants d'un
+    // même département ne le deviennent jamais
+    for (const dept of ['all', 'haute-savoie', 'savoie', 'autres-regions']) {
+      const [lead, ...rest] = dept === 'all' ? items : items.filter((i) => i.department === dept)
+      expect(lead.image, dept).not.toBeNull()
+      expect(lead.image?.src, dept).not.toContain('960x540')
+      expect(lead.excerpt, dept).not.toBeNull()
+      if (dept !== 'all') for (const other of rest) expect(other.image, `${dept} : ${other.id}`).toBeNull()
+    }
+    expect(items.map((i) => i.image?.src ?? null)).toEqual(['/api/media/file/portrait.webp', '/api/media/file/lac.webp', null, '/api/media/file/portrait.webp', null])
+    // le premier n'est jamais dans le fil « En continu » : pas de vignette
+    expect(items.map((i) => i.thumb !== null)).toEqual([false, true, true, true, true])
   })
 })
 
