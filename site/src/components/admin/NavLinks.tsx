@@ -1,10 +1,67 @@
 'use client'
 
-import { Link, useAuth, useConfig } from '@payloadcms/ui'
+import { Link, useAuth, useConfig, useNav } from '@payloadcms/ui'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AdminIcon } from './icons'
-import { MENU } from './menu'
+import { MENU, MODAL_NAV_QUERY } from './menu'
+
+/**
+ * Premier élément affiché parmi ceux du sélecteur : largeur non nulle (sur téléphone, le bouton du menu de la marge
+ * gauche reste dans la page, vide et large de 0 px, à côté de celui de l'en-tête).
+ */
+const firstShown = (root: ParentNode, selector: string) => [...root.querySelectorAll<HTMLElement>(selector)].find((el) => el.getBoundingClientRect().width > 0)
+
+/**
+ * Téléphone et tablette (≤ 1024 px) : le menu s'ouvre par-dessus le contenu (custom.scss). Il est fermé à l'arrivée
+ * (et au retour sur la page par le bouton « Précédent »), se referme en touchant un de ses liens, en touchant le voile
+ * posé sur le contenu, avec Échap (le focus revient alors au bouton du menu), et ouvert au clavier, il reçoit le focus.
+ * Payload ne le referme lui-même qu'au changement d'adresse, et seulement sous 768 px. Sur ordinateur, rien ne change :
+ * le menu reste comme l'utilisateur l'a laissé (préférence mémorisée par Payload).
+ */
+function useModalNav() {
+  const { navOpen, setNavOpen } = useNav()
+
+  useEffect(() => {
+    const close = () => {
+      if (window.matchMedia(MODAL_NAV_QUERY).matches) setNavOpen(false)
+    }
+    close()
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) close()
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [setNavOpen])
+
+  useEffect(() => {
+    if (!navOpen || !window.matchMedia(MODAL_NAV_QUERY).matches) return
+    // ouvert au clavier (bouton du menu focalisé et focus visible) : le focus entre dans le menu, sinon Tab parcourrait
+    // la page cachée derrière ; au toucher, rien ne bouge
+    const opener = document.activeElement
+    const nav = document.querySelector<HTMLElement>('aside.nav')
+    if (nav && opener instanceof HTMLElement && opener.matches('.nav-toggler:focus-visible')) {
+      firstShown(nav, '.nav__mobile-close, a[href]')?.focus({ preventScroll: true })
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !window.matchMedia(MODAL_NAV_QUERY).matches) return
+      setNavOpen(false)
+      firstShown(document, '.nav-toggler')?.focus({ preventScroll: true })
+    }
+    const onClick = (event: MouseEvent) => {
+      if (!window.matchMedia(MODAL_NAV_QUERY).matches || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      const target = event.target instanceof Element ? event.target : null
+      // lien du menu, ou voile : pseudo-élément de .template-default__wrap, qui reçoit donc le toucher
+      if (target?.closest('.nav a[href]') || target?.classList.contains('template-default__wrap')) setNavOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('click', onClick)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('click', onClick)
+    }
+  }, [navOpen, setNavOpen])
+}
 
 /**
  * Rubrique choisie avant même l'arrivée de la page : le lien cliqué s'allume aussitôt (et la barre de progression de
@@ -31,6 +88,8 @@ export function NavStart() {
   } = useConfig()
   const { user } = useAuth()
   const { isActive, onNavigate } = usePendingNav()
+  // monté avec le menu, sur toutes les pages de l'administration (une seule fois : NavEnd ne l'appelle pas)
+  useModalNav()
   const isAdmin = (user as { role?: string } | null)?.role === 'admin'
   const home = isActive(routes.admin, true)
   return (

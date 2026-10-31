@@ -206,6 +206,7 @@ html[data-theme='dark'] {
   transition: border-color 0.15s, color 0.15s;
 
   svg {
+    flex: 0 0 auto;
     width: 18px;
     height: 18px;
   }
@@ -384,6 +385,11 @@ html[data-theme='dark'] {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+
+    // libellés courts (« Voir le site », « Aide ») : un bouton passe à la ligne entier, jamais coupé mot par mot
+    .sw-btn {
+      white-space: nowrap;
+    }
   }
 
   &__h2 {
@@ -404,12 +410,13 @@ html[data-theme='dark'] {
     list-style: none;
   }
 
+  // min(…, 100%) : sur un écran plus étroit que la largeur minimale d'une carte, la carte se resserre au lieu de déborder
   &__actions {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   }
 
   &__tiles {
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
     gap: 10px;
   }
 
@@ -1022,6 +1029,117 @@ html[data-theme='dark'] .sw-day[aria-pressed='true'] {
   }
 }
 
+/* Menu jusqu'à 1024 px (là où Payload le traite comme une fenêtre) : Payload le range dans une colonne de la grille
+   .template-default, si bien qu'ouvert il pousse le contenu. Sur téléphone, cette colonne fait 100vw : le contenu,
+   rejeté hors de l'écran, élargit la page (653 px au lieu de 390 sur le tableau de bord), le navigateur dézoome, et le
+   tableau de bord se retrouve écrasé dans une bande étroite à côté du menu (« Voir le site » coupé mot par mot).
+   Ici le menu passe PAR-DESSUS le contenu, qui garde toujours toute la largeur : plein écran sur téléphone, tiroir de
+   320 px sur un voile sombre sur tablette. useModalNav (NavLinks.tsx) le referme d'un lien touché, d'Échap ou du voile. */
+@media (max-width: 1024px) {
+  .template-default,
+  .template-default--nav-hydrated,
+  .template-default--nav-hydrated.template-default--nav-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .template-default .nav {
+    position: fixed;
+    inset: 0 auto 0 0;
+    // au-dessus de l'en-tête (--z-modal) et du voile (--z-status), dans le contexte isolé de .template-default
+    z-index: calc(var(--z-status) + 1);
+    width: 320px;
+    max-width: 100%;
+    height: auto;
+    background: var(--theme-bg);
+    box-shadow: 0 0 48px rgba(7, 18, 36, 0.35);
+    opacity: 1;
+    // fermé : hors de l'écran et invisible (ni touché ni lu), en plus de l'attribut inert posé par Payload
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition: none;
+  }
+
+  .template-default .nav--nav-animate {
+    transition:
+      transform var(--nav-trans-time) ease-out,
+      visibility 0s linear var(--nav-trans-time);
+  }
+
+  .template-default .nav--nav-open {
+    visibility: visible;
+    transform: none;
+  }
+
+  .template-default .nav--nav-open.nav--nav-animate {
+    transition: transform var(--nav-trans-time) ease-out;
+  }
+
+  // voile sur le contenu (pseudo-élément prévu par Payload, resté invisible) : toucher le voile referme le menu
+  .template-default--nav-open .template-default__wrap::before {
+    position: fixed;
+    background: rgba(7, 18, 36, 0.55);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  // la page ne défile pas sous le menu ouvert
+  body:has(.template-default--nav-open) {
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 768px) {
+  // téléphone : le menu occupe tout l'écran, sa croix (.nav__mobile-close, Payload) en haut à gauche
+  .template-default .nav {
+    width: 100%;
+    border-right: 0;
+    box-shadow: none;
+  }
+
+  /* barre des fiches cochées d'une liste (Payload, fixée en bas) : sans « left », elle partait de la marge et
+     dépassait de l'écran de la largeur de celle-ci ; ses boutons (Éditer, Publier, Retirer du site, Supprimer) sur une
+     seule ligne sortaient de l'écran : ils passent à la ligne, sans les tirets qui les séparent */
+  .collection-list__list-selection {
+    left: 0;
+    padding-inline: var(--gutter-h);
+
+    .list-selection {
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0;
+
+      > span {
+        white-space: nowrap;
+      }
+
+      > span:not(:first-child) {
+        display: none;
+      }
+    }
+
+    .list-selection__actions {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn {
+      margin: 0;
+    }
+  }
+
+  // fiches cochées : la barre, sur deux lignes, ne cache pas la pagination en bas de la liste
+  .collection-list__wrap:has(.collection-list__list-selection .list-selection) {
+    padding-bottom: 120px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .template-default .nav--nav-animate,
+  .template-default .nav--nav-open.nav--nav-animate {
+    transition: none;
+  }
+}
+
 /* Jusqu'à 1024 px, l'aperçu en direct prendrait toute la largeur et écraserait le formulaire dans une colonne de
    quelques pixels : il est masqué, le formulaire garde toute la largeur et « Aperçu » ouvre la page dans un onglet. */
 @media (max-width: 1024px) {
@@ -1045,6 +1163,11 @@ html[data-theme='dark'] .sw-day[aria-pressed='true'] {
   .sw-nav__link {
     min-height: 40px;
     padding-block: 8px;
+  }
+
+  /* tableau de bord : salutation un peu plus petite, sur une ligne avec un prénom courant */
+  .sw-dash__title {
+    font-size: 28px;
   }
 
   /* tableau de bord : titres des derniers contenus sur deux lignes plutôt que coupés après quelques mots */

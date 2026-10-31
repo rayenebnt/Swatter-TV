@@ -16,6 +16,12 @@ export type MenuItem = {
 
 export type MenuSection = { title: string; items: MenuItem[]; adminOnly?: boolean }
 
+/**
+ * Écrans où le menu s'ouvre par-dessus le contenu (custom.scss, NavLinks.tsx) : ceux où Payload le traite comme une
+ * fenêtre (point de rupture « m » de @payloadcms/ui).
+ */
+export const MODAL_NAV_QUERY = '(max-width: 1024px)'
+
 /** Grille des programmes : directement sur la semaine en cours (sans passer par la redirection de src/proxy.ts). */
 export const scheduleSearch = () => rangeSearch(currentMonday(), 7)
 

@@ -1,6 +1,6 @@
 import { expect, request as apiRequest, test, type APIRequestContext, type Page } from '@playwright/test'
 import { settle, watchErrors } from './helpers'
-import { presetConsent, recordThirdParty } from './outils-contenus'
+import { mobileContext, presetConsent, recordThirdParty } from './outils-contenus'
 import { MOCK_PROGRAM, MOCK_VIDEOS, startYoutubeMock } from './youtube-mock'
 
 /**
@@ -41,6 +41,74 @@ async function createdMember(request: APIRequestContext, headers: Record<string,
     .toBe(true)
   expect(found?.passwordHash).toBeUndefined()
   return found!.id
+}
+
+/**
+ * La page tient dans l'écran : le navigateur ne l'a pas élargie (sur téléphone, un contenu trop large fait dézoomer la
+ * page entière, ce que scrollWidth seul ne voit pas : innerWidth grandit avec lui) et aucun élément du contenu ne sort à
+ * droite, sauf dans un conteneur qui défile ou qui rogne (tableaux des listes).
+ */
+async function expectFitsScreen(page: Page, width: number) {
+  const fit = await page.evaluate(() => {
+    const right = document.documentElement.clientWidth + 1
+    const inScroller = (el: Element) => {
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        if (getComputedStyle(p).overflowX !== 'visible' && p.getBoundingClientRect().right <= right) return true
+      }
+      return false
+    }
+    const outside = [...document.querySelectorAll('.template-default__wrap *')]
+      .filter((el) => {
+        const r = el.getBoundingClientRect()
+        return r.width > 0 && r.right > right && !inScroller(el)
+      })
+      .slice(0, 5)
+      .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).trim().split(/\s+/).join('.')}`)
+    return { innerWidth: window.innerWidth, scrollWidth: document.documentElement.scrollWidth, outside }
+  })
+  expect(fit, `la page tient dans ${width} px`).toEqual({ innerWidth: width, scrollWidth: width, outside: [] })
+}
+
+/** Texte, nombre de mots et nombre de lignes occupées par chaque élément du sélecteur. */
+const textLines = (page: Page, selector: string) =>
+  page.locator(selector).evaluateAll((els) =>
+    els.map((el) => {
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      const text = el.textContent?.trim() ?? ''
+      return { text, words: text.split(/\s+/).length, lines: new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top))).size }
+    }),
+  )
+
+/** Aucun texte coupé mot par mot : sur une seule ligne, ou avec moins de lignes que de mots. */
+async function expectNoWordPerLine(page: Page, selector: string) {
+  const cut = (await textLines(page, selector)).filter((t) => t.lines > 1 && t.lines >= t.words)
+  expect(cut, `textes coupés mot par mot (${selector})`).toEqual([])
+}
+
+/** Boîte du menu, de la zone de contenu, et élément au centre de l'écran (le menu, s'il recouvre le contenu). */
+const navLayout = (page: Page) =>
+  page.evaluate(() => {
+    const box = (selector: string) => {
+      const r = document.querySelector(selector)!.getBoundingClientRect()
+      return { x: Math.round(r.x), width: Math.round(r.width) }
+    }
+    const nav = document.querySelector('aside.nav')!
+    return {
+      open: nav.classList.contains('nav--nav-open'),
+      nav: box('aside.nav'),
+      content: box('.template-default__wrap'),
+      background: getComputedStyle(nav).backgroundColor,
+      onTop: Boolean(document.elementFromPoint(window.innerWidth / 4, window.innerHeight / 2)?.closest('aside.nav')),
+      innerWidth: window.innerWidth,
+    }
+  })
+
+/** Ouvre le menu par son bouton et attend la fin du glissement (menu collé au bord gauche). */
+async function openNav(page: Page, toggler: string) {
+  await page.locator(toggler).click()
+  await expect(page.locator('aside.nav')).toHaveClass(/nav--nav-open/)
+  await expect.poll(async () => (await navLayout(page)).nav.x).toBe(0)
 }
 
 async function adminHeaders(request: APIRequestContext) {
@@ -590,6 +658,113 @@ test.describe('administration', () => {
       // nettoyage si le test s'est arrêté avant la suppression
       await request.delete(`/api/members/${memberId}`, { headers }).catch(() => undefined)
       await guest.dispose()
+    }
+  })
+
+  // Téléphone et tablette (≤ 1024 px) : le menu passe par-dessus le contenu, qui garde toute la largeur (custom.scss,
+  // useModalNav de NavLinks.tsx). Contextes « mobile » ouverts ici : les connexions administrateur restent une à une.
+  test('téléphone : menu fermé à l’arrivée, ouvert par-dessus le contenu, rien ne déborde à 390 px', async ({ browser }) => {
+    test.setTimeout(150_000)
+    const context = await mobileContext(browser)
+    const page = await context.newPage()
+    const errors = watchErrors(page)
+    const width = page.viewportSize()!.width
+    const toggler = '.app-header__mobile-nav-toggler'
+    const expectClosed = async () => {
+      await expect(page.locator('aside.nav')).not.toHaveClass(/nav--nav-open/)
+      await expect(page.locator('aside.nav')).toBeHidden()
+    }
+    // API avec la session de la page (cookie de connexion passé en en-tête : l'API refuse le cookie seul sans Origin)
+    const auth = async () => ({ Authorization: `JWT ${(await context.cookies()).find((c) => c.name === 'payload-token')?.value}` })
+    const preference = async (method: 'POST' | 'DELETE') =>
+      page.request.fetch('/api/payload-preferences/nav', { method, headers: await auth(), data: method === 'POST' ? { value: { open: true } } : undefined })
+    try {
+      await login(page, ADMIN)
+      // menu laissé ouvert sur un ordinateur (préférence de Payload) : sur téléphone, il ne s'ouvre pas tout seul
+      expect((await preference('POST')).ok()).toBe(true)
+      await page.goto('/admin')
+      await expect(page.locator('.template-default--nav-hydrated')).toBeAttached()
+      await expectClosed()
+
+      // tableau de bord : pleine largeur, boutons et cartes à la largeur de l'écran, aucun libellé coupé mot par mot
+      await expect(page.getByRole('heading', { level: 1, name: /^Bon(jour|soir)/ })).toBeVisible()
+      await expectFitsScreen(page, width)
+      expect((await textLines(page, '.sw-dash__links .sw-btn')).map((t) => t.lines)).toEqual([1, 1])
+      // (le grand titre « Bonjour Prénom » n'est pas compté : deux mots, dont un prénom de longueur quelconque)
+      await expectNoWordPerLine(page, '.sw-dash__h2, .sw-dash__lead, .sw-action__text > *, .sw-tile__text > *, .sw-status__text > *')
+      const gutter = await page.locator('.sw-dash').evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft))
+      for (const card of await page.locator('.sw-action').all()) {
+        expect((await card.boundingBox())!.width).toBeGreaterThanOrEqual(width - 2 * gutter - 1)
+      }
+
+      // menu ouvert : il recouvre l'écran (fond opaque), le contenu derrière garde toute sa largeur
+      await openNav(page, toggler)
+      const layout = await navLayout(page)
+      expect(layout).toMatchObject({ open: true, onTop: true, innerWidth: width, nav: { x: 0 }, content: { x: 0, width } })
+      expect(layout.nav.width).toBeGreaterThanOrEqual(width * 0.9)
+      expect(layout.background).toMatch(/^rgb\(/)
+      await expectFitsScreen(page, width)
+
+      // fermeture : la croix, puis Échap, puis un lien du menu (navigation)
+      await page.locator('.nav__mobile-close').click()
+      await expectClosed()
+      await openNav(page, toggler)
+      await page.keyboard.press('Escape')
+      await expectClosed()
+      // le focus revient au bouton du menu affiché (celui de l'en-tête sur téléphone)
+      await expect(page.locator(toggler)).toBeFocused()
+      await openNav(page, toggler)
+      await page.locator('aside.nav').getByRole('link', { name: 'Vidéos', exact: true }).click()
+      await expectClosed()
+      await expect(page).toHaveURL(/\/admin\/collections\/videos/)
+      await expectFitsScreen(page, width)
+
+      // fiche d'une vidéo : formulaire à la largeur de l'écran, menu ouvert compris
+      const videos = (await (await page.request.get('/api/videos?limit=1&depth=0&draft=true', { headers: await auth() })).json()) as { docs: { id: number }[] }
+      test.skip(!videos.docs.length, 'aucune vidéo (lancez npm run seed)')
+      await page.goto(`/admin/collections/videos/${videos.docs[0].id}`)
+      await expect(page.getByText('Où se trouve la vidéo ?')).toBeVisible()
+      await expectClosed()
+      await expectFitsScreen(page, width)
+      await openNav(page, toggler)
+      expect(await navLayout(page)).toMatchObject({ onTop: true, innerWidth: width, content: { x: 0, width } })
+      await expectFitsScreen(page, width)
+      expect(errors, errors.join('\n')).toEqual([])
+    } finally {
+      await preference('DELETE').catch(() => undefined)
+      await context.close()
+    }
+  })
+
+  test('tablette : le menu s’ouvre en tiroir sur un voile, sans pousser le contenu, et se referme au toucher du voile', async ({ browser }) => {
+    test.setTimeout(120_000)
+    const context = await mobileContext(browser, { viewport: { width: 820, height: 1180 } })
+    const page = await context.newPage()
+    const errors = watchErrors(page)
+    const nav = page.locator('aside.nav')
+    try {
+      await login(page, ADMIN)
+      await expect(page.locator('.template-default--nav-hydrated')).toBeAttached()
+      await expect(nav).not.toHaveClass(/nav--nav-open/)
+
+      await openNav(page, '.template-default__nav-toggler')
+      const layout = await navLayout(page)
+      expect(layout).toMatchObject({ onTop: true, innerWidth: 820, nav: { x: 0, width: 320 }, content: { x: 0, width: 820 } })
+      await expectFitsScreen(page, 820)
+
+      // toucher le voile, à droite du tiroir, referme le menu sans rien activer derrière
+      await page.mouse.click(700, 600)
+      await expect(nav).not.toHaveClass(/nav--nav-open/)
+      await expect(page).toHaveURL(/\/admin$/)
+
+      // un lien du menu le referme aussi (Payload ne le fait lui-même que sous 768 px)
+      await openNav(page, '.template-default__nav-toggler')
+      await nav.getByRole('link', { name: 'L’Info', exact: true }).click()
+      await expect(page).toHaveURL(/\/admin\/collections\/articles/)
+      await expect(nav).not.toHaveClass(/nav--nav-open/)
+      expect(errors, errors.join('\n')).toEqual([])
+    } finally {
+      await context.close()
     }
   })
 })
