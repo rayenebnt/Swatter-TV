@@ -115,13 +115,14 @@
   /* Photo entière (data-whole « phone », heroWhole) : colonne photo puis textes, la photo sous l'en-tête et les textes
      juste en dessous (jamais masquée par eux, boutons au plus haut sur un petit écran), sans zoom ni débord (rien n'est
      coupé) ; en pleine largeur (au plus 46 % de la hauteur : photo carrée centrée), plus petite si les textes ont besoin
-     de la place, sans descendre sous 40 % de la largeur de l'écran en hauteur (le cadre s'allonge alors) ; ses
-     proportions suivent sa hauteur. Fond flou sur toute la diapositive (.slide__media sans boîte : ni position, ni
+     de la place, sans descendre sous 40 % de la largeur de l'écran en hauteur (le cadre s'allonge alors ; min-height: 0,
+     sans quoi la taille minimale automatique d'un élément flex la garderait à sa hauteur naturelle) ; ses proportions
+     suivent sa hauteur. Fond flou sur toute la diapositive (.slide__media sans boîte : ni position, ni
      parallaxe), dégradé calme */
   .slide[data-whole~='phone'] { justify-content: normal; gap: 14px; padding: var(--header-h) 0 64px; }
   .slide[data-whole~='phone'] .slide__media, .slide[data-whole~='phone'] .slide__media > picture { display: contents; }
   .slide[data-whole~='phone'] .slide__backdrop { display: block; }
-  .slide[data-whole~='phone'] .slide__photo { position: relative; inset: auto; flex: 1 0 min(calc(100cqw / var(--ratio-m)), 40cqw); align-self: center; width: auto; max-width: 100%; height: auto; max-height: min(calc(100cqw / var(--ratio-m)), calc(var(--hero-h) * .46)); aspect-ratio: var(--ratio-m); object-fit: contain; transform: none; animation: none; }
+  .slide[data-whole~='phone'] .slide__photo { position: relative; inset: auto; flex: 1 0 min(calc(100cqw / var(--ratio-m)), 40cqw); align-self: center; width: auto; max-width: 100%; height: auto; min-height: 0; max-height: min(calc(100cqw / var(--ratio-m)), calc(var(--hero-h) * .46)); aspect-ratio: var(--ratio-m); object-fit: contain; transform: none; animation: none; }
   .slide[data-whole~='phone'] .slide__content { position: relative; bottom: auto; width: 100%; }
   .slide[data-whole~='phone']::after { background: linear-gradient(0deg, var(--bg) 5%, rgba(4, 10, 22, .72) 32%, rgba(4, 10, 22, 0) 56%); }
   .slide__desc { font-size: 15.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
