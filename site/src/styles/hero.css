@@ -98,19 +98,25 @@
   .hero__bottom-in { justify-content: flex-end; }
 }
 @media (max-width: 760px) {
-  .hero { --hero-h: clamp(620px, 92svh, 760px); }
+  /* Hauteur au moins --hero-h, davantage si une diapositive en photo entière en a besoin (petit téléphone, programme en
+     cours du direct) : ces diapositives sont dans le flux, empilées dans une même case de grille (le cadre prend la
+     hauteur de la plus haute, sans saut d'une diapositive à l'autre) ; les autres restent posées sur tout le cadre */
+  .hero { --hero-h: clamp(620px, 92svh, 760px); height: auto; min-height: var(--hero-h); }
+  .hero__slides { display: grid; grid-template-columns: minmax(0, 1fr); }
   .slide::after { background: linear-gradient(0deg, var(--bg) 6%, rgba(4, 10, 22, .8) 42%, rgba(4, 10, 22, .2) 72%, rgba(4, 10, 22, .55) 100%); }
   /* Cadre portrait : image pour téléphone (centrée), ou image de fond centrée sur son point focal (heroMedia.ts) ;
      sans point focal, cadrage par défaut des visuels paysage, dont le sujet est un peu à droite */
   .slide__photo { object-position: var(--focal-m, 62% 50%); }
-  /* Photo entière (data-whole « phone », heroWhole) : colonne photo puis textes, la photo sous l'en-tête et au-dessus des
-     textes (jamais masquée par eux), sans zoom ni débord (rien n'est coupé) ; en pleine largeur (au plus 46 % de la
-     hauteur : photo carrée centrée), plus petite si les textes ont besoin de la place (ses proportions suivent sa
-     hauteur). Fond flou sur toute la diapositive (.slide__media sans boîte : ni position, ni parallaxe), dégradé calme */
-  .slide[data-whole~='phone'] { display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; padding: var(--header-h) 0 64px; }
+  /* Photo entière (data-whole « phone », heroWhole) : colonne photo puis textes, la photo sous l'en-tête et les textes
+     juste en dessous (jamais masquée par eux, boutons au plus haut sur un petit écran), sans zoom ni débord (rien n'est
+     coupé) ; en pleine largeur (au plus 46 % de la hauteur : photo carrée centrée), plus petite si les textes ont besoin
+     de la place, sans descendre sous 40 % de la largeur de l'écran en hauteur (le cadre s'allonge alors) ; ses
+     proportions suivent sa hauteur. Fond flou sur toute la diapositive (.slide__media sans boîte : ni position, ni
+     parallaxe), dégradé calme */
+  .slide[data-whole~='phone'] { position: relative; inset: auto; grid-area: 1 / 1; min-width: 0; min-height: var(--hero-h); display: flex; flex-direction: column; gap: 14px; padding: var(--header-h) 0 64px; }
   .slide[data-whole~='phone'] .slide__media, .slide[data-whole~='phone'] .slide__media > picture { display: contents; }
   .slide[data-whole~='phone'] .slide__backdrop { display: block; }
-  .slide[data-whole~='phone'] .slide__photo { position: relative; inset: auto; flex: 0 1 auto; align-self: center; width: auto; max-width: 100%; height: min(calc(100cqw / var(--ratio-m)), calc(var(--hero-h) * .46)); min-height: 96px; margin-bottom: auto; aspect-ratio: var(--ratio-m); object-fit: contain; transform: none; animation: none; }
+  .slide[data-whole~='phone'] .slide__photo { position: relative; inset: auto; flex: 1 0 min(calc(100cqw / var(--ratio-m)), 40cqw); align-self: center; width: auto; max-width: 100%; height: auto; max-height: min(calc(100cqw / var(--ratio-m)), calc(var(--hero-h) * .46)); aspect-ratio: var(--ratio-m); object-fit: contain; transform: none; animation: none; }
   .slide[data-whole~='phone'] .slide__content { position: relative; bottom: auto; width: 100%; }
   .slide[data-whole~='phone']::after { background: linear-gradient(0deg, var(--bg) 5%, rgba(4, 10, 22, .72) 32%, rgba(4, 10, 22, 0) 56%); }
   .slide__desc { font-size: 15.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }

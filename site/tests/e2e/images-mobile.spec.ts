@@ -107,6 +107,39 @@ test.describe('carrousel de l’accueil sur téléphone', () => {
     await expectNoHorizontalOverflow(page)
     expect(errors, errors.join('\n')).toEqual([])
   })
+
+  test('petit téléphone (375 × 667) : la photo entière reste sous l’en-tête et assez grande, le cadre s’allonge pour les textes', async ({ page }) => {
+    const errors = watchErrors(page)
+    await page.setViewportSize({ width: 375, height: 667 })
+    await presetConsent(page.context())
+    await page.goto('/')
+    await settle(page)
+    const slides = page.locator('.hero .slide')
+    const count = await slides.count()
+    let checked = 0
+    for (let i = 0; i < count; i++) {
+      const slide = slides.nth(i)
+      if (!((await slide.getAttribute('data-whole')) ?? '').split(' ').includes('phone')) continue
+      // la diapositive du direct, la plus chargée (programme en cours selon l'heure), est la première
+      const g = await slide.evaluate((el) => {
+        const photo = el.querySelector('.slide__photo')!.getBoundingClientRect()
+        const content = el.querySelector('.slide__content')!.getBoundingClientRect()
+        const hero = el.closest('.hero')!.getBoundingClientRect()
+        return { photoTop: photo.top - hero.top, photoHeight: photo.height, photoRight: photo.right, contentTop: content.top, contentBottom: content.bottom, photoBottom: photo.bottom, heroBottom: hero.bottom }
+      })
+      const header = await page.locator('.hdr__in').evaluate((el) => el.getBoundingClientRect().height)
+      const label = `diapositive ${i + 1}`
+      expect(g.photoTop, `${label} : photo sous l'en-tête`).toBeGreaterThanOrEqual(header - 0.5)
+      expect(g.photoHeight, `${label} : photo d'au moins 40 % de la largeur de l'écran en hauteur`).toBeGreaterThanOrEqual(375 * 0.4 - 1)
+      expect(g.photoRight, label).toBeLessThanOrEqual(375.5)
+      expect(g.contentTop, `${label} : textes sous la photo`).toBeGreaterThanOrEqual(g.photoBottom - 0.5)
+      expect(g.contentBottom, `${label} : textes entièrement dans le carrousel`).toBeLessThanOrEqual(g.heroBottom + 0.5)
+      checked++
+    }
+    expect(checked, 'diapositives en photo entière').toBeGreaterThan(0)
+    await expectNoHorizontalOverflow(page)
+    expect(errors, errors.join('\n')).toEqual([])
+  })
 })
 
 test.describe('photo insérée dans le texte d’un article (article créé pour le test)', () => {
