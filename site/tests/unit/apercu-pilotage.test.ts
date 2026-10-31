@@ -340,6 +340,23 @@ describe('lecteur d’une fiche', () => {
     expect(card.calls).toEqual(['play', 'stop'])
   })
 
+  it('« Relancer l’aperçu » après un passage hors de l’écran, lecteur revenu à moins de 60 % : il tourne (le bouton reste)', () => {
+    const player = fake('ambient')
+    const [id] = setup({}, player)
+    director.visibility(id, 1)
+    tick()
+    director.setPaused(id, true)
+    director.visibility(id, 0)
+    director.visibility(id, 0.4)
+    settle()
+    expect(player.calls).toEqual(['play', 'stop'])
+    director.setPaused(id, false)
+    expect(director.isPlaying(id)).toBe(true)
+    settle()
+    expect(player.calls).toEqual(['play', 'stop', 'play'])
+    expect(director.isPlaying(id)).toBe(true)
+  })
+
   it('« pause » et « relance » ne concernent que le lecteur', () => {
     const card = fake('card')
     const [id] = setup({}, card)
@@ -394,6 +411,36 @@ describe('préférences et onglet', () => {
     tick()
     expect(a.calls).toEqual(['play', 'stop', 'play'])
     expect(b.calls).toEqual(['play', 'stop', 'play'])
+  })
+
+  it('lecteur lancé puis visible à moins de 60 % (lecture de la description) : il reprend au retour sur l’onglet', () => {
+    const player = fake('ambient')
+    const [id] = setup({}, player)
+    director.visibility(id, 1)
+    tick()
+    director.visibility(id, 0.4)
+    settle()
+    expect(player.calls).toEqual(['play'])
+    director.setEnv({ hidden: true })
+    expect(player.calls).toEqual(['play', 'stop'])
+    // aucun nouveau rappel de visibilité au retour : le lecteur n'a franchi aucun seuil
+    director.setEnv({ hidden: false })
+    tick()
+    expect(player.calls).toEqual(['play', 'stop', 'play'])
+    expect(director.isPlaying(id)).toBe(true)
+    // même chose quand les aperçus sont arrêtés puis relancés (préférence, commande du pied de page)
+    director.setEnv({ allowed: false })
+    director.setEnv({ allowed: true })
+    tick()
+    expect(player.calls).toEqual(['play', 'stop', 'play', 'stop', 'play'])
+    // sorti de l'écran puis revenu à moins de 60 % : il attend d'être de nouveau visible à 60 %
+    director.visibility(id, 0)
+    director.visibility(id, 0.4)
+    settle()
+    expect(player.calls).toEqual(['play', 'stop', 'play', 'stop', 'play', 'stop'])
+    director.visibility(id, VISIBLE_RATIO)
+    tick()
+    expect(player.calls).toEqual(['play', 'stop', 'play', 'stop', 'play', 'stop', 'play'])
   })
 
   it('aperçu retiré (carte démontée ou fichier illisible) : arrêté, plus jamais proposé, sa place revient à un autre', () => {

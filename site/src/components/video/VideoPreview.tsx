@@ -4,10 +4,11 @@
 // qu'il est visible, sans survol ni toucher ; hors de l'écran, il est mis en pause. Le fichier n'est demandé qu'à la
 // première apparition (preload="none", src posée à ce moment-là). Le choix des aperçus qui tournent revient au pilote
 // unique de la page (preview-director.ts) : plafond d'aperçus lus en même temps, jamais en « réduire les animations »,
-// en économie de données ni dans un onglet masqué.
+// en économie de données, dans un onglet masqué ni une fois arrêtés par l'internaute (commande du pied de page,
+// PreviewsToggle : WCAG 2.2.2).
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
-import { autoplayAllowed, deviceMemory, onAutoplayPrefsChange, SMALL_SCREEN } from './motion'
+import { deviceMemory, onAutoplayPrefsChange, previewsAllowed, SMALL_SCREEN } from './motion'
 import { CARD_RATIO, PreviewDirector, previewLimit, screenDistance, VISIBLE_RATIO, type SlotKind } from './preview-director'
 import '@/styles/video.css'
 
@@ -20,7 +21,7 @@ function getRuntime(): Runtime {
   if (runtime) return runtime
   const small = window.matchMedia(SMALL_SCREEN)
   const limit = () => previewLimit(small.matches, deviceMemory())
-  const director = new PreviewDirector({ allowed: autoplayAllowed(), hidden: document.hidden, limit: limit() })
+  const director = new PreviewDirector({ allowed: previewsAllowed(), hidden: document.hidden, limit: limit() })
   const ids = new Map<Element, number>()
   const io = new IntersectionObserver(
     (entries) => {
@@ -31,7 +32,9 @@ function getRuntime(): Runtime {
     },
     { threshold: [0, CARD_RATIO, VISIBLE_RATIO] },
   )
-  onAutoplayPrefsChange(() => director.setEnv({ allowed: autoplayAllowed() }))
+  // préférences du système ou commande du pied de page : arrêt immédiat de tous les aperçus (cartes et lecteur), ou reprise
+  onAutoplayPrefsChange(() => director.setEnv({ allowed: previewsAllowed() }))
+  // rotation du téléphone, fenêtre redimensionnée : plafond recalculé
   small.addEventListener('change', () => director.setEnv({ limit: limit() }))
   document.addEventListener('visibilitychange', () => director.setEnv({ hidden: document.hidden }))
   // défilement de la page et des rails (capture : l'événement scroll d'un élément ne remonte pas jusqu'au document) ;
