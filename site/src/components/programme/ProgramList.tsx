@@ -19,6 +19,7 @@ import {
   programmeDayUrl,
   slotsOfEvening,
 } from './model'
+import { renderNow } from '@/components/video/utils'
 import { SlotStatus } from './SlotStatus'
 import '@/styles/programme.css'
 
@@ -41,7 +42,7 @@ export async function ProgramList({ day, today }: { day: string; today: string }
         titleId="liste-title"
         subtitle={`${SITE_NAME} est à l’antenne tous les soirs de 18\u00a0h à 0\u00a0h\u00a030 (heure de Paris).`}
       >
-        <DayNav links={programmeDays(today).map((d) => ({ href: `${programmeDayUrl(d, today)}#liste`, label: dayLabel(d, today, Date.now()), long: dayLong(d), current: d === day }))} />
+        <DayNav links={programmeDays(today).map((d) => ({ href: `${programmeDayUrl(d, today)}#liste`, label: dayLabel(d, today, renderNow()), long: dayLong(d), current: d === day }))} />
       </SectionHead>
 
       {parts.length ? (

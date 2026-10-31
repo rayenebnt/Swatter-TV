@@ -162,6 +162,7 @@ describe('programme TV : les 7 prochaines soirées (18 h – 0 h 30) à partir d
     ]
     expect((await dashboard({ schedule })).evenings).toEqual({
       today: '2026-10-21',
+      at: expect.any(Number),
       empty: ['2026-10-23', '2026-10-26'],
       incomplete: [{ day: '2026-10-27', missingMinutes: 75 }],
       offAir: { count: 1, firstDay: '2026-10-23' },
