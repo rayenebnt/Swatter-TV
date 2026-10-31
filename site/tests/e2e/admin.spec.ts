@@ -755,18 +755,33 @@ test.describe('administration', () => {
       await expect(page.locator('.template-default__wrap > [inert]')).toHaveCount(0)
       await expectFitsScreen(page, width)
 
-      // fiche d'une vidéo : formulaire à la largeur de l'écran, menu ouvert compris. La plus ancienne (contenus de départ) :
-      // une vidéo créée par un autre test peut disparaître pendant celui-ci (aperçu en direct de la fiche alors en 404)
-      const videos = (await (await page.request.get('/api/videos?limit=1&depth=0&draft=true&sort=createdAt', { headers: await auth() })).json()) as { docs: { id: number }[] }
-      test.skip(!videos.docs.length, 'aucune vidéo (lancez npm run seed)')
-      await page.goto(`/admin/collections/videos/${videos.docs[0].id}`)
-      await expect(page.getByText('Où se trouve la vidéo ?')).toBeVisible()
-      await expectClosed()
-      await expectFitsScreen(page, width)
-      await openNav(page, toggler)
-      expect(await navLayout(page)).toMatchObject({ onTop: true, innerWidth: width, content: { x: 0, width } })
-      await expectFitsScreen(page, width)
-      expect(errors, errors.join('\n')).toEqual([])
+      // fiche d'une vidéo : formulaire à la largeur de l'écran, menu ouvert compris. Vidéo créée pour le test : celles
+      // des autres tests peuvent disparaître pendant celui-ci (aperçu en direct de la fiche alors en 404), et la base
+      // des tests de bout en bout n'a pas de vidéo de départ
+      const created = await page.request.post('/api/videos?depth=0', {
+        headers: await auth(),
+        data: {
+          title: `Test e2e menu téléphone ${Date.now().toString(36)}`,
+          source: { provider: 'youtube', youtubeUrl: 'https://www.youtube.com/watch?v=e2eSwatTV07' },
+          category: 'nature',
+          publishedAt: new Date().toISOString(),
+          _status: 'published',
+        },
+      })
+      expect(created.ok(), `vidéo du test : ${created.status()}`).toBe(true)
+      const videoId = ((await created.json()) as { doc: { id: number } }).doc.id
+      try {
+        await page.goto(`/admin/collections/videos/${videoId}`)
+        await expect(page.getByText('Où se trouve la vidéo ?')).toBeVisible()
+        await expectClosed()
+        await expectFitsScreen(page, width)
+        await openNav(page, toggler)
+        expect(await navLayout(page)).toMatchObject({ onTop: true, innerWidth: width, content: { x: 0, width } })
+        await expectFitsScreen(page, width)
+        expect(errors, errors.join('\n')).toEqual([])
+      } finally {
+        await page.request.delete(`/api/videos/${videoId}`, { headers: await auth() }).catch(() => undefined)
+      }
     } finally {
       await preference('DELETE').catch(() => undefined)
       await context.close()
@@ -818,7 +833,15 @@ test.describe('administration', () => {
       await page.setViewportSize({ width, height: 900 })
       await page.goto('/admin')
       await expect(page.locator('.template-default--nav-hydrated')).toBeAttached()
-      if (!(await nav.evaluate((el) => el.classList.contains('nav--nav-open')))) await page.locator('.template-default__nav-toggler').click()
+      if (width <= 1440) {
+        // jusqu'à 1440 px, Payload referme le menu au chargement, un rendu après l'hydratation : attendre qu'il soit
+        // fermé avant de l'ouvrir (une lecture ponctuelle pourrait le voir encore ouvert)
+        await expect(nav).not.toHaveClass(/nav--nav-open/)
+        await page.locator('.template-default__nav-toggler').click()
+      } else if (!(await nav.evaluate((el) => el.classList.contains('nav--nav-open')))) {
+        // au-delà, état final dès le HTML du serveur (préférence mémorisée, ouvert par défaut)
+        await page.locator('.template-default__nav-toggler').click()
+      }
       await expect(nav).toHaveClass(/nav--nav-open/)
       expect(await behindState(), `${width} px`).toEqual({ inert: 0, veil: '0', scroll: expect.not.stringMatching(/^hidden$/) })
     }

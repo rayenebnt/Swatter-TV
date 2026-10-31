@@ -101,3 +101,6 @@ export const useAutoplayAllowed = () => useSyncExternalStore(onAutoplayPrefsChan
 
 /** Aperçus arrêtés par l'internaute, mis à jour aussitôt ; false au premier rendu (serveur et hydratation). */
 export const usePreviewsStopped = () => useSyncExternalStore(onAutoplayPrefsChange, previewsStopped, serverFalse)
+
+/** Aperçus animés permis (previewsAllowed), mis à jour aussitôt ; false au premier rendu (serveur et hydratation). */
+export const usePreviewsAllowed = () => useSyncExternalStore(onAutoplayPrefsChange, previewsAllowed, serverFalse)

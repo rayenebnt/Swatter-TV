@@ -8,7 +8,7 @@
 // PreviewsToggle : WCAG 2.2.2).
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
-import { deviceMemory, onAutoplayPrefsChange, previewsAllowed, SMALL_SCREEN } from './motion'
+import { deviceMemory, onAutoplayPrefsChange, previewsAllowed, SMALL_SCREEN, usePreviewsAllowed } from './motion'
 import { CARD_RATIO, PreviewDirector, previewLimit, screenDistance, VISIBLE_RATIO, type SlotKind } from './preview-director'
 import '@/styles/video.css'
 
@@ -139,6 +139,8 @@ export function PlayerPreview({ src }: { src: string }) {
   const slot = useRef<number | null>(null)
   const [playing, setPlaying] = useState(false)
   const [paused, setPaused] = useState(false)
+  // aperçus arrêtés (pied de page, préférences du système) : plus de bouton, il ne pourrait rien relancer
+  const allowed = usePreviewsAllowed()
 
   useEffect(() => {
     const el = ref.current
@@ -164,7 +166,7 @@ export function PlayerPreview({ src }: { src: string }) {
   return (
     <>
       <video ref={ref} className="vprev vp__preview" muted loop playsInline preload="none" disablePictureInPicture disableRemotePlayback aria-hidden tabIndex={-1} />
-      {(playing || paused) && (
+      {allowed && (playing || paused) && (
         <button type="button" className="vp__ptoggle" onClick={toggle} aria-label={label} title={label}>
           {paused ? <Icon name="play" /> : <PauseIcon />}
         </button>

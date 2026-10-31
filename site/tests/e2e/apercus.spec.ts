@@ -426,6 +426,16 @@ withAdmin('aperçus animés des cartes et des fiches (vidéos créées pour le t
       await page.evaluate(() => window.scrollTo(0, 0))
       await expect.poll(() => preview.evaluate((v: HTMLVideoElement) => !v.paused), 'aperçu de la fiche relancé').toBe(true)
       await expect(player.getByRole('button', { name: 'Mettre l’aperçu en pause' })).toBeVisible()
+
+      // aperçu mis en pause par son bouton, puis aperçus arrêtés depuis le pied de page : plus de bouton (« Relancer
+      // l'aperçu » ne pourrait rien relancer) ; aperçus relancés : celui de la fiche reste en pause, son bouton revient
+      await player.getByRole('button', { name: 'Mettre l’aperçu en pause' }).click()
+      await expect(player.getByRole('button', { name: 'Relancer l’aperçu' })).toBeVisible()
+      await stopButton(page).click()
+      await expect(player.getByRole('button', { name: PREVIEW_TOGGLE })).toHaveCount(0)
+      await relaunchButton(page).click()
+      await expect(player.getByRole('button', { name: 'Relancer l’aperçu' })).toBeVisible()
+      expect(await preview.evaluate((v: HTMLVideoElement) => v.paused), 'aperçu de la fiche toujours en pause').toBe(true)
     } else {
       test.info().annotations.push({ type: 'info', description: 'aperçu non décodé par ce navigateur (H.264) : bouton pause non vérifié' })
       await expect(player.getByRole('button', { name: PREVIEW_TOGGLE })).toHaveCount(0)
@@ -460,7 +470,8 @@ withAdmin('aperçus animés des cartes et des fiches (vidéos créées pour le t
       description: 'Vidéo créée par un test automatique, supprimée à la fin du test.',
       publishedAt: new Date(Date.now() - 30 * 1000).toISOString(),
     })
-    await admin().create('events', { title: `Test e2e aperçu sortie ${tag}`, city: 'Annecy', startDate: new Date(Date.now() + 2 * 86_400_000).toISOString() })
+    // commune qu'aucun autre test ne recherche (parcours.spec vérifie les résultats de « annecy » en même temps)
+    await admin().create('events', { title: `Test e2e aperçu sortie ${tag}`, city: 'Thônes', startDate: new Date(Date.now() + 2 * 86_400_000).toISOString() })
     await presetConsent(page.context())
     await serveWebm(page.context(), clip!, body!)
     await page.goto('/')

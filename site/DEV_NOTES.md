@@ -282,7 +282,8 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
     pied de page après « Gestion des cookies ». Choix dans localStorage `swatter-apercus` (`arretes`), lu et écrit dans un
     try/catch (stockage refusé : vaut pour la page). `setPreviewsStopped()` émet `swatter:apercus` ;
     `onAutoplayPrefsChange` écoute cet événement et `storage` (autres onglets), et le pilote reçoit `previewsAllowed()`
-    (= `autoplayAllowed() && !previewsStopped()`) : cartes, tuiles et lecteur d'une fiche s'arrêtent aussitôt.
+    (= `autoplayAllowed() && !previewsStopped()`) : cartes, tuiles et lecteur d'une fiche s'arrêtent aussitôt, et le
+    bouton pause du lecteur disparaît tant que les aperçus sont arrêtés (`usePreviewsAllowed`).
     `autoplayAllowed()` reste limité aux préférences du système, car elle sert aussi au direct lancé seul, qui ne dépend
     pas de la commande. Bouton rendu après l'hydratation seulement (`usePreviewsStopped`, instantané serveur false),
     masqué en reduced-motion ou saveData ; libellé qui dit l'action, sans aria-pressed (même modèle que le bouton pause
@@ -506,8 +507,8 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   sous le menu ouvert. Voile et blocage demandent `--nav-hydrated` en plus de `--nav-open` : le HTML du serveur arrive
   menu ouvert (défaut de Payload), alors que le menu reste masqué jusqu'à l'hydratation. `useModalNav` (`NavLinks.tsx`,
   appelé par `NavStart`) le ferme à l'arrivée et au retour par « Précédent », et le referme au toucher d'un lien du menu
-  ou du voile et avec Échap (focus rendu au bouton du menu) ; tant qu'il est ouvert, les enfants de
-  `.template-default__wrap` sont inertes (`inert` : ni Tab ni VoiceOver ne sortent du menu ; pas le wrap lui-même, dont
+  ou du voile et avec Échap (focus rendu au bouton du menu) ; tant qu'il est ouvert (une fois hydraté : pas au
+  chargement, où close() ne le referme qu'au rendu suivant), les enfants de `.template-default__wrap` sont inertes (`inert` : ni Tab ni VoiceOver ne sortent du menu ; pas le wrap lui-même, dont
   le voile doit rester touchable). Ils sont libérés à la fermeture, au démontage, au passage à la taille d'un ordinateur
   et, sur Échap, avant de rendre le focus (focus() ne fait rien sur un élément encore inerte) ;
   Payload, lui, ne le referme qu'au changement d'adresse et seulement sous 768 px. Seuil commun : `MODAL_NAV_QUERY`

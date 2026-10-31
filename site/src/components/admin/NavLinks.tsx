@@ -21,7 +21,7 @@ const firstShown = (root: ParentNode, selector: string) => [...root.querySelecto
  * l'utilisateur l'a laissé (préférence mémorisée par Payload), et le contenu n'est jamais rendu inerte.
  */
 function useModalNav() {
-  const { navOpen, setNavOpen } = useNav()
+  const { hydrated, navOpen, setNavOpen } = useNav()
 
   useEffect(() => {
     const close = () => {
@@ -37,7 +37,10 @@ function useModalNav() {
 
   useEffect(() => {
     const modal = window.matchMedia(MODAL_NAV_QUERY)
-    if (!navOpen || !modal.matches) return
+    // pas avant que le menu soit hydraté : le HTML du serveur arrive menu ouvert (défaut de Payload) et close() ne le
+    // referme qu'au rendu suivant ; rendre la page inerte à ce moment-là ferait perdre le focus à un champ touché pendant
+    // le chargement
+    if (!navOpen || !hydrated || !modal.matches) return
     // ouvert au clavier (bouton du menu focalisé et focus visible) : le focus entre dans le menu, avant que le bouton
     // (dans l'en-tête sur téléphone) ne devienne inerte ; au toucher, rien ne bouge
     const opener = document.activeElement
@@ -79,7 +82,7 @@ function useModalNav() {
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('click', onClick)
     }
-  }, [navOpen, setNavOpen])
+  }, [hydrated, navOpen, setNavOpen])
 }
 
 /**
