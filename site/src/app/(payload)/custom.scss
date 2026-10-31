@@ -1074,16 +1074,19 @@ html[data-theme='dark'] .sw-day[aria-pressed='true'] {
     transition: transform var(--nav-trans-time) ease-out;
   }
 
-  // voile sur le contenu (pseudo-élément prévu par Payload, resté invisible) : toucher le voile referme le menu
-  .template-default--nav-open .template-default__wrap::before {
+  // voile sur le contenu (pseudo-élément prévu par Payload, resté invisible) : toucher le voile referme le menu.
+  // Seulement une fois le menu hydraté (--nav-hydrated) : le HTML du serveur arrive avec --nav-open (menu ouvert par
+  // défaut chez Payload) et le menu, lui, reste masqué jusque-là ; sans cette condition, chaque chargement complet
+  // montrerait la page assombrie et bloquée, sans menu, jusqu'à ce que useModalNav le referme.
+  .template-default--nav-hydrated.template-default--nav-open .template-default__wrap::before {
     position: fixed;
     background: rgba(7, 18, 36, 0.55);
     opacity: 1;
     visibility: visible;
   }
 
-  // la page ne défile pas sous le menu ouvert
-  body:has(.template-default--nav-open) {
+  // la page ne défile pas sous le menu ouvert (même condition)
+  body:has(.template-default--nav-hydrated.template-default--nav-open) {
     overflow: hidden;
   }
 }

@@ -16,8 +16,9 @@ const firstShown = (root: ParentNode, selector: string) => [...root.querySelecto
  * Téléphone et tablette (≤ 1024 px) : le menu s'ouvre par-dessus le contenu (custom.scss). Il est fermé à l'arrivée
  * (et au retour sur la page par le bouton « Précédent »), se referme en touchant un de ses liens, en touchant le voile
  * posé sur le contenu, avec Échap (le focus revient alors au bouton du menu), et ouvert au clavier, il reçoit le focus.
- * Payload ne le referme lui-même qu'au changement d'adresse, et seulement sous 768 px. Sur ordinateur, rien ne change :
- * le menu reste comme l'utilisateur l'a laissé (préférence mémorisée par Payload).
+ * Tant qu'il est ouvert, le contenu derrière est inerte : ni Tab ni VoiceOver n'y mènent. Payload ne le referme
+ * lui-même qu'au changement d'adresse, et seulement sous 768 px. Sur ordinateur, rien ne change : le menu reste comme
+ * l'utilisateur l'a laissé (préférence mémorisée par Payload), et le contenu n'est jamais rendu inerte.
  */
 function useModalNav() {
   const { navOpen, setNavOpen } = useNav()
@@ -35,21 +36,37 @@ function useModalNav() {
   }, [setNavOpen])
 
   useEffect(() => {
-    if (!navOpen || !window.matchMedia(MODAL_NAV_QUERY).matches) return
-    // ouvert au clavier (bouton du menu focalisé et focus visible) : le focus entre dans le menu, sinon Tab parcourrait
-    // la page cachée derrière ; au toucher, rien ne bouge
+    const modal = window.matchMedia(MODAL_NAV_QUERY)
+    if (!navOpen || !modal.matches) return
+    // ouvert au clavier (bouton du menu focalisé et focus visible) : le focus entre dans le menu, avant que le bouton
+    // (dans l'en-tête sur téléphone) ne devienne inerte ; au toucher, rien ne bouge
     const opener = document.activeElement
     const nav = document.querySelector<HTMLElement>('aside.nav')
     if (nav && opener instanceof HTMLElement && opener.matches('.nav-toggler:focus-visible')) {
       firstShown(nav, '.nav__mobile-close, a[href]')?.focus({ preventScroll: true })
     }
+    // contenu derrière le menu (en-tête, page) rendu inerte : Tab et le balayage de VoiceOver restent dans le menu au
+    // lieu de parcourir la page cachée. Les enfants de .template-default__wrap, pas le wrap lui-même, dont le ::before
+    // (le voile) doit rester touchable ; un enfant déjà inerte est laissé tel quel. Libéré à la fermeture et au
+    // démontage (nettoyage de l'effet), et dès que l'écran passe à la taille d'un ordinateur, menu ouvert
+    // (fenêtre agrandie, tablette tournée : le menu n'y est plus une fenêtre). Sans inert (iOS < 15.5), rien ne change.
+    const behind = [...document.querySelectorAll<HTMLElement>('.template-default__wrap > *')].filter((el) => !el.inert)
+    const setInert = (inert: boolean) => {
+      for (const el of behind) el.inert = inert
+    }
+    setInert(true)
+    const onResize = () => setInert(modal.matches)
+    modal.addEventListener('change', onResize)
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || !window.matchMedia(MODAL_NAV_QUERY).matches) return
+      if (event.key !== 'Escape' || !modal.matches) return
+      // libéré AVANT de rendre le focus : sur téléphone, le bouton du menu est dans l'en-tête, donc derrière le menu, et
+      // focus() ne fait rien sur un élément encore inerte (le nettoyage de l'effet ne vient qu'après le nouveau rendu)
+      setInert(false)
       setNavOpen(false)
       firstShown(document, '.nav-toggler')?.focus({ preventScroll: true })
     }
     const onClick = (event: MouseEvent) => {
-      if (!window.matchMedia(MODAL_NAV_QUERY).matches || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      if (!modal.matches || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
       const target = event.target instanceof Element ? event.target : null
       // lien du menu, ou voile : pseudo-élément de .template-default__wrap, qui reçoit donc le toucher
       if (target?.closest('.nav a[href]') || target?.classList.contains('template-default__wrap')) setNavOpen(false)
@@ -57,6 +74,8 @@ function useModalNav() {
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('click', onClick)
     return () => {
+      setInert(false)
+      modal.removeEventListener('change', onResize)
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('click', onClick)
     }
