@@ -24,7 +24,7 @@ function formatDuration(d: string | null | undefined): string | null {
   return parts.length === 2 ? `${parts[0].padStart(2, '0')}:${parts[1]}` : v
 }
 
-/** Grande tuile : vidéo du jour (ou dernière vidéo), avec son aperçu animé lancé seul une fois quand elle est visible. */
+/** Grande tuile : vidéo du jour (ou dernière vidéo), avec son aperçu animé, en boucle tant qu'elle est visible. */
 function VideoTile({ video, now }: { video: HomeVideo; now: Date }) {
   const duration = formatDuration(video.duration)
   const preview = previewUrl(video.preview)
@@ -39,7 +39,7 @@ function VideoTile({ video, now }: { video: HomeVideo; now: Date }) {
         fill
         sizes="(max-width: 1100px) calc(100vw - 32px), 560px"
       />
-      {preview && <VideoPreview src={preview} kind="feature" />}
+      {preview && <VideoPreview src={preview} />}
       <div className="tile__top">
         <span className="badge badge--gold">{video.isVideoOfDay ? 'Vidéo du jour' : 'Dernière vidéo'}</span>
         {duration && (

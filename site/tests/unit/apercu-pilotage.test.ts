@@ -1,34 +1,58 @@
-// Aperçus animés des vidéos : choix de l'aperçu qui tourne (un seul à la fois), à la souris (survol, focus clavier),
-// sur écran tactile (carte la plus visible après le défilement, une seule fois), « Vidéo du jour » lancée seule,
-// lecteur d'une fiche (boucle et bouton pause), préférences de l'internaute et onglet masqué.
+// Aperçus animés des vidéos : chaque aperçu visible tourne seul, en boucle, sans geste (ordinateur comme téléphone),
+// plusieurs à la fois dans la limite d'un plafond (les plus proches du centre de l'écran), pause hors de l'écran ;
+// lecteur d'une fiche (boucle et bouton pause, servi en premier), préférences de l'internaute et onglet masqué.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { AUTO_MAX_MS, HOVER_MS, IDLE_MS, PreviewDirector, type PreviewEnv, type SlotKind } from '@/components/video/preview-director'
+import {
+  CARD_RATIO,
+  EVAL_MS,
+  KEEP_PX,
+  MAX_PLAYING,
+  MAX_PLAYING_SMALL,
+  PreviewDirector,
+  previewLimit,
+  screenDistance,
+  SETTLE_MS,
+  VISIBLE_RATIO,
+  type PreviewEnv,
+  type SlotKind,
+} from '@/components/video/preview-director'
 
-const POINTER: PreviewEnv = { allowed: true, pointer: true, hidden: false }
-const TOUCH: PreviewEnv = { allowed: true, pointer: false, hidden: false }
+const ENV: PreviewEnv = { allowed: true, hidden: false, limit: MAX_PLAYING }
 
-/** Faux aperçu : journal des ordres reçus (« loop », « once », « stop ») et distance au centre de l'écran réglable. */
+/** Faux aperçu : journal des ordres reçus (« play », « stop »), distance au centre de l'écran réglable, mesures comptées. */
 function fake(kind: SlotKind = 'card', distance = 100) {
   const calls: string[] = []
-  const slot = {
-    kind,
-    distance: () => item.distance,
-    play: (loop: boolean) => calls.push(loop ? 'loop' : 'once'),
-    stop: () => calls.push('stop'),
+  const item = {
+    calls,
+    distance,
+    measured: 0,
+    slot: {
+      kind,
+      distance: () => {
+        item.measured++
+        return item.distance
+      },
+      play: () => calls.push('play'),
+      stop: () => calls.push('stop'),
+    },
   }
-  const item = { slot, calls, distance }
   return item
 }
 
 let director: PreviewDirector
 
-function setup(env: PreviewEnv, ...items: ReturnType<typeof fake>[]) {
-  director = new PreviewDirector(env)
+function setup(env: Partial<PreviewEnv>, ...items: ReturnType<typeof fake>[]) {
+  director = new PreviewDirector({ ...ENV, ...env })
   return items.map((item) => director.register(item.slot))
 }
 
-/** Laisse passer le délai d'arrêt du défilement (choix de l'aperçu). */
-const idle = () => vi.advanceTimersByTime(IDLE_MS)
+/** Laisse passer le délai d'apparition d'une carte (et le regroupement des changements qui suit). */
+const settle = () => vi.advanceTimersByTime(SETTLE_MS + EVAL_MS)
+/** Laisse passer le regroupement des changements (nouveau choix). */
+const tick = () => vi.advanceTimersByTime(EVAL_MS)
+
+/** Plusieurs aperçus visibles en entier. */
+const show = (...ids: number[]) => ids.forEach((id) => director.visibility(id, 1))
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -39,406 +63,365 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('à la souris', () => {
-  it('le survol lance l’aperçu en boucle après un court délai ; la sortie le ramène à l’image', () => {
+describe('cartes : en continu dès qu’elles sont visibles', () => {
+  it('une carte visible démarre seule, en boucle, sans survol ni toucher, après un court instant', () => {
     const a = fake()
-    const [id] = setup(POINTER, a)
+    const [id] = setup({}, a)
     director.visibility(id, 1)
-    idle()
-    expect(a.calls, 'une carte ne démarre pas seule à la souris').toEqual([])
-    director.pointerEnter(id)
-    vi.advanceTimersByTime(HOVER_MS - 1)
-    expect(a.calls).toEqual([])
-    vi.advanceTimersByTime(1)
-    expect(a.calls).toEqual(['loop'])
-    expect(director.current).toMatchObject({ id, loop: true, by: 'user' })
-    director.pointerLeave(id)
-    expect(a.calls).toEqual(['loop', 'stop'])
-    expect(director.current).toBeNull()
+    vi.advanceTimersByTime(SETTLE_MS)
+    expect(a.calls, 'pas avant le délai d’apparition').toEqual([])
+    tick()
+    expect(a.calls).toEqual(['play'])
+    expect(director.active).toEqual([id])
+    expect(director.isPlaying(id)).toBe(true)
+    // et elle continue : aucune limite de durée, aucun arrêt au fil du temps
+    vi.advanceTimersByTime(60_000)
+    expect(a.calls).toEqual(['play'])
   })
 
-  it('la souris qui traverse une carte sans s’arrêter ne charge rien', () => {
+  it('moins de 30 % visible : rien ; au-delà, lancement', () => {
     const a = fake()
-    const [id] = setup(POINTER, a)
+    const [id] = setup({}, a)
+    director.visibility(id, CARD_RATIO - 0.05)
+    settle()
+    expect(a.calls).toEqual([])
+    director.visibility(id, CARD_RATIO)
+    settle()
+    expect(a.calls).toEqual(['play'])
+  })
+
+  it('défilement rapide : une carte qui ne fait que passer ne charge rien', () => {
+    const a = fake()
+    const [id] = setup({}, a)
     director.visibility(id, 1)
-    director.pointerEnter(id)
-    vi.advanceTimersByTime(HOVER_MS / 2)
-    director.pointerLeave(id)
-    vi.advanceTimersByTime(IDLE_MS * 3)
-    expect(a.calls).toEqual([])
-  })
-
-  it('un seul aperçu à la fois : survoler une autre carte arrête la première', () => {
-    const a = fake()
-    const b = fake()
-    const [ida, idb] = setup(POINTER, a, b)
-    director.pointerEnter(ida)
-    vi.advanceTimersByTime(HOVER_MS)
-    director.pointerLeave(ida)
-    director.pointerEnter(idb)
-    vi.advanceTimersByTime(HOVER_MS)
-    expect(a.calls).toEqual(['loop', 'stop'])
-    expect(b.calls).toEqual(['loop'])
-    expect(director.current?.id).toBe(idb)
-  })
-
-  it('focus clavier : lancement immédiat, arrêt quand le focus quitte la carte ; le plus récent l’emporte', () => {
-    const a = fake()
-    const b = fake()
-    const [ida, idb] = setup(POINTER, a, b)
-    director.focusIn(ida)
-    expect(a.calls).toEqual(['loop'])
-    // la souris passe sur une autre carte pendant que la première a le focus : la carte survolée l'emporte
-    director.pointerEnter(idb)
-    vi.advanceTimersByTime(HOVER_MS)
-    expect(director.current?.id).toBe(idb)
-    idle()
-    expect(director.current?.id, 'le choix suivant ne revient pas à la carte qui a le focus').toBe(idb)
-    director.pointerLeave(idb)
-    idle()
-    // la carte qui a toujours le focus reprend
-    expect(director.current?.id).toBe(ida)
-    director.focusOut(ida)
-    expect(director.current).toBeNull()
-    expect(a.calls.at(-1)).toBe('stop')
-  })
-
-  it('« Vidéo du jour » : lancée seule une fois visible à 60 %, une seule fois, puis retour à l’image', () => {
-    const tile = fake('feature')
-    const [id] = setup(POINTER, tile)
-    director.visibility(id, 0.4)
-    idle()
-    expect(tile.calls, 'moins de 60 % visible').toEqual([])
-    director.visibility(id, 0.7)
-    vi.advanceTimersByTime(IDLE_MS - 1)
-    expect(tile.calls, 'attend l’arrêt du défilement').toEqual([])
-    vi.advanceTimersByTime(1)
-    expect(tile.calls).toEqual(['once'])
-    expect(director.current).toMatchObject({ id, loop: false, by: 'auto' })
-    director.ended(id)
-    expect(tile.calls).toEqual(['once', 'stop'])
-    director.scrolled()
-    idle()
-    expect(tile.calls, 'ne rejoue pas tant qu’elle reste à l’écran').toEqual(['once', 'stop'])
-    // sortie puis retour : elle rejoue
+    vi.advanceTimersByTime(SETTLE_MS / 2)
     director.visibility(id, 0)
-    director.visibility(id, 1)
-    idle()
-    expect(tile.calls).toEqual(['once', 'stop', 'once'])
+    settle()
+    // passage partiel (moins de 30 %) avant le délai : rien non plus
+    director.visibility(id, 0.8)
+    vi.advanceTimersByTime(SETTLE_MS / 2)
+    director.visibility(id, 0.1)
+    settle()
+    expect(a.calls).toEqual([])
   })
 
-  it('« Vidéo du jour » survolée pendant sa lecture : elle passe en boucle sans repartir, et ne repart pas seule ensuite', () => {
-    const tile = fake('feature')
-    const [id] = setup(POINTER, tile)
-    director.visibility(id, 1)
-    idle()
-    director.playing(id)
-    director.pointerEnter(id)
-    vi.advanceTimersByTime(HOVER_MS)
-    expect(tile.calls).toEqual(['once', 'loop'])
-    // plus de limite de 5 s : l'internaute la regarde
-    vi.advanceTimersByTime(AUTO_MAX_MS * 2)
-    expect(director.current).toMatchObject({ id, loop: true })
-    director.pointerLeave(id)
-    director.scrolled()
-    idle()
-    expect(tile.calls).toEqual(['once', 'loop', 'stop'])
+  it('plusieurs cartes visibles tournent en même temps', () => {
+    const items = [fake(), fake(), fake(), fake()]
+    const ids = setup({}, ...items)
+    show(...ids)
+    settle()
+    expect(director.active).toEqual(ids)
+    for (const item of items) expect(item.calls).toEqual(['play'])
   })
 
-  it('« Vidéo du jour » survolée avant d’avoir joué : elle ne repart pas seule quand la souris la quitte', () => {
-    const tile = fake('feature')
-    const [id] = setup(POINTER, tile)
-    director.pointerEnter(id)
-    vi.advanceTimersByTime(HOVER_MS)
+  it('sortie de l’écran : pause aussitôt ; retour : reprise après le délai d’apparition', () => {
+    const a = fake()
+    const [id] = setup({}, a)
     director.visibility(id, 1)
-    director.pointerLeave(id)
-    idle()
-    expect(tile.calls).toEqual(['loop', 'stop'])
+    settle()
+    director.visibility(id, 0)
+    expect(a.calls).toEqual(['play', 'stop'])
+    expect(director.active).toEqual([])
+    director.visibility(id, 1)
+    vi.advanceTimersByTime(SETTLE_MS)
+    expect(a.calls).toEqual(['play', 'stop'])
+    tick()
+    expect(a.calls).toEqual(['play', 'stop', 'play'])
   })
 
-  it('petite vignette (« hover ») : au survol seulement', () => {
-    const small = fake('hover')
-    const [id] = setup(POINTER, small)
+  it('carte lancée puis presque sortie (moins de 30 % visible) : elle tourne jusqu’à sa sortie complète', () => {
+    const a = fake()
+    const [id] = setup({}, a)
     director.visibility(id, 1)
-    idle()
-    expect(small.calls).toEqual([])
-    director.pointerEnter(id)
-    vi.advanceTimersByTime(HOVER_MS)
-    expect(small.calls).toEqual(['loop'])
+    settle()
+    director.visibility(id, 0.1)
+    settle()
+    expect(a.calls).toEqual(['play'])
+    director.visibility(id, 0)
+    expect(a.calls).toEqual(['play', 'stop'])
+  })
+
+  it('le défilement ne fait rien tant que toutes les cartes visibles tournent (aucune mesure de position)', () => {
+    const a = fake()
+    const b = fake()
+    const ids = setup({}, a, b)
+    show(...ids)
+    settle()
+    for (let i = 0; i < 20; i++) {
+      director.scrolled()
+      vi.advanceTimersByTime(20)
+    }
+    settle()
+    expect(a.measured + b.measured).toBe(0)
+    expect(a.calls).toEqual(['play'])
+    expect(b.calls).toEqual(['play'])
   })
 })
 
-describe('sur écran tactile', () => {
-  it('la carte la plus proche du centre parmi celles visibles à 60 % démarre après l’arrêt du défilement, une seule fois', () => {
-    const top = fake('card', 300)
-    const middle = fake('card', 20)
-    const half = fake('card', 0)
-    const [idTop, idMiddle, idHalf] = setup(TOUCH, top, middle, half)
-    director.visibility(idTop, 1)
-    director.visibility(idMiddle, 1)
-    // au centre, mais visible à moins de 60 % : écartée
-    director.visibility(idHalf, 0.5)
-    vi.advanceTimersByTime(IDLE_MS - 50)
-    director.scrolled()
-    vi.advanceTimersByTime(IDLE_MS - 50)
-    expect(middle.calls, 'le défilement repousse le choix').toEqual([])
-    vi.advanceTimersByTime(50)
-    expect(middle.calls).toEqual(['once'])
-    expect(top.calls).toEqual([])
-    expect(half.calls).toEqual([])
-    expect(director.current).toMatchObject({ id: idMiddle, loop: false, by: 'auto' })
+describe('plafond d’aperçus lus en même temps', () => {
+  it('plafond selon l’appareil : 6 sur grand écran, 3 sur petit écran ou avec peu de mémoire', () => {
+    expect(previewLimit(false)).toBe(MAX_PLAYING)
+    expect(previewLimit(true)).toBe(MAX_PLAYING_SMALL)
+    expect(previewLimit(false, 8)).toBe(MAX_PLAYING)
+    expect(previewLimit(false, 4)).toBe(MAX_PLAYING)
+    expect(previewLimit(false, 2)).toBe(MAX_PLAYING_SMALL)
+    expect(previewLimit(true, 8)).toBe(MAX_PLAYING_SMALL)
+    expect([MAX_PLAYING, MAX_PLAYING_SMALL]).toEqual([6, 3])
   })
 
-  it('fin de l’extrait : retour à l’image, la carte voisine ne prend pas le relais sans nouveau défilement', () => {
+  it('éloignement : distance au centre de l’écran, augmentée de la part cachée par ses bords', () => {
+    const [w, h] = [1440, 900]
+    const halfDiagonal = Math.hypot(w, h) / 2
+    // carte entière, centrée : 0
+    expect(screenDistance({ left: 620, top: 400, width: 200, height: 100 }, w, h)).toBe(0)
+    // carte entière : distance seule
+    expect(screenDistance({ left: 1120, top: 400, width: 200, height: 100 }, w, h)).toBe(500)
+    // carte à moitié sous le bord du bas : moitié de la demi-diagonale en plus
+    const cut = screenDistance({ left: 620, top: 850, width: 200, height: 100 }, w, h)
+    expect(cut).toBeCloseTo(450 + halfDiagonal / 2)
+    // une carte entière dans un coin passe avant une carte coupée en haut, pourtant plus proche du centre
+    const corner = screenDistance({ left: 1200, top: 600, width: 220, height: 124 }, w, h)
+    const halfHidden = screenDistance({ left: 620, top: -62, width: 220, height: 124 }, w, h)
+    expect(corner).toBeLessThan(halfHidden)
+    // carte hors de l'écran ou sans taille : la plus éloignée possible
+    expect(screenDistance({ left: 0, top: 2000, width: 200, height: 100 }, w, h)).toBeGreaterThan(halfDiagonal)
+    expect(screenDistance({ left: 620, top: 400, width: 0, height: 0 }, w, h)).toBeCloseTo(halfDiagonal + Math.hypot(100, 50))
+  })
+
+  it('au-delà du plafond, les cartes les plus proches du centre tournent, les autres gardent leur image', () => {
+    const far = fake('card', 500)
+    const near = fake('card', 10)
+    const mid = fake('card', 120)
+    const farther = fake('card', 800)
+    const ids = setup({ limit: 2 }, far, near, mid, farther)
+    show(...ids)
+    settle()
+    expect(near.calls).toEqual(['play'])
+    expect(mid.calls).toEqual(['play'])
+    expect(far.calls).toEqual([])
+    expect(farther.calls).toEqual([])
+    expect(director.active).toHaveLength(2)
+  })
+
+  it('une place se libère (carte sortie de l’écran) : la suivante la plus proche la prend', () => {
     const a = fake('card', 10)
     const b = fake('card', 50)
-    const [ida, idb] = setup(TOUCH, a, b)
-    director.visibility(ida, 1)
-    director.visibility(idb, 1)
-    idle()
-    expect(a.calls).toEqual(['once'])
-    director.ended(ida)
-    idle()
-    expect(a.calls).toEqual(['once', 'stop'])
-    expect(b.calls).toEqual([])
-    // nouveau défilement : la carte déjà jouée est écartée, la suivante démarre
-    director.scrolled()
-    idle()
-    expect(b.calls).toEqual(['once'])
-    expect(a.calls).toEqual(['once', 'stop'])
+    const c = fake('card', 300)
+    const d = fake('card', 900)
+    const [ida, idb, idc, idd] = setup({ limit: 2 }, a, b, c, d)
+    show(ida, idb, idc, idd)
+    settle()
+    expect(director.active).toEqual([ida, idb])
+    director.visibility(ida, 0)
+    expect(a.calls).toEqual(['play', 'stop'])
+    tick()
+    expect(director.active).toEqual([idb, idc])
+    expect(d.calls).toEqual([])
   })
 
-  it('une carte déjà jouée ne rejoue qu’après être sortie de l’écran puis revenue', () => {
-    const a = fake('card', 0)
-    const [id] = setup(TOUCH, a)
-    director.visibility(id, 1)
-    idle()
-    director.ended(id)
+  it('défilement : les élus suivent le centre de l’écran ; une carte qui tourne garde sa place face à une à peine plus proche', () => {
+    const top = fake('card', 50)
+    const bottom = fake('card', 400)
+    const [idt, idb] = setup({ limit: 1 }, top, bottom)
+    show(idt, idb)
+    settle()
+    expect(director.active).toEqual([idt])
+    // la carte du bas devient à peine plus proche : pas d'échange
+    top.distance = 200
+    bottom.distance = 200 - KEEP_PX + 1
     director.scrolled()
-    idle()
-    expect(a.calls).toEqual(['once', 'stop'])
-    // encore partiellement visible : toujours « jouée »
-    director.visibility(id, 0.3)
-    director.visibility(id, 1)
-    idle()
-    expect(a.calls).toEqual(['once', 'stop'])
-    director.visibility(id, 0)
-    director.visibility(id, 1)
-    idle()
-    expect(a.calls).toEqual(['once', 'stop', 'once'])
+    tick()
+    expect(director.active).toEqual([idt])
+    // nettement plus proche : elle prend la place
+    bottom.distance = 20
+    director.scrolled()
+    tick()
+    expect(top.calls).toEqual(['play', 'stop'])
+    expect(bottom.calls).toEqual(['play'])
   })
 
-  it('une autre carte devient la plus proche du centre : elle prend la place (un seul aperçu à la fois)', () => {
+  it('pendant un défilement continu, un nouveau choix au plus toutes les 150 ms (pas d’attente de l’arrêt)', () => {
     const a = fake('card', 10)
-    const b = fake('card', 80)
-    const [ida, idb] = setup(TOUCH, a, b)
-    director.visibility(ida, 1)
-    director.visibility(idb, 1)
-    idle()
-    a.distance = 200
+    const b = fake('card', 500)
+    const [ida, idb] = setup({ limit: 1 }, a, b)
+    show(ida, idb)
+    settle()
+    a.distance = 600
     b.distance = 5
-    director.scrolled()
-    idle()
-    expect(a.calls).toEqual(['once', 'stop'])
-    expect(b.calls).toEqual(['once'])
+    // défilement toutes les 16 ms pendant 1 s : le choix suit sans attendre la fin du mouvement
+    for (let t = 0; t < EVAL_MS; t += 16) {
+      director.scrolled()
+      vi.advanceTimersByTime(16)
+    }
+    expect(director.active).toEqual([idb])
+    const measures = a.measured
+    for (let t = 0; t < 1000; t += 16) {
+      director.scrolled()
+      vi.advanceTimersByTime(16)
+    }
+    expect(a.measured - measures).toBeLessThanOrEqual(Math.ceil(1000 / EVAL_MS) + 1)
   })
 
-  it('aperçu moins visible pendant sa lecture : il va jusqu’au bout ; sorti de l’écran : il s’arrête', () => {
-    const a = fake('card', 0)
-    const [id] = setup(TOUCH, a)
-    director.visibility(id, 1)
-    idle()
-    director.visibility(id, 0.4)
-    idle()
-    expect(director.current?.id).toBe(id)
-    director.visibility(id, 0)
-    expect(a.calls).toEqual(['once', 'stop'])
-  })
-
-  it('à égalité de distance (deux cartes côte à côte), la première de la page', () => {
+  it('à distance égale, la première carte de la page', () => {
     const left = fake('card', 90)
     const right = fake('card', 90)
-    const [idl, idr] = setup(TOUCH, left, right)
+    const [idl, idr] = setup({ limit: 1 }, left, right)
     director.visibility(idr, 1)
     director.visibility(idl, 1)
-    idle()
-    expect(director.current?.id).toBe(idl)
+    settle()
+    expect(director.active).toEqual([idl])
   })
 
-  it('écart de quelques pixels (arrondis du navigateur) : toujours la première ; écart réel : la plus proche', () => {
-    const left = fake('card', 92.6)
-    const right = fake('card', 92.4)
-    const below = fake('card', 300)
-    const [idl, idr, idb] = setup(TOUCH, left, right, below)
-    for (const id of [idl, idr, idb]) director.visibility(id, 1)
-    idle()
-    expect(director.current?.id).toBe(idl)
-    director.ended(idl)
-    // la carte de droite, nettement plus proche que celle du dessous, l'emporte au défilement suivant
-    director.scrolled()
-    idle()
-    expect(director.current?.id).toBe(idr)
-  })
-
-  it('lecture unique limitée à 5 s après le vrai démarrage (WCAG 2.2.2), même si l’extrait est plus long', () => {
-    const a = fake('card', 0)
-    const [id] = setup(TOUCH, a)
-    director.visibility(id, 1)
-    idle()
-    // chargement : le décompte ne commence qu'à l'événement « playing »
-    vi.advanceTimersByTime(AUTO_MAX_MS)
-    expect(a.calls).toEqual(['once'])
-    director.playing(id)
-    // nouvelle reprise après une attente de chargement : le décompte ne repart pas de zéro
-    vi.advanceTimersByTime(AUTO_MAX_MS - 1)
-    director.playing(id)
-    vi.advanceTimersByTime(1)
-    expect(a.calls).toEqual(['once', 'stop'])
-  })
-
-  it('le survol (pointeur tactile) est ignoré ; les petites vignettes ne démarrent jamais seules', () => {
-    const card = fake('card', 50)
-    const small = fake('hover', 0)
-    const [idc, ids] = setup(TOUCH, card, small)
-    director.visibility(idc, 1)
-    director.visibility(ids, 1)
-    director.pointerEnter(ids)
-    vi.advanceTimersByTime(HOVER_MS)
-    idle()
-    expect(small.calls).toEqual([])
-    expect(card.calls).toEqual(['once'])
+  it('passage au petit écran (plafond réduit) : les aperçus les plus éloignés s’arrêtent', () => {
+    const items = [fake('card', 10), fake('card', 20), fake('card', 30), fake('card', 400), fake('card', 500)]
+    const ids = setup({ limit: 6 }, ...items)
+    show(...ids)
+    settle()
+    expect(director.active).toEqual(ids)
+    director.setEnv({ limit: 3 })
+    tick()
+    expect(director.active).toEqual(ids.slice(0, 3))
+    expect(items[3].calls).toEqual(['play', 'stop'])
+    expect(items[4].calls).toEqual(['play', 'stop'])
+    director.setEnv({ limit: 6 })
+    tick()
+    expect(director.active).toEqual(ids)
   })
 })
 
 describe('lecteur d’une fiche', () => {
-  it('en boucle tant qu’il est visible ; une carte survolée prend la place, puis il reprend', () => {
+  it('en boucle quand il est visible à 60 % ; il continue tant qu’il reste à l’écran ; sorti : pause', () => {
+    const player = fake('ambient')
+    const [id] = setup({}, player)
+    director.visibility(id, VISIBLE_RATIO - 0.1)
+    settle()
+    expect(player.calls, 'moins de 60 % visible au départ').toEqual([])
+    director.visibility(id, 1)
+    tick()
+    expect(player.calls).toEqual(['play'])
+    director.visibility(id, 0.2)
+    settle()
+    expect(player.calls).toEqual(['play'])
+    // aucune limite de durée (bouton pause à la place)
+    vi.advanceTimersByTime(60_000)
+    expect(player.calls).toEqual(['play'])
+    director.visibility(id, 0)
+    expect(player.calls).toEqual(['play', 'stop'])
+  })
+
+  it('il tourne avec les cartes visibles et passe avant elles dans le plafond', () => {
+    const player = fake('ambient', 600)
+    const a = fake('card', 10)
+    const b = fake('card', 20)
+    const [idp, ida, idb] = setup({ limit: 2 }, player, a, b)
+    show(idp, ida, idb)
+    settle()
+    expect(director.active).toEqual([idp, ida])
+    expect(b.calls).toEqual([])
+  })
+
+  it('bouton pause : arrêt, pas de reprise au choix suivant ; sa place revient à une carte ; « Relancer l’aperçu » le relance aussitôt', () => {
     const player = fake('ambient')
     const card = fake('card')
-    const [idp, idc] = setup(POINTER, player, card)
-    director.visibility(idp, 0.5)
-    idle()
-    expect(player.calls, 'moins de 60 % visible au départ').toEqual([])
-    director.visibility(idp, 1)
-    idle()
-    expect(player.calls).toEqual(['loop'])
-    director.visibility(idc, 1)
-    director.pointerEnter(idc)
-    vi.advanceTimersByTime(HOVER_MS)
-    expect(player.calls).toEqual(['loop', 'stop'])
-    expect(card.calls).toEqual(['loop'])
-    director.pointerLeave(idc)
-    idle()
-    expect(player.calls).toEqual(['loop', 'stop', 'loop'])
-    // toujours en boucle : aucune limite de durée (bouton pause à la place)
-    director.playing(idp)
-    vi.advanceTimersByTime(AUTO_MAX_MS * 3)
-    expect(director.current).toMatchObject({ id: idp, loop: true })
-  })
-
-  it('bouton pause : arrêt, pas de reprise au choix suivant ; « Relancer l’aperçu » le relance', () => {
-    const player = fake('ambient')
-    const [id] = setup(TOUCH, player)
-    director.visibility(id, 1)
-    idle()
-    director.setPaused(id, true)
+    const [idp, idc] = setup({ limit: 1 }, player, card)
+    show(idp, idc)
+    settle()
+    expect(director.active).toEqual([idp])
+    director.setPaused(idp, true)
+    expect(player.calls).toEqual(['play', 'stop'])
+    expect(director.active).toEqual([idc])
     director.scrolled()
-    idle()
-    expect(player.calls).toEqual(['loop', 'stop'])
-    director.setPaused(id, false)
-    expect(player.calls).toEqual(['loop', 'stop', 'loop'])
+    settle()
+    expect(player.calls).toEqual(['play', 'stop'])
+    director.setPaused(idp, false)
+    // relance immédiate (le bouton garde le focus sans attendre)
+    expect(director.isPlaying(idp)).toBe(true)
+    expect(player.calls).toEqual(['play', 'stop', 'play'])
+    expect(card.calls).toEqual(['play', 'stop'])
   })
 
-  it('sur écran tactile, une carte jouée seule passe avant lui, puis il reprend à la fin de l’extrait', () => {
-    const player = fake('ambient', 400)
-    const card = fake('card', 10)
-    const [idp, idc] = setup(TOUCH, player, card)
-    director.visibility(idp, 1)
-    director.visibility(idc, 1)
-    idle()
-    expect(card.calls).toEqual(['once'])
-    expect(player.calls).toEqual([])
-    director.ended(idc)
-    idle()
-    expect(player.calls).toEqual(['loop'])
-  })
-
-  it('sorti de l’écran : arrêt', () => {
-    const player = fake('ambient')
-    const [id] = setup(POINTER, player)
+  it('« pause » et « relance » ne concernent que le lecteur', () => {
+    const card = fake('card')
+    const [id] = setup({}, card)
     director.visibility(id, 1)
-    idle()
-    director.visibility(id, 0)
-    expect(player.calls).toEqual(['loop', 'stop'])
+    settle()
+    director.setPaused(id, true)
+    expect(card.calls).toEqual(['play'])
   })
 })
 
 describe('préférences et onglet', () => {
-  it('« réduire les animations » ou économie de données : rien ne démarre, ni au survol, ni seul', () => {
+  it('« réduire les animations » ou économie de données : rien ne démarre, ni carte, ni lecteur', () => {
     const card = fake('card')
-    const tile = fake('feature')
     const player = fake('ambient')
-    const [idc, idt, idp] = setup({ ...POINTER, allowed: false }, card, tile, player)
-    director.visibility(idt, 1)
-    director.visibility(idp, 1)
-    director.focusIn(idc)
-    director.pointerEnter(idc)
-    vi.advanceTimersByTime(HOVER_MS)
-    idle()
+    const [idc, idp] = setup({ allowed: false }, card, player)
+    show(idc, idp)
+    settle()
     director.setPaused(idp, false)
-    expect([...card.calls, ...tile.calls, ...player.calls]).toEqual([])
+    settle()
+    expect([...card.calls, ...player.calls]).toEqual([])
+    expect(director.active).toEqual([])
   })
 
-  it('préférence activée pendant un aperçu : arrêt immédiat', () => {
-    const card = fake('card')
-    const [id] = setup(POINTER, card)
-    director.focusIn(id)
+  it('préférence activée pendant la lecture : arrêt immédiat de tous les aperçus ; retirée : reprise', () => {
+    const a = fake('card')
+    const player = fake('ambient')
+    const [ida, idp] = setup({}, a, player)
+    show(ida, idp)
+    settle()
     director.setEnv({ allowed: false })
-    expect(card.calls).toEqual(['loop', 'stop'])
-    idle()
-    expect(card.calls).toEqual(['loop', 'stop'])
+    expect(a.calls).toEqual(['play', 'stop'])
+    expect(player.calls).toEqual(['play', 'stop'])
+    settle()
+    expect(director.active).toEqual([])
+    director.setEnv({ allowed: true })
+    tick()
+    expect(director.active).toEqual([ida, idp])
   })
 
-  it('onglet masqué : arrêt ; de retour, le choix reprend (la carte encore survolée repart)', () => {
-    const card = fake('card')
-    const [id] = setup(POINTER, card)
-    director.pointerEnter(id)
-    vi.advanceTimersByTime(HOVER_MS)
+  it('onglet masqué : tout s’arrête aussitôt ; de retour, les aperçus visibles reprennent', () => {
+    const a = fake('card')
+    const b = fake('card')
+    const [ida, idb] = setup({}, a, b)
+    show(ida, idb)
+    settle()
     director.setEnv({ hidden: true })
-    expect(card.calls).toEqual(['loop', 'stop'])
-    idle()
-    expect(card.calls).toEqual(['loop', 'stop'])
+    expect(a.calls).toEqual(['play', 'stop'])
+    expect(b.calls).toEqual(['play', 'stop'])
+    settle()
+    expect(director.active).toEqual([])
     director.setEnv({ hidden: false })
-    idle()
-    expect(card.calls).toEqual(['loop', 'stop', 'loop'])
+    tick()
+    expect(a.calls).toEqual(['play', 'stop', 'play'])
+    expect(b.calls).toEqual(['play', 'stop', 'play'])
   })
 
-  it('passage de la souris à l’écran tactile (ou l’inverse) : l’aperçu en cours s’arrête', () => {
-    const card = fake('card', 0)
-    const [id] = setup(POINTER, card)
-    director.visibility(id, 1)
-    director.pointerEnter(id)
-    vi.advanceTimersByTime(HOVER_MS)
-    director.setEnv({ pointer: false })
-    expect(card.calls).toEqual(['loop', 'stop'])
-  })
-
-  it('aperçu retiré (carte démontée ou fichier illisible) : arrêté et plus jamais proposé', () => {
+  it('aperçu retiré (carte démontée ou fichier illisible) : arrêté, plus jamais proposé, sa place revient à un autre', () => {
     const a = fake('card', 0)
     const b = fake('card', 50)
-    const [ida, idb] = setup(TOUCH, a, b)
-    director.visibility(ida, 1)
-    director.visibility(idb, 1)
-    idle()
+    const [ida, idb] = setup({ limit: 1 }, a, b)
+    show(ida, idb)
+    settle()
+    expect(director.active).toEqual([ida])
     director.unregister(ida)
-    expect(a.calls).toEqual(['once', 'stop'])
-    director.scrolled()
-    idle()
-    expect(b.calls).toEqual(['once'])
+    expect(a.calls).toEqual(['play', 'stop'])
+    tick()
+    expect(b.calls).toEqual(['play'])
     // événements tardifs d'un aperçu retiré : sans effet
     director.visibility(ida, 1)
-    director.pointerEnter(ida)
-    director.ended(ida)
-    idle()
-    expect(a.calls).toEqual(['once', 'stop'])
+    director.setPaused(ida, false)
+    settle()
+    expect(a.calls).toEqual(['play', 'stop'])
+    expect(director.isPlaying(ida)).toBe(false)
+  })
+
+  it('carte retirée pendant son délai d’apparition : rien n’est lancé', () => {
+    const a = fake()
+    const [id] = setup({}, a)
+    director.visibility(id, 1)
+    vi.advanceTimersByTime(SETTLE_MS / 2)
+    director.unregister(id)
+    settle()
+    expect(a.calls).toEqual([])
   })
 })

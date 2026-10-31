@@ -12,8 +12,7 @@ export function HitCard({ hit, words }: { hit: SearchHit; words: string[] }) {
     <article className="card hit">
       <div className="media hit__media">
         <Image src={src} alt="" fill sizes="(max-width: 760px) 120px, 176px" unoptimized={isRemote(src)} />
-        {/* vignette étroite : aperçu au survol ou au focus clavier seulement (pas de lancement seul sur téléphone) */}
-        {hit.preview && <VideoPreview src={hit.preview} kind="hover" />}
+        {hit.preview && <VideoPreview src={hit.preview} />}
       </div>
       <div className="hit__body">
         <p className="kicker">{hit.typeLabel}</p>
