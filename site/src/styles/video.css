@@ -27,6 +27,10 @@
 .vp.is-paused .badge--live i, .onair.is-paused .dot-live { animation-play-state: paused; }
 .vp--off { background: var(--bg-deep); }
 .vp--off .vp__poster { opacity: .3; filter: grayscale(.5); }
+/* Affiche entière sur fond flou (WholeFrame) : tout le cadre est atténué, fond flou compris, et la photo, à l'intérieur,
+   ne l'est pas une seconde fois (en mode couverture, le fond est masqué : même rendu qu'une image simple) */
+.vp--off .whole { opacity: .3; filter: grayscale(.5); }
+.vp--off .whole .vp__poster { opacity: 1; filter: none; }
 .vp__overlay--off { gap: 8px; background: radial-gradient(70% 80% at 50% 50%, rgba(4, 10, 22, .35), rgba(4, 10, 22, .8)); }
 .vp__off-ico { width: 42px; height: 42px; margin-bottom: 4px; color: var(--gold); }
 .vp__off-title { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--ink); }
@@ -138,7 +142,7 @@
 /* ----- Page Direct ----- */
 .direct { padding-top: clamp(28px, 4vw, 44px); }
 .direct__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: clamp(24px, 3vw, 36px); align-items: start; }
-.direct-off .vp__poster { opacity: .45; }
+.direct-off .vp__poster, .direct-off .whole { opacity: .45; }
 .direct-off .vp__overlay { gap: 12px; }
 .direct-off h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(24px, 3vw, 36px); line-height: 1.1; letter-spacing: -.02em; color: var(--ink); text-wrap: balance; }
 .direct-off p { max-width: 48ch; color: var(--ink-2); font-size: 15.5px; }

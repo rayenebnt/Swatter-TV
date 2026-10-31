@@ -5,7 +5,7 @@ import { SectionHead } from '@/components/ui/SectionHead'
 import { getLatestArticles } from '@/lib/queries/articles'
 import { getInfoOfDay } from '@/lib/queries/home'
 import { InfoFeed } from './InfoFeed'
-import { toTeaser } from './utils'
+import { feedTeasers } from './utils'
 import '@/styles/info.css'
 
 /** Articles envoyés au client (filtres par département sans nouvelle requête). */
@@ -19,15 +19,8 @@ export async function InfoSection() {
   const [une, latest] = await Promise.all([getInfoOfDay(), getLatestArticles(COUNT + 1)])
   const articles = latest.filter((a) => a.id !== une?.id).slice(0, COUNT)
 
-  // Seuls les articles qui peuvent devenir l'article principal (le premier de chaque département) emportent leur
-  // grande image et leur chapô ; le tout premier n'apparaît jamais dans le fil : moins de données envoyées au navigateur.
-  const leads = new Set<number>()
-  const seen = new Set<string>()
-  for (const a of articles) {
-    if (!seen.has(a.department)) leads.add(a.id)
-    seen.add(a.department)
-  }
-  const items = articles.map((a, i) => toTeaser(a, { image: leads.has(a.id), excerpt: leads.has(a.id), thumb: i > 0 }))
+  // grande image (image d'origine) et chapô pour les seuls articles qui peuvent devenir l'article principal
+  const items = feedTeasers(articles)
 
   return (
     <section className="section container" id="info" aria-labelledby="info-title">

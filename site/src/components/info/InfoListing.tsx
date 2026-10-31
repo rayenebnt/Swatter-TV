@@ -116,7 +116,7 @@ export function InfoListing({ dept, page, data }: { dept: InfoZone | null; page:
   const t = texts(dept)
   const label = dept ? infoZoneLabel(dept) : null
   const crumbs: Crumb[] = label ? [{ label: 'L’Info', href: '/info' }, { label }] : [{ label: 'L’Info' }]
-  const lead = page === 1 && featured ? toTeaser(featured) : null
+  const lead = page === 1 && featured ? toTeaser(featured, { lead: true }) : null
   const items = list.docs.map((a) => toTeaser(a))
   const total = list.totalDocs + (featured ? 1 : 0)
   const links = [

@@ -34,7 +34,8 @@ export function LeadCard({
   return (
     <article className={`card lead ${className}`.trim()} data-reveal={reveal ? '' : undefined} style={style}>
       <div className="media">
-        {/* cadre presque carré (tablette) ou très allongé : photo entière sur fond flou s'il en couperait trop */}
+        {/* image d'origine (toTeaser « lead ») : entière sur fond flou quand le cadre en couperait trop (photo en hauteur ou
+            carrée dans le cadre allongé du téléphone, photo en largeur dans le cadre presque carré de la tablette) */}
         {item.image && <ArticleImage image={item.image} sizes={sizes} priority={priority} whole />}
         <span className="badge badge--live" aria-hidden="true">
           <i />

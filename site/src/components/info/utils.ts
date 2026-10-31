@@ -8,8 +8,11 @@ import { ogImage, type OgImage } from '@/lib/og'
 import { SITE_URL } from '@/lib/site'
 import { articleUrl } from '@/lib/urls'
 
-/** Image prête pour next/image (adresse locale optimisée, ou distante non optimisée). */
-export type ImageData = { src: string; alt: string; width: number; height: number; unoptimized: boolean; position?: string }
+/**
+ * Image prête pour next/image (adresse locale optimisée, ou distante non optimisée). `fallback` : visuel de repli du site
+ * (paysage sans sujet), qui couvre toujours son cadre (jamais de photo entière sur fond flou).
+ */
+export type ImageData = { src: string; alt: string; width: number; height: number; unoptimized: boolean; position?: string; fallback?: true }
 
 /** Article réduit aux champs affichés par les cartes et le fil « En continu ». */
 export type ArticleTeaser = {
@@ -29,7 +32,7 @@ export type ArticleTeaser = {
   short: string
   /** « 16 octobre 2026 à 16:34 » (infobulle) */
   full: string
-  /** Grand format (carte, article principal) */
+  /** Grand format : découpe 16:9 « card » des cartes, ou image d'origine (« hero ») de l'article principal (option `lead`) */
   image: ImageData | null
   /** Vignette (fil « En continu ») */
   thumb: ImageData | null
@@ -52,14 +55,17 @@ export function imageSource(url: string): { src: string; unoptimized: boolean } 
   return { src, unoptimized: !LOCAL.test(src) }
 }
 
-/** Image d'un article : média Payload, sinon visuel de repli. */
+/**
+ * Image d'un article : média Payload (point focal placé dans la déclinaison demandée, découpée autour de lui à l'envoi),
+ * sinon visuel de repli.
+ */
 export function articleImage(a: { id: number; image?: MediaRef }, size: MediaSize): ImageData {
   const url = mediaUrl(a.image, size)
   if (url) {
     const { width, height } = mediaSize(a.image, size)
-    return { ...imageSource(url), alt: mediaAlt(a.image), width, height, position: mediaFocal(a.image) }
+    return { ...imageSource(url), alt: mediaAlt(a.image), width, height, position: mediaFocal(a.image, size) }
   }
-  return { src: fallbackVisual(a.id), unoptimized: false, alt: '', width: 960, height: 540 }
+  return { src: fallbackVisual(a.id), unoptimized: false, alt: '', width: 960, height: 540, fallback: true }
 }
 
 /** Accroche : « Annemasse · Faits divers » (département, ou « Autres régions », à défaut de commune). */
@@ -81,9 +87,11 @@ export const fullDateTime = (iso: string) => `${formatDate(iso)} à ${formatTime
 
 /**
  * Article → données d'affichage. `image` : grand format ; `thumb` : vignette du fil ; `excerpt` : chapô.
+ * `lead` : article principal (LeadCard), grand format sur l'image d'origine (« hero », ses vraies proportions) pour la
+ * photo entière sur fond flou ; sinon la découpe 16:9 « card » des cartes.
  * Ne demander que ce qui sera affiché (données envoyées au client).
  */
-export function toTeaser(a: ArticleListItem, { image = true, thumb = false, excerpt = true } = {}): ArticleTeaser {
+export function toTeaser(a: ArticleListItem, { image = true, thumb = false, excerpt = true, lead = false } = {}): ArticleTeaser {
   return {
     id: a.id,
     title: frenchSpaces(a.title),
@@ -96,9 +104,24 @@ export function toTeaser(a: ArticleListItem, { image = true, thumb = false, exce
     clock: formatTime(a.publishedAt),
     short: shortDateTime(a.publishedAt),
     full: fullDateTime(a.publishedAt),
-    image: image ? articleImage(a, 'card') : null,
+    image: image ? articleImage(a, lead ? 'hero' : 'card') : null,
     thumb: thumb ? articleImage(a, 'thumb') : null,
   }
+}
+
+/**
+ * Articles du fil de l'accueil (InfoFeed), prêts pour le client. Seuls ceux qui peuvent devenir l'article principal (le
+ * premier de chaque département : InfoFeed prend le premier de la liste filtrée) emportent leur grande image, l'image
+ * d'origine de la photo entière (LeadCard), et leur chapô ; le tout premier n'apparaît jamais dans le fil (pas de
+ * vignette) : moins de données envoyées au navigateur, et seule l'image de l'article principal affiché est téléchargée.
+ */
+export function feedTeasers(articles: ArticleListItem[]): ArticleTeaser[] {
+  const seen = new Set<string>()
+  return articles.map((a, i) => {
+    const lead = !seen.has(a.department)
+    seen.add(a.department)
+    return toTeaser(a, { image: lead, excerpt: lead, thumb: i > 0, lead: true })
+  })
 }
 
 /* ----- Contenu riche (Lexical) ----- */
