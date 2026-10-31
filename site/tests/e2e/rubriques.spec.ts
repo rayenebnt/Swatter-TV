@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { currentEvening } from '../../src/lib/broadcast'
 import { expectNoHorizontalOverflow, expectPlayer, firstDoc, linksMatching, settle, watchErrors } from './helpers'
 
 // Un test par rubrique : le contenu attendu est bien là (jeu de démonstration : npm run seed).
@@ -90,6 +91,21 @@ test('programme TV : grille du jour et autre jour', async ({ page }) => {
   await page.goto('/programme-tv')
   await settle(page)
   await expect(page.locator('main')).toContainText(/\d{2}:\d{2}/)
+  // soirées de 18 h à 0 h 30 : en-tête, frise de 18:00 à 00:00, onglet « Ce soir », parties de la soirée
+  await expect(page.locator('main')).toContainText(/tous les soirs de 18\sh à 0\sh\s30/)
+  await expect(page.locator('.ruler span')).toHaveText(['18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00'])
+  await expect(page.getByRole('tab', { name: /^Ce soir/ })).toBeVisible()
+  const parts = await page.locator('#liste .tvl__part h3').allInnerTexts()
+  for (const part of parts) expect(['DÉBUT DE SOIRÉE', 'SOIRÉE'], 'partie de la soirée').toContain(part.toUpperCase())
+  // liste et JSON-LD : uniquement des créneaux de la soirée affichée (ce soir, rendu par le serveur à l'heure réelle)
+  const { start, end } = currentEvening(new Date())
+  const ld = await page.locator('script[type="application/ld+json"]').allTextContents()
+  const list = ld.map((t) => JSON.parse(t) as { '@type'?: string; itemListElement?: { item: { startDate: string; endDate: string } }[] }).find((d) => d['@type'] === 'ItemList')
+  for (const { item } of list?.itemListElement ?? []) {
+    expect(Date.parse(item.startDate), `début ${item.startDate}`).toBeGreaterThanOrEqual(start.getTime())
+    expect(Date.parse(item.endDate), `fin ${item.endDate}`).toBeLessThanOrEqual(end.getTime())
+  }
+  expect(await page.locator('#liste .tvl__row').count(), 'lignes de la liste = émissions du JSON-LD').toBe(list?.itemListElement?.length ?? 0)
   // jours suivants : liens ?jour=AAAA-MM-JJ (le lendemain, couvert par la grille de démonstration)
   const days = await linksMatching(page, /[?&]jour=\d{4}-\d{2}-\d{2}/)
   expect(days.length, 'sélecteur de jours').toBeGreaterThanOrEqual(1)

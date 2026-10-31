@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useEffect, useId, useRef, type CSSProperties } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { formatTime } from '@/lib/format'
-import { capitalize, dayLong, formatDuration, minutesBetween, programImage, type GridProgram, type GridSlot } from './model'
+import { capitalize, dayLong, formatDuration, isAfterMidnight, minutesBetween, programImage, type GridProgram, type GridSlot } from './model'
 
 /**
  * Panneau de détail d'une émission (dialogue modal natif) : focus piégé, Échap, retour du focus au bloc d'origine,
@@ -95,6 +95,8 @@ export function ProgramDialog({
               <Icon name="clock" />
               <span>
                 <time dateTime={slot.start}>{formatTime(slot.start)}</time> – <time dateTime={slot.end}>{formatTime(slot.end)}</time> ({formatDuration(minutesBetween(slot.start, slot.end))})
+                {/* 00:15 sous la date de la veille : la soirée continue après minuit */}
+                {isAfterMidnight(slot.start, day) && <small className="tvd__night"> · après minuit</small>}
               </span>
             </li>
             {program?.isPremiere && (

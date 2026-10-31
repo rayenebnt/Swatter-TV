@@ -5,7 +5,7 @@ import { useLayoutEffect, useRef } from 'react'
 
 export type DayLink = { href: string; label: string; long: string; current: boolean }
 
-/** Liens vers les jours du programme (vue liste) ; sur mobile, le jour affiché est ramené dans le champ du bandeau défilant. */
+/** Liens vers les soirées du programme (vue liste) ; sur mobile, la soirée affichée est ramenée dans le champ du bandeau défilant. */
 export function DayNav({ links }: { links: DayLink[] }) {
   const ref = useRef<HTMLElement>(null)
   const current = links.findIndex((l) => l.current)
@@ -18,7 +18,7 @@ export function DayNav({ links }: { links: DayLink[] }) {
   }, [current])
 
   return (
-    <nav ref={ref} className="seg tvl-days" aria-label="Choisir le jour du programme">
+    <nav ref={ref} className="seg tvl-days" aria-label="Choisir la soirée du programme">
       {links.map((l) => (
         <Link key={l.href} href={l.href} scroll={false} aria-current={l.current ? 'page' : undefined}>
           {l.label}

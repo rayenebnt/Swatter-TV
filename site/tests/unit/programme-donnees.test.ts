@@ -173,17 +173,26 @@ describe('getOnAir : programme en cours et suivants', () => {
 })
 
 describe('getProgrammeWeek : créneaux des sept jours de la page Programme TV', () => {
-  it('d’aujourd’hui 6 h à J+7 6 h (heure de Paris), à travers le retour à l’heure d’hiver', async () => {
-    const first = scheduleDoc('2026-10-21', '06:00', 30)
-    const night = scheduleDoc('2026-10-28', '05:30', 30)
-    const outside = scheduleDoc('2026-10-28', '06:00', 30)
-    const find = useSchedule([first, night, outside])
+  it('de ce soir 18 h à 0 h 30 au bout de la 7e soirée (heure de Paris), à travers le retour à l’heure d’hiver', async () => {
+    const early = scheduleDoc('2026-10-21', '17:30', 60) // déborde sur 18 h : gardé (rogné ensuite par slotsOfEvening)
+    const first = scheduleDoc('2026-10-21', '18:00', 30)
+    const night = scheduleDoc('2026-10-28', '00:15', 15) // soirée du 27, la 7e
+    const outside = scheduleDoc('2026-10-28', '00:30', 30) // 0 h 30 pile : fin de l'antenne
+    const nextEvening = scheduleDoc('2026-10-28', '18:00', 30)
+    const find = useSchedule([early, first, night, outside, nextEvening])
     const slots = await getProgrammeWeek('2026-10-21')
-    expect(slots.map((s) => s.id)).toEqual([first.id, night.id])
+    expect(slots.map((s) => s.id)).toEqual([early.id, first.id, night.id])
     const where = find.mock.calls[0][0].where.and
-    // début de l'intervalle : 6 h le 21 (heure d'été), moins les 10 h de marge de la requête
-    expect(where[0].startsAt.greater_than_equal).toBe(new Date(Date.parse('2026-10-21T04:00:00.000Z') - 10 * 3600_000).toISOString())
-    // fin : 6 h le 28 (heure d'hiver)
-    expect(where[1].startsAt.less_than).toBe('2026-10-28T05:00:00.000Z')
+    // début de l'intervalle : 18 h le 21 (heure d'été), moins les 10 h de marge de la requête
+    expect(where[0].startsAt.greater_than_equal).toBe(new Date(Date.parse('2026-10-21T16:00:00.000Z') - 10 * 3600_000).toISOString())
+    // fin : 0 h 30 le 28 (heure d'hiver)
+    expect(where[1].startsAt.less_than).toBe('2026-10-27T23:30:00.000Z')
+  })
+
+  it('créneau entièrement avant 18 h (ancienne donnée à 10 h) : écarté par la requête', async () => {
+    const morning = scheduleDoc('2026-11-10', '10:00', 60)
+    const evening = scheduleDoc('2026-11-10', '20:00', 30)
+    useSchedule([morning, evening])
+    expect((await getProgrammeWeek('2026-11-10')).map((s) => s.id)).toEqual([evening.id])
   })
 })

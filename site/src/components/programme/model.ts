@@ -1,13 +1,21 @@
 // Programme TV : constantes, types et calculs partagés par le serveur et le client (aucune dépendance serveur).
-import { dateChip, formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
-import { BROADCAST_END, eveningOf, shiftDay } from '@/lib/broadcast'
+// La chaîne n'est à l'antenne que le soir (src/lib/broadcast.ts) : le programme se lit soirée par soirée, de 18 h à
+// 0 h 30. La frise, la vue liste et le JSON-LD montrent exactement les mêmes créneaux (slotsOfEvening).
+import { dateChip, formatDayLong, parisDateTime, parisDay } from '@/lib/format'
+import { BROADCAST_END, BROADCAST_MINUTES, BROADCAST_START, currentEvening, eveningOf, eveningWindow, shiftDay } from '@/lib/broadcast'
 import type { Slot } from '@/lib/queries/schedule'
 
-/** Frise horaire : de 6 h à 2 h du lendemain (heure de Paris). Aucun changement d'heure ne tombe dans cet intervalle. */
-export const GRID_START = '06:00'
-export const GRID_HOURS = 20
-export const GRID_MINUTES = GRID_HOURS * 60
-/** Jours proposés : aujourd'hui et les six suivants. */
+/**
+ * Frise horaire d'une soirée : de 18 h à 0 h 30 du lendemain (heure de Paris), soit 390 minutes réelles tous les jours
+ * (les changements d'heure ont lieu à 2 h / 3 h, hors de l'antenne).
+ */
+export const GRID_START = BROADCAST_START
+export const GRID_MINUTES = BROADCAST_MINUTES
+/** Largeur de la frise, en heures (6,5) : sert au calcul CSS, pas au nombre de graduations. */
+export const GRID_HOURS = GRID_MINUTES / 60
+/** Graduations, une par heure pleine : 18:00, 19:00… 00:00 (7) ; la dernière demi-heure finit au bord droit. */
+export const RULER_HOURS = Math.ceil(GRID_HOURS)
+/** Soirées proposées : celle en cours (ou à venir) et les six suivantes. */
 export const PROGRAMME_DAYS = 7
 
 /** Infos d'une émission, partagées par tous ses créneaux (évite de répéter résumé et image dans les données envoyées au client). */
@@ -20,7 +28,10 @@ export type GridProgram = {
   isPremiere: boolean
 }
 
-/** Créneau placé sur la frise d'un jour : `from` / `to` en minutes depuis 6 h, bornés à la frise. */
+/**
+ * Créneau placé sur la frise d'une soirée : `start` / `end` rognés aux bornes de l'antenne (voir slotsOfEvening),
+ * `from` / `to` en minutes depuis 18 h.
+ */
 export type GridSlot = {
   id: number
   title: string
@@ -30,10 +41,13 @@ export type GridSlot = {
   prog: number
   from: number
   to: number
-  /** commence avant 6 h / finit après 2 h : bord découpé */
+  /** commençait avant 18 h / finissait après 0 h 30 (ancienne donnée) : rogné, bord découpé */
   cutL?: true
   cutR?: true
-  /** autour de l'heure du rendu serveur : vignette chargée tout de suite (visible dès le défilement initial vers « maintenant ») */
+  /**
+   * vignette chargée tout de suite : autour de l'heure du rendu serveur (visible dès le défilement initial vers
+   * « maintenant ») ; rendu hors antenne : les trois premières heures de la soirée à venir (la frise s'ouvre à 18 h)
+   */
   eager?: true
 }
 
@@ -54,17 +68,17 @@ export const tvDay = (d: Date = new Date()) => eveningOf(d)
  */
 export const tvDayStart = (day: string) => parisDateTime(day, BROADCAST_END)
 
-/** Les jours proposés à partir d'aujourd'hui (journée TV en cours). */
+/** Les soirées proposées à partir de celle d'aujourd'hui (journée TV en cours). */
 export const programmeDays = (today: string) => Array.from({ length: PROGRAMME_DAYS }, (_, i) => shiftDay(today, i))
 
 /** Midi du jour : instant sûr pour formater la date (loin des changements d'heure). */
 const noon = (day: string) => parisDateTime(day, '12:00')
 
-/** « Aujourd’hui », « Demain », « Hier » ou « Sam. 18 ». */
+/** « Ce soir », « Demain soir », « Hier soir », sinon « Sam. 18 » (la soirée qui commence ce jour-là). */
 export function dayLabel(day: string, today: string): string {
-  if (day === today) return 'Aujourd’hui'
-  if (day === shiftDay(today, 1)) return 'Demain'
-  if (day === shiftDay(today, -1)) return 'Hier'
+  if (day === today) return 'Ce soir'
+  if (day === shiftDay(today, 1)) return 'Demain soir'
+  if (day === shiftDay(today, -1)) return 'Hier soir'
   const { weekday, day: n } = dateChip(noon(day))
   return `${weekday} ${n}`
 }
@@ -74,14 +88,50 @@ export const dayLong = (day: string) => formatDayLong(noon(day))
 
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
-/** Adresse de la page Programme TV pour un jour (aujourd'hui : adresse canonique sans paramètre). */
+/** Adresse de la page Programme TV pour une soirée (ce soir : adresse canonique sans paramètre). */
 export const programmeDayUrl = (day: string, today: string) => (day === today ? '/programme-tv' : `/programme-tv?jour=${day}`)
+
+/** Créneau d'une soirée, rogné à l'antenne : `cutL` / `cutR` s'il commençait avant 18 h / finissait après 0 h 30. */
+export type EveningSlot = Slot & { cutL?: true; cutR?: true }
+
+/**
+ * Créneaux de la soirée `day` (de 18 h à 0 h 30 le lendemain) : ceux qui chevauchent l'antenne, rognés à ses bornes
+ * (début, fin et durée) ; un créneau entièrement hors antenne (ancienne donnée à 10 h…), vide, à l'envers ou illisible
+ * est ignoré. Règle unique de la frise, de la vue liste et du JSON-LD. Deux soirées sont séparées de 17 h 30, plus que
+ * la durée maximale d'un créneau : un créneau n'appartient jamais à deux soirées.
+ */
+export function slotsOfEvening(slots: Slot[], day: string): EveningSlot[] {
+  const { start, end } = eveningWindow(day)
+  const from = start.getTime()
+  const to = end.getTime()
+  const out: EveningSlot[] = []
+  for (const s of slots) {
+    const a = Date.parse(s.start)
+    const b = Date.parse(s.end)
+    if (!(b > a) || b <= from || a >= to) continue
+    if (a >= from && b <= to) {
+      out.push(s)
+      continue
+    }
+    const a2 = Math.max(a, from)
+    const b2 = Math.min(b, to)
+    out.push({
+      ...s,
+      start: new Date(a2).toISOString(),
+      end: new Date(b2).toISOString(),
+      durationMinutes: Math.round((b2 - a2) / 60_000),
+      ...(a < from ? { cutL: true as const } : {}),
+      ...(b > to ? { cutR: true as const } : {}),
+    })
+  }
+  return out
+}
 
 /** Fenêtre autour de « maintenant » dont les vignettes sont chargées d'emblée (le reste est chargé au défilement). */
 const EAGER_BEFORE = 60 * 60_000
 const EAGER_AFTER = 3 * 60 * 60_000
 
-/** Répartit les créneaux sur les frises des jours proposés (créneaux à cheval découpés aux bords). */
+/** Répartit les créneaux sur les frises des soirées proposées (créneaux qui débordent rognés aux bords). */
 export function buildGridData(slots: Slot[], today: string, now: number = Date.now()): GridData {
   const programs: GridProgram[] = []
   const index = new Map<string, number>()
@@ -94,56 +144,49 @@ export function buildGridData(slots: Slot[], today: string, now: number = Date.n
     }
     return i
   }
+  // Hors antenne, la frise s'ouvre au début de la soirée à venir : c'est autour de 18 h qu'il faut charger les vignettes
+  const evening = currentEvening(new Date(now))
+  const focus = evening.onAir ? now : evening.start.getTime()
   const days = programmeDays(today).map((key): GridDay => {
-    const start = parisDateTime(key, GRID_START).getTime()
-    const end = start + GRID_MINUTES * 60_000
-    const daySlots: GridSlot[] = []
-    for (const s of slots) {
+    const start = eveningWindow(key).start.getTime()
+    const daySlots = slotsOfEvening(slots, key).map((s): GridSlot => {
       const a = Date.parse(s.start)
       const b = Date.parse(s.end)
-      if (!(b > a) || b <= start || a >= end) continue
-      daySlots.push({
+      return {
         id: s.id,
         title: s.title,
         start: s.start,
         end: s.end,
         prog: progOf(s),
-        from: Math.max(0, (a - start) / 60_000),
-        to: Math.min(GRID_MINUTES, (b - start) / 60_000),
-        ...(a < start ? { cutL: true as const } : {}),
-        ...(b > end ? { cutR: true as const } : {}),
-        ...(b > now - EAGER_BEFORE && a < now + EAGER_AFTER ? { eager: true as const } : {}),
-      })
-    }
+        from: (a - start) / 60_000,
+        to: (b - start) / 60_000,
+        ...(s.cutL ? { cutL: true as const } : {}),
+        ...(s.cutR ? { cutR: true as const } : {}),
+        ...(b > focus - EAGER_BEFORE && a < focus + EAGER_AFTER ? { eager: true as const } : {}),
+      }
+    })
     return { key, start: new Date(start).toISOString(), slots: daySlots }
   })
   return { today, days, programs }
 }
 
-/** Créneaux de la journée TV d'un jour (de 6 h à 6 h le lendemain), d'après leur heure de début : vue liste et JSON-LD. */
-export function slotsOfTvDay(slots: Slot[], day: string): Slot[] {
-  const from = parisDateTime(day, GRID_START).getTime()
-  const to = parisDateTime(shiftDay(day, 1), GRID_START).getTime()
-  return slots.filter((s) => {
-    const t = Date.parse(s.start)
-    return t >= from && t < to
-  })
+/** Le créneau commence après minuit : il garde son heure (00:15) mais appartient à la soirée de la veille `day`. */
+export const isAfterMidnight = (start: string, day: string) => parisDay(start) > day
+
+/** Heure de Paris qui sépare les deux parties d'une soirée. */
+const LATE_FROM = '21:00'
+
+/**
+ * Partie de la soirée `day` d'après l'heure de début : « Début de soirée » de 18 h à 21 h, « Soirée » ensuite, après
+ * minuit compris (comparaison d'instants : un créneau de 00:15 reste en fin de soirée, jamais en tête).
+ */
+export function eveningPart(start: string, day: string): 'debut' | 'soiree' {
+  return Date.parse(start) < parisDateTime(day, LATE_FROM).getTime() ? 'debut' : 'soiree'
 }
 
-/** Moment de la journée d'après l'heure de début (heure de Paris). */
-export function dayPart(start: string): 'matin' | 'apres-midi' | 'soir' | 'nuit' {
-  const h = Number(formatTime(start).slice(0, 2))
-  if (h >= 6 && h < 12) return 'matin'
-  if (h >= 12 && h < 18) return 'apres-midi'
-  if (h >= 18) return 'soir'
-  return 'nuit'
-}
-
-export const DAY_PARTS = [
-  { value: 'matin', label: 'Matinée' },
-  { value: 'apres-midi', label: 'Après-midi' },
-  { value: 'soir', label: 'Soirée' },
-  { value: 'nuit', label: 'Nuit' },
+export const EVENING_PARTS = [
+  { value: 'debut', label: 'Début de soirée' },
+  { value: 'soiree', label: 'Soirée' },
 ] as const
 
 /** Durée en minutes entre deux dates ISO. */
