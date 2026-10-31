@@ -42,6 +42,8 @@ export type DashboardData = {
 export type EveningsStatus = {
   /** soirée en cours ou à venir (AAAA-MM-JJ, tvDay) : la première des 7 */
   today: string
+  /** instant du contrôle (ms) : de 0 h à 0 h 30, la soirée suivante porte le nom de son jour (« samedi soir ») */
+  at?: number
   /** soirées sans aucun programme entre 18 h et 0 h 30 */
   empty: string[]
   /** soirées en partie seulement couvertes : minutes sans programme entre 18 h et 0 h 30 */
@@ -124,6 +126,7 @@ async function evenings(payload: Payload, now = new Date()): Promise<EveningsSta
   const missing = days.map((day) => ({ day, missingMinutes: uncoveredMinutes(day, docs) }))
   return {
     today,
+    at: now.getTime(),
     empty: missing.filter((m) => m.missingMinutes >= BROADCAST_MINUTES).map((m) => m.day),
     incomplete: missing.filter((m) => m.missingMinutes > 0 && m.missingMinutes < BROADCAST_MINUTES),
     offAir: { count: offAir.length, firstDay: offAir.length ? tvDay(new Date(offAir[0].startsAt)) : null },
@@ -139,7 +142,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : 
  */
 export function programmeSummary(e: EveningsStatus | null): { tone: 'ok' | 'warn'; value: string; first: string | null } {
   if (!e) return { tone: 'warn', value: 'Information indisponible pour le moment : rechargez la page dans un instant', first: null }
-  const label = (d: string) => eveningShortLabel(d, e.today)
+  const label = (d: string) => eveningShortLabel(d, e.today, e.at)
   const parts: string[] = []
   if (e.empty.length === 7) parts.push('Aucune émission prévue pour les 7 prochaines soirées')
   else if (e.empty.length) parts.push(`Rien de prévu : ${e.empty.map(label).join(', ')}`)

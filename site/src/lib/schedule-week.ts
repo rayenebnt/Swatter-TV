@@ -87,11 +87,12 @@ export const rangeLabel = (first: string, days: number) => (days === 7 ? `semain
 
 /**
  * Soirée en quelques mots, en minuscules, par rapport à la soirée en cours ou à venir `today` (tvDay) : « ce soir »,
- * « demain soir », « hier soir », sinon « sam. 24 » (tableau de bord).
+ * « demain soir », « hier soir », sinon « sam. 24 » (tableau de bord). Avec l'instant `now`, de 0 h à 0 h 30 : « samedi
+ * soir » au lieu de « demain soir », comme sur le site.
  */
-export function eveningShortLabel(day: string, today: string): string {
+export function eveningShortLabel(day: string, today: string, now?: number): string {
   if (day === today) return 'ce soir'
-  if (day === shiftDay(today, 1)) return 'demain soir'
+  if (day === shiftDay(today, 1)) return now !== undefined && parisDay(new Date(now)) !== today ? `${formatDayLong(noon(day)).split(' ')[0]} soir` : 'demain soir'
   if (day === shiftDay(today, -1)) return 'hier soir'
   const { weekday, day: n } = dateChip(noon(day))
   return `${weekday.toLowerCase()} ${n}`

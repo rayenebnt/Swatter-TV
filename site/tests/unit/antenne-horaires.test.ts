@@ -8,7 +8,9 @@ import {
   isOnAir,
   slotOutsideBroadcast,
 } from '@/lib/broadcast'
-import { tvDay, tvDayStart } from '@/components/programme/model'
+import { dayLabel, tvDay, tvDayStart } from '@/components/programme/model'
+import { eveningLabel } from '@/lib/on-air'
+import { eveningShortLabel } from '@/lib/schedule-week'
 
 /** Instant à Paris (heure d'hiver, UTC+1, sauf mention). */
 const paris = (iso: string) => new Date(iso)
@@ -67,7 +69,7 @@ describe('horaires d’antenne : tous les jours de 18 h à 0 h 30 (heure de Pari
     expect(slotOutsideBroadcast(paris('2026-11-10T23:45:00+01:00'), 60)).toBe(
       "Ce créneau finirait à 00:45, après la fin de l'antenne (0 h 30) : 45 min au plus à partir de 23:45.",
     )
-    expect(slotOutsideBroadcast(paris('2026-11-10T17:50:00+01:00'), 30)).toMatch(/^La chaîne diffuse tous les jours de 18 h – 0 h 30/)
+    expect(slotOutsideBroadcast(paris('2026-11-10T17:50:00+01:00'), 30)).toMatch(/^La chaîne diffuse tous les jours de 18 h à 0 h 30 : choisissez/)
     expect(slotOutsideBroadcast(paris('2026-11-11T00:30:00+01:00'), 10)).toMatch(/date du lendemain/)
   })
 
@@ -76,5 +78,25 @@ describe('horaires d’antenne : tous les jours de 18 h à 0 h 30 (heure de Pari
     // nuit du passage à l'heure d'hiver : 0 h 30 n'est jamais ambiguë
     expect(tvDayStart('2026-10-25').toISOString()).toBe('2026-10-24T22:30:00.000Z')
     expect(tvDayStart('2026-10-26').toISOString()).toBe('2026-10-25T23:30:00.000Z')
+  })
+
+  it('la soirée suivante porte le même nom partout : « Demain soir », puis « Mercredi soir » de 0 h à 0 h 30', () => {
+    const at2100 = paris('2026-11-10T21:00:00+01:00').getTime()
+    const at0015 = paris('2026-11-11T00:15:00+01:00').getTime()
+    const at0030 = paris('2026-11-11T00:30:00+01:00').getTime()
+    // mardi 10 à 21 h : la soirée suivante est « demain soir »
+    expect(dayLabel('2026-11-11', '2026-11-10', at2100)).toBe('Demain soir')
+    expect(eveningLabel('2026-11-11', at2100)).toBe('Demain soir')
+    expect(eveningShortLabel('2026-11-11', '2026-11-10', at2100)).toBe('demain soir')
+    // mercredi 11 à 0 h 15 : la soirée de mardi est encore à l'antenne, la suivante est « mercredi soir »
+    expect(dayLabel('2026-11-10', '2026-11-10', at0015)).toBe('Ce soir')
+    expect(dayLabel('2026-11-11', '2026-11-10', at0015)).toBe('Mercredi soir')
+    expect(eveningLabel('2026-11-11', at0015)).toBe('Mercredi soir')
+    expect(eveningShortLabel('2026-11-11', '2026-11-10', at0015)).toBe('mercredi soir')
+    // à 0 h 30, mercredi soir devient « ce soir »
+    expect(dayLabel('2026-11-11', '2026-11-11', at0030)).toBe('Ce soir')
+    expect(dayLabel('2026-11-12', '2026-11-11', at0030)).toBe('Demain soir')
+    // sans instant : comportement d'origine
+    expect(dayLabel('2026-11-11', '2026-11-10')).toBe('Demain soir')
   })
 })

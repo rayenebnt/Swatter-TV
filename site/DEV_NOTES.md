@@ -344,7 +344,8 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
     0 h 30, au pas de 15 s de `useNow`.
   - Page Direct : `DirectStage` affiche `VideoPlayer` pendant l'antenne et `LiveOff` en dehors (« Le direct reprend ce
     soir à 18 h » + « Au programme : X à 18:00 »). Direct coupé (`liveEnabled`) ou sans flux : « Le direct reprend
-    bientôt » à toute heure. `OnAirPanel` affiche, hors antenne, le bloc « Hors antenne · Reprise ce soir à 18 h » ; à
+    bientôt » à toute heure, et `OnAirPanel` (`cut`) n'affiche alors ni point rouge ni « En direct jusqu'à 0 h 30 ».
+    `OnAirPanel` affiche, hors antenne, le bloc « Hors antenne · Reprise ce soir à 18 h » ; à
     l'antenne sans créneau, « En direct jusqu'à 0 h 30 ». Le JSON-LD BroadcastEvent couvre la soirée en cours ou à venir.
   - Accueil : `liveView` (`components/home/liveSlide.ts`) recalcule dans `HeroClient` les diapositives « direct ». Hors
     antenne, les badges `live` deviennent « Ce soir dès 18 h » (glass), la ligne devient « Ce soir à 18:00 · … » et la
@@ -353,6 +354,10 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
     20 h à 0 h 30, soirées par `eveningOf`.
   - Point rouge « Le Direct » (MainNav, MobileMenu, TabBar) : `useOnAir() === true` seulement, jamais dans le HTML du
     serveur.
+  - Nom des soirées, le même partout (`dayLabel` de la grille avec l'instant du rendu `GridData.at` puis l'heure du
+    navigateur, `eveningLabel` de l'accueil et du direct, `eveningShortLabel` du tableau de bord avec `EveningsStatus.at`) :
+    « Ce soir », « Demain soir »… ; de 0 h à 0 h 30, la soirée de la veille est encore « Ce soir » et la suivante porte
+    le nom de son jour (« Mercredi soir ») plutôt que « Demain soir », ambigu.
   - Tests indépendants de l'heure. Unitaires : `tests/unit/antenne-horaires.test.ts`, `antenne-direct.test.ts`. E2E :
     `tests/e2e/antenne.spec.ts`, avec `atParisTime(page, 'HH:MM')` / `parisToday()` de `tests/e2e/helpers.ts` (horloge
     du navigateur par `page.clock` ; le serveur garde l'heure réelle). Les tests de la grille fixent l'horloge sur la
@@ -651,7 +656,10 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
     créneaux hors antenne.
   - Anciennes données : `npm run grille:hors-antenne` (`src/scripts/grille-hors-antenne.ts`) liste les créneaux hors
     antenne ; `-- --supprimer` supprime ceux qui commencent hors antenne et raccourcit à 0 h 30 ceux qui finissent après.
-    Le script npm se termine par `--` : sans lui, `payload run` (minimist) avale le drapeau `--supprimer`.
+    Le script npm se termine par `--` : sans lui, `payload run` (minimist) avale le drapeau `--supprimer`. Un créneau à
+    raccourcir dont un brouillon plus récent attend d'être publié n'est pas touché (l'enregistrer publierait ce
+    brouillon) ; le raccourcissement renvoie les valeurs de la fiche publiée (dont `_status`). Une erreur sur un créneau
+    n'arrête pas les autres : les créneaux non traités sont listés à la fin (code de sortie 1).
 - **Top 10** (`src/hooks/top10.ts`) : places uniques, comme une liste qu'on réordonne. Une vidéo placée à une place
   prise décale le bloc de places occupées qui suit (au-delà de 10 : sortie du classement) ; une place libérée fait remonter
   le bloc suivant ; une place vide arrête le décalage. Les décalages passent `context.top10Reorder` (pas de cascade, pas de

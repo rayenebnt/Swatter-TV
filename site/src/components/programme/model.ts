@@ -52,7 +52,7 @@ export type GridSlot = {
 }
 
 export type GridDay = { key: string; start: string; slots: GridSlot[] }
-export type GridData = { today: string; days: GridDay[]; programs: GridProgram[] }
+export type GridData = { today: string; days: GridDay[]; programs: GridProgram[]; /** instant du rendu (ms) */ at?: number }
 
 export { shiftDay }
 
@@ -74,10 +74,14 @@ export const programmeDays = (today: string) => Array.from({ length: PROGRAMME_D
 /** Midi du jour : instant sûr pour formater la date (loin des changements d'heure). */
 const noon = (day: string) => parisDateTime(day, '12:00')
 
-/** « Ce soir », « Demain soir », « Hier soir », sinon « Sam. 18 » (la soirée qui commence ce jour-là). */
-export function dayLabel(day: string, today: string): string {
+/**
+ * « Ce soir », « Demain soir », « Hier soir », sinon « Sam. 18 » (la soirée qui commence ce jour-là). Avec l'instant
+ * `now` : de 0 h à 0 h 30 (soirée de la veille encore à l'antenne), « demain » serait ambigu et la soirée suivante porte
+ * le nom de son jour (« Samedi soir »), comme sur l'accueil et la page Direct (eveningLabel de src/lib/on-air.ts).
+ */
+export function dayLabel(day: string, today: string, now?: number): string {
   if (day === today) return 'Ce soir'
-  if (day === shiftDay(today, 1)) return 'Demain soir'
+  if (day === shiftDay(today, 1)) return now !== undefined && parisDay(new Date(now)) !== today ? `${capitalize(dayLong(day).split(' ')[0])} soir` : 'Demain soir'
   if (day === shiftDay(today, -1)) return 'Hier soir'
   const { weekday, day: n } = dateChip(noon(day))
   return `${weekday} ${n}`
@@ -167,7 +171,7 @@ export function buildGridData(slots: Slot[], today: string, now: number = Date.n
     })
     return { key, start: new Date(start).toISOString(), slots: daySlots }
   })
-  return { today, days, programs }
+  return { today, days, programs, at: now }
 }
 
 /** Le créneau commence après minuit : il garde son heure (00:15) mais appartient à la soirée de la veille `day`. */

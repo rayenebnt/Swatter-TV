@@ -77,7 +77,7 @@ export default async function DirectPage() {
               />
             }
           />
-          <OnAirPanel data={onAir} />
+          <OnAirPanel data={onAir} cut={!live} />
         </div>
       </section>
 

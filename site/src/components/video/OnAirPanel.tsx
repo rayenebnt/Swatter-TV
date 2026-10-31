@@ -25,9 +25,10 @@ function SlotTitle({ slot }: { slot: Slot }) {
  * cours, la progression et le temps restant suivent l'heure du navigateur (page servie depuis le cache, onglet ouvert).
  * Hors antenne (de 0 h 30 à 18 h) : « Hors antenne · Reprise ce soir à 18 h » ; à l'antenne sans programme saisi :
  * « En direct jusqu'à 0 h 30 ». Dans « À suivre », la fin de l'antenne est annoncée avant les créneaux d'une autre soirée,
- * nommée (« Demain soir », « Ce soir »…).
+ * nommée (« Demain soir », « Ce soir »…). Direct coupé (`cut` : « Direct actif » décoché ou sans flux, la page affiche
+ * « Le direct reprend bientôt ») : jamais de point rouge ni « En direct jusqu'à 0 h 30 ».
  */
-export function OnAirPanel({ data, max = 3 }: { data: OnAirData<Slot>; max?: number }) {
+export function OnAirPanel({ data, max = 3, cut = false }: { data: OnAirData<Slot>; max?: number; cut?: boolean }) {
   const now = useAirNow(data.at)
   // progression et temps restant : seulement dans le navigateur (au rendu serveur, barre vide)
   const hydrated = useNow() !== null
@@ -48,7 +49,7 @@ export function OnAirPanel({ data, max = 3 }: { data: OnAirData<Slot>; max?: num
       {cur ? (
         <div className="onair__now">
           <p className="onair__label">
-            <span className="dot-live" aria-hidden="true" />
+            {!cut && <span className="dot-live" aria-hidden="true" />}
             En ce moment
           </p>
           <h3 className="onair__now-title">
@@ -79,10 +80,10 @@ export function OnAirPanel({ data, max = 3 }: { data: OnAirData<Slot>; max?: num
         // à l'antenne entre deux créneaux (ou sans grille), ou hors antenne : jamais de vide à la place du programme en cours
         <div className="onair__now">
           <p className="onair__label">
-            {state.onAir && <span className="dot-live" aria-hidden="true" />}
+            {state.onAir && !cut && <span className="dot-live" aria-hidden="true" />}
             {state.onAir ? 'En ce moment' : 'Hors antenne'}
           </p>
-          <h3 className="onair__now-title">{state.onAir ? `En direct jusqu’à ${BROADCAST_END_LABEL}` : RESUME_TONIGHT}</h3>
+          <h3 className="onair__now-title">{state.onAir ? (cut ? 'Le direct reprend bientôt' : `En direct jusqu’à ${BROADCAST_END_LABEL}`) : RESUME_TONIGHT}</h3>
           <p className="onair__sub">Swatter TV Info, tous les soirs de 18 h à {BROADCAST_END_LABEL}</p>
         </div>
       )}

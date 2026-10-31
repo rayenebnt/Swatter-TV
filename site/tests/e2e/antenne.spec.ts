@@ -64,9 +64,12 @@ test.describe('page Direct selon l’antenne', () => {
     const errors = watchErrors(page)
     const player = page.getByRole('region', { name: /lecteur vidéo/i })
 
-    await page.clock.install({ time: parisToday('17:59:40') })
+    // horloge installée bien avant 18 h, puis figée à 17 h 59 40 une fois la page chargée : le chargement (première
+    // compilation d'un serveur de développement, machine chargée) ne peut pas franchir 18 h à l'insu du test
+    await page.clock.install({ time: parisToday('17:50:00') })
     await page.goto('/direct')
     await settle(page)
+    await page.clock.pauseAt(parisToday('17:59:40'))
     await expect(page.locator('.direct-off')).toBeVisible()
     await expect(player).toHaveCount(0)
     // 18 h passées (l'horloge partagée du site avance par pas de 15 s)

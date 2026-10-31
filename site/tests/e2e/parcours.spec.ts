@@ -204,11 +204,13 @@ test.describe('programme TV', () => {
   test('hors antenne puis 18 h : bandeau, « Début de soirée », ligne « maintenant » ; sans recharger la page', async ({ page }) => {
     const errors = watchErrors(page)
     const evening = currentEvening(new Date())
-    // 17 h 59 le jour de la soirée servie (la même que celle du serveur, à antenne coupée)
-    await page.clock.install({ time: new Date(evening.start.getTime() - 60_000) })
+    // 17 h 59 le jour de la soirée servie (la même que celle du serveur, à antenne coupée) : horloge installée à 17 h 50
+    // puis figée à 17 h 59 une fois la page chargée (un chargement lent ne franchit pas 18 h à l'insu du test)
+    await page.clock.install({ time: new Date(evening.start.getTime() - 10 * 60_000) })
     await presetConsent(page.context())
     await page.goto('/programme-tv')
     await settle(page)
+    await page.clock.pauseAt(new Date(evening.start.getTime() - 60_000))
 
     const banner = page.locator('.grid-offair')
     const tools = page.locator('#grille .sec-tools')
@@ -236,11 +238,13 @@ test.describe('programme TV', () => {
   test('0 h 30 : fin de l’antenne, la soirée suivante devient « Ce soir », hors antenne', async ({ page }) => {
     const errors = watchErrors(page)
     const evening = currentEvening(new Date())
-    // 0 h 29 à la fin de la soirée servie : encore à l'antenne, ligne « maintenant » au bout de la frise
-    await page.clock.install({ time: new Date(evening.end.getTime() - 60_000) })
+    // 0 h 29 à la fin de la soirée servie : encore à l'antenne, ligne « maintenant » au bout de la frise (horloge
+    // installée à 0 h 20, figée à 0 h 29 une fois la page chargée)
+    await page.clock.install({ time: new Date(evening.end.getTime() - 10 * 60_000) })
     await presetConsent(page.context())
     await page.goto('/programme-tv')
     await settle(page)
+    await page.clock.pauseAt(new Date(evening.end.getTime() - 60_000))
 
     const tools = page.locator('#grille .sec-tools')
     await expect(page.locator('.nowline')).toBeVisible()

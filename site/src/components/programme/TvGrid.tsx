@@ -171,7 +171,7 @@ export function TvGrid({
             value: d.key,
             label: (
               <>
-                {dayLabel(d.key, today)}
+                {dayLabel(d.key, today, now ?? data.at)}
                 <span className="sr-only"> ({dayLong(d.key)})</span>
               </>
             ),

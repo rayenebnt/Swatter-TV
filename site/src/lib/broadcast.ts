@@ -62,7 +62,7 @@ export function broadcastEvening(start: Date): string | null {
 export function slotOutsideBroadcast(start: Date, minutes: number): string | null {
   const day = broadcastEvening(start)
   if (!day) {
-    return `La chaîne diffuse tous les jours de ${BROADCAST_HOURS_LABEL} : choisissez une heure de début entre 18:00 et 00:25 (un créneau après minuit se saisit à la date du lendemain).`
+    return `La chaîne diffuse tous les jours de 18 h à 0 h 30 : choisissez une heure de début entre 18:00 et 00:25 (un créneau après minuit se saisit à la date du lendemain).`
   }
   const end = eveningWindow(day).end.getTime()
   const max = Math.floor((end - start.getTime()) / 60_000)
