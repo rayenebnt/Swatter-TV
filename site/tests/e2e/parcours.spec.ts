@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test'
+import { currentEvening } from '../../src/lib/broadcast'
 import { firstDoc, linksMatching, settle, watchErrors } from './helpers'
 import { AdminApi, deleteMember, mobileContext, presetConsent, recordThirdParty, signupMember, SITE, unique } from './outils-contenus'
 
@@ -126,7 +127,7 @@ test.describe('programme TV', () => {
     await page.goto('/programme-tv')
     await settle(page)
     const blocks = page.locator('.tvgrid__list .blk')
-    test.skip((await blocks.count()) < 3, 'grille du jour presque vide (lancez npm run seed)')
+    test.skip((await blocks.count()) < 3, 'soirée presque vide (lancez npm run seed)')
 
     // un seul arrêt de tabulation dans la frise ; flèches, Début et Fin passent d'une émission à l'autre
     await expect(page.locator('.tvgrid__list .blk[tabindex="0"]')).toHaveCount(1)
@@ -195,6 +196,69 @@ test.describe('programme TV', () => {
     await expect(page).toHaveURL(/\/programme-tv(\?jour=\d{4}-\d{2}-\d{2})?$/)
     // le focus revient sur l'émission dans la grille
     await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '')).toMatch(new RegExp(`^${escapeRegExp(title)}, `))
+    expect(errors, errors.join('\n')).toEqual([])
+  })
+
+  // L'antenne (18 h – 0 h 30) se décide dans le navigateur, avec l'heure du visiteur : son horloge est fixée juste avant
+  // une bascule, sur la soirée que le serveur rend à l'heure réelle (le test passe à n'importe quelle heure).
+  test('hors antenne puis 18 h : bandeau, « Début de soirée », ligne « maintenant » ; sans recharger la page', async ({ page }) => {
+    const errors = watchErrors(page)
+    const evening = currentEvening(new Date())
+    // 17 h 59 le jour de la soirée servie (la même que celle du serveur, à antenne coupée)
+    await page.clock.install({ time: new Date(evening.start.getTime() - 60_000) })
+    await presetConsent(page.context())
+    await page.goto('/programme-tv')
+    await settle(page)
+
+    const banner = page.locator('.grid-offair')
+    const tools = page.locator('#grille .sec-tools')
+    await expect(banner).toHaveText(/^Hors antenne · reprise ce soir à 18\sh$/)
+    await expect(page.getByRole('tab', { selected: true })).toContainText('Ce soir')
+    await expect(tools.getByRole('button', { name: /^Début de soirée/ })).toBeVisible()
+    await expect(page.locator('.nowline')).toHaveCount(0)
+    await expect(page.locator('.tvgrid__list .blk.is-now')).toHaveCount(0)
+    // la frise s'ouvre à 18 h ; « Début de soirée » y ramène après un défilement
+    const scroller = page.locator('.grid-scroll')
+    await expect.poll(() => scroller.evaluate((el) => el.scrollLeft)).toBe(0)
+    await scroller.evaluate((el) => (el.scrollLeft = 600))
+    await tools.getByRole('button', { name: /^Début de soirée/ }).click()
+    await expect.poll(() => scroller.evaluate((el) => el.scrollLeft)).toBe(0)
+
+    // 18 h : l'antenne reprend (horloge du programme, toutes les 30 s)
+    await page.clock.runFor(61_000)
+    await expect(banner).toHaveCount(0)
+    await expect(tools.getByRole('button', { name: /^Maintenant/ })).toBeVisible()
+    await expect(page.locator('.nowline')).toBeVisible()
+    await expect(page.locator('.nowline span')).toHaveText('18:00')
+    expect(errors, errors.join('\n')).toEqual([])
+  })
+
+  test('0 h 30 : fin de l’antenne, la soirée suivante devient « Ce soir », hors antenne', async ({ page }) => {
+    const errors = watchErrors(page)
+    const evening = currentEvening(new Date())
+    // 0 h 29 à la fin de la soirée servie : encore à l'antenne, ligne « maintenant » au bout de la frise
+    await page.clock.install({ time: new Date(evening.end.getTime() - 60_000) })
+    await presetConsent(page.context())
+    await page.goto('/programme-tv')
+    await settle(page)
+
+    const tools = page.locator('#grille .sec-tools')
+    await expect(page.locator('.nowline')).toBeVisible()
+    await expect(page.locator('.nowline span')).toHaveText('00:29')
+    await expect(page.locator('.grid-offair')).toHaveCount(0)
+    await expect(tools.getByRole('button', { name: /^Maintenant/ })).toBeVisible()
+    const tab = page.getByRole('tab', { selected: true })
+    await expect(tab).toContainText('Ce soir')
+    const before = await tab.locator('.sr-only').innerText()
+
+    await page.clock.runFor(61_000)
+    await expect(page.locator('.nowline')).toHaveCount(0)
+    await expect(page.locator('.grid-offair')).toHaveText(/reprise ce soir à 18\sh/)
+    await expect(tools.getByRole('button', { name: /^Début de soirée/ })).toBeVisible()
+    // la soirée finie s'appelle « Hier soir » ; « Ce soir » est la suivante, affichée
+    await expect(page.getByRole('tab', { name: new RegExp(`^Hier soir ${escapeRegExp(before.trim())}$`) })).toBeVisible()
+    await expect(page.getByRole('tab', { selected: true })).toContainText('Ce soir')
+    await expect(page.getByRole('tab', { selected: true }).locator('.sr-only')).not.toHaveText(before)
     expect(errors, errors.join('\n')).toEqual([])
   })
 })

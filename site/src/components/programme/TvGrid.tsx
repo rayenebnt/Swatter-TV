@@ -7,6 +7,7 @@ import { Fragment, useId, useLayoutEffect, useRef, useState, type CSSProperties,
 import { Icon } from '@/components/ui/Icon'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { Seg } from '@/components/ui/Seg'
+import { isOnAir } from '@/lib/broadcast'
 import { formatTime } from '@/lib/format'
 import { useGridGestures, useHash, useNow } from './hooks'
 import {
@@ -19,6 +20,7 @@ import {
   minutesBetween,
   programImage,
   programmeDayUrl,
+  RULER_HOURS,
   slotMeta,
   tvDay,
   type GridData,
@@ -26,13 +28,14 @@ import {
 import { ProgramDialog } from './ProgramDialog'
 
 const FIRST_HOUR = Number(GRID_START.slice(0, 2))
-const HOURS = Array.from({ length: GRID_HOURS }, (_, h) => h)
+// 18:00 … 00:00 ; repère de demi-heure sauf au bord droit (0 h 30, fin de la frise : il élargirait la zone défilante)
+const HOURS = Array.from({ length: RULER_HOURS }, (_, h) => h)
 const hourLabel = (h: number) => `${String((FIRST_HOUR + h) % 24).padStart(2, '0')}:00`
 const NAV_KEYS = ['ArrowRight', 'ArrowLeft', 'Home', 'End']
 
 /**
- * Place la frise : minute `mid` au centre (émission ciblée), sinon « maintenant » au tiers gauche
- * quand il tombe dans la frise du jour (comme la maquette), sinon le début de la journée.
+ * Place la frise : minute `mid` au centre (émission ciblée), sinon « maintenant » au tiers gauche quand il tombe dans
+ * la soirée affichée, à l'antenne (comme la maquette), sinon le début de la soirée (18 h).
  */
 function placeGrid(scroller: HTMLDivElement, grid: HTMLDivElement, dayStart: string, mid: number | null, smooth: boolean) {
   const px = grid.offsetWidth / GRID_MINUTES
@@ -43,10 +46,23 @@ function placeGrid(scroller: HTMLDivElement, grid: HTMLDivElement, dayStart: str
 }
 
 /**
- * Grille horaire du programme TV : onglets des jours, frise de 6 h à 2 h, ligne « maintenant » (après montage),
- * glisser / molette / tactile, panneau de détail. Le premier rendu ne dépend que des données du serveur.
+ * Grille horaire du programme TV : onglets des soirées, frise de 18 h à 0 h 30, ligne « maintenant » pendant l'antenne
+ * (après montage), glisser / molette / tactile, panneau de détail. Hors antenne, sur la soirée à venir : bandeau
+ * « Hors antenne · reprise ce soir à 18 h » et bouton « Début de soirée » au lieu de « Maintenant ». Le premier rendu ne
+ * dépend que des données du serveur (dont `onAirAtRender`) ; l'heure du visiteur prend le relais après hydratation, ce
+ * qui fait basculer à 18 h et à 0 h 30 une page servie depuis le cache ou un onglet resté ouvert.
  */
-export function TvGrid({ data, initialDay, variant }: { data: GridData; initialDay: string; variant: 'home' | 'full' }) {
+export function TvGrid({
+  data,
+  initialDay,
+  variant,
+  onAirAtRender,
+}: {
+  data: GridData
+  initialDay: string
+  variant: 'home' | 'full'
+  onAirAtRender: boolean
+}) {
   const router = useRouter()
   const now = useNow()
   const hash = useHash()
@@ -67,8 +83,9 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
   const [focusId, setFocusId] = useState<number | null>(null)
 
   const has = (key: string) => data.days.some((d) => d.key === key)
-  // Jour civil réel, après montage (page mise en cache la veille, onglet resté ouvert après minuit)
+  // Soirée réelle et état de l'antenne, après montage (page mise en cache, onglet resté ouvert après 0 h 30)
   const today = now === null ? data.today : tvDay(new Date(now))
+  const onAir = now === null ? onAirAtRender : isOnAir(new Date(now))
   // Émission demandée par l'adresse (/programme-tv#slug, voir programUrl) : sa prochaine diffusion
   const linked = hash && now !== null ? findAiring(data, hash, now) : null
   const dayKey = picked ?? linked?.day ?? (initialDay === data.today && has(today) ? today : initialDay)
@@ -97,6 +114,7 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
     if (variant === 'full' && key !== day.key) router.replace(programmeDayUrl(key, data.today), { scroll: false })
   }
 
+  // « Maintenant » (à l'antenne) ou « Début de soirée » (hors antenne : la soirée qui reprend, placée à 18 h)
   const goNow = () => {
     const key = tvDay(new Date())
     const target = has(key) ? key : data.days[0].key
@@ -137,13 +155,15 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
   const liveSlot = now === null ? undefined : day.slots.find((s) => Date.parse(s.start) <= now && now < Date.parse(s.end))
   const tabId = (focusId !== null && day.slots.some((s) => s.id === focusId) ? focusId : liveSlot?.id) ?? day.slots[0]?.id
   const home = variant === 'home'
+  // Hors antenne, la soirée en cours est celle qui reprend à 18 h (« aujourd'hui » bascule à 0 h 30, voir tvDay)
+  const offAir = !onAir && day.key === today
 
   return (
     <>
-      <SectionHead eyebrow={home ? 'Ce soir et cette semaine' : 'Heure par heure'} title={home ? 'Programme TV' : 'La grille de la semaine'} titleId={home ? 'prog-title' : 'grille-title'}>
+      <SectionHead eyebrow={home ? 'Ce soir et cette semaine' : 'Soirée par soirée'} title={home ? 'Programme TV' : 'La grille de la semaine'} titleId={home ? 'prog-title' : 'grille-title'}>
         <Seg
           role="tablist"
-          ariaLabel="Jour du programme"
+          ariaLabel="Soirée du programme"
           controls={panelId}
           value={day.key}
           onChange={selectDay}
@@ -159,8 +179,17 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
         />
         <button className="btn btn--ghost btn--sm" type="button" onClick={goNow}>
           <Icon name="now" />
-          Maintenant
-          <span className="sr-only">&nbsp;: aller à l’émission en cours</span>
+          {onAir ? (
+            <>
+              Maintenant
+              <span className="sr-only">&nbsp;: aller à l’émission en cours</span>
+            </>
+          ) : (
+            <>
+              Début de soirée
+              <span className="sr-only">&nbsp;: aller à 18&nbsp;h, ce soir</span>
+            </>
+          )}
         </button>
         {home && (
           <Link className="link-more" href="/programme-tv">
@@ -170,7 +199,12 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
         )}
       </SectionHead>
 
-      <div ref={wrapRef} className="grid-wrap" data-reveal id={panelId} role="tabpanel" aria-label={`Programme du ${dayLong(day.key)}`}>
+      {offAir && (
+        <p className="grid-offair" role="status">
+          <span>Hors antenne</span> · reprise ce soir à 18&nbsp;h
+        </p>
+      )}
+      <div ref={wrapRef} className="grid-wrap" data-reveal id={panelId} role="tabpanel" aria-label={`Programme de la soirée du ${dayLong(day.key)}`}>
         <div className="grid-fade l" aria-hidden="true" />
         <div className="grid-fade r" aria-hidden="true" />
         <div ref={scrollerRef} className="grid-scroll">
@@ -179,7 +213,7 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
               {HOURS.map((h) => (
                 <Fragment key={h}>
                   <span style={{ '--h': h } as CSSProperties}>{hourLabel(h)}</span>
-                  <i style={{ '--h': h } as CSSProperties} />
+                  {h + 0.5 < GRID_HOURS && <i style={{ '--h': h } as CSSProperties} />}
                 </Fragment>
               ))}
             </div>
@@ -226,7 +260,8 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
                 )
               })}
             </ol>
-            {now !== null && nowMin !== null && nowMin >= 0 && nowMin < GRID_MINUTES && (
+            {/* pendant l'antenne seulement : « maintenant » tombe alors dans la soirée en cours, entre 18 h et 0 h 30 */}
+            {now !== null && nowMin !== null && onAir && nowMin >= 0 && nowMin < GRID_MINUTES && (
               <div className={`nowline${nowMin < 15 ? ' is-start' : nowMin > GRID_MINUTES - 15 ? ' is-end' : ''}`} style={{ '--now': nowMin } as CSSProperties} aria-hidden="true">
                 <span>{formatTime(new Date(now))}</span>
               </div>
@@ -237,8 +272,8 @@ export function TvGrid({ data, initialDay, variant }: { data: GridData; initialD
           <div className="grid-empty" role="status">
             <Icon name="cal" />
             <p>
-              <b>Aucun programme ce jour-là</b>
-              La grille du {dayLong(day.key)} n’est pas encore publiée.
+              <b>Aucun programme ce soir-là</b>
+              Le programme de la soirée du {dayLong(day.key)} n’est pas encore publié.
             </p>
           </div>
         )}

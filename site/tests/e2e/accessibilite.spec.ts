@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
+import { currentEvening } from '../../src/lib/broadcast'
 import { firstDoc } from './helpers'
 import { AdminApi, deleteMember, mobileContext, signupMember, unique } from './outils-contenus'
 
@@ -187,6 +188,17 @@ test.describe('accessibilité des états ouverts', () => {
     await page.keyboard.press('Enter')
     await expect(page.locator('dialog.tvd[open]')).toBeVisible()
     await expectAccessible(page, 'fiche d’une émission (/programme-tv)')
+  })
+
+  test('programme TV hors antenne : bandeau « reprise ce soir à 18 h » et bouton « Début de soirée »', async ({ page }) => {
+    // horloge du navigateur à 16 h le jour de la soirée servie (le serveur rend à l'heure réelle)
+    await page.clock.install({ time: new Date(currentEvening(new Date()).start.getTime() - 2 * 3600_000) })
+    await page.goto('/programme-tv')
+    await ready(page)
+    await refuseCookies(page)
+    await expect(page.locator('.grid-offair')).toBeVisible()
+    await expect(page.locator('#grille .sec-tools').getByRole('button', { name: /^Début de soirée/ })).toBeVisible()
+    await expectAccessible(page, 'programme TV hors antenne (/programme-tv)')
   })
 
   test('formulaires envoyés vides : erreurs affichées', async ({ page }) => {

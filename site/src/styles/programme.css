@@ -8,9 +8,16 @@
 @media (hover: hover) and (pointer: fine) {
   .grid-scroll:not(.is-drag) { cursor: grab; }
 }
+/* Frise d'une soirée : largeur proportionnelle à sa durée (--hours = 6,5 h, de 18 h à 0 h 30), toujours plus large que le
+   conteneur (1 820 px ; 1 365 px sous 760 px) : glisser, molette et dégradés gardent leur effet */
 .tvgrid { --hw: 280px; position: relative; height: 250px; width: calc(var(--hours) * var(--hw)); }
 
-/* Graduations : une par heure, repère à la demi-heure */
+/* Hors antenne, sur la soirée à venir (après hydratation) : bandeau discret au-dessus de la frise */
+.grid-offair { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; color: var(--ink-2); font-size: 14px; }
+.grid-offair::before { content: ''; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); flex-shrink: 0; }
+.grid-offair span { font-family: var(--font-display); font-weight: 700; letter-spacing: .02em; color: var(--ink); }
+
+/* Graduations : une par heure pleine (18:00 … 00:00), repère à la demi-heure */
 .ruler { position: absolute; inset: 0 0 auto; height: 44px; border-bottom: 1px solid var(--line); }
 .ruler span { position: absolute; top: 13px; left: calc(var(--h) * var(--hw)); font: 600 12.5px var(--font-display); color: var(--muted); transform: translateX(10px); font-variant-numeric: tabular-nums; }
 .ruler span::before { content: ''; position: absolute; left: -10px; top: -13px; height: 44px; width: 1px; background: var(--line); }
@@ -34,7 +41,7 @@
 .blk.is-now time { color: var(--gold-light); }
 .blk .pfill { position: absolute; left: 0; bottom: 0; width: 100%; height: 3px; background: var(--gold-grad); transform: scaleX(var(--p, 0)); transform-origin: left; }
 .blk .badge { position: absolute; top: 12px; left: 12px; }
-/* Créneau à cheval sur 6 h ou 2 h : bord découpé */
+/* Créneau qui commençait avant 18 h ou finissait après 0 h 30 (ancienne donnée) : rogné, bord découpé */
 .blk.is-cut-l { border-left-style: dashed; border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
 .blk.is-cut-r { border-right-style: dashed; border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
 
@@ -91,6 +98,7 @@
 .tvd__bar { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .14); overflow: hidden; }
 .tvd__bar span { display: block; height: 100%; background: var(--gold-grad); transform: scaleX(var(--p, 0)); transform-origin: left; }
 .tvd__progress p { margin-top: 7px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tvd__night { color: var(--muted); font-size: 13px; }
 .tvd__desc { margin-top: 16px; color: var(--ink-2); font-size: 15.5px; line-height: 1.65; }
 .tvd__actions { margin-top: 20px; }
 @keyframes tvd-in { from { opacity: 0; transform: translateY(18px) scale(.98); } }
@@ -110,6 +118,8 @@
 .tvl__row:has(.tvl__past) :is(.tvl__time, .tvl__title) { color: var(--ink-2); }
 .tvl__time { grid-area: time; font: 800 19px var(--font-display); font-variant-numeric: tabular-nums; }
 .tvl__time > span { display: block; margin-top: 2px; color: var(--muted); font-weight: 500; font-size: 13.5px; }
+/* créneau après minuit, encore dans la soirée de la veille */
+.tvl__night { display: block; margin-top: 4px; color: var(--muted); font: 500 12px var(--font-body); }
 .tvl__thumb { grid-area: thumb; position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
 .tvl__thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .tvl__body { grid-area: body; min-width: 0; }
@@ -132,6 +142,7 @@
   .tvl__row { grid-template-columns: 54px minmax(0, 1fr) 88px; grid-template-areas: 'time body thumb'; gap: 12px 14px; align-items: start; padding: 14px 16px; }
   .tvl__time { font-size: 16px; }
   .tvl__time > span { font-size: 12px; }
+  .tvl__night { font-size: 11px; }
   .tvl__thumb { margin-top: 3px; border-radius: 10px; }
   .tvl__title { font-size: 16px; }
   .tvl__desc { font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
