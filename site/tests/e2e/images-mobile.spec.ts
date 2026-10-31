@@ -4,8 +4,9 @@ import { AdminApi, mobileContext, presetConsent, unique } from './outils-contenu
 
 /**
  * Images adaptées au téléphone (390 px) : photo insérée dans le texte d'un article affichée à ses vraies proportions
- * (ni étirée ni découpée en vignette 16:9), carrousel de l'accueil servi par une balise <picture> avec une source
- * « téléphone » (image dédiée ou image de fond recadrée, taille adaptée au cadre portrait), sans débordement horizontal.
+ * (ni étirée ni découpée en vignette 16:9), carrousel de l'accueil dont les photos en largeur (visuels des contenus de
+ * départ) s'affichent entières sous l'en-tête, sur un fond flou tiré du même fichier (une seule image téléchargée par
+ * diapositive), sans débordement horizontal.
  */
 
 /** Proportions affichées et naturelles d'une image, une fois chargée. */
@@ -20,35 +21,81 @@ async function ratios(page: Page, selector: string) {
 }
 
 test.describe('carrousel de l’accueil sur téléphone', () => {
-  test.skip(({ isMobile }) => !isMobile, 'source « téléphone » : projet mobile')
+  test.skip(({ isMobile }) => !isMobile, 'cadre portrait du carrousel : projet mobile')
 
-  test('balise <picture> avec une source sous 760 px, image retenue parmi ses tailles, prioritaire pour la première diapositive', async ({ page }) => {
+  test('photo en largeur entière sous l’en-tête, sur un fond flou du même fichier (une image par diapositive), première diapositive prioritaire', async ({ page }) => {
     const errors = watchErrors(page)
+    const requests: string[] = []
+    page.on('request', (r) => {
+      if (r.resourceType() === 'image') requests.push(r.url())
+    })
     await presetConsent(page.context())
     await page.goto('/')
     await settle(page)
 
-    const first = page.locator('.slide__media').first()
-    const source = first.locator('picture > source[media="(max-width: 760px)"]')
-    await expect(source).toHaveCount(1)
-    // largeur réellement affichée (cadre portrait couvert par une image plus large, puis zoomée) : jamais « 100vw »
-    await expect(source).not.toHaveAttribute('sizes', '100vw')
-    const img = first.locator('picture > img')
-    await expect(img).toHaveAttribute('fetchpriority', 'high')
-    // image affichée prise dans la source « téléphone »
-    await expect
-      .poll(() =>
-        img.evaluate((el: HTMLImageElement) => {
-          const srcset = el.parentElement?.querySelector('source')?.getAttribute('srcset') ?? ''
-          const urls = srcset.split(',').map((c) => new URL(c.trim().split(/\s+/)[0], location.href).href)
-          return el.complete && urls.includes(el.currentSrc)
-        }),
-      )
-      .toBe(true)
+    const slides = page.locator('.hero .slide')
+    const count = await slides.count()
+    // contenus de départ : visuels en largeur, donc photo entière sur téléphone
+    await expect(slides.first()).toHaveAttribute('data-whole', /\bphone\b/)
+    // seule la première diapositive est prioritaire (les autres en différé)
+    await expect(slides.first().locator('.slide__photo')).toHaveAttribute('fetchpriority', 'high')
+    await expect(page.locator('.hero .slide__photo[fetchpriority="high"]')).toHaveCount(1)
 
-    // les autres diapositives ne sont pas prioritaires (chargement différé)
-    const others = page.locator('.slide__media picture > img[fetchpriority="high"]')
-    await expect(others).toHaveCount(1)
+    let checked = 0
+    for (let i = 0; i < count; i++) {
+      const slide = slides.nth(i)
+      if (!((await slide.getAttribute('data-whole')) ?? '').split(' ').includes('phone')) continue
+      if (i > 0) await page.locator('.hnav [role="tab"]').nth(i).click()
+      // haut de page : en-tête affiché, mesures dans la position de départ
+      await page.evaluate(() => window.scrollTo(0, 0))
+      const photo = slide.locator('.slide__photo')
+      const backdrop = slide.locator('.slide__backdrop')
+      // fond : mêmes sources que la photo
+      for (const attr of ['srcset', 'sizes', 'src']) expect(await backdrop.getAttribute(attr), attr).toBe(await photo.getAttribute(attr))
+      await expect.poll(() => photo.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { message: `photo de la diapositive ${i + 1} chargée` }).toBe(true)
+      await expect.poll(() => backdrop.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { message: `fond de la diapositive ${i + 1} chargé` }).toBe(true)
+
+      const g = await photo.evaluate((el: HTMLImageElement) => {
+        const r = el.getBoundingClientRect()
+        const hero = el.closest('.hero')!.getBoundingClientRect()
+        const header = document.querySelector('.hdr__in')!.getBoundingClientRect()
+        // position dans le carrousel (l'en-tête fixe le recouvre sur sa hauteur)
+        const bg = el.closest('.slide')!.querySelector<HTMLImageElement>('.slide__backdrop')!
+        const style = getComputedStyle(el)
+        return {
+          left: r.left,
+          right: r.right,
+          topInHero: r.top - hero.top,
+          bottom: r.bottom,
+          width: r.width,
+          shown: r.width / r.height,
+          natural: el.naturalWidth / el.naturalHeight,
+          heroBottom: hero.bottom,
+          headerHeight: header.height,
+          viewport: window.innerWidth,
+          transform: style.transform,
+          src: el.currentSrc,
+          bgSrc: bg.currentSrc,
+          bgDisplay: getComputedStyle(bg).display,
+        }
+      })
+      const label = `diapositive ${i + 1}`
+      // photo entière : proportions affichées = proportions du fichier, sans zoom, entièrement dans le carrousel et l'écran
+      expect(Math.abs(g.shown - g.natural) / g.natural, `${label} : proportions affichées ${g.shown.toFixed(3)}, naturelles ${g.natural.toFixed(3)}`).toBeLessThan(0.02)
+      expect(g.transform, `${label} : sans zoom`).toBe('none')
+      expect(g.left, label).toBeGreaterThanOrEqual(-0.5)
+      expect(g.right, label).toBeLessThanOrEqual(g.viewport + 0.5)
+      expect(g.bottom, label).toBeLessThanOrEqual(g.heroBottom + 0.5)
+      // sous l'en-tête (logo et boutons ne la masquent pas) ; photo en largeur (16:9 des contenus de départ) : pleine largeur
+      expect(g.topInHero, `${label} : sous l'en-tête`).toBeGreaterThanOrEqual(g.headerHeight - 0.5)
+      if (g.natural >= 1.6) expect(g.width, `${label} : pleine largeur`).toBeGreaterThanOrEqual(g.viewport - 1)
+      // fond flou affiché, tiré du même fichier, téléchargé une seule fois
+      expect(g.bgDisplay).not.toBe('none')
+      expect(g.bgSrc, `${label} : fond et photo, même fichier`).toBe(g.src)
+      expect(requests.filter((u) => u === g.src), `${label} : une seule requête pour ${g.src}`).toHaveLength(1)
+      checked++
+    }
+    expect(checked, 'diapositives en photo entière').toBeGreaterThan(0)
     await expectNoHorizontalOverflow(page)
     expect(errors, errors.join('\n')).toEqual([])
   })

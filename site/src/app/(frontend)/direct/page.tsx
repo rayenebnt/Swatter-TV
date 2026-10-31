@@ -7,7 +7,7 @@ import { OnAirPanel } from '@/components/video/OnAirPanel'
 import { ReplaySection } from '@/components/video/ReplaySection'
 import { VideoPlayer } from '@/components/video/VideoPlayer'
 import { renderNow, videoObject } from '@/components/video/utils'
-import { mediaFocal, mediaUrl } from '@/lib/media'
+import { mediaFocal, mediaUrl, wholeOrientation } from '@/lib/media'
 import { getOnAir } from '@/lib/queries/schedule'
 import { getSettings } from '@/lib/queries/settings'
 import { SITE_NAME } from '@/lib/site'
@@ -57,6 +57,7 @@ export default async function DirectPage() {
               video={live}
               poster={poster}
               posterPosition={mediaFocal(settings?.livePoster)}
+              posterOrientation={wholeOrientation(settings?.livePoster, 16 / 9, 'hero')}
               title={current ? `Swatter TV Info en direct\u00a0: ${current.title}` : 'Swatter TV Info en direct'}
               live
               autoPlay

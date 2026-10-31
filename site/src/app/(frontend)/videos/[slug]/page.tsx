@@ -12,7 +12,7 @@ import { VideoPlayer } from '@/components/video/VideoPlayer'
 import { fallbackVisual, renderNow, spokenDuration, videoListUrl, videoLocation, videoObject } from '@/components/video/utils'
 import { labelOf, VIDEO_CATEGORIES } from '@/lib/categories'
 import { formatDate, formatNumber } from '@/lib/format'
-import { mediaAlt, mediaFocal, mediaUrl } from '@/lib/media'
+import { mediaAlt, mediaFocal, mediaUrl, wholeOrientation } from '@/lib/media'
 import { getOtherVideos, getRelatedVideos, getVideoBySlug } from '@/lib/queries/videos'
 import { SITE_NAME } from '@/lib/site'
 import { videoUrl } from '@/lib/urls'
@@ -84,6 +84,7 @@ export default async function VideoPage({ params }: { params: Params }) {
               video={resolved}
               poster={poster}
               posterPosition={mediaFocal(video.thumbnail)}
+              posterOrientation={wholeOrientation(video.thumbnail, 16 / 9, 'hero')}
               preview={previewUrl(video.preview)}
               title={video.title}
               history={{ kind: 'video', id: video.id }}

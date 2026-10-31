@@ -122,7 +122,44 @@ main { overflow-x: clip; min-height: 60vh; }
 .card:hover::before { opacity: 1; }
 .media { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--surface-2); }
 .media > img, .media > picture > img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s var(--ease); }
-.card:hover .media > img, .card:hover .media > picture > img { transform: scale(1.07); }
+.media > .whole { transition: transform 1s var(--ease); }
+.card:hover .media > img, .card:hover .media > picture > img, .card:hover .media > .whole { transform: scale(1.07); }
+/* Photo entière sur fond flou (WholeFrame de MediaImage) : deux images aux mêmes sources (un seul fichier téléchargé) dans
+   un conteneur qui couvre le cadre. La photo couvre le cadre (point focal --focal), sauf quand il en couperait plus de
+   40 % environ : orientation data-o de la photo comparée aux proportions du cadre (requêtes de conteneur, mêmes seuils que
+   WHOLE_FRAMES de lib/media.ts). Elle s'affiche alors entière (cadrage --whole-pos, centré par défaut) sur une version
+   floutée et assombrie d'elle-même. data-whole="phone" : seulement sous 760 px (au-delà, le conteneur ne répond plus). */
+.whole { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; container: whole / size; }
+.whole img { object-fit: cover; }
+.whole__fg { object-position: var(--focal, 50% 50%); }
+.whole__bg { display: none; scale: 1.15; filter: blur(16px) brightness(.5) saturate(1.15); }
+@container whole (aspect-ratio < 1.05) {
+  .whole[data-o='l'] .whole__fg { object-fit: contain; object-position: var(--whole-pos, 50% 50%); }
+  .whole[data-o='l'] .whole__bg { display: block; }
+}
+@container whole (aspect-ratio < .85) {
+  .whole[data-o='m'] .whole__fg { object-fit: contain; object-position: var(--whole-pos, 50% 50%); }
+  .whole[data-o='m'] .whole__bg { display: block; }
+}
+@container whole (aspect-ratio < .6) {
+  .whole[data-o='s'] .whole__fg { object-fit: contain; object-position: var(--whole-pos, 50% 50%); }
+  .whole[data-o='s'] .whole__bg { display: block; }
+}
+@container whole (aspect-ratio > 1.67) {
+  .whole[data-o='s'] .whole__fg { object-fit: contain; object-position: var(--whole-pos, 50% 50%); }
+  .whole[data-o='s'] .whole__bg { display: block; }
+}
+@container whole (aspect-ratio > 1.25) {
+  .whole[data-o='p'] .whole__fg { object-fit: contain; object-position: var(--whole-pos, 50% 50%); }
+  .whole[data-o='p'] .whole__bg { display: block; }
+}
+@container whole (aspect-ratio > .95) {
+  .whole[data-o='t'] .whole__fg { object-fit: contain; object-position: var(--whole-pos, 50% 50%); }
+  .whole[data-o='t'] .whole__bg { display: block; }
+}
+@media (min-width: 761px) {
+  .whole[data-whole='phone'] { container-type: normal; }
+}
 /* Image à source mobile (MediaImage « mobile ») : un cadrage par source, en variables (un style en ligne vaudrait pour les deux) */
 .img-mobile { object-position: var(--focal, 50% 50%); }
 .media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4, 10, 22, 0) 45%, rgba(4, 10, 22, .75)); pointer-events: none; }

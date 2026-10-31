@@ -35,8 +35,9 @@ function VideoTile({ video, now }: { video: HomeVideo; now: Date }) {
       <MediaImage
         media={video.thumbnail}
         fallbackSrc="/visuels/t-ete-a.webp"
-        size="card"
+        size="hero"
         fill
+        whole
         sizes="(max-width: 1100px) calc(100vw - 32px), 560px"
       />
       {preview && <VideoPreview src={preview} />}
@@ -77,12 +78,14 @@ function EventTile({ event }: { event: HomeEvent }) {
   const when = `${cap(formatDayLong(event.startDate))}${time === '00:00' ? '' : ` · ${time.replace(':', 'h')}`}`
   return (
     <article className="tile b-sortie" data-reveal style={delay(1)}>
-      {/* affiche d'origine : la déclinaison « card » est déjà coupée en 16:9, l'affiche serait recadrée deux fois.
-          Tailles : largeur de la tuile (une affiche en hauteur la remplit par sa largeur), 460 px de haut en bureau. */}
+      {/* affiche d'origine : la déclinaison « card » est déjà coupée en 16:9, l'affiche serait recadrée deux fois ; entière
+          sur fond flou si la tuile en couperait trop. Tailles : largeur de la tuile (une affiche en hauteur la remplit par sa
+          largeur), 460 px de haut en bureau. */}
       <MediaImage
         media={event.poster}
         fallbackSrc="/visuels/t-matin-a.webp"
         fill
+        whole
         sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1100px) 50vw, 460px"
       />
       <div className="tile__top">
@@ -110,11 +113,13 @@ function EventTile({ event }: { event: HomeEvent }) {
 function InfoTile({ article }: { article: HomeArticle }) {
   return (
     <article className="tile b-info" data-reveal style={delay(2)}>
+      {/* tuile haute quand la météo manque : photo entière sur fond flou */}
       <MediaImage
         media={article.image}
         fallbackSrc="/visuels/t-nuages-a.webp"
-        size="card"
+        size="hero"
         fill
+        whole
         sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1100px) 50vw, 340px"
       />
       <div className="tile__top">

@@ -163,7 +163,8 @@ export default async function ArticlePage({ params }: { params: Params }) {
               {media && (
                 <figure className="art__figure">
                   <div className="art__media">
-                    <MediaImage media={media} size="hero" fill priority sizes={FIGURE_SIZES} />
+                    {/* cadre 16:9 : une photo en hauteur ou carrée s'affiche entière sur fond flou */}
+                    <MediaImage media={media} size="hero" fill whole priority sizes={FIGURE_SIZES} />
                   </div>
                   {media?.credit?.trim() && <figcaption>© {media.credit.trim()}</figcaption>}
                 </figure>

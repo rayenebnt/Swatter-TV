@@ -4,12 +4,14 @@
 // l'aperçu animé de la vidéo tourne en boucle (avec un bouton pause). Le direct (autoPlay) démarre seul, sans le son,
 // quand il est visible.
 import Image, { getImageProps } from 'next/image'
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from 'react'
 import { preload } from 'react-dom'
 import type Hls from 'hls.js'
 import { openCookieSettings, useConsent } from '@/components/layout/consent'
 import { recordWatch } from '@/components/members/recordWatch'
 import { Icon } from '@/components/ui/Icon'
+import { WholeFrame } from '@/components/ui/MediaImage'
+import type { Orientation } from '@/lib/media'
 import { SITE_URL } from '@/lib/site'
 import { mutedEmbedUrl, twitchEmbedUrl, type ResolvedVideo } from '@/lib/video'
 import { useAutoplayAllowed } from './motion'
@@ -25,6 +27,8 @@ export type VideoPlayerProps = {
   poster?: string | null
   /** Cadrage de l'affiche (object-position : point focal de la couverture, voir mediaFocal) */
   posterPosition?: string
+  /** Affiche entière sur fond flou (photo en hauteur ou carrée dans le cadre 16:9) : son orientation, voir wholeOrientation */
+  posterOrientation?: Orientation
   /** Aperçu animé (adresse d'un court extrait muet) : en boucle derrière le bouton de lecture tant que le lecteur est visible */
   preview?: string | null
   /** Titre de la vidéo (titre de l'iframe, libellés accessibles) */
@@ -84,7 +88,7 @@ export function VideoPlayer(props: VideoPlayerProps) {
   return <Player key={sourceKey(props.video)} {...props} />
 }
 
-function Player({ video, poster, posterPosition, preview, title, autoPlay = false, live = false, history }: VideoPlayerProps) {
+function Player({ video, poster, posterPosition, posterOrientation, preview, title, autoPlay = false, live = false, history }: VideoPlayerProps) {
   const [failed, setFailed] = useState(false)
   const fail = useCallback(() => setFailed(true), [])
   // Historique : un seul envoi par lecteur (donc par source), au premier démarrage de la lecture
@@ -104,9 +108,19 @@ function Player({ video, poster, posterPosition, preview, title, autoPlay = fals
   return (
     <div ref={root} className={`vp${playable ? '' : ' vp--off'}${paused ? ' is-paused' : ''}`} role="region" aria-label={`Lecteur vidéo : ${title}`}>
       {!playable ? (
-        <Unavailable poster={poster} posterPosition={posterPosition} live={live} />
+        <Unavailable poster={poster} posterPosition={posterPosition} posterOrientation={posterOrientation} live={live} />
       ) : playable.kind === 'youtube' || playable.kind === 'twitch' || playable.kind === 'iframe' ? (
-        <Embed video={playable} poster={poster} posterPosition={posterPosition} preview={preview} title={title} autoPlay={autoPlay} root={root} onStart={onStart} />
+        <Embed
+          video={playable}
+          poster={poster}
+          posterPosition={posterPosition}
+          posterOrientation={posterOrientation}
+          preview={preview}
+          title={title}
+          autoPlay={autoPlay}
+          root={root}
+          onStart={onStart}
+        />
       ) : (
         <Native video={playable} poster={poster} preview={preview} title={title} autoPlay={autoPlay} live={live} onError={fail} onStart={onStart} />
       )}
@@ -122,10 +136,15 @@ function Player({ video, poster, posterPosition, preview, title, autoPlay = fals
 
 /**
  * Affiche plein cadre (next/image : AVIF/WebP, tailles adaptées), chargée en priorité : le lecteur est l'élément principal
- * de sa page. `position` : cadrage (point focal de la couverture).
+ * de sa page. `position` : cadrage (point focal de la couverture). `orientation` : affiche entière sur fond flou (WholeFrame,
+ * mêmes sources : un seul fichier), chargée tout de suite et en priorité plutôt que préchargée.
  */
-function Poster({ src, position }: { src: string; position?: string }) {
+function Poster({ src, position, orientation }: { src: string; position?: string; orientation?: Orientation }) {
   const img = imageSource(src)
+  if (orientation) {
+    const props = getImageProps({ src: img.src, unoptimized: img.unoptimized, alt: '', fill: true, sizes: SIZES, loading: 'eager', fetchPriority: 'high' }).props
+    return <WholeFrame img={props} orientation={orientation} className="vp__poster" style={{ '--focal': position } as CSSProperties} />
+  }
   // preload : lien de préchargement dans le <head> (Next 16 : ne pas le combiner avec loading ni fetchPriority)
   return <Image src={img.src} unoptimized={img.unoptimized} alt="" fill sizes={SIZES} preload className="vp__poster" style={position ? { objectPosition: position } : undefined} />
 }
@@ -138,6 +157,7 @@ function Embed({
   video,
   poster,
   posterPosition,
+  posterOrientation,
   preview,
   title,
   autoPlay,
@@ -147,6 +167,7 @@ function Embed({
   video: EmbedVideo
   poster?: string | null
   posterPosition?: string
+  posterOrientation?: Orientation
   preview?: string | null
   title: string
   autoPlay: boolean
@@ -193,7 +214,8 @@ function Embed({
   const img = poster || (video.kind === 'youtube' ? video.thumbnail : null) || fallbackVisual(title)
   return (
     <>
-      <Poster src={img} position={posterPosition} />
+      {/* orientation de l'affiche choisie (pas de la vignette YouTube de repli) */}
+      <Poster src={img} position={posterPosition} orientation={poster ? posterOrientation : undefined} />
       {preview && <PlayerPreview src={preview} />}
       <div className="vp__overlay">
         <button type="button" className="vp__play" onClick={() => setClicked(true)} aria-label={`Lire la vidéo : ${title}`} aria-describedby={showNotice ? noticeId : undefined}>
@@ -440,10 +462,10 @@ function Native({
 }
 
 /** Vidéo absente, source invalide ou erreur de lecture. */
-function Unavailable({ poster, posterPosition, live }: { poster?: string | null; posterPosition?: string; live: boolean }) {
+function Unavailable({ poster, posterPosition, posterOrientation, live }: { poster?: string | null; posterPosition?: string; posterOrientation?: Orientation; live: boolean }) {
   return (
     <>
-      {poster && <Poster src={poster} position={posterPosition} />}
+      {poster && <Poster src={poster} position={posterPosition} orientation={posterOrientation} />}
       <div className="vp__overlay vp__overlay--off" role="status">
         <Icon name="tv" className="vp__off-ico" />
         <p className="vp__off-title">Vidéo indisponible</p>

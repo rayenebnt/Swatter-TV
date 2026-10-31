@@ -117,7 +117,8 @@
   /* Carte avec affiche : liste compacte (vignette à gauche) */
   .agenda-grid { grid-template-columns: 1fr; gap: 12px; }
   .ecard { display: grid; grid-template-columns: 112px minmax(0, 1fr); }
-  .ecard .media { aspect-ratio: auto; height: 100%; min-height: 124px; }
+  /* Photo en largeur entière sur fond flou (EventCard) : en bas de la vignette, sous la pastille de date */
+  .ecard .media { aspect-ratio: auto; height: 100%; min-height: 124px; --whole-pos: 50% 100%; }
   .ecard .card__body { padding: 12px 14px 13px; }
   .ecard .card__title { margin-top: 5px; font-size: 15.5px; }
   .ecard .card__meta { padding-top: 8px; gap: 4px 12px; font-size: 12.5px; }
