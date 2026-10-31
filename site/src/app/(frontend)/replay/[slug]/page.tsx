@@ -12,7 +12,7 @@ import { VideoPlayer } from '@/components/video/VideoPlayer'
 import { fallbackVisual, renderNow, replayListUrl, spokenDuration, videoLocation, videoObject } from '@/components/video/utils'
 import { labelOf, PROGRAM_GENRES } from '@/lib/categories'
 import { formatDate, formatTime } from '@/lib/format'
-import { mediaAlt, mediaFocal, mediaUrl } from '@/lib/media'
+import { mediaAlt, mediaFocal, mediaUrl, wholeOrientation } from '@/lib/media'
 import { getOtherEpisodes, getOtherReplays, getReplayBySlug, programOf } from '@/lib/queries/replays'
 import { SITE_NAME } from '@/lib/site'
 import { replayUrl } from '@/lib/urls'
@@ -92,6 +92,7 @@ export default async function ReplayEpisodePage({ params }: { params: Params }) 
               video={resolved}
               poster={poster}
               posterPosition={mediaFocal(replay.thumbnail)}
+              posterOrientation={wholeOrientation(replay.thumbnail, 16 / 9, 'hero')}
               preview={previewUrl(replay.preview)}
               title={replay.title}
               history={{ kind: 'replay', id: replay.id }}

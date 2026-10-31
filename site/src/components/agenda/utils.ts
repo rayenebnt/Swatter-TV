@@ -3,7 +3,7 @@ import type { Event } from '@/payload-types'
 import { EVENT_CATEGORIES, labelOf } from '@/lib/categories'
 import type { DepartmentSlug } from '@/lib/departments'
 import { dateChip, formatDate, formatDayLong, formatTime, parisDateTime, parisDay } from '@/lib/format'
-import { coverWidth, mediaRatio, type MediaRef } from '@/lib/media'
+import { coverWidth, mediaOrientation, mediaRatio, mediaUrl, wholeIn, type MediaRef } from '@/lib/media'
 import type { EventCategory, EventPeriod } from '@/lib/queries/events'
 
 type Dates = Pick<Event, 'startDate' | 'endDate'>
@@ -19,14 +19,19 @@ export const AGENDA_VISUAL = '/visuels/t-crepuscule-a.webp'
 
 /* ----- Affiches ----- */
 
-/** Vignette d'affiche des cartes sur téléphone (agenda.css : 112 px de large, environ 150 px de haut avec le texte). */
-const POSTER_THUMB = { width: 112, height: 150 }
+/** Vignette d'affiche des cartes sur téléphone (agenda.css : 112 px de large, 124 px de haut au moins, environ 150 px avec le texte). */
+const POSTER_THUMB = { width: 112, height: 150, minHeight: 124 }
 
 /**
- * Attribut sizes de l'affiche d'origine dans la vignette des cartes sur téléphone : largeur réellement affichée (une
- * affiche paysage couvre la vignette par sa hauteur, elle est donc plus large qu'elle).
+ * Attribut sizes de l'affiche d'origine dans la vignette des cartes sur téléphone : largeur réellement affichée. Une
+ * photo en largeur s'y affiche entière sur fond flou (EventCard, MediaImage « whole ») : largeur de la vignette ; une
+ * affiche plus large que la vignette, sans l'être assez pour s'afficher entière, la couvre par sa hauteur.
  */
-export const posterThumbSizes = (poster: MediaRef) => `${Math.round(coverWidth(POSTER_THUMB.width, POSTER_THUMB.height, mediaRatio(poster)))}px`
+export function posterThumbSizes(poster: MediaRef): string {
+  // entière même dans la vignette la plus basse (la moins haute par rapport à sa largeur) ; jamais le visuel de repli
+  if (mediaUrl(poster) && wholeIn(mediaOrientation(poster), POSTER_THUMB.width / POSTER_THUMB.minHeight)) return `${POSTER_THUMB.width}px`
+  return `${Math.round(coverWidth(POSTER_THUMB.width, POSTER_THUMB.height, mediaRatio(poster)))}px`
+}
 
 /**
  * Proportions de l'encart vedette sur téléphone : celles de l'affiche, entre 4:5 et 3:2. Une affiche portrait garde

@@ -20,7 +20,7 @@ function dayLabel(iso: string, now: number) {
 export function LiveOff({ poster, next, now, fallbackSrc }: { poster: MediaRef; next: Slot | null; now: number; fallbackSrc: string }) {
   return (
     <div className="vp vp--off direct-off">
-      <MediaImage media={poster} size="hero" fill sizes="(max-width: 1100px) 100vw, 900px" alt="" className="vp__poster" fallbackSrc={fallbackSrc} priority />
+      <MediaImage media={poster} size="hero" fill whole sizes="(max-width: 1100px) 100vw, 900px" alt="" className="vp__poster" fallbackSrc={fallbackSrc} priority />
       <div className="vp__overlay">
         <Icon name="tv" className="vp__off-ico" />
         <h2>Le direct reprend bientôt</h2>

@@ -84,6 +84,56 @@ export function mediaFocal(m: MediaRef, size?: MediaSize): string | undefined {
 /** Largeur affichée d'une image de proportions `ratio` qui couvre un cadre (object-fit: cover) : pour l'attribut sizes. */
 export const coverWidth = (frameWidth: number, frameHeight: number, ratio: number) => Math.max(frameWidth, frameHeight * ratio)
 
+/** Part de la photo (0-1) qui reste visible quand elle couvre un cadre de proportions `frameRatio` (object-fit: cover). */
+export const coverShare = (ratio: number, frameRatio: number) => Math.min(ratio / frameRatio, frameRatio / ratio)
+
+/**
+ * Orientation d'une image, pour la photo entière sur fond flou (.whole de globals.css, carrousel de l'accueil) :
+ * l en largeur (16:9 et plus), m moyenne (3:2, 4:3), s presque carrée, p en hauteur (4:5, 3:4), t très haute (2:3, 9:16).
+ */
+export type Orientation = 'l' | 'm' | 's' | 'p' | 't'
+
+export function ratioOrientation(ratio: number): Orientation {
+  if (ratio >= 1.6) return 'l'
+  if (ratio >= 1.2) return 'm'
+  if (ratio >= 0.85) return 's'
+  if (ratio >= 0.7) return 'p'
+  return 't'
+}
+
+/** Orientation de l'image affichée (taille demandée, sinon l'original ; 16:9 sans dimensions, comme les visuels de repli). */
+export const mediaOrientation = (m: MediaRef, size?: MediaSize): Orientation => ratioOrientation(mediaRatio(m, size))
+
+/**
+ * Cadres (largeur / hauteur) où chaque orientation perdrait plus de 40 % environ de la photo en le couvrant : elle s'y
+ * affiche alors entière, sur une version floutée d'elle-même. Cadre plus étroit que `below` (photo en largeur dans un
+ * cadre en hauteur) ou plus large que `above` (photo en hauteur dans un bandeau). Mêmes seuils que les requêtes de
+ * conteneur de globals.css (un test le vérifie).
+ */
+export const WHOLE_FRAMES: Record<Orientation, { below?: number; above?: number }> = {
+  l: { below: 1.05 },
+  m: { below: 0.85 },
+  s: { below: 0.6, above: 1.67 },
+  p: { above: 1.25 },
+  t: { above: 0.95 },
+}
+
+/** Vrai si une image de cette orientation s'affiche entière dans un cadre de proportions `frameRatio`. */
+export function wholeIn(orientation: Orientation, frameRatio: number): boolean {
+  const { below, above } = WHOLE_FRAMES[orientation]
+  return (below !== undefined && frameRatio < below) || (above !== undefined && frameRatio > above)
+}
+
+/**
+ * Cadre aux proportions fixes (lecteur 16:9) : orientation du média s'il doit s'y afficher entier sur fond flou, sinon
+ * rien (il couvre le cadre). Sans média (visuel de repli), rien.
+ */
+export function wholeOrientation(m: MediaRef, frameRatio: number, size?: MediaSize): Orientation | undefined {
+  if (!mediaUrl(m, size)) return undefined
+  const orientation = mediaOrientation(m, size)
+  return wholeIn(orientation, frameRatio) ? orientation : undefined
+}
+
 /**
  * Cadrage (object-position) qui place le point focal au centre d'un cadre de proportions `frameRatio` (object-fit: cover),
  * contre le bord quand le point en est trop près (jamais de vide). Rien pour le centre par défaut, pour laisser le CSS cadrer.

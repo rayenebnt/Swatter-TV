@@ -65,12 +65,14 @@ export function EventCard({
   return (
     <article className="card ecard" data-reveal style={style}>
       <div className="media">
-        {/* Carte 16:9 : déclinaison « card » (découpée autour du point focal) ; vignette presque carrée sur téléphone :
-            affiche d'origine cadrée sur son point focal, plutôt qu'une seconde découpe de la bande 16:9 */}
+        {/* Carte 16:9 : déclinaison « card » (découpée autour du point focal) ; vignette en hauteur sur téléphone : affiche
+            d'origine cadrée sur son point focal, plutôt qu'une seconde découpe de la bande 16:9, entière sur fond flou si
+            c'est une photo en largeur */}
         <MediaImage
           media={event.poster}
           size="card"
           fill
+          whole="phone"
           priority={priority}
           sizes={sizes}
           alt=""

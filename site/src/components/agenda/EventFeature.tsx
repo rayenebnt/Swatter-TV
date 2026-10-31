@@ -38,9 +38,18 @@ export function EventFeature({
 
   return (
     <article className={wide ? 'card feature feature--wide' : 'card feature'} data-reveal>
-      {/* Sur téléphone, cadre aux proportions de l'affiche (bornées) : l'essentiel d'une affiche portrait reste visible */}
+      {/* Sur téléphone, cadre aux proportions de l'affiche (bornées) : l'essentiel d'une affiche portrait reste visible ;
+          au-delà, cadre de la hauteur du texte : affiche entière sur fond flou s'il en couperait trop */}
       <div className="media" style={{ '--poster-ratio': featureRatio(event.poster) } as CSSProperties}>
-        <MediaImage media={event.poster} fill priority={priority} sizes={wide ? WIDE_SIZES : SIZES} alt={mediaAlt(event.poster, `Affiche\u00a0: ${event.title}`)} fallbackSrc={eventVisual(event.id)} />
+        <MediaImage
+          media={event.poster}
+          fill
+          whole
+          priority={priority}
+          sizes={wide ? WIDE_SIZES : SIZES}
+          alt={mediaAlt(event.poster, `Affiche\u00a0: ${event.title}`)}
+          fallbackSrc={eventVisual(event.id)}
+        />
       </div>
       <div className="card__body">
         <div className="when">

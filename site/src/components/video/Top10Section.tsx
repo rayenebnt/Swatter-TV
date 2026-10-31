@@ -32,8 +32,9 @@ export async function Top10Section({ priority = false }: { priority?: boolean } 
                   {i + 1}
                 </span>
                 <div className="top__card">
-                  <MediaImage media={v.thumbnail} size="poster" fill sizes="(max-width: 760px) 150px, 176px" alt="" fallbackSrc={fallbackVisual(v.id)} priority={priority && i === 0} />
-                  {/* aperçu 16:9 recadré au centre dans la vignette portrait */}
+                  {/* vignette portrait : image en largeur entière sur fond flou (une image en hauteur la couvre) */}
+                  <MediaImage media={v.thumbnail} size="hero" fill whole sizes="(max-width: 760px) 150px, 176px" alt="" fallbackSrc={fallbackVisual(v.id)} priority={priority && i === 0} />
+                  {/* aperçu 16:9 entier, au même endroit que l'image (video.css) */}
                   {preview && <VideoPreview src={preview} />}
                   <div className="top__info">
                     <small>{labelOf(VIDEO_CATEGORIES, v.category)}</small>

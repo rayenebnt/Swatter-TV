@@ -4,14 +4,20 @@
    ===================================================================== */
 
 /* ----- Héros ----- */
-.hero { --hero-dur: 8s; position: relative; height: clamp(660px, 100svh, 980px); overflow: hidden; isolation: isolate; background: var(--bg-deep); }
+/* Conteneur en largeur : unités cqw de la photo entière (largeur du carrousel, sans la barre de défilement) */
+.hero { --hero-dur: 8s; --hero-h: clamp(660px, 100svh, 980px); position: relative; height: var(--hero-h); overflow: hidden; isolation: isolate; container-type: inline-size; background: var(--bg-deep); }
 .slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 1.3s var(--ease), visibility 0s 1.3s; }
 .slide.is-active { opacity: 1; visibility: visible; transition: opacity 1.3s var(--ease), visibility 0s; }
 .slide__media { position: absolute; inset: -30px; transform: translate3d(calc(var(--px, 0) * -18px), calc(var(--py, 0) * -12px), 0); transition: transform 1.2s var(--ease-out); }
-/* Cadrage de chaque source de la balise <picture> en variables (MediaImage « mobile ») : point focal sur ordinateur */
-.slide__media img { object-fit: cover; object-position: var(--focal, 50% 50%); transform: scale(1.16); }
+/* Image de fond (HeroImage.tsx) : couvre le cadre ; cadrage de chaque source de la balise <picture> en variables
+   (--focal sur ordinateur, --focal-m sur téléphone), point focal sur ordinateur */
+.slide__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--focal, 50% 50%); transform: scale(1.16); }
 /* La diapositive sortante garde la même animation (pas de saut de zoom pendant son fondu) */
-.slide.is-active .slide__media img, .slide.is-prev .slide__media img { animation: kenburns calc(var(--hero-dur) + 2s) var(--ease) forwards; }
+.slide.is-active .slide__photo, .slide.is-prev .slide__photo { animation: kenburns calc(var(--hero-dur) + 2s) var(--ease) forwards; }
+/* Balises <source> sans boîte (la photo entière met la balise <picture> à plat : elles ne doivent pas compter dans la mise en page) */
+.slide__media source { display: none; }
+/* Fond de la photo entière : la même image (même fichier, aucune requête de plus), floutée et assombrie, immobile */
+.slide__backdrop { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; scale: 1.2; filter: blur(26px) brightness(.45) saturate(1.2); }
 @keyframes kenburns { from { transform: scale(1.16) translateX(1.5%); } to { transform: scale(1.03) translateX(0); } }
 .slide::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(4, 10, 22, .92) 0%, rgba(4, 10, 22, .66) 30%, rgba(4, 10, 22, .08) 62%, rgba(4, 10, 22, 0) 100%), linear-gradient(0deg, var(--bg) 0%, rgba(7, 18, 36, .55) 22%, rgba(7, 18, 36, 0) 46%), linear-gradient(180deg, rgba(4, 10, 22, .6) 0%, rgba(4, 10, 22, 0) 18%); }
 .hero__glow { position: absolute; z-index: 1; inset: -10%; pointer-events: none; background: radial-gradient(36% 46% at 70% 32%, rgba(243, 213, 138, .13), rgba(243, 213, 138, 0) 70%); transform: translate3d(calc(var(--px, 0) * 40px), calc(var(--py, 0) * 30px), 0); transition: transform 1.2s var(--ease-out); }
@@ -92,12 +98,21 @@
   .hero__bottom-in { justify-content: flex-end; }
 }
 @media (max-width: 760px) {
-  .hero { height: clamp(620px, 92svh, 760px); }
+  .hero { --hero-h: clamp(620px, 92svh, 760px); }
   .slide::after { background: linear-gradient(0deg, var(--bg) 6%, rgba(4, 10, 22, .8) 42%, rgba(4, 10, 22, .2) 72%, rgba(4, 10, 22, .55) 100%); }
-  /* Cadre portrait : image pour téléphone (centrée), ou image de fond centrée sur son point focal (Hero.tsx) ;
+  /* Cadre portrait : image pour téléphone (centrée), ou image de fond centrée sur son point focal (heroMedia.ts) ;
      sans point focal, cadrage par défaut des visuels paysage, dont le sujet est un peu à droite */
-  .slide__media img { object-position: var(--focal-m, 62% 50%); }
-  .slide__content { bottom: 96px; }
+  .slide__photo { object-position: var(--focal-m, 62% 50%); }
+  /* Photo entière (data-whole « phone », heroWhole) : colonne photo puis textes, la photo sous l'en-tête et au-dessus des
+     textes (jamais masquée par eux), sans zoom ni débord (rien n'est coupé) ; en pleine largeur (au plus 46 % de la
+     hauteur : photo carrée centrée), plus petite si les textes ont besoin de la place (ses proportions suivent sa
+     hauteur). Fond flou sur toute la diapositive (.slide__media sans boîte : ni position, ni parallaxe), dégradé calme */
+  .slide[data-whole~='phone'] { display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; padding: var(--header-h) 0 64px; }
+  .slide[data-whole~='phone'] .slide__media, .slide[data-whole~='phone'] .slide__media > picture { display: contents; }
+  .slide[data-whole~='phone'] .slide__backdrop { display: block; }
+  .slide[data-whole~='phone'] .slide__photo { position: relative; inset: auto; flex: 0 1 auto; align-self: center; width: auto; max-width: 100%; height: min(calc(100cqw / var(--ratio-m)), calc(var(--hero-h) * .46)); min-height: 96px; margin-bottom: auto; aspect-ratio: var(--ratio-m); object-fit: contain; transform: none; animation: none; }
+  .slide[data-whole~='phone'] .slide__content { position: relative; bottom: auto; width: 100%; }
+  .slide[data-whole~='phone']::after { background: linear-gradient(0deg, var(--bg) 5%, rgba(4, 10, 22, .72) 32%, rgba(4, 10, 22, 0) 56%); }
   .slide__desc { font-size: 15.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   /* Boutons côte à côte qui se partagent la largeur, chacun sur sa ligne si les libellés ne tiennent pas */
   .hero__cta .btn { flex: 1 1 auto; max-width: 100%; padding-inline: 12px; }
@@ -113,12 +128,26 @@
   .ticker__in { height: 46px; gap: 14px; }
   .ticker__clock { display: none; }
 }
+/* Petit téléphone : présentation sur deux lignes, pour laisser de la place à la photo entière */
+@media (max-width: 760px) and (max-height: 720px) {
+  .slide[data-whole~='phone'] .slide__desc { -webkit-line-clamp: 2; }
+}
+/* Tablette tenue en hauteur (data-whole « tall ») : photo de fond en largeur entière au-dessus des textes, comme sur
+   téléphone (au plus 46 % de la hauteur), textes au-dessus des vignettes de navigation */
+@media (min-width: 761px) and (orientation: portrait) {
+  .slide[data-whole~='tall'] { display: flex; flex-direction: column; justify-content: flex-end; gap: 24px; padding: calc(var(--header-h) + 8px) 0 128px; }
+  .slide[data-whole~='tall'] .slide__media, .slide[data-whole~='tall'] .slide__media > picture { display: contents; }
+  .slide[data-whole~='tall'] .slide__backdrop { display: block; }
+  .slide[data-whole~='tall'] .slide__photo { position: relative; inset: auto; flex: 0 1 auto; align-self: center; width: auto; max-width: 100%; height: min(calc(100cqw / var(--ratio)), calc(var(--hero-h) * .46)); min-height: 120px; margin-bottom: auto; aspect-ratio: var(--ratio); object-fit: contain; transform: none; animation: none; }
+  .slide[data-whole~='tall'] .slide__content { position: relative; bottom: auto; width: 100%; }
+  .slide[data-whole~='tall']::after { background: linear-gradient(0deg, var(--bg) 4%, rgba(4, 10, 22, .72) 30%, rgba(4, 10, 22, 0) 52%); }
+}
 @media (hover: none) {
   .hnav button:hover { transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero__snow { display: none; }
-  .slide.is-active .slide__media img, .slide__media img { animation: none !important; transform: scale(1.03); }
+  .slide__photo { animation: none !important; transform: scale(1.03); }
   .slide__media, .hero__glow { transform: none; }
   /* Pas de défilement automatique : la liste se fait défiler à la main */
   .hnav button[aria-selected='true'] .bar i { animation: none !important; transform: scaleX(1); }

@@ -8,15 +8,16 @@ import { getSettings } from '@/lib/queries/settings'
 import { eventUrl, programUrl } from '@/lib/urls'
 import type { Setting } from '@/payload-types'
 import { CountUp } from './CountUp'
-import { heroMobileSource } from './heroMedia'
+import { heroWhole } from './heroMedia'
 import { HeroClient, type HeroBadge, type HeroLink, type HeroLive, type HeroSlide } from './HeroClient'
+import { HeroImage } from './HeroImage'
 import type { LiveSlot } from './LiveProgress'
 import '@/styles/hero.css'
 
 type ConfiguredSlide = NonNullable<Setting['heroSlides']>[number]
 
 /** Diapositive avant rendu des images (l'image prioritaire dépend de la position finale). */
-type Draft = Omit<HeroSlide, 'media' | 'thumb'> & {
+type Draft = Omit<HeroSlide, 'media' | 'whole' | 'thumb'> & {
   image: MediaRef
   /** Image pour téléphone (diapositives des réglages) */
   imageMobile: MediaRef
@@ -195,20 +196,11 @@ function render({ image, imageMobile, heroFallback, thumbFallback, requireLarge,
   const background = requireLarge && !isLarge(image) ? null : image
   return {
     ...slide,
-    // Image LCP : la première diapositive est chargée en priorité, les autres en différé. Sous 760 px (cadre portrait),
-    // image pour téléphone de la diapositive, sinon l'image de fond recadrée autour de son point focal
-    media: (
-      <MediaImage
-        media={background}
-        fallbackSrc={heroFallback}
-        size="hero"
-        fill
-        sizes="100vw"
-        priority={index === 0}
-        alt=""
-        mobile={heroMobileSource(background, imageMobile, heroFallback)}
-      />
-    ),
+    // Image LCP : la première diapositive est chargée en priorité, les autres en différé. Dans un cadre en hauteur
+    // (téléphone, tablette tenue en hauteur), photo en largeur entière sur fond flou ; sinon, image qui couvre le cadre
+    // (sous 760 px : image pour téléphone de la diapositive, ou image de fond recadrée autour de son point focal)
+    media: <HeroImage background={background} phone={imageMobile} fallbackSrc={heroFallback} priority={index === 0} />,
+    whole: heroWhole(background, imageMobile),
     thumb: <MediaImage media={image} fallbackSrc={thumbFallback} size="thumb" sizes="76px" alt="" />,
   }
 }

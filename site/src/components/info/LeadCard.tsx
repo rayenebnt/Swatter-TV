@@ -34,7 +34,8 @@ export function LeadCard({
   return (
     <article className={`card lead ${className}`.trim()} data-reveal={reveal ? '' : undefined} style={style}>
       <div className="media">
-        {item.image && <ArticleImage image={item.image} sizes={sizes} priority={priority} />}
+        {/* cadre presque carré (tablette) ou très allongé : photo entière sur fond flou s'il en couperait trop */}
+        {item.image && <ArticleImage image={item.image} sizes={sizes} priority={priority} whole />}
         <span className="badge badge--live" aria-hidden="true">
           <i />
           Info

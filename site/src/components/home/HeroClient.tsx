@@ -23,8 +23,10 @@ export type HeroSlide = {
   primary: HeroLink | null
   secondary: HeroLink | null
   live: HeroLive | null
-  /** Image de fond (MediaImage « fill » : <picture> avec une source pour téléphone) */
+  /** Image de fond (HeroImage : photo, précédée de son fond flou quand elle s'affiche entière) */
   media: ReactNode
+  /** Photo entière sur fond flou : « phone » (téléphone), « tall » (tablette tenue en hauteur), voir heroWhole */
+  whole?: string
   /** Vignette de navigation */
   thumb: ReactNode
 }
@@ -197,6 +199,7 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
               key={s.key}
               id={slideId(i)}
               className={active ? 'slide is-active' : i === prev ? 'slide is-prev' : 'slide'}
+              data-whole={s.whole}
               role="group"
               aria-roledescription="diapositive"
               aria-label={`${i + 1} sur ${n}`}

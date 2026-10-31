@@ -1,11 +1,20 @@
-// Images adaptées au téléphone : source « téléphone » du carrousel (src/components/home/heroMedia.ts : image dédiée ou
-// image de fond recadrée, largeur réellement affichée), fichiers insérés dans un texte riche (src/components/ui/proseUpload.ts),
-// affiches de l'agenda (vignette et encart vedette) et point focal des vignettes de webcams.
+// Images adaptées au téléphone : photo entière sur fond flou quand un cadre en couperait trop (src/lib/media.ts :
+// orientation et seuils, mêmes valeurs que les requêtes de conteneur de globals.css ; WholeFrame de MediaImage : deux images
+// aux mêmes sources), carrousel de l'accueil (src/components/home/heroMedia.ts et HeroImage.tsx : photo entière ou image qui
+// couvre le cadre portrait, largeur réellement affichée), fichiers insérés dans un texte riche
+// (src/components/ui/proseUpload.ts), affiches de l'agenda (vignette et encart vedette) et point focal des vignettes de webcams.
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { featureRatio, posterThumbSizes } from '@/components/agenda/utils'
-import { heroMobilePosition, heroMobileSizes, heroMobileSource } from '@/components/home/heroMedia'
+import { HeroImage } from '@/components/home/HeroImage'
+import { heroMobilePosition, heroMobileSizes, heroMobileSource, heroWhole } from '@/components/home/heroMedia'
+import { MediaImage } from '@/components/ui/MediaImage'
 import { PROSE_SIZES, proseUpload } from '@/components/ui/proseUpload'
 import { webcamPoster } from '@/components/webcams/utils'
+import { coverShare, mediaOrientation, ratioOrientation, WHOLE_FRAMES, wholeIn, wholeOrientation, type Orientation } from '@/lib/media'
 import type { WebcamItem } from '@/lib/queries/webcams'
 import type { Media } from '@/payload-types'
 
@@ -40,8 +49,150 @@ describe('carrousel sur téléphone : largeur affichée de l’image (attribut s
   })
 })
 
-describe('carrousel sur téléphone : source « téléphone » de la balise <picture>', () => {
-  it('image pour téléphone renseignée : elle remplace l’image de fond, centrée par défaut', () => {
+describe('photo entière sur fond flou : orientation de la photo et proportions du cadre', () => {
+  it('orientation : en largeur (16:9 et plus), moyenne (3:2, 4:3), presque carrée, en hauteur (4:5, 3:4), très haute (2:3, 9:16)', () => {
+    expect([16 / 9, 2, 3 / 2, 4 / 3, 1, 0.9, 4 / 5, 3 / 4, 2 / 3, 9 / 16].map(ratioOrientation)).toEqual(['l', 'l', 'm', 'm', 's', 's', 'p', 'p', 't', 't'])
+    expect(mediaOrientation(media())).toBe('l')
+    expect(mediaOrientation(media({ width: 1080, height: 1350, sizes: {} }), 'hero')).toBe('p')
+    // sans dimensions ni média : 16:9, comme les visuels de repli
+    expect(mediaOrientation(null)).toBe('l')
+  })
+
+  it('part visible d’une photo qui couvre son cadre', () => {
+    expect(coverShare(16 / 9, 16 / 9)).toBe(1)
+    expect(coverShare(16 / 9, 390 / 760)).toBeCloseTo(0.289, 3)
+    expect(coverShare(0.8, 16 / 9)).toBeCloseTo(0.45, 3)
+  })
+
+  it('seuils : la photo s’affiche entière quand le cadre en couperait plus de 40 % environ, sinon elle le couvre', () => {
+    // téléphone (carrousel 390 × 760), vignette du Top 10 (176 × 264), tuile « À la une » sur téléphone (4:3,3), carte 16:9
+    expect(wholeIn('l', 390 / 760)).toBe(true)
+    expect(wholeIn('l', 176 / 264)).toBe(true)
+    expect(wholeIn('l', 4 / 3.3)).toBe(false)
+    expect(wholeIn('l', 16 / 9)).toBe(false)
+    expect(wholeIn('m', 0.78)).toBe(true)
+    expect(wholeIn('m', 1)).toBe(false)
+    expect(wholeIn('s', 390 / 760)).toBe(true)
+    expect(wholeIn('s', 0.78)).toBe(false)
+    expect(wholeIn('s', 16 / 9)).toBe(true)
+    // photo en hauteur : couvre un cadre en hauteur, entière dans un bandeau (lecteur, image d'un article)
+    expect(wholeIn('p', 390 / 760)).toBe(false)
+    expect(wholeIn('p', 1)).toBe(false)
+    expect(wholeIn('p', 16 / 9)).toBe(true)
+    expect(wholeIn('t', 1.2)).toBe(true)
+    // à chaque seuil, la photo typique de l'orientation garde 55 à 65 % d'elle-même en couvrant le cadre
+    const typical: Record<Orientation, number> = { l: 16 / 9, m: 1.42, s: 1, p: 0.75, t: 0.6 }
+    for (const [o, { below, above }] of Object.entries(WHOLE_FRAMES) as [Orientation, { below?: number; above?: number }][]) {
+      for (const frame of [below, above].filter((f): f is number => f !== undefined)) {
+        expect(coverShare(typical[o], frame), `${o} à ${frame}`).toBeGreaterThan(0.55)
+        expect(coverShare(typical[o], frame), `${o} à ${frame}`).toBeLessThan(0.65)
+      }
+    }
+  })
+
+  it('globals.css : mêmes seuils dans les requêtes de conteneur que WHOLE_FRAMES (photo entière et fond affichés)', () => {
+    const css = readFileSync(join(process.cwd(), 'src/styles/globals.css'), 'utf8')
+    const blocks = [...css.matchAll(/@container whole \(aspect-ratio ([<>]) ([\d.]+)\) \{([^}]*\}[^}]*\})\s*\}/g)]
+    const found = blocks.map(([, op, value, body]) => {
+      expect(body).toContain('object-fit: contain')
+      expect(body).toContain('.whole__bg { display: block; }')
+      return { op, value: Number(value), orientations: [...new Set([...body.matchAll(/data-o='(\w)'/g)].map((m) => m[1]))] }
+    })
+    const expected = Object.entries(WHOLE_FRAMES).flatMap(([o, { below, above }]) => [
+      ...(below !== undefined ? [{ op: '<', value: below, orientations: [o] }] : []),
+      ...(above !== undefined ? [{ op: '>', value: above, orientations: [o] }] : []),
+    ])
+    expect(found).toHaveLength(expected.length)
+    expect(found).toEqual(expect.arrayContaining(expected))
+    // « phone » : le conteneur ne répond plus au-delà de 760 px
+    expect(css).toMatch(/@media \(min-width: 761px\) \{\s*\.whole\[data-whole='phone'\] \{ container-type: normal; \}/)
+  })
+
+  it('cadre aux proportions fixes (lecteur 16:9) : orientation seulement si la photo doit s’y afficher entière', () => {
+    expect(wholeOrientation(media({ width: 1080, height: 1350, sizes: {} }), 16 / 9, 'hero')).toBe('p')
+    expect(wholeOrientation(media({ width: 1600, height: 1600, sizes: {} }), 16 / 9, 'hero')).toBe('s')
+    expect(wholeOrientation(media(), 16 / 9, 'hero')).toBeUndefined()
+    expect(wholeOrientation(null, 16 / 9)).toBeUndefined()
+  })
+})
+
+/** Balises <img> d'un rendu HTML, avec leurs attributs. */
+function imgs(html: string): Record<string, string>[] {
+  return [...html.matchAll(/<img ([^>]*)\/?>/g)].map(([, attrs]) => Object.fromEntries([...attrs.matchAll(/([\w-]+)="([^"]*)"/g)].map((m) => [m[1], m[2]])))
+}
+
+/** Balises <source> des <picture> d'un rendu HTML. */
+const sources = (html: string) => [...html.matchAll(/<picture>(<source [^>]*\/?>)/g)].map((m) => m[1])
+
+describe('WholeFrame (MediaImage « whole ») : deux images aux mêmes sources', () => {
+  const render = (props: Parameters<typeof MediaImage>[0]) => renderToStaticMarkup(createElement(MediaImage, props))
+
+  it('photo et fond : mêmes srcset, sizes et src (un seul fichier téléchargé) ; fond décoratif et différé', () => {
+    const html = render({ media: media(), size: 'hero', fill: true, whole: true, sizes: '176px', priority: true })
+    // React précharge lui-même une image prioritaire (même srcset et sizes : même fichier)
+    expect(html).toMatch(/^(<link rel="preload" as="image" imageSrcSet="[^"]+" imageSizes="176px" fetchPriority="high"\/>)?<span class="whole" data-o="l">/)
+    const [bg, fg] = imgs(html)
+    expect(bg.class).toBe('whole__bg')
+    expect(fg.class).toBe('whole__fg')
+    for (const key of ['srcSet', 'sizes', 'src']) expect(bg[key], key).toBe(fg[key])
+    expect(fg.sizes).toBe('176px')
+    expect(bg).toMatchObject({ alt: '', 'aria-hidden': 'true', loading: 'lazy' })
+    expect(bg).not.toHaveProperty('fetchPriority')
+    // image principale : chargée tout de suite et en priorité (pas de préchargement : deux images)
+    expect(fg).toMatchObject({ alt: 'Le lac d’Annecy au lever du soleil', loading: 'eager', fetchPriority: 'high' })
+    // cadrage de la photo qui couvre le cadre : point focal en variable (la photo entière se cadre en CSS)
+    expect(render({ media: media({ focalX: 80, focalY: 40 }), size: 'hero', fill: true, whole: true })).toContain('--focal:80% 40%')
+  })
+
+  it('orientation de la photo affichée ; « phone » : seulement sous 760 px ; visuel de repli : image simple qui couvre', () => {
+    expect(render({ media: media({ width: 1080, height: 1350, sizes: {} }), size: 'hero', fill: true, whole: true })).toContain('data-o="p"')
+    expect(render({ media: media(), size: 'hero', fill: true, whole: 'phone' })).toContain('data-whole="phone"')
+    const fallback = render({ media: null, fill: true, whole: true, fallbackSrc: '/visuels/t-ete-a.webp' })
+    expect(fallback).not.toContain('whole')
+    expect(imgs(fallback)).toHaveLength(1)
+  })
+
+  it('avec une source « téléphone » : deux balises <picture> identiques, orientation de l’image pour téléphone', () => {
+    const poster = media({ width: 2400, height: 1350 })
+    const html = render({ media: poster, size: 'card', fill: true, whole: 'phone', sizes: '330px', mobile: { media: poster, sizes: '112px' } })
+    expect(html).toContain('data-o="l" data-whole="phone"')
+    const [first, second] = sources(html)
+    expect(first).toBe(second)
+    expect(first).toContain('sizes="112px"')
+    const [bg, fg] = imgs(html)
+    for (const key of ['srcSet', 'sizes', 'src']) expect(bg[key], key).toBe(fg[key])
+    expect(fg.class).toBe('whole__fg img-mobile')
+  })
+})
+
+describe('carrousel : photo entière sur fond flou (data-whole)', () => {
+  const portrait = media({ id: 8, width: 1080, height: 1350, sizes: {} })
+  const square = media({ id: 9, width: 1600, height: 1600, sizes: {} })
+
+  it('photo en largeur : entière sur téléphone et sur tablette tenue en hauteur', () => {
+    expect(heroWhole(media(), null)).toBe('phone tall')
+    expect(heroWhole(media({ width: 1600, height: 1200, sizes: {} }), null)).toBe('phone tall')
+  })
+
+  it('photo carrée : entière sur téléphone seulement ; photo en hauteur : couvre le cadre', () => {
+    expect(heroWhole(square, null)).toBe('phone')
+    expect(heroWhole(portrait, null)).toBeUndefined()
+  })
+
+  it('image pour téléphone : c’est elle qui compte sur téléphone (l’image de fond, sur tablette)', () => {
+    expect(heroWhole(media(), portrait)).toBe('tall')
+    expect(heroWhole(portrait, media({ id: 10 }))).toBe('phone')
+    // image pour téléphone non chargée (identifiant seul) : l'image de fond
+    expect(heroWhole(media(), 12)).toBe('phone tall')
+  })
+
+  it('visuel de repli (pas d’image de fond) : il couvre toujours le cadre', () => {
+    expect(heroWhole(null, null)).toBeUndefined()
+  })
+})
+
+describe('carrousel sur téléphone : source « téléphone »', () => {
+  it('image pour téléphone en hauteur : elle remplace l’image de fond et couvre le cadre, centrée par défaut', () => {
     const phone = media({ id: 8, width: 1080, height: 1350, sizes: {} })
     expect(heroMobileSource(media(), phone, '/visuels/hero-nuit.webp')).toEqual({ media: phone, size: 'hero', sizes: '761px', position: '50% 50%' })
     // son point focal, au centre du cadre (seulement en largeur : l'image, moins haute que le cadre en proportion, garde toute sa hauteur)
@@ -49,23 +200,56 @@ describe('carrousel sur téléphone : source « téléphone » de la balise <pic
     expect(heroMobileSource(media(), { ...phone, focalX: 20, focalY: 30 }, '/visuels/hero-nuit.webp').position).toBe('0% 50%')
   })
 
-  it('sans image pour téléphone : l’image de fond, recadrée autour de son point focal (cadrage CSS sans point focal)', () => {
-    const background = media()
-    expect(heroMobileSource(background, null, '/visuels/hero-nuit.webp')).toEqual({
-      media: background,
-      size: 'hero',
-      fallbackSrc: '/visuels/hero-nuit.webp',
-      sizes: '1691px',
-      position: undefined,
-    })
-    // sujet à droite (conseillé pour l'ordinateur) : fenêtre contre le bord droit, le sujet reste dans le cadre
-    expect(heroMobileSource(media({ focalX: 85, focalY: 40 }), null, '/visuels/hero-nuit.webp').position).toBe('100% 50%')
+  it('photo entière (en largeur, sans image pour téléphone) : pleine largeur de l’écran, sans recadrage', () => {
+    const background = media({ focalX: 85, focalY: 40 })
+    expect(heroMobileSource(background, null, '/visuels/hero-nuit.webp')).toEqual({ media: background, size: 'hero', fallbackSrc: '/visuels/hero-nuit.webp', sizes: '100vw', position: undefined })
+    // image pour téléphone en largeur : entière elle aussi
+    expect(heroMobileSource(media(), media({ id: 11 }), '/visuels/hero-nuit.webp')).toMatchObject({ sizes: '100vw', position: undefined })
+  })
+
+  it('image de fond en hauteur : elle couvre le cadre portrait, recadrée autour de son point focal (cadrage CSS sans point focal)', () => {
+    const background = media({ width: 1080, height: 1350, sizes: {} })
+    expect(heroMobileSource(background, null, '/visuels/hero-nuit.webp')).toEqual({ media: background, size: 'hero', fallbackSrc: '/visuels/hero-nuit.webp', sizes: '761px', position: undefined })
+    expect(heroMobileSource({ ...background, focalX: 20, focalY: 40 }, null, '/visuels/hero-nuit.webp').position).toBe('0% 50%')
     expect(heroMobilePosition(media({ focalX: 60, focalY: 40 }))).toBe('64.5% 50%')
   })
 
-  it('image pour téléphone non chargée (identifiant seul) ou absente, image de fond absente : repli sur le visuel', () => {
+  it('image pour téléphone non chargée (identifiant seul) ou absente, image de fond absente : repli sur le visuel, qui couvre le cadre', () => {
     expect(heroMobileSource(media(), 12, '/visuels/hero-nuit.webp').media).toEqual(media())
     expect(heroMobileSource(null, null, '/visuels/hero-matin.webp')).toEqual({ media: null, size: 'hero', fallbackSrc: '/visuels/hero-matin.webp', sizes: '1691px', position: undefined })
+  })
+})
+
+describe('carrousel : rendu de l’image de fond (HeroImage)', () => {
+  const render = (props: Parameters<typeof HeroImage>[0]) => renderToStaticMarkup(createElement(HeroImage, props))
+
+  it('photo entière : fond flou puis photo, une seule source pour tous les écrans, première diapositive prioritaire', () => {
+    const html = render({ background: media(), phone: null, fallbackSrc: '/visuels/hero-nuit.webp', priority: true })
+    expect(html).not.toContain('<picture')
+    const [bg, fg] = imgs(html)
+    expect(bg).toMatchObject({ class: 'slide__backdrop', alt: '', 'aria-hidden': 'true', loading: 'lazy', sizes: '100vw' })
+    expect(fg).toMatchObject({ class: 'slide__photo', alt: '', loading: 'eager', fetchPriority: 'high', sizes: '100vw' })
+    for (const key of ['srcSet', 'sizes', 'src']) expect(bg[key], key).toBe(fg[key])
+    expect(fg.src).toContain('lac-2400x1350.webp')
+    // proportions de la photo (pas de saut de mise en page), sans les styles de remplissage de next/image
+    expect(fg.style).toContain('--ratio-m:1.7778')
+    expect(fg.style).not.toContain('position')
+    expect(render({ background: media(), phone: null, fallbackSrc: '/visuels/hero-nuit.webp', priority: false })).not.toContain('fetchPriority')
+  })
+
+  it('photo en hauteur : pas de fond, <picture> avec la source « téléphone » qui couvre le cadre portrait', () => {
+    const html = render({ background: media({ width: 1080, height: 1350, sizes: {} }), phone: null, fallbackSrc: '/visuels/hero-nuit.webp', priority: true })
+    expect(imgs(html)).toHaveLength(1)
+    expect(sources(html)).toHaveLength(1)
+    expect(sources(html)[0]).toMatch(/^<source media="\(max-width: 760px\)" srcSet="[^"]+" sizes="761px"\/?>$/)
+  })
+
+  it('image pour téléphone en hauteur et image de fond en largeur : fond flou (tablette) et photo, mêmes <picture>', () => {
+    const phone = media({ id: 8, url: '/api/media/file/portrait.webp', width: 1080, height: 1350, sizes: {} })
+    const [first, second, ...rest] = sources(render({ background: media(), phone, fallbackSrc: '/visuels/hero-nuit.webp', priority: false }))
+    expect(rest).toHaveLength(0)
+    expect(first).toBe(second)
+    expect(first).toContain('portrait.webp')
   })
 })
 
@@ -104,8 +288,12 @@ describe('fichier inséré dans un texte riche', () => {
 describe('affiches de l’agenda sur téléphone', () => {
   it('vignette des cartes : largeur affichée de l’affiche d’origine dans le cadre de 112 × 150 px', () => {
     expect(posterThumbSizes(media({ width: 1200, height: 1700 }))).toBe('112px')
-    expect(posterThumbSizes(media({ width: 1600, height: 900 }))).toBe('267px')
-    // sans affiche (visuel de repli 16:9)
+    // photo en largeur : entière sur fond flou, à la largeur de la vignette
+    expect(posterThumbSizes(media({ width: 1600, height: 900 }))).toBe('112px')
+    // presque carrée ou 4:3 : elle couvre la vignette par sa hauteur
+    expect(posterThumbSizes(media({ width: 1000, height: 1000 }))).toBe('150px')
+    expect(posterThumbSizes(media({ width: 1600, height: 1200 }))).toBe('200px')
+    // sans affiche (visuel de repli 16:9, qui couvre la vignette)
     expect(posterThumbSizes(null)).toBe('267px')
   })
 

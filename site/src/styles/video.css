@@ -67,6 +67,10 @@
 .top:hover .top__card { transform: translateY(-8px) rotate(-1.2deg); border-color: rgba(217, 170, 69, .5); }
 .top__card img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s var(--ease); }
 .top:hover .top__card img { transform: scale(1.08); }
+/* Image en largeur entière sur fond flou (MediaImage « whole » : vignette 2:3, photos l et m) et aperçu 16:9 entier au
+   même endroit, au-dessus du titre */
+.top__card { --whole-pos: 50% 28%; }
+.top__card:has(> .whole:is([data-o='l'], [data-o='m'])) > .vprev { object-fit: contain; object-position: var(--whole-pos); }
 .top__card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4, 10, 22, 0) 45%, rgba(4, 10, 22, .92)); pointer-events: none; }
 .top__info { position: absolute; z-index: 1; left: 14px; right: 12px; bottom: 12px; }
 .top__info small { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }

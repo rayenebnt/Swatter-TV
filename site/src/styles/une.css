@@ -13,6 +13,9 @@
 .tile:hover::before { opacity: 1; }
 .tile > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform 1.2s var(--ease); }
 .tile:hover > img { transform: scale(1.06); }
+/* Photo entière sur fond flou (MediaImage « whole ») : au même plan qu'une image */
+.tile > .whole { z-index: -2; transition: transform 1.2s var(--ease); }
+.tile:hover > .whole { transform: scale(1.06); }
 /* Aperçu animé de la « Vidéo du jour » (VideoPreview) : au même plan que l'image, sous le dégradé et le texte */
 .tile > .vprev { z-index: -2; transition: opacity .45s var(--ease), transform 1.2s var(--ease); }
 .tile:hover > .vprev { transform: scale(1.06); }
@@ -77,5 +80,5 @@
 }
 @media (hover: none) {
   .tile:hover { transform: none; }
-  .tile:hover > img, .tile:hover > .vprev { transform: none; }
+  .tile:hover > img, .tile:hover > .whole, .tile:hover > .vprev { transform: none; }
 }
