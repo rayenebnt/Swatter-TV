@@ -80,11 +80,11 @@ export default async function DirectPage() {
                   priority
                 />
                 {place && (
-                  <p className="vp__place">
+                  <div className="vp__place">
                     <Icon name="pin" />
                     <span className="sr-only">Photo : </span>
                     {place}
-                  </p>
+                  </div>
                 )}
               </>
             }

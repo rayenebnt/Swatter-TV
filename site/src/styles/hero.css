@@ -163,7 +163,8 @@
 /* Tablette tenue en hauteur, photo entière : même principe, centré en bas de la photo */
 @media (min-width: 761px) and (orientation: portrait) {
   .slide[data-whole~='tall'] .slide__content { order: 2; }
-  .slide[data-whole~='tall']:has(.slide__place) .slide__photo { margin-bottom: 0; }
+  /* seulement si une étiquette s'affiche sur tablette (pas celle du téléphone seul, masquée : la photo reste en haut) */
+  .slide[data-whole~='tall']:has(> .slide__place:not([data-on='m'])) .slide__photo { margin-bottom: 0; }
   .slide[data-whole~='tall'] .slide__place { order: 1; position: relative; bottom: auto; right: auto; align-self: center; margin: calc(-24px - 28px - 12px) 0 auto; }
 }
 /* Petit téléphone : présentation sur deux lignes, pour laisser de la place à la photo entière */

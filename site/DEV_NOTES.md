@@ -334,7 +334,8 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
 - **Photos de fond de la chaîne et lieu photographié** : `public/visuels/bargy.webp`, `mole.webp` (le Môle recadré en
   16:9 autour du sommet) et `mole-portrait.webp` (photo d'origine en hauteur, image pour téléphone), agrandies (Lanczos +
   légère accentuation) depuis les photos du client, qui ne font que 800 × 450 et 1264 × 1568 : à remplacer par les
-  originaux en pleine résolution s'il les fournit (mêmes noms de fichiers, puis `npm run fonds -- --confirmer`). Champ
+  originaux en pleine résolution s'il les fournit (mêmes noms de fichiers ; en production, reconstruire l'image, la mise à
+  jour le fait, puis `npm run fonds -- --confirmer`, qui remplace le fichier des médias déjà ajoutés). Champ
   `place` des médias (« Lieu photographié », migration `20261101_185903_lieu_photo`) ; `mediaPlace(m, fallbackSrc)`
   (`lib/media.ts`, lieux des visuels de repli dans `VISUAL_PLACES`) ; `heroPlaces` (`home/heroMedia.ts`) : lieu de
   l'image de fond et, sur téléphone, de l'image qui s'y affiche (`data-on` « all », « d » ou « m ») ; étiquette

@@ -10,12 +10,15 @@
  * Usage : npm run fonds              montre ce qui sera fait, sans rien modifier
  *         npm run fonds -- --confirmer   le fait
  *
+ * Les fichiers de public/visuels remplacés (originaux en meilleure résolution, mêmes noms) : relancée, la commande remplace
+ * le fichier des médias déjà ajoutés (dimensions différentes), sans changer leur numéro.
  * Refusé si des modifications des réglages « Accueil et direct » attendent d'être publiées (elles seraient publiées en
  * même temps) : publiez-les ou annulez-les d'abord. Les anciennes images restent dans la médiathèque.
  */
 import config from '@payload-config'
 import path from 'path'
 import { getPayload } from 'payload'
+import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import type { Media } from '@/payload-types'
@@ -51,15 +54,28 @@ const slides = settings.heroSlides ?? []
 
 const existing = new Map<PhotoKey, Media | null>()
 for (const key of PHOTOS) existing.set(key, await findPhoto(key))
+const source = (key: PhotoKey) => path.join(ROOT, MEDIA.find((m) => m.key === key)?.file ?? '')
+/** Le fichier du site (public/visuels) a changé depuis l'ajout du média : dimensions différentes. */
+const changed = new Map<PhotoKey, boolean>()
+for (const key of PHOTOS) {
+  const m = existing.get(key)
+  const { width, height } = await sharp(source(key)).metadata()
+  changed.set(key, Boolean(m && (m.width !== width || m.height !== height)))
+}
 
 console.log('Photos de la médiathèque :')
 for (const key of PHOTOS) {
   const def = MEDIA.find((m) => m.key === key)
   const m = existing.get(key)
-  console.log(`  ${def?.place} (${key}) : ${m ? `déjà là (${label(m)}), lieu « ${def?.place} »` : 'ajoutée'}`)
+  console.log(`  ${def?.place} (${key}) : ${m ? `déjà là (${label(m)}), lieu « ${def?.place} »${changed.get(key) ? ', fichier remplacé par la nouvelle version' : ''}` : 'ajoutée'}`)
 }
 console.log('Images de fond :')
-if (slides[0]) console.log(`  diapositive 1 « ${slides[0].titleLine1} » : ${label(slides[0].image)} → le Bargy`)
+if (slides[0]) {
+  const phone = slides[0].imageMobile
+  console.log(
+    `  diapositive 1 « ${slides[0].titleLine1} » : ${label(slides[0].image)} → le Bargy${phone ? ` ; pour téléphone : ${label(phone)}, inchangée (elle reste affichée sur téléphone à la place du Bargy : videz « Image pour téléphone » de la diapositive pour y montrer le Bargy)` : ''}`,
+  )
+}
 if (slides[1]) console.log(`  diapositive 2 « ${slides[1].titleLine1} » : ${label(slides[1].image)} → le Môle ; pour téléphone : ${label(slides[1].imageMobile)} → le Môle en hauteur`)
 if (!slides.length) console.log('  aucune diapositive dans le carrousel : l’accueil affiche déjà ces photos par défaut')
 console.log(`  page « Le direct » : ${label(settings.livePoster)} → le Bargy`)
@@ -81,8 +97,15 @@ for (const key of PHOTOS) {
   if (!def) throw new Error(`Photo inconnue : ${key}`)
   const m = existing.get(key)
   const doc = m
-    ? await payload.update({ collection: 'media', id: m.id, data: { alt: def.alt, place: def.place }, overrideAccess: true, context })
-    : await payload.create({ collection: 'media', data: { alt: def.alt, place: def.place }, filePath: path.join(ROOT, def.file), overrideAccess: true, context })
+    ? await payload.update({
+        collection: 'media',
+        id: m.id,
+        data: { alt: def.alt, place: def.place },
+        ...(changed.get(key) ? { filePath: source(key) } : {}),
+        overrideAccess: true,
+        context,
+      })
+    : await payload.create({ collection: 'media', data: { alt: def.alt, place: def.place }, filePath: source(key), overrideAccess: true, context })
   ids.set(key, doc.id)
 }
 const id = (key: PhotoKey) => ids.get(key) as number
