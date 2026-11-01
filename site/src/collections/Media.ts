@@ -41,6 +41,17 @@ export const Media: CollectionConfig = {
       },
     },
     { name: 'credit', label: 'Crédit photo (facultatif)', type: 'text', admin: { placeholder: '© Swatter TV Info' } },
+    {
+      name: 'place',
+      label: 'Lieu photographié (facultatif)',
+      type: 'text',
+      maxLength: 60,
+      admin: {
+        placeholder: 'Le Bargy',
+        description:
+          'Nom du sommet ou du lieu, affiché discrètement sur la photo quand elle sert d’image de fond (carrousel de l’accueil, page « Le direct » hors antenne). Laissez vide pour ne rien afficher.',
+      },
+    },
   ],
   upload: {
     // dossier des fichiers envoyés ; MEDIA_DIR : un autre dossier (tests automatiques, pour ne pas toucher à media/)

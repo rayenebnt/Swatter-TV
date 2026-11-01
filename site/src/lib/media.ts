@@ -31,6 +31,25 @@ export function mediaAlt(m: MediaRef, fallback = ''): string {
   return isMedia(m) ? m.alt || fallback : fallback
 }
 
+/**
+ * Lieux des visuels de repli du site (public/visuels) qui en ont un : photos de montagnes de la chaîne, nommées sur
+ * l'image de fond comme leur média (champ « Lieu photographié »).
+ */
+const VISUAL_PLACES: Record<string, string> = {
+  '/visuels/bargy.webp': 'Le Bargy',
+  '/visuels/mole.webp': 'Le Môle',
+  '/visuels/mole-portrait.webp': 'Le Môle',
+}
+
+/**
+ * Lieu photographié, affiché sur une image de fond : champ « Lieu photographié » du média ; sans média, celui du visuel de
+ * repli `fallbackSrc` s'il en a un. null : rien à afficher.
+ */
+export function mediaPlace(m: MediaRef, fallbackSrc?: string | null): string | null {
+  if (isMedia(m)) return m.place?.trim() || null
+  return (fallbackSrc && VISUAL_PLACES[fallbackSrc]) || null
+}
+
 export function mediaSize(m: MediaRef, size?: MediaSize): { width: number; height: number } {
   if (!isMedia(m)) return { width: 1600, height: 900 }
   const s = size ? m.sizes?.[size] : null

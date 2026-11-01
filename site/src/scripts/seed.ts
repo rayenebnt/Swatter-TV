@@ -112,7 +112,7 @@ const media = new Map<string, number>()
 await inBatches(MEDIA, 4, async (m) => {
   const doc = await payload.create({
     collection: 'media',
-    data: { alt: m.alt, credit: m.credit },
+    data: { alt: m.alt, credit: m.credit, place: m.place },
     filePath: path.join(ROOT, m.file),
     overrideAccess: true,
     context,
@@ -299,7 +299,7 @@ await payload.updateGlobal({
         titleLine1: 'Le direct,',
         titleLine2: 'au cœur des Alpes',
         description: `Texte d’exemple à personnaliser (${EDIT_SLIDES}) : présentez votre chaîne en une ou deux phrases.`,
-        image: mediaId('hero-crepuscule'),
+        image: mediaId('bargy'),
         navLabel: 'En direct',
         primaryLabel: 'Regarder le direct',
         primaryHref: '/direct',
@@ -315,7 +315,8 @@ await payload.updateGlobal({
         titleLine1: 'Votre émission',
         titleLine2: 'de ce soir',
         description: `Diapositive d’exemple (${EDIT_SLIDES}) : mettez en avant le programme de la soirée avec son titre, une image et ce texte.`,
-        image: mediaId('hero-nuit'),
+        image: mediaId('mole'),
+        imageMobile: mediaId('mole-portrait'),
         navLabel: 'Ce soir',
         primaryLabel: `Ce soir à ${formatTime(primeAt)}`,
         primaryHref: '/programme-tv',
@@ -341,7 +342,7 @@ await payload.updateGlobal({
     ],
     liveEnabled: true,
     live: upload('direct-mont-blanc'),
-    livePoster: mediaId('hero-crepuscule'),
+    livePoster: mediaId('bargy'),
     flashAuto: true,
     flashItems: [
       { label: 'Exemple', text: 'Remplacez ce message dans Accueil et direct › Flash info', href: articleLinks.get(ARTICLES[0].title) },

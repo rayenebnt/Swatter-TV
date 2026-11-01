@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { AdSlot } from '@/components/layout/AdSlot'
+import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -8,7 +9,7 @@ import { OnAirPanel } from '@/components/video/OnAirPanel'
 import { ReplaySection } from '@/components/video/ReplaySection'
 import { renderNow, videoObject } from '@/components/video/utils'
 import { BROADCAST_HOURS_LABEL } from '@/lib/broadcast'
-import { mediaFocal, mediaUrl, wholeOrientation } from '@/lib/media'
+import { mediaFocal, mediaPlace, mediaUrl, wholeOrientation } from '@/lib/media'
 import { onAirState } from '@/lib/on-air'
 import { getOnAirData } from '@/lib/queries/schedule'
 import { getSettings } from '@/lib/queries/settings'
@@ -21,7 +22,7 @@ export const revalidate = 60
 
 const DESCRIPTION =
   'Regardez Swatter TV Info en direct et gratuitement, tous les soirs de 18 h à 0 h 30 : l’info, la météo, les magazines et les documentaires d’Auvergne-Rhône-Alpes.'
-const FALLBACK_POSTER = '/visuels/hero-crepuscule.webp'
+const FALLBACK_POSTER = '/visuels/bargy.webp'
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings()
@@ -49,6 +50,8 @@ export default async function DirectPage() {
   // Programme en cours au rendu, pour les données structurées seulement : le lecteur ou l'écran hors antenne, et
   // « En ce moment / À suivre », se décident aussi dans le navigateur (page en cache, onglet resté ouvert)
   const { current } = onAirState(onAir.slots, now.getTime())
+  // lieu photographié de l'image de fond (« Le Bargy »), nommé sur l'écran hors antenne
+  const place = mediaPlace(settings?.livePoster, mediaUrl(settings?.livePoster) ? null : FALLBACK_POSTER)
 
   return (
     <>
@@ -64,17 +67,26 @@ export default async function DirectPage() {
                 : null
             }
             poster={
-              <MediaImage
-                media={settings?.livePoster}
-                size="hero"
-                fill
-                whole
-                sizes="(max-width: 1100px) 100vw, 900px"
-                alt=""
-                className="vp__poster"
-                fallbackSrc={FALLBACK_POSTER}
-                priority
-              />
+              <>
+                <MediaImage
+                  media={settings?.livePoster}
+                  size="hero"
+                  fill
+                  whole
+                  sizes="(max-width: 1100px) 100vw, 900px"
+                  alt=""
+                  className="vp__poster"
+                  fallbackSrc={FALLBACK_POSTER}
+                  priority
+                />
+                {place && (
+                  <p className="vp__place">
+                    <Icon name="pin" />
+                    <span className="sr-only">Photo : </span>
+                    {place}
+                  </p>
+                )}
+              </>
             }
           />
           <OnAirPanel data={onAir} cut={!live} />

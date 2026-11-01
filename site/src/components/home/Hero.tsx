@@ -9,7 +9,7 @@ import { eventUrl, programUrl } from '@/lib/urls'
 import { resolveVideo } from '@/lib/video'
 import type { Setting } from '@/payload-types'
 import { CountUp } from './CountUp'
-import { heroWhole } from './heroMedia'
+import { heroPlaces, heroWhole } from './heroMedia'
 import { HeroClient, type HeroBadge, type HeroLink, type HeroLive, type HeroSlide } from './HeroClient'
 import { HeroImage } from './HeroImage'
 import type { LiveSlot } from './LiveProgress'
@@ -30,10 +30,10 @@ type Draft = Omit<HeroSlide, 'media' | 'whole' | 'thumb'> & {
   requireLarge: boolean
 }
 
-// Visuels de repli, dans l'ordre de la maquette (crépuscule, nuit, matin)
+// Visuels de repli : photos de la chaîne (le Bargy, le Môle, nommées sur l'image), puis le matin de la maquette
 const FALLBACKS = [
-  { hero: '/visuels/hero-crepuscule.webp', thumb: '/visuels/t-crepuscule-c.webp' },
-  { hero: '/visuels/hero-nuit.webp', thumb: '/visuels/t-nuit-b.webp' },
+  { hero: '/visuels/bargy.webp', thumb: '/visuels/t-bargy.webp' },
+  { hero: '/visuels/mole.webp', thumb: '/visuels/t-mole.webp' },
   { hero: '/visuels/hero-matin.webp', thumb: '/visuels/t-matin-a.webp' },
 ] as const
 const HERO_MIN_WIDTH = 1600
@@ -213,6 +213,7 @@ function render({ image, imageMobile, heroFallback, thumbFallback, requireLarge,
     // (sous 760 px : image pour téléphone de la diapositive, ou image de fond recadrée autour de son point focal)
     media: <HeroImage background={background} phone={imageMobile} fallbackSrc={heroFallback} priority={index === 0} />,
     whole: heroWhole(background, imageMobile),
+    places: heroPlaces(background, imageMobile, heroFallback),
     thumb: <MediaImage media={image} fallbackSrc={thumbFallback} size="thumb" sizes="76px" alt="" />,
   }
 }

@@ -331,6 +331,19 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   pied de page restent affichés. `src/app/global-error.tsx` est la page de dernier recours.
 - **Fiche d'émission par ancre** (`/programme-tv#slug`) : à la fermeture, l'ancre est retirée de l'adresse (un nouveau lien
   vers la même émission la rouvre).
+- **Photos de fond de la chaîne et lieu photographié** : `public/visuels/bargy.webp`, `mole.webp` (le Môle recadré en
+  16:9 autour du sommet) et `mole-portrait.webp` (photo d'origine en hauteur, image pour téléphone), agrandies (Lanczos +
+  légère accentuation) depuis les photos du client, qui ne font que 800 × 450 et 1264 × 1568 : à remplacer par les
+  originaux en pleine résolution s'il les fournit (mêmes noms de fichiers, puis `npm run fonds -- --confirmer`). Champ
+  `place` des médias (« Lieu photographié », migration `20261101_185903_lieu_photo`) ; `mediaPlace(m, fallbackSrc)`
+  (`lib/media.ts`, lieux des visuels de repli dans `VISUAL_PLACES`) ; `heroPlaces` (`home/heroMedia.ts`) : lieu de
+  l'image de fond et, sur téléphone, de l'image qui s'y affiche (`data-on` « all », « d » ou « m ») ; étiquette
+  `.slide__place` (hero.css) en bas à droite au-dessus des vignettes sur ordinateur, sous l'en-tête à droite quand l'image
+  couvre le cadre du téléphone, centrée en bas de la photo entière (élément de la colonne placé après la photo et
+  remonté sur elle, sans changer la mise en page) ; `.vp__place` sur l'écran hors antenne de la page Direct.
+  `npm run fonds` (`src/scripts/fonds-montagnes.ts`) : ajoute ces photos à la médiathèque (avec leur lieu) et les pose sur
+  les diapositives 1 et 2 et sur l'image du direct, sans `--confirmer` n'affiche que le plan ; refusé si un brouillon des
+  réglages attend d'être publié. Contenus de départ et visuels de repli du carrousel et du direct : ces photos.
 - **Programme TV, soirées de 18 h à 0 h 30** : la frise dure 390 min (`GRID_MINUTES`, 7 graduations `RULER_HOURS`, largeur
   `GRID_HOURS` = 6,5 h). Un créneau d'avant la règle des horaires qui déborde est rogné aux bornes (bords découpés), un
   créneau entièrement hors antenne n'est jamais montré (frise, liste, JSON-LD). Hors antenne (décidé dans le navigateur

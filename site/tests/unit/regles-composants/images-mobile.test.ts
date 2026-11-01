@@ -11,12 +11,12 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { featureRatio, posterThumbSizes } from '@/components/agenda/utils'
 import { HeroImage } from '@/components/home/HeroImage'
-import { heroMobilePosition, heroMobileSizes, heroMobileSource, heroWhole } from '@/components/home/heroMedia'
+import { heroMobilePosition, heroMobileSizes, heroMobileSource, heroPlaces, heroWhole } from '@/components/home/heroMedia'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { PROSE_SIZES, proseUpload } from '@/components/ui/proseUpload'
 import { top10Sizes } from '@/components/video/Top10Section'
 import { webcamPoster } from '@/components/webcams/utils'
-import { coverShare, mediaOrientation, ratioOrientation, WHOLE_FRAMES, wholeIn, wholeOrientation, type Orientation } from '@/lib/media'
+import { coverShare, mediaOrientation, mediaPlace, ratioOrientation, WHOLE_FRAMES, wholeIn, wholeOrientation, type Orientation } from '@/lib/media'
 import type { WebcamItem } from '@/lib/queries/webcams'
 import type { Media } from '@/payload-types'
 
@@ -374,3 +374,46 @@ describe('vignette des webcams : point focal', () => {
     expect(webcamPoster(cam(null))).not.toHaveProperty('position')
   })
 })
+
+describe('lieu photographié nommé sur l’image de fond (« Le Bargy »)', () => {
+  const bargy = media({ id: 7, filename: 'bargy.webp', place: 'Le Bargy' })
+  const mole = media({ id: 8, filename: 'mole.webp', place: ' Le Môle ' })
+  const molePortrait = media({ id: 9, filename: 'mole-portrait.webp', width: 1264, height: 1568, place: 'Le Môle', sizes: {} })
+
+  it('champ « Lieu photographié » du média (espaces retirés) ; vide ou absent : rien', () => {
+    expect(mediaPlace(bargy)).toBe('Le Bargy')
+    expect(mediaPlace(mole)).toBe('Le Môle')
+    expect(mediaPlace(media({ place: '  ' }))).toBeNull()
+    expect(mediaPlace(media())).toBeNull()
+  })
+
+  it('sans média : lieu du visuel de repli du site s’il en a un', () => {
+    expect(mediaPlace(null, '/visuels/bargy.webp')).toBe('Le Bargy')
+    expect(mediaPlace(null, '/visuels/mole.webp')).toBe('Le Môle')
+    expect(mediaPlace(null, '/visuels/hero-matin.webp')).toBeNull()
+    expect(mediaPlace(undefined)).toBeNull()
+    // un média chargé sans lieu ne prend pas celui du visuel de repli
+    expect(mediaPlace(media(), '/visuels/bargy.webp')).toBeNull()
+  })
+
+  it('carrousel : une seule mention quand le téléphone montre le même lieu, deux sinon, aucune sans lieu', () => {
+    expect(heroPlaces(bargy, null, '/visuels/hero-matin.webp')).toEqual([{ label: 'Le Bargy', on: 'all' }])
+    expect(heroPlaces(mole, molePortrait, '/visuels/hero-matin.webp')).toEqual([{ label: 'Le Môle', on: 'all' }])
+    expect(heroPlaces(bargy, molePortrait, '/visuels/hero-matin.webp')).toEqual([
+      { label: 'Le Bargy', on: 'd' },
+      { label: 'Le Môle', on: 'm' },
+    ])
+    expect(heroPlaces(media(), molePortrait, '/visuels/bargy.webp')).toEqual([{ label: 'Le Môle', on: 'm' }])
+    expect(heroPlaces(media(), null, '/visuels/bargy.webp')).toEqual([])
+    // sans image : visuel de repli ; image pour téléphone non chargée (identifiant seul) : ignorée
+    expect(heroPlaces(null, null, '/visuels/bargy.webp')).toEqual([{ label: 'Le Bargy', on: 'all' }])
+    expect(heroPlaces(null, 12, '/visuels/mole.webp')).toEqual([{ label: 'Le Môle', on: 'all' }])
+  })
+
+  it('hero.css : sur ordinateur le lieu de l’image de fond, sur téléphone celui de l’image qui s’y affiche', () => {
+    const css = readFileSync(join(process.cwd(), 'src/styles/hero.css'), 'utf8')
+    expect(css).toMatch(/\.slide__place\[data-on='m'\] \{ display: none; \}/)
+    expect(css).toMatch(/@media \(max-width: 760px\) \{\s*\.slide__place \{[^}]*\}\s*\.slide__place\[data-on='d'\] \{ display: none; \}\s*\.slide__place\[data-on='m'\] \{ display: inline-flex; \}/)
+  })
+})
+

@@ -36,6 +36,13 @@
 .slide.is-active .fx { opacity: 1; transform: none; transition-delay: calc(.45s + var(--i, 0) * .1s); }
 .slide__desc { max-width: 52ch; color: var(--ink-2); font-size: 17.5px; line-height: 1.6; margin-top: 20px; }
 
+/* Lieu photographié (HeroImage, heroPlaces : « Le Bargy ») : petite étiquette sur la photo, alignée sur le bord droit du
+   contenu, juste au-dessus des vignettes de navigation (bas de la photo, assombri par le voile) ; data-on « d » / « m » :
+   lieu de l'image de fond (ordinateur, tablette) ou de l'image pour téléphone, quand ce ne sont pas les mêmes */
+.slide__place { position: absolute; z-index: 4; right: calc(max(0px, (100% - var(--container)) / 2) + var(--gutter)); bottom: 122px; display: inline-flex; align-items: center; gap: 6px; height: 28px; margin: 0; padding: 0 12px 0 9px; border-radius: 999px; background: rgba(4, 10, 22, .5); border: 1px solid rgba(255, 255, 255, .14); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); font-size: 12.5px; font-weight: 600; letter-spacing: .02em; line-height: 1; color: var(--ink-2); white-space: nowrap; pointer-events: none; }
+.slide__place svg { width: 14px; height: 14px; color: var(--gold); flex-shrink: 0; }
+.slide__place[data-on='m'] { display: none; }
+
 /* Programme en cours (diapositive « direct ») */
 .progress { margin-top: 26px; max-width: 480px; }
 .progress__now { display: flex; align-items: baseline; gap: 8px; margin-bottom: 11px; font-size: 14px; color: var(--muted); min-width: 0; }
@@ -141,6 +148,23 @@
   .hnav .bar { left: 0; right: 0; top: 10px; height: 3px; }
   .ticker__in { height: 46px; gap: 14px; }
   .ticker__clock { display: none; }
+}
+/* Lieu photographié sur téléphone : en haut à droite, sous l'en-tête, quand l'image couvre le cadre (ciel en général) ;
+   sur la photo entière, centré en bas de la photo (élément de la colonne placé juste après elle, remonté sur son bord de
+   sa hauteur et de l'écart : la mise en page ne bouge pas ; centré, il reste sur la photo quand elle rétrécit pour
+   laisser la place aux textes) */
+@media (max-width: 760px) {
+  .slide__place { top: calc(var(--header-h) + 12px); bottom: auto; right: var(--gutter); height: 26px; font-size: 12px; }
+  .slide__place[data-on='d'] { display: none; }
+  .slide__place[data-on='m'] { display: inline-flex; }
+  .slide[data-whole~='phone'] .slide__content { order: 2; }
+  .slide[data-whole~='phone'] .slide__place { order: 1; position: relative; top: auto; right: auto; align-self: center; margin: calc(-14px - 26px - 10px) 0 10px; }
+}
+/* Tablette tenue en hauteur, photo entière : même principe, centré en bas de la photo */
+@media (min-width: 761px) and (orientation: portrait) {
+  .slide[data-whole~='tall'] .slide__content { order: 2; }
+  .slide[data-whole~='tall']:has(.slide__place) .slide__photo { margin-bottom: 0; }
+  .slide[data-whole~='tall'] .slide__place { order: 1; position: relative; bottom: auto; right: auto; align-self: center; margin: calc(-24px - 28px - 12px) 0 auto; }
 }
 /* Petit téléphone : présentation sur deux lignes, pour laisser de la place à la photo entière */
 @media (max-width: 760px) and (max-height: 720px) {

@@ -432,7 +432,8 @@ blanche ») : cliquez sur une diapositive pour la déplier. Pour chaque diaposit
 - **Image de fond (paysage, 2400 px de large conseillés)** : une photo en largeur, d’au moins 2400 × 1350 pixels. Sur
   ordinateur, le texte est à gauche : placez plutôt le sujet à droite. Sur téléphone, la photo s’affiche **en entier**
   en haut du carrousel, sous le logo, sur un fond flou tiré de la même photo : rien n’est coupé, vous n’avez rien à
-  régler ;
+  régler. Si l’image a un **Lieu photographié** dans la médiathèque (partie 17), son nom s’affiche sur la photo
+  (« Le Bargy ») ;
 - **Image pour téléphone (facultative, portrait 1080 × 1350 ou plus)** : une autre photo, en hauteur, affichée à la
   place de l’image de fond sur les téléphones, où elle remplit tout l’écran. Mettez le sujet dans la moitié haute : le
   texte s’affiche en bas. Ne la remplissez que si vous préférez une photo en hauteur sur les téléphones ; laissée vide,
@@ -527,6 +528,9 @@ Conseils :
   sert aux personnes malvoyantes et au référencement. Si vous la laissez vide, le nom du fichier est repris : une vraie
   description reste préférable.
 - **Crédit photo (facultatif)** : le nom du photographe ou de l’agence, si besoin.
+- **Lieu photographié (facultatif)** : le nom du sommet ou du lieu (« Le Bargy », « Le Môle »). Quand la photo sert
+  d’image de fond (carrousel de l’accueil, page « Le direct » hors antenne), ce nom s’affiche discrètement sur la photo,
+  avec une petite épingle. Laissé vide, rien ne s’affiche.
 - **Photo entière** : quand un cadre du site couperait trop une photo (carrousel sur téléphone, Top 10, « À la une »
   de l’accueil, article à la une de L’Info, image d’un article, agenda, lecteur vidéo), elle s’affiche entière sur un fond flou tiré d’elle-même : vous n’avez
   rien à faire.

@@ -1,12 +1,16 @@
 // Médias de départ : visuels de montagne du site (public/visuels), utilisables comme illustrations, et un court clip
 // d'exemple pour le direct (seed/assets/videos), à remplacer par le vrai flux.
 
-export type SeedMedia = { key: string; file: string; alt: string; credit?: string }
+export type SeedMedia = { key: string; file: string; alt: string; credit?: string; place?: string }
 
-const visual = (key: string, alt: string): SeedMedia => ({ key, file: `public/visuels/${key}.webp`, alt })
+const visual = (key: string, alt: string, place?: string): SeedMedia => ({ key, file: `public/visuels/${key}.webp`, alt, ...(place ? { place } : {}) })
 const clip = (key: string, alt: string): SeedMedia => ({ key, file: `seed/assets/videos/${key}.mp4`, alt, credit: 'Swatter TV Info' })
 
 export const MEDIA: SeedMedia[] = [
+  // Photos de la chaîne (images de fond du carrousel et de la page Direct), nommées sur l'image
+  visual('bargy', 'Les falaises calcaires du Bargy au-dessus des forêts de sapins, sous un ciel bleu', 'Le Bargy'),
+  visual('mole', 'Le sommet enneigé du Môle au-dessus des forêts givrées, sous un ciel bleu d’hiver', 'Le Môle'),
+  visual('mole-portrait', 'Le sommet enneigé du Môle au-dessus des forêts givrées et d’une nappe de brume, sous un ciel bleu d’hiver', 'Le Môle'),
   visual('hero-crepuscule', 'Sommets enneigés dorés par le crépuscule, reflétés dans un lac de montagne'),
   visual('hero-matin', 'Lac alpin paisible et chaîne de sommets sous la lumière claire du matin'),
   visual('hero-nuit', 'Massif montagneux sous la pleine lune, reflété dans un lac la nuit'),

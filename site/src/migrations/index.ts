@@ -4,6 +4,7 @@ import * as migration_20261023_165354_nom_swatter_tv_info from './20261023_16535
 import * as migration_20261027_123813_mention_protection from './20261027_123813_mention_protection';
 import * as migration_20261030_115356_apercu_video_image_mobile from './20261030_115356_apercu_video_image_mobile';
 import * as migration_20261030_225851_autres_regions_info from './20261030_225851_autres_regions_info';
+import * as migration_20261101_185903_lieu_photo from './20261101_185903_lieu_photo';
 
 export const migrations = [
   {
@@ -34,6 +35,11 @@ export const migrations = [
   {
     up: migration_20261030_225851_autres_regions_info.up,
     down: migration_20261030_225851_autres_regions_info.down,
-    name: '20261030_225851_autres_regions_info'
+    name: '20261030_225851_autres_regions_info',
+  },
+  {
+    up: migration_20261101_185903_lieu_photo.up,
+    down: migration_20261101_185903_lieu_photo.down,
+    name: '20261101_185903_lieu_photo',
   },
 ];

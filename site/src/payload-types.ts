@@ -237,6 +237,10 @@ export interface Media {
    */
   alt?: string | null;
   credit?: string | null;
+  /**
+   * Nom du sommet ou du lieu, affiché discrètement sur la photo quand elle sert d’image de fond (carrousel de l’accueil, page « Le direct » hors antenne). Laissez vide pour ne rien afficher.
+   */
+  place?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -1211,6 +1215,7 @@ export interface PagesSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   credit?: T;
+  place?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

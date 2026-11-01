@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type ReactNode, type TouchEvent } from 'react'
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { useNow } from '@/components/video/useNow'
+import type { HeroPlace } from './heroMedia'
 import { LiveProgress } from './LiveProgress'
 import { liveView, type HeroLive, type LiveView } from './liveSlide'
 import { Snow } from './Snow'
@@ -32,6 +33,8 @@ export type HeroSlide = {
   whole?: string
   /** Vignette de navigation */
   thumb: ReactNode
+  /** Lieu photographié, nommé sur l'image (heroPlaces) */
+  places?: HeroPlace[]
 }
 
 const SWIPE_MIN = 50
@@ -256,6 +259,13 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
                   )}
                 </div>
               </div>
+              {s.places?.map((p) => (
+                <p key={p.on} className="slide__place fx" data-on={p.on} style={{ '--i': 3 } as CSSProperties}>
+                  <Icon name="pin" />
+                  <span className="sr-only">Photo : </span>
+                  {p.label}
+                </p>
+              ))}
             </div>
           )
         })}

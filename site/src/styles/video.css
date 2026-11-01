@@ -148,6 +148,9 @@
 .direct-off p { max-width: 48ch; color: var(--ink-2); font-size: 15.5px; }
 .direct-off p b { color: var(--ink); }
 .direct-off .btn { margin-top: 6px; }
+/* Lieu photographié de l'image de fond (« Le Bargy ») : petite étiquette en bas à droite, au-dessus du voile */
+.vp__place { position: absolute; z-index: 3; right: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 6px; height: 26px; margin: 0; padding: 0 11px 0 8px; border-radius: 999px; background: rgba(4, 10, 22, .55); border: 1px solid rgba(255, 255, 255, .14); font-size: 12px; font-weight: 600; letter-spacing: .02em; line-height: 1; color: var(--ink-2); white-space: nowrap; pointer-events: none; }
+.vp__place svg { width: 13px; height: 13px; color: var(--gold); flex-shrink: 0; }
 .onair { padding: 24px; border-radius: var(--r-xl); border: 1px solid var(--line); background: radial-gradient(120% 80% at 100% 0%, rgba(217, 170, 69, .14), rgba(217, 170, 69, 0) 55%), linear-gradient(160deg, var(--surface-2), var(--surface) 70%); }
 .onair__title { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: -.015em; }
 .onair__label { display: flex; align-items: center; gap: 8px; margin-top: 18px; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }

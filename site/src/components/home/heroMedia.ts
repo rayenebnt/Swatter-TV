@@ -3,7 +3,7 @@
 // (largeur réellement affichée : cadre couvert par l'image, débord de la parallaxe, zoom du Ken Burns ; cadrage autour du
 // point focal).
 import type { MobileSource } from '@/components/ui/MediaImage'
-import { coverWidth, focalCover, mediaOrientation, mediaRatio, mediaUrl, wholeIn, type MediaRef } from '@/lib/media'
+import { coverWidth, focalCover, mediaOrientation, mediaPlace, mediaRatio, mediaUrl, wholeIn, type MediaRef } from '@/lib/media'
 
 /** Zoom de départ de l'image (hero.css : scale(1.16)). */
 const ZOOM = 1.16
@@ -59,4 +59,20 @@ export function heroMobileSource(background: MediaRef, phone: MediaRef, fallback
   const sizes = (m: MediaRef) => (whole ? HERO_SIZES : heroMobileSizes(mediaRatio(m, 'hero')))
   if (mediaUrl(phone)) return { media: phone, size: 'hero', sizes: sizes(phone), position: whole ? undefined : (heroMobilePosition(phone) ?? '50% 50%') }
   return { media: background, size: 'hero', fallbackSrc, sizes: sizes(background), position: whole ? undefined : heroMobilePosition(background) }
+}
+
+/** Nom du lieu photographié sur l'image de fond : partout (« all »), sur ordinateur et tablette (« d ») ou sur téléphone (« m »). */
+export type HeroPlace = { label: string; on: 'all' | 'd' | 'm' }
+
+/**
+ * Lieu photographié affiché sur la diapositive (champ « Lieu photographié » du média, ou lieu du visuel de repli) : celui
+ * de l'image de fond, et sur téléphone celui de l'image qui s'y affiche (image pour téléphone si elle est renseignée).
+ * Une seule mention si c'est le même lieu ; aucune si l'image affichée n'en a pas.
+ */
+export function heroPlaces(background: MediaRef, phone: MediaRef, fallbackSrc: string): HeroPlace[] {
+  const shown = (m: MediaRef) => mediaPlace(m, mediaUrl(m) ? null : fallbackSrc)
+  const desktop = shown(background)
+  const mobile = shown(phoneImage(background, phone))
+  if (desktop === mobile) return desktop ? [{ label: desktop, on: 'all' }] : []
+  return [...(desktop ? [{ label: desktop, on: 'd' as const }] : []), ...(mobile ? [{ label: mobile, on: 'm' as const }] : [])]
 }
