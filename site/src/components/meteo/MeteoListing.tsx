@@ -59,7 +59,7 @@ export async function MeteoListing({ dept }: { dept: DepartmentSlug | null }) {
 
   return (
     <>
-      <PageHeader eyebrow="Prévisions à 5 jours" title={dept ? `La Météo ${inPlace(dept)}` : 'La Météo'} description={lede} crumbs={crumbs} />
+      <PageHeader photo="mole" eyebrow="Prévisions à 5 jours" title={dept ? `La Météo ${inPlace(dept)}` : 'La Météo'} description={lede} crumbs={crumbs} />
       <div className="container">
         <DeptFilter
           label="La météo par département"

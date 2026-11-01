@@ -147,6 +147,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Searc
     <>
       <DocumentTitle title={title} />
       <PageHeader
+        photo="mole"
         eyebrow="Sortir dans la région"
         title={`${cat ? `Agenda «\u00a0${cat}\u00a0»` : 'Agenda'}${place ? ` ${place}` : ''}`}
         description={intro(department)}

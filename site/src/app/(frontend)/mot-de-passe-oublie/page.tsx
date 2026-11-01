@@ -24,6 +24,7 @@ export default async function ForgotPasswordPage({ searchParams }: { searchParam
   return (
     <>
       <PageHeader
+        photo="mole"
         eyebrow="Mon espace"
         title="Mot de passe oublié"
         description={DESCRIPTION}

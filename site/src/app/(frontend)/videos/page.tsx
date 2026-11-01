@@ -71,7 +71,7 @@ export default async function VideosPage({ searchParams }: { searchParams: Searc
   return (
     <>
       <DocumentTitle title={title} />
-      <PageHeader eyebrow={label ? 'Vidéos' : 'À voir maintenant'} title={label ?? 'Les vidéos'} description={description} crumbs={crumbs} />
+      <PageHeader photo="mole" eyebrow={label ? 'Vidéos' : 'À voir maintenant'} title={label ?? 'Les vidéos'} description={description} crumbs={crumbs} />
 
       {withTop && (
         <>

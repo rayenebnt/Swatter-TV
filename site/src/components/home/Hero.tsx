@@ -30,10 +30,10 @@ type Draft = Omit<HeroSlide, 'media' | 'whole' | 'thumb'> & {
   requireLarge: boolean
 }
 
-// Visuels de repli : photos de la chaîne (le Bargy, le Môle, nommées sur l'image), puis le matin de la maquette
+// Visuels de repli, dans l'ordre de la maquette (crépuscule, nuit, matin)
 const FALLBACKS = [
-  { hero: '/visuels/bargy.webp', thumb: '/visuels/t-bargy.webp' },
-  { hero: '/visuels/mole.webp', thumb: '/visuels/t-mole.webp' },
+  { hero: '/visuels/hero-crepuscule.webp', thumb: '/visuels/t-crepuscule-c.webp' },
+  { hero: '/visuels/hero-nuit.webp', thumb: '/visuels/t-nuit-b.webp' },
   { hero: '/visuels/hero-matin.webp', thumb: '/visuels/t-matin-a.webp' },
 ] as const
 const HERO_MIN_WIDTH = 1600

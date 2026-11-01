@@ -65,6 +65,7 @@ export default async function ReplayPage({ searchParams }: { searchParams: Searc
     <>
       <DocumentTitle title={listTitle(program, page)} />
       <PageHeader
+        photo="mole"
         eyebrow={program ? 'Replay' : 'Voir ou revoir'}
         title={program ? program.title : 'Le Replay'}
         description={program ? program.synopsis || `Tous les épisodes de «\u00a0${program.title}\u00a0» à revoir gratuitement.` : INTRO}

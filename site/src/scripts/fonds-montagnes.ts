@@ -1,24 +1,19 @@
 /**
- * Photos de montagnes de la chaîne comme images de fond du site en ligne : le Bargy et le Môle (public/visuels), nommés
- * sur l'image (champ « Lieu photographié » de la médiathèque). Les photos sont ajoutées à la médiathèque (reprises si
- * elles y sont déjà), puis posées sur :
- *   - la 1re diapositive du carrousel de l'accueil : le Bargy ;
- *   - la 2e diapositive : le Môle (en largeur), et sa photo en hauteur comme image pour téléphone ;
- *   - l'image de la page « Le direct » (affichée avant la lecture et hors antenne) : le Bargy.
- * Les autres diapositives et réglages ne changent pas.
+ * Photos de montagnes de la chaîne (le Bargy, le Môle) : elles sont l'image de fond des en-têtes des pages intérieures
+ * (PageHeader, headerPhotos.ts), pas du carrousel de l'accueil. Une version précédente de cette commande les avait posées
+ * sur les deux premières diapositives du carrousel et sur l'image de la page « Le direct » : elle remet à leur place les
+ * images d'origine (contenus de départ : crépuscule, nuit), là seulement où ces photos sont encore en place.
  *
- * Usage : npm run fonds              montre ce qui sera fait, sans rien modifier
+ * Usage : npm run fonds                  montre ce qui sera fait, sans rien modifier
  *         npm run fonds -- --confirmer   le fait
  *
- * Les fichiers de public/visuels remplacés (originaux en meilleure résolution, mêmes noms) : relancée, la commande remplace
- * le fichier des médias déjà ajoutés (dimensions différentes), sans changer leur numéro.
- * Refusé si des modifications des réglages « Accueil et direct » attendent d'être publiées (elles seraient publiées en
- * même temps) : publiez-les ou annulez-les d'abord. Les anciennes images restent dans la médiathèque.
+ * Image d'origine absente de la médiathèque : elle y est remise (visuel du site, public/visuels). Rien d'autre ne
+ * change (textes, autres diapositives, photos de la médiathèque, qui restent utilisables). Refusé si des modifications des
+ * réglages « Accueil et direct » attendent d'être publiées (elles seraient publiées en même temps).
  */
 import config from '@payload-config'
 import path from 'path'
 import { getPayload } from 'payload'
-import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import type { Media } from '@/payload-types'
@@ -26,22 +21,32 @@ import type { Media } from '@/payload-types'
 import { MEDIA } from './seed/media'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+
 const confirm = process.argv.slice(2).includes('--confirmer')
 const payload = await getPayload({ config })
 const context = { disableRevalidate: true }
 
-const PHOTOS = ['bargy', 'mole', 'mole-portrait'] as const
-type PhotoKey = (typeof PHOTOS)[number]
+/** Fichier de la médiathèque de ce nom (« bargy.webp », « bargy-1.webp »…). */
+const named = (key: string) => (m: Media | number | null | undefined) =>
+  Boolean(m && typeof m === 'object' && m.filename && new RegExp(`^${key}(-\\d+)?\\.\\w+$`).test(m.filename))
 
-/** Média de la médiathèque portant ce nom de fichier (ou « nom-1.ext »…). */
-async function findPhoto(key: PhotoKey): Promise<Media | null> {
+async function findMedia(key: string): Promise<Media | null> {
   const found = await payload.find({ collection: 'media', where: { filename: { like: key } }, limit: 20, depth: 0, overrideAccess: true })
-  return found.docs.find((m) => m.filename && new RegExp(`^${key}(-\\d+)?\\.\\w+$`).test(m.filename)) ?? null
+  return found.docs.find((m) => named(key)(m)) ?? null
 }
 
 const label = (m: Media | number | null | undefined) => (m && typeof m === 'object' ? `« ${m.filename ?? m.id} »` : m ? `n° ${m}` : 'aucune')
+const original = (key: string, m: Media | null) => (m ? label(m) : `« ${key} » (remise dans la médiathèque)`)
 
-// réglages publiés (depth 1 : noms des images actuelles) ; refus si un brouillon plus récent attend
+/** Image d'origine : celle de la médiathèque, sinon ajoutée depuis les visuels du site. */
+async function originalId(key: string, m: Media | null): Promise<number> {
+  if (m) return m.id
+  const def = MEDIA.find((d) => d.key === key)
+  if (!def) throw new Error(`Visuel inconnu : ${key}`)
+  const doc = await payload.create({ collection: 'media', data: { alt: def.alt }, filePath: path.join(ROOT, def.file), overrideAccess: true, context })
+  return doc.id
+}
+
 const { docs: drafts } = await payload.findGlobalVersions({
   slug: 'settings',
   where: { and: [{ latest: { equals: true } }, { 'version._status': { equals: 'draft' } }] },
@@ -49,37 +54,29 @@ const { docs: drafts } = await payload.findGlobalVersions({
   depth: 0,
   overrideAccess: true,
 })
+// réglages publiés : depth 1 pour reconnaître les photos (nom du fichier), depth 0 pour réécrire les mêmes valeurs
 const settings = await payload.findGlobal({ slug: 'settings', depth: 1, overrideAccess: true })
 const slides = settings.heroSlides ?? []
+const crepuscule = await findMedia('hero-crepuscule')
+const nuit = await findMedia('hero-nuit')
 
-const existing = new Map<PhotoKey, Media | null>()
-for (const key of PHOTOS) existing.set(key, await findPhoto(key))
-const source = (key: PhotoKey) => path.join(ROOT, MEDIA.find((m) => m.key === key)?.file ?? '')
-/** Le fichier du site (public/visuels) a changé depuis l'ajout du média : dimensions différentes. */
-const changed = new Map<PhotoKey, boolean>()
-for (const key of PHOTOS) {
-  const m = existing.get(key)
-  const { width, height } = await sharp(source(key)).metadata()
-  changed.set(key, Boolean(m && (m.width !== width || m.height !== height)))
+const changes = {
+  slide1: named('bargy')(slides[0]?.image),
+  slide2: named('mole')(slides[1]?.image),
+  slide2Phone: named('mole-portrait')(slides[1]?.imageMobile),
+  poster: named('bargy')(settings.livePoster),
 }
 
-console.log('Photos de la médiathèque :')
-for (const key of PHOTOS) {
-  const def = MEDIA.find((m) => m.key === key)
-  const m = existing.get(key)
-  console.log(`  ${def?.place} (${key}) : ${m ? `déjà là (${label(m)}), lieu « ${def?.place} »${changed.get(key) ? ', fichier remplacé par la nouvelle version' : ''}` : 'ajoutée'}`)
+console.log('Carrousel de l’accueil et page « Le direct » :')
+if (changes.slide1) console.log(`  diapositive 1 « ${slides[0].titleLine1} » : ${label(slides[0].image)} → ${original('hero-crepuscule', crepuscule)} (image d’origine)`)
+if (changes.slide2) console.log(`  diapositive 2 « ${slides[1].titleLine1} » : ${label(slides[1].image)} → ${original('hero-nuit', nuit)} (image d’origine)`)
+if (changes.slide2Phone) console.log(`  diapositive 2, image pour téléphone : ${label(slides[1].imageMobile)} → aucune`)
+if (changes.poster) console.log(`  page « Le direct » : ${label(settings.livePoster)} → ${original('hero-crepuscule', crepuscule)} (image d’origine)`)
+if (!Object.values(changes).some(Boolean)) {
+  console.log('  aucune photo de montagne à retirer : rien à faire.')
+  console.log('Les photos du Bargy et du Môle sont l’image de fond des pages du site (en-têtes), sans réglage.')
+  process.exit(0)
 }
-console.log('Images de fond :')
-if (slides[0]) {
-  const phone = slides[0].imageMobile
-  console.log(
-    `  diapositive 1 « ${slides[0].titleLine1} » : ${label(slides[0].image)} → le Bargy${phone ? ` ; pour téléphone : ${label(phone)}, inchangée (elle reste affichée sur téléphone à la place du Bargy : videz « Image pour téléphone » de la diapositive pour y montrer le Bargy)` : ''}`,
-  )
-}
-if (slides[1]) console.log(`  diapositive 2 « ${slides[1].titleLine1} » : ${label(slides[1].image)} → le Môle ; pour téléphone : ${label(slides[1].imageMobile)} → le Môle en hauteur`)
-if (!slides.length) console.log('  aucune diapositive dans le carrousel : l’accueil affiche déjà ces photos par défaut')
-console.log(`  page « Le direct » : ${label(settings.livePoster)} → le Bargy`)
-if (slides.length > 2) console.log(`  diapositive${slides.length > 3 ? 's' : ''} 3${slides.length > 3 ? ` à ${slides.length}` : ''} : inchangée${slides.length > 3 ? 's' : ''}`)
 
 if (drafts.length) {
   console.error('\n✖ Des modifications de « Accueil et direct » attendent d’être publiées : publiez-les (ou annulez-les) dans l’administration, puis relancez.')
@@ -90,37 +87,21 @@ if (!confirm) {
   process.exit(0)
 }
 
-// photos : ajoutées si besoin, description et lieu mis à jour
-const ids = new Map<PhotoKey, number>()
-for (const key of PHOTOS) {
-  const def = MEDIA.find((m) => m.key === key)
-  if (!def) throw new Error(`Photo inconnue : ${key}`)
-  const m = existing.get(key)
-  const doc = m
-    ? await payload.update({
-        collection: 'media',
-        id: m.id,
-        data: { alt: def.alt, place: def.place },
-        ...(changed.get(key) ? { filePath: source(key) } : {}),
-        overrideAccess: true,
-        context,
-      })
-    : await payload.create({ collection: 'media', data: { alt: def.alt, place: def.place }, filePath: source(key), overrideAccess: true, context })
-  ids.set(key, doc.id)
-}
-const id = (key: PhotoKey) => ids.get(key) as number
-
-// diapositives telles qu'enregistrées (depth 0 : numéros des images), seules les images des deux premières changent
+const crepusculeId = changes.slide1 || changes.poster ? await originalId('hero-crepuscule', crepuscule) : null
+const nuitId = changes.slide2 ? await originalId('hero-nuit', nuit) : null
 const published = await payload.findGlobal({ slug: 'settings', depth: 0, overrideAccess: true })
-const heroSlides = (published.heroSlides ?? []).map((s, i) =>
-  i === 0 ? { ...s, image: id('bargy') } : i === 1 ? { ...s, image: id('mole'), imageMobile: id('mole-portrait') } : s,
-)
+const heroSlides = (published.heroSlides ?? []).map((s, i) => {
+  if (i === 0 && crepusculeId !== null && changes.slide1) return { ...s, image: crepusculeId }
+  if (i === 1 && (changes.slide2 || changes.slide2Phone))
+    return { ...s, ...(nuitId !== null ? { image: nuitId } : {}), ...(changes.slide2Phone ? { imageMobile: null } : {}) }
+  return s
+})
 await payload.updateGlobal({
   slug: 'settings',
-  data: { heroSlides, livePoster: id('bargy'), _status: 'published' },
+  data: { heroSlides, ...(changes.poster && crepusculeId !== null ? { livePoster: crepusculeId } : {}), _status: 'published' },
   depth: 0,
   overrideAccess: true,
   context,
 })
-console.log('\nPhotos posées. Le site se met à jour de lui-même dans la minute.')
+console.log('\nImages d’origine remises. Le site se met à jour de lui-même dans la minute.')
 process.exit(0)

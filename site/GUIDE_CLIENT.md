@@ -509,6 +509,11 @@ vider le champ.
 
 ## 17. Les images et la médiathèque
 
+Les pages du site (Le direct, Vidéos, L’Info, La Météo, Programme TV, Agenda, Webcams, Le Replay, Contact…) ont en
+fond, sous leur titre, les photos de vos montagnes : **le Bargy** et **le Môle**, en alternance, avec leur nom affiché
+dans un coin. Elles font partie du site lui-même : vous n’avez rien à régler (pour les changer, adressez-vous à votre
+prestataire). Le carrousel de l’accueil garde ses propres images, que vous choisissez (partie 12).
+
 **Médiathèque** rassemble toutes les images et vidéos envoyées. Une image ajoutée depuis une fiche (vidéo,
 article…) y arrive aussi. Dans un champ image d’une fiche :
 
@@ -528,9 +533,9 @@ Conseils :
   sert aux personnes malvoyantes et au référencement. Si vous la laissez vide, le nom du fichier est repris : une vraie
   description reste préférable.
 - **Crédit photo (facultatif)** : le nom du photographe ou de l’agence, si besoin.
-- **Lieu photographié (facultatif)** : le nom du sommet ou du lieu (« Le Bargy », « Le Môle »). Quand la photo sert
-  d’image de fond (carrousel de l’accueil, page « Le direct » hors antenne), ce nom s’affiche discrètement sur la photo,
-  avec une petite épingle. Laissé vide, rien ne s’affiche.
+- **Lieu photographié (facultatif)** : le nom du sommet ou du lieu (« Le Semnoz », « La Tournette »). Quand la photo
+  sert d’image de fond (carrousel de l’accueil, page « Le direct » hors antenne), ce nom s’affiche discrètement sur la
+  photo, avec une petite épingle. Laissé vide, rien ne s’affiche.
 - **Photo entière** : quand un cadre du site couperait trop une photo (carrousel sur téléphone, Top 10, « À la une »
   de l’accueil, article à la une de L’Info, image d’un article, agenda, lecteur vidéo), elle s’affiche entière sur un fond flou tiré d’elle-même : vous n’avez
   rien à faire.

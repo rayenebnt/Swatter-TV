@@ -13,6 +13,7 @@ import { featureRatio, posterThumbSizes } from '@/components/agenda/utils'
 import { HeroImage } from '@/components/home/HeroImage'
 import { heroMobilePosition, heroMobileSizes, heroMobileSource, heroPlaces, heroWhole } from '@/components/home/heroMedia'
 import { MediaImage } from '@/components/ui/MediaImage'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { PROSE_SIZES, proseUpload } from '@/components/ui/proseUpload'
 import { top10Sizes } from '@/components/video/Top10Section'
 import { webcamPoster } from '@/components/webcams/utils'
@@ -414,6 +415,28 @@ describe('lieu photographié nommé sur l’image de fond (« Le Bargy »)', () 
     const css = readFileSync(join(process.cwd(), 'src/styles/hero.css'), 'utf8')
     expect(css).toMatch(/\.slide__place\[data-on='m'\] \{ display: none; \}/)
     expect(css).toMatch(/@media \(max-width: 760px\) \{\s*\.slide__place \{[^}]*\}\s*\.slide__place\[data-on='d'\] \{ display: none; \}\s*\.slide__place\[data-on='m'\] \{ display: inline-flex; \}/)
+  })
+})
+
+describe('en-têtes des pages intérieures : photo de montagne nommée (PageHeader)', () => {
+  const html = (photo?: 'bargy' | 'mole') => renderToStaticMarkup(createElement(PageHeader, { title: 'La Météo', crumbs: [{ label: 'La Météo' }], ...(photo ? { photo } : {}) }))
+
+  it('le Bargy par défaut : photo décorative prioritaire et optimisée, nommée à droite du fil d’Ariane', () => {
+    const out = html()
+    expect(out).toContain('data-photo="bargy"')
+    expect(out).toMatch(/<div class="page-header__bg" aria-hidden="true"[^>]*><picture><img[^>]*alt=""/)
+    expect(out).toMatch(/srcSet="[^"]*%2Fvisuels%2Fbargy\.webp/)
+    expect(out).toContain('fetchPriority="high"')
+    expect(out).not.toContain('<source')
+    expect(out).toMatch(/<div class="page-header__top"><nav aria-label="Fil d’Ariane">.*<\/nav><div class="page-header__place">.*<span class="sr-only">Photo : <\/span>Le Bargy<\/div><\/div>/)
+  })
+
+  it('le Môle : photo en largeur sur ordinateur, photo d’origine en hauteur sur téléphone (balise <source>)', () => {
+    const out = html('mole')
+    expect(out).toContain('data-photo="mole"')
+    expect(out).toMatch(/<source media="\(max-width: 760px\)" srcSet="[^"]*%2Fvisuels%2Fmole-portrait\.webp/)
+    expect(out).toMatch(/<img[^>]*srcSet="[^"]*%2Fvisuels%2Fmole\.webp/)
+    expect(out).toContain('Photo : </span>Le Môle')
   })
 })
 

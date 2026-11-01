@@ -22,7 +22,7 @@ export const revalidate = 60
 
 const DESCRIPTION =
   'Regardez Swatter TV Info en direct et gratuitement, tous les soirs de 18 h à 0 h 30 : l’info, la météo, les magazines et les documentaires d’Auvergne-Rhône-Alpes.'
-const FALLBACK_POSTER = '/visuels/bargy.webp'
+const FALLBACK_POSTER = '/visuels/hero-crepuscule.webp'
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings()

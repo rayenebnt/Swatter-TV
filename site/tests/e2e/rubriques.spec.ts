@@ -23,42 +23,30 @@ test('accueil : toutes les rubriques sont présentes', async ({ page, request })
   expect(errors, errors.join('\n')).toEqual([])
 })
 
-// Photos de fond de la chaîne (npm run seed, npm run fonds) : le lieu photographié de la médiathèque est nommé sur l'image
-test('accueil et direct : la photo de fond nomme la montagne (« Le Bargy », « Le Môle »)', async ({ page, request, isMobile }) => {
-  type Img = { place?: string | null } | number | null | undefined
-  const settings = (await (await request.get('/api/globals/settings?depth=1')).json()) as {
-    heroSlides?: { titleLine1?: string | null; image?: Img; imageMobile?: Img }[] | null
-    livePoster?: Img
-  }
-  const place = (m: Img) => (m && typeof m === 'object' ? m.place?.trim() || null : null)
-  const slides = (settings.heroSlides ?? []).filter((s) => s.titleLine1?.trim())
-  test.skip(!slides.length, 'carrousel par défaut (aucune diapositive dans les réglages)')
+// Photos de montagnes de la chaîne en fond des en-têtes des pages intérieures (PageHeader), nommées sur l'image ; le
+// carrousel de l'accueil garde ses propres images
+test('pages intérieures : en-tête sur une photo de montagne nommée (« Le Bargy », « Le Môle ») ; pas dans le carrousel', async ({ page, isMobile }) => {
   const errors = watchErrors(page)
-  await atParisTime(page, '10:00')
+  for (const [path, place, file] of [
+    ['/programme-tv', 'Le Bargy', 'bargy.webp'],
+    ['/meteo', 'Le Môle', isMobile ? 'mole-portrait.webp' : 'mole.webp'],
+  ] as const) {
+    await page.goto(path)
+    await settle(page)
+    const header = page.locator('header.page-header')
+    await expect(header.locator('.page-header__place'), path).toHaveText(`Photo : ${place}`)
+    await expect(header.locator('.page-header__place svg')).toBeVisible()
+    // photo décorative chargée (fichier du téléphone sur mobile), sous les textes
+    const img = header.locator('.page-header__bg img')
+    await expect(img).toHaveAttribute('alt', '')
+    await expect.poll(() => img.evaluate((el: HTMLImageElement, f) => el.complete && el.naturalWidth > 0 && decodeURIComponent(el.currentSrc).includes(`/visuels/${f}`), file), path).toBe(true)
+    await expect(header.locator('h1')).toBeVisible()
+    await expectNoHorizontalOverflow(page)
+  }
+  // carrousel de l'accueil : ses propres images (contenus de départ, sans « Lieu photographié »)
   await page.goto('/')
   await settle(page)
-  // sur téléphone, le lieu de l'image pour téléphone si elle est renseignée
-  const expected = isMobile && slides[0].imageMobile && typeof slides[0].imageMobile === 'object' ? place(slides[0].imageMobile) : place(slides[0].image)
-  const shown = page.locator('.hero .slide').first().locator('.slide__place:visible')
-  if (expected) {
-    await expect(shown).toHaveCount(1)
-    await expect(shown).toHaveText(`Photo : ${expected}`)
-    await expect(shown.locator('svg')).toBeVisible()
-    // sur la photo, jamais hors de l'écran ni sur les textes
-    const box = (await shown.boundingBox())!
-    expect(box.x).toBeGreaterThanOrEqual(0)
-    expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width)
-  } else {
-    await expect(shown).toHaveCount(0)
-  }
-  await expectNoHorizontalOverflow(page)
-
-  await page.goto('/direct')
-  await settle(page)
-  const poster = place(settings.livePoster)
-  const label = page.locator('.direct-off .vp__place')
-  if (poster) await expect(label).toHaveText(`Photo : ${poster}`)
-  else await expect(label).toHaveCount(0)
+  await expect(page.locator('.hero .slide__place')).toHaveCount(0)
   expect(errors, errors.join('\n')).toEqual([])
 })
 

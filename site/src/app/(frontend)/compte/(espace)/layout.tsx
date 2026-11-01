@@ -34,7 +34,7 @@ export default async function SpaceLayout({ children }: { children: ReactNode })
     : 'Vos vidéos, votre liste et vos réglages, au même endroit.'
   return (
     <>
-      <PageHeader eyebrow="Mon espace" title={title} description={description} crumbs={[{ label: 'Mon espace', href: '/compte' }]}>
+      <PageHeader photo="mole" eyebrow="Mon espace" title={title} description={description} crumbs={[{ label: 'Mon espace', href: '/compte' }]}>
         {member && <LogoutButton />}
       </PageHeader>
       <div className="container space-bar">

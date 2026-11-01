@@ -34,6 +34,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   return (
     <>
       <PageHeader
+        photo="mole"
         eyebrow="Mon espace"
         title="Connexion"
         description={'Retrouvez votre historique, «\u00a0Ma liste\u00a0» et l’actualité de votre département.'}

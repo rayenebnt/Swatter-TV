@@ -73,7 +73,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
 
   return (
     <>
-      <PageHeader eyebrow="Recherche" title={q ? `Résultats pour ${quoted(q)}` : 'Rechercher sur Swatter TV Info'} description={description} crumbs={[{ label: 'Recherche' }]}>
+      <PageHeader photo="mole" eyebrow="Recherche" title={q ? `Résultats pour ${quoted(q)}` : 'Rechercher sur Swatter TV Info'} description={description} crumbs={[{ label: 'Recherche' }]}>
         <form className="sform" action="/recherche" method="get" role="search">
           <Icon name="search" />
           <label className="sr-only" htmlFor="sform-q">
