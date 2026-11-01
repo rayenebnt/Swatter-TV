@@ -31,7 +31,9 @@ export function PageHeader({
   const all: Crumb[] = [{ label: 'Accueil', href: '/' }, ...crumbs]
   const bg = HEADER_PHOTOS[photo]
   // Photo décorative, chargée en priorité (haut de page) ; sur téléphone, son autre fichier s'il en a un (<picture>)
-  const { style: _fill, ...img } = getImageProps({ src: bg.src, alt: '', fill: true, sizes: '100vw', loading: 'eager', fetchPriority: 'high' }).props
+  // sans fichier pour téléphone, la photo en largeur couvre l'en-tête presque carré par sa hauteur : bien plus large que l'écran
+  const sizes = bg.mobileSrc ? '100vw' : '(max-width: 760px) 180vw, 100vw'
+  const { style: _fill, ...img } = getImageProps({ src: bg.src, alt: '', fill: true, sizes, loading: 'eager', fetchPriority: 'high' }).props
   const phone = bg.mobileSrc ? getImageProps({ src: bg.mobileSrc, alt: '', fill: true, sizes: '100vw' }).props : null
   return (
     <header className="page-header" data-photo={photo}>
