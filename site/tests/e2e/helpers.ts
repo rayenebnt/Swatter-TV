@@ -18,8 +18,10 @@ export function watchErrors(page: Page): string[] {
   page.on('response', (response) => {
     const url = new URL(response.url())
     // « test-import… » : fiches créées puis supprimées par le test d'import YouTube qui tourne en parallèle (admin.spec.ts) ;
-    // une page déjà affichée peut encore précharger leur lien
-    const transient = response.status() === 404 && url.pathname.includes('/test-import')
+    // une page déjà affichée peut encore précharger leur lien. Même chose pour le préchargement (requête _rsc) des fiches
+    // « test-e2e-… » créées puis supprimées par les autres tests ; une vraie navigation vers une page absente reste signalée
+    const transient =
+      response.status() === 404 && (url.pathname.includes('/test-import') || (url.pathname.includes('/test-e2e-') && url.searchParams.has('_rsc')))
     if (url.origin === ORIGIN && response.status() >= 400 && !url.pathname.startsWith('/__nextjs') && !transient) {
       errors.push(`HTTP ${response.status()} : ${url.pathname}${url.search}`)
     }
