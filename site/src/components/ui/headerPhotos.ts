@@ -16,10 +16,10 @@ const photo = (src: string, position: string, positionMobile: string, mobileSrc?
 })
 
 /**
- * Cadrage : le Bargy, falaises sur toute la largeur et sommet à droite ; le Môle, sommet au centre. Sur téléphone, le cadre
- * presque carré ne montre qu'une bande verticale : celle du sommet.
+ * Cadrage : le Bargy, sommet entier (haut de la photo) et falaises qui montent vers lui ; le Môle, sommet au centre. Sur
+ * téléphone, le cadre presque carré ne montre qu'une bande verticale : celle du sommet.
  */
 export const HEADER_PHOTOS: Record<HeaderPhoto, PhotoDef> = {
-  bargy: photo('/visuels/bargy.webp', '50% 34%', '74% 40%'),
+  bargy: photo('/visuels/bargy.webp', '50% 14%', '74% 40%'),
   mole: photo('/visuels/mole.webp', '50% 36%', '50% 38%', '/visuels/mole-portrait.webp'),
 }
