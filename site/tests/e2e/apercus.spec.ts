@@ -486,6 +486,11 @@ withAdmin('aperçus animés des cartes et des fiches (vidéos créées pour le t
     for (const width of [1440, 1263, 1180, 1101, 1000]) {
       await page.setViewportSize({ width, height: 900 })
       await tile.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+      // largeur changée : la photo peut être redemandée dans une autre taille (tuile en pleine largeur sous 1101 px) ; ses
+      // dimensions propres ne sont connues qu'une fois chargée (sous charge, la mesure tombait pendant le chargement)
+      await expect
+        .poll(() => tile.locator('.whole__fg').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0), { message: `${width} px : photo chargée` })
+        .toBe(true)
       const { ratio, photo, video } = await framing(tile)
       const whole = ratio < 1.05
       if (width === 1180) expect(whole, `mosaïque 5 + 4 + 3 : tuile vidéo plus haute que large à ${width} px (${ratio.toFixed(2)})`).toBe(true)
