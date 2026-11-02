@@ -378,8 +378,11 @@ describe('relations vers un contenu non publié', () => {
   })
 
   it('un créneau en ligne ne révèle pas son émission en brouillon', async () => {
-    const hidden = await draftOnly('programs')
+    // un créneau n'est publié qu'avec une émission en ligne (contrôle de Schedule.ts) : l'émission est retirée du site
+    // après coup, et repasse en brouillon
+    const hidden = await published('programs')
     const slot = await published('schedule', { program: hidden.id })
+    await payload.update({ collection: 'programs', id: hidden.id as number, data: { _status: 'draft' } })
     const res = await apiJson<Doc>(`/schedule/${slot.id}?depth=1`)
     expect(res.status).toBe(200)
     expect(res.body.program).toBe(hidden.id)
