@@ -64,10 +64,18 @@ Message au client :
 > racine (`@`) par `IP_DU_SERVEUR` (si `www` est un CNAME, remplacez-le par un A) ? Ne touchez surtout pas aux
 > enregistrements MX et TXT : vos e-mails restent chez SiteW. Ne résiliez pas SiteW avant d’avoir déménagé vos e-mails.
 
-Une fois le changement fait (la commande vérifie le DNS et vous dit d’attendre s’il n’est pas encore visible) :
+Chez SiteW : **Mes domaines** › « … » du domaine › **Configuration DNS** › **Ajouter un enregistrement DNS**, deux fois
+(nom `@` puis `www`, type **A**, valeur `IP_DU_SERVEUR`). Les enregistrements de SiteW (ancien site, e-mails) n’y
+apparaissent pas : vérifiez ensuite sur un outil de consultation DNS que `swatter-tv.fr` et `www.swatter-tv.fr` ne
+renvoient plus que `IP_DU_SERVEUR`. Les anciens enregistrements sont gardés en cache jusqu’à 6 heures.
+
+Une fois le changement fait, lancez la commande (elle vérifie le DNS et vous dit d’attendre s’il n’est pas encore
+visible, ou si un nom pointe encore aussi vers l’ancien site ; elle reconstruit le site, d’où `nohup` : une coupure de
+la connexion ne l’interrompt pas) :
 
 ```bash
-~/Swatter-TV/site/deploy/bascule.sh
+nohup ~/Swatter-TV/site/deploy/bascule.sh > ~/bascule.log 2>&1 &
+tail -f ~/bascule.log
 ```
 
 Le site est alors en ligne sur `https://www.swatter-tv.fr`, sans mot de passe ; `swatter-tv.fr` et l’adresse

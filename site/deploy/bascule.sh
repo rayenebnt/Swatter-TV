@@ -17,8 +17,16 @@ if [ "${FORCER:-0}" != 1 ]; then
   IP4="$(ip -4 route get 1.1.1.1 2> /dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1) }')" || IP4=""
   [ -n "$IP4" ] || { echo "Adresse IP du serveur introuvable. Si le DNS a bien été changé : FORCER=1 $0"; exit 1; }
   for nom in www.swatter-tv.fr swatter-tv.fr; do
-    getent ahostsv4 "$nom" | grep -qwF "$IP4" || {
+    adresses="$(getent ahostsv4 "$nom" | awk '{ print $1 }' | sort -u)" || adresses=""
+    grep -qxF "$IP4" <<< "$adresses" || {
       echo "$nom ne pointe pas encore vers ce serveur ($IP4) : attendez que le client ait changé le DNS, puis relancez."
+      exit 1
+    }
+    # Une autre adresse en plus (l'ancien site, si l'ancien enregistrement A est resté à côté du nouveau) : une partie des
+    # visiteurs y serait envoyée, et le certificat HTTPS pourrait être refusé.
+    autres="$(grep -vxF "$IP4" <<< "$adresses" | paste -sd ' ' -)" || autres=""
+    [ -z "$autres" ] || {
+      echo "$nom pointe aussi vers $autres (l'ancien site ?) : supprimez cet enregistrement A dans le DNS pour ne garder que $IP4, attendez, puis relancez."
       exit 1
     }
   done
