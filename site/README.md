@@ -427,7 +427,8 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - Droits du public, des éditeurs et des administrateurs sur chaque collection et chaque réglage (REST et GraphQL),
     brouillons, contenus programmés, comptes de l’équipe, membres.
   - Comportements automatiques : adresses uniques, Top 10, couvertures et aperçus animés tirés des vidéos (vrai ffmpeg :
-    fichier envoyé, lien direct MP4 et HLS, YouTube ; envoi de 35 Mo), grille des programmes, régénération du site,
+    fichier envoyé, lien direct MP4 et HLS, YouTube ; envoi de 35 Mo), vidéo de fond du carrousel (image tirée de la vidéo,
+    version légère 1080p muette sans doublon, fichier remplacé), grille des programmes, régénération du site,
     ménage des brouillons vides, imports YouTube simultanés sans doublon, articles « Autres régions » (refusés pour
     l’agenda et les webcams).
   - API de l’espace membres (inscription, connexion et blocage, sessions, mot de passe oublié, historique, « Ma liste »,
@@ -454,6 +455,9 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - `contact.spec.ts` : bouton « Proposer une info », champs vérifiés, robots ignorés ;
   - `members.spec.ts` : espace membres fermé sans connexion, inscription, mot de passe oublié, retours sûrs après la
     connexion, pages lisibles sur mobile ;
+  - `video-fond.spec.ts` : vidéo de fond d’une diapositive du carrousel (demandée seulement à l’affichage de sa
+    diapositive, muette et en boucle, posée exactement sur la photo sur ordinateur et sur téléphone, en pause sur une
+    autre diapositive ; rien en « réduire les animations » ni après « Arrêter les aperçus animés ») ;
   - `apercus.spec.ts` : aperçu animé des cartes (lancé sans survol ni toucher dès que la carte est à l’écran, rien de
     demandé hors de l’écran, en boucle et sans le son ; lecture réelle d’une mire WebM : plusieurs à la fois, 3 au plus
     sur téléphone en portrait et en paysage, pause hors de l’écran et onglet masqué, commande « Arrêter les aperçus

@@ -2,15 +2,17 @@
 // - YouTube : image de la vidéo (youtube-<id>) et diaporama animé de ses 3 images (ffmpeg) ;
 // - fichier envoyé ou lien direct MP4 / HLS : image représentative et extrait muet de 5 s (ffmpeg, voir ./ffmpeg) ;
 // - Bunny Stream : son image, si l'hôte de la zone de diffusion est connu (BUNNY_CDN_HOST), sans aperçu.
-// Les fichiers créés sont reconnaissables à leur nom : youtube-<id>, video-<clé>, bunny-<id> (couvertures) et apercu-<clé>
-// (aperçus), où la clé désigne la vidéo (y<id YouTube>, m<n° du fichier>, u<empreinte du lien>). Une image choisie à la main
+// Les fichiers créés sont reconnaissables à leur nom : youtube-<id>, video-<clé>, bunny-<id> (couvertures), apercu-<clé>
+// (aperçus) et fond-m<n°> (vidéo de fond du carrousel de l'accueil, version légère d'un fichier envoyé), où la clé désigne
+// la vidéo (y<id YouTube>, m<n° du fichier>, u<empreinte du lien>). Une image choisie à la main
 // (ou un aperçu fourni par l'API) n'est jamais remplacée. Le hook ne lève jamais d'erreur : en cas d'échec, la fiche est enregistrée sans couverture ni aperçu.
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { createLocalReq, type CollectionAfterChangeHook, type CollectionBeforeValidateHook, type Payload, type PayloadRequest } from 'payload'
+import { createLocalReq, type CollectionAfterChangeHook, type CollectionBeforeValidateHook, type GlobalAfterChangeHook, type GlobalBeforeValidateHook, type Payload, type PayloadRequest } from 'payload'
 import { youtubeId } from '@/lib/video'
-import { ffmpegReady, MissingProgramError, probeVideo, resetFfmpegState, slideshow, videoClip, videoCover, type VideoInput, type VideoProbe } from './ffmpeg'
+import type { Media } from '@/payload-types'
+import { backgroundClip, ffmpegReady, MissingProgramError, probeVideo, resetFfmpegState, slideshow, videoClip, videoCover, type VideoInput, type VideoProbe } from './ffmpeg'
 import { TOP10_REORDER } from './top10'
 
 type Data = Record<string, unknown>
@@ -81,7 +83,12 @@ export function previewBase(key: string): string | null {
   return key[0] === 'b' ? null : `apercu-${key}`
 }
 
-const AUTO_NAME = /^(?:youtube-[\w-]{11}|video-(?:m\d+|u[0-9a-f]{12})|bunny-[\w-]{1,64}|apercu-(?:y[\w-]{11}|m\d+|u[0-9a-f]{12}))(?:-\d+)?\.\w+$/
+/** Nom (sans extension) de la vidéo de fond du carrousel tirée d'un fichier de la médiathèque (numéro `id`). */
+export function backgroundBase(id: number | string): string {
+  return `fond-m${id}`
+}
+
+const AUTO_NAME = /^(?:youtube-[\w-]{11}|video-(?:m\d+|u[0-9a-f]{12})|bunny-[\w-]{1,64}|apercu-(?:y[\w-]{11}|m\d+|u[0-9a-f]{12})|fond-m\d+)(?:-\d+)?\.\w+$/
 
 /** Fichier de la médiathèque créé automatiquement (couverture ou aperçu), reconnu à son nom. */
 export function isAutoFilename(filename: string): boolean {
@@ -138,11 +145,15 @@ const inflight = new Map<string, Promise<Buffer | null>>()
 /** Programmes absents déjà signalés dans le journal. */
 const warned = new Set<string>()
 
+/** Vidéos de fond en préparation (nom du fichier → traitement) : un seul par vidéo, quel que soit le nombre d'appels. */
+const preparing = new Map<string, Promise<number | string | null>>()
+
 /** Oublie les échecs récents et l'état de ffmpeg (tests). */
 export function resetVideoAutoMedia() {
   failures.clear()
   inflight.clear()
   warned.clear()
+  preparing.clear()
   resetFfmpegState()
 }
 
@@ -434,8 +445,8 @@ export async function catchUpAutoMedia(payload: Payload, onUpdate?: (line: strin
 }
 
 /**
- * Fichier vidéo de la médiathèque remplacé (même document, autre fichier) : sa couverture et son aperçu automatiques
- * (video-m<n°>, apercu-m<n°>), tirés de l'ancien fichier, sont supprimés. Les fiches liées perdent ces fichiers (clé
+ * Fichier vidéo de la médiathèque remplacé (même document, autre fichier) : sa couverture, son aperçu et sa vidéo de fond
+ * automatiques (video-m<n°>, apercu-m<n°>, fond-m<n°>), tirés de l'ancien fichier, sont supprimés. Les fiches liées perdent ces fichiers (clé
  * étrangère ON DELETE SET NULL) et les retrouvent, tirés du nouveau fichier, à leur prochain enregistrement.
  */
 export const purgeReplacedVideoMedia: CollectionAfterChangeHook = async ({ doc, previousDoc, operation, req }) => {
@@ -444,7 +455,7 @@ export const purgeReplacedVideoMedia: CollectionAfterChangeHook = async ({ doc, 
   const replaced = previousDoc.filename !== doc.filename || previousDoc.filesize !== doc.filesize
   if (!wasVideo || !replaced || !/^\d+$/.test(String(doc.id))) return doc
   try {
-    for (const base of [coverBase(`m${doc.id}`), previewBase(`m${doc.id}`) as string]) {
+    for (const base of [coverBase(`m${doc.id}`), previewBase(`m${doc.id}`) as string, backgroundBase(doc.id)]) {
       for (const id of await findAllAuto(base, req)) await req.payload.delete({ collection: 'media', id, req })
     }
   } catch (error) {
@@ -458,3 +469,167 @@ export const thumbnailUnlessAutomatic = (value: unknown, { siblingData }: { sibl
   const provider = (siblingData?.source as { provider?: string } | undefined)?.provider
   return value || (provider && AUTO_COVER_PROVIDERS.includes(provider)) ? true : 'Ajoutez une image : elle n’est pas tirée automatiquement d’une vidéo Bunny Stream.'
 }
+
+// ---------- Vidéo de fond du carrousel de l'accueil (src/globals/Settings.ts, diapositives) ----------
+
+const isNumericId = (id: unknown): id is number | string => (typeof id === 'number' || typeof id === 'string') && /^\d+$/.test(String(id))
+
+/** Version légère déjà prête de la vidéo de fond tirée du fichier `id` de la médiathèque ; null : pas encore (ou jamais). */
+export async function findBackgroundVideo(payload: Payload, id: number | string): Promise<Media | null> {
+  if (!isNumericId(id)) return null
+  const base = backgroundBase(id)
+  const { docs } = await payload.find({
+    collection: 'media',
+    where: { or: [{ filename: { like: `${base}.` } }, { filename: { like: `${base}-` } }] },
+    limit: 10,
+    depth: 0,
+    overrideAccess: true,
+  })
+  return docs.find((m) => typeof m.filename === 'string' && hasBase(m.filename, base)) ?? null
+}
+
+/**
+ * Version légère de la vidéo de fond (fond-m<n°>.mp4 : 20 s au plus, 1920 × 1080 au plus, sans le son, voir
+ * backgroundClip) tirée du fichier `id` de la médiathèque : la fabrique si elle manque, hors de toute requête (traitement
+ * de plusieurs secondes, lancé sans être attendu après l'enregistrement des réglages ou au rendu de l'accueil). Un seul
+ * traitement par vidéo à la fois ; en cas d'échec (vidéo illisible, ffmpeg absent), aucun nouvel essai avant
+ * RETRY_AFTER_MS. Renvoie son numéro dans la médiathèque, ou null. Jamais d'erreur.
+ */
+export function prepareBackgroundVideo(payload: Payload, id: number | string): Promise<number | string | null> {
+  if (!isNumericId(id)) return Promise.resolve(null)
+  const base = backgroundBase(id)
+  const running = preparing.get(base)
+  if (running) return running
+  const job = (async () => {
+    const req = await createLocalReq({}, payload)
+    const found = await findAuto(base, req)
+    if (found !== null) return found
+    if (!(await ffmpegReady((program) => warnMissing(program, req)))) return null
+    let credit: string | null = null
+    const file = await produce(
+      base,
+      async () => {
+        const video = await uploadedVideo(String(id), req)
+        credit = video.credit
+        return backgroundClip(video.input)
+      },
+      (reason) => `[swatter] Vidéo de fond du carrousel impossible à préparer (fichier n° ${id} de la médiathèque) : ${reason ?? 'aucune image'}`,
+      req,
+    )
+    if (!file) return null
+    return createMedia(req, file, `${base}.mp4`, 'video/mp4', 'Vidéo de fond du carrousel (version légère)', credit)
+  })()
+    .catch((error: unknown) => {
+      payload.logger?.warn(`[swatter] Vidéo de fond du carrousel impossible à préparer (fichier n° ${id}) : ${reasonOf(error)}`)
+      return null
+    })
+    .finally(() => preparing.delete(base))
+  preparing.set(base, job)
+  return job
+}
+
+/**
+ * État de la version légère de la vidéo de fond tirée du fichier `id` : en préparation, en échec récent (fichier illisible,
+ * délai dépassé : nouvel essai RETRY_AFTER_MS après), ou ni l'un ni l'autre (prête, ou pas encore demandée). Mémoire du
+ * serveur du site : tableau de bord.
+ */
+export function backgroundState(id: number | string): 'preparing' | 'failed' | null {
+  const base = backgroundBase(id)
+  if (preparing.has(base)) return 'preparing'
+  const failedAt = failures.get(base)
+  return failedAt !== undefined && Date.now() - failedAt < RETRY_AFTER_MS ? 'failed' : null
+}
+
+/** Vidéos de fond en cours de préparation (tests : attendre leur fin). */
+export const backgroundVideosSettled = () => Promise.all([...preparing.values()])
+
+/** Couverture tirée du fichier vidéo `id` de la médiathèque (video-m<n°>.jpg, la même que pour une vidéo du site) ; null en cas d'échec. */
+async function coverFromUploadedVideo(id: number | string, alt: string, req: PayloadRequest): Promise<number | string | null> {
+  const key = `m${id}`
+  const base = coverBase(key)
+  const found = await findAuto(base, req)
+  if (found !== null) return found
+  if (!(await ffmpegReady((program) => warnMissing(program, req)))) return null
+  const steps = recipe(key, { provider: 'upload', file: id }, req)
+  const file = await produce(base, steps.cover, steps.coverFailure, req)
+  if (!file) return null
+  const credit = await steps.credit().catch(() => null)
+  return createMedia(req, file, `${base}.jpg`, 'image/jpeg', alt, credit)
+}
+
+type SlideRow = Record<string, unknown> & { id?: string | null; video?: unknown; image?: unknown; titleLine1?: unknown }
+
+/**
+ * Diapositives du carrousel avec une vidéo de fond (réglages, à chaque enregistrement, brouillons compris) : image de fond
+ * tirée de la vidéo si elle est vide, ou si la vidéo a changé et que l'image était tirée d'une autre vidéo. Une image
+ * choisie à la main est gardée. Jamais d'erreur : en cas d'échec, l'image reste vide (le site affiche son visuel par défaut).
+ */
+export const heroSlidesAutoCover: GlobalBeforeValidateHook = async ({ data, originalDoc, req }) => {
+  const slides = (data as Data | undefined)?.heroSlides
+  if (!Array.isArray(slides)) return data
+  try {
+    const before = new Map<string, SlideRow>()
+    for (const row of ((originalDoc as Data | undefined)?.heroSlides as SlideRow[] | undefined) ?? []) if (row?.id) before.set(String(row.id), row)
+    let touched = false
+    const next: SlideRow[] = []
+    for (const row of slides as SlideRow[]) {
+      const video = idOf(row?.video)
+      const image = idOf(row?.image)
+      if (!row || video === null || !isNumericId(video)) {
+        next.push(row)
+        continue
+      }
+      const previous = row.id ? before.get(String(row.id)) : undefined
+      const changed = previous !== undefined && !same(idOf(previous.video), video)
+      const replace = image === null || (changed && (await isStale(image, coverBase(`m${video}`), req)))
+      if (!replace) {
+        next.push(row)
+        continue
+      }
+      const title = typeof row.titleLine1 === 'string' && row.titleLine1.trim() ? row.titleLine1.trim() : 'Diapositive du carrousel'
+      const cover = await coverFromUploadedVideo(video, `Image de la vidéo : ${title}`, req)
+      if (cover !== null && !same(cover, image)) {
+        next.push({ ...row, image: cover })
+        touched = true
+      } else next.push(row)
+    }
+    return touched ? { ...data, heroSlides: next } : data
+  } catch (error) {
+    req.payload.logger.warn(`[swatter] Image tirée de la vidéo de fond du carrousel impossible : ${reasonOf(error)}`)
+    return data
+  }
+}
+
+/** Numéros des vidéos de fond des diapositives (réglages). */
+export function slideVideoIds(slides: unknown): string[] {
+  if (!Array.isArray(slides)) return []
+  return [...new Set(slides.map((row) => idOf((row as SlideRow | null)?.video)).filter(isNumericId).map(String))]
+}
+
+/**
+ * Réglages enregistrés : version légère des vidéos de fond du carrousel préparée en arrière-plan (sans retarder
+ * l'enregistrement ; les brouillons comptent, pour que l'aperçu la montre vite).
+ */
+export const heroSlidesPrepareVideos: GlobalAfterChangeHook = ({ doc, req }) => {
+  for (const id of slideVideoIds((doc as Data | undefined)?.heroSlides)) void prepareBackgroundVideo(req.payload, id)
+  return doc
+}
+
+/** Rattrapage (npm run apercus) : version légère des vidéos de fond des diapositives publiées. Renvoie le nombre préparé. */
+export async function catchUpHeroVideos(payload: Payload, onUpdate?: (line: string) => void): Promise<number> {
+  let prepared = 0
+  try {
+    const settings = await payload.findGlobal({ slug: 'settings', depth: 0, overrideAccess: true })
+    for (const id of slideVideoIds(settings.heroSlides)) {
+      if (await findBackgroundVideo(payload, id)) continue
+      if ((await prepareBackgroundVideo(payload, id)) !== null) {
+        prepared++
+        onUpdate?.(`Vidéo de fond du carrousel : version légère du fichier n° ${id} préparée`)
+      }
+    }
+  } catch (error) {
+    payload.logger.warn(`[swatter] Rattrapage des vidéos de fond impossible : ${reasonOf(error)}`)
+  }
+  return prepared
+}
+

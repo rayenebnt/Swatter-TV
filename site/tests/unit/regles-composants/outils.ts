@@ -53,6 +53,11 @@ function check(value: unknown, operator: string, operand: unknown): boolean {
       if (operator === 'greater_than') return c > 0
       return c >= 0
     }
+    case 'like': {
+      // comme Payload : chaque mot de la recherche, sans tenir compte de la casse
+      const text = String(value ?? '').toLowerCase()
+      return !isNil(value) && String(operand).toLowerCase().split(/\s+/).filter(Boolean).every((word) => text.includes(word))
+    }
     default:
       throw new Error(`opérateur non pris en charge par l’outil de test : ${operator}`)
   }

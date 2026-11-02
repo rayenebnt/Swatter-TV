@@ -42,6 +42,7 @@ function fakePayload(store: Store, globals: Record<string, Doc> = {}, failing: s
       fail(`global:${args.slug}`)
       return globals[args.slug ?? ''] ?? {}
     }),
+    findByID: vi.fn(async (args: Args & { id: number }) => (store[args.collection ?? ''] ?? []).find((d) => d.id === args.id) ?? null),
   }
   return payload as unknown as Payload
 }
@@ -440,6 +441,7 @@ describe('une requête en échec n’empêche pas le tableau de bord de s’affi
       analyticsId: null,
       recent: [],
       members: null,
+      heroVideos: null,
     })
   })
 })
@@ -457,3 +459,29 @@ describe('mesure d’audience', () => {
     }
   })
 })
+
+describe('vidéos de fond du carrousel', () => {
+  const MB = 1024 * 1024
+  const media = [
+    // vidéo 5 : version légère prête ; 6 : fichier d'origine léger (WebM de 2 Mo), lu en attendant ; 7 : fichier lourd
+    { id: 5, filename: 'montagne.mp4', mimeType: 'video/mp4', filesize: 80 * MB, url: '/api/media/file/montagne.mp4' },
+    { id: 50, filename: 'fond-m5.mp4', mimeType: 'video/mp4', filesize: 3 * MB, url: '/api/media/file/fond-m5.mp4' },
+    { id: 6, filename: 'boucle.webm', mimeType: 'video/webm', filesize: 2 * MB, url: '/api/media/file/boucle.webm' },
+    { id: 7, filename: 'drone.mp4', mimeType: 'video/mp4', filesize: 300 * MB, url: '/api/media/file/drone.mp4' },
+  ]
+  const slides = (videos: (number | null)[]) => ({ heroSlides: videos.map((video, i) => ({ id: `s${i}`, titleLine1: `Diapositive ${i + 1}`, image: 1, video })) })
+
+  it('aucune vidéo de fond : le tableau de bord n’en parle pas', async () => {
+    expect((await dashboard({ media }, { settings: slides([null, null]) })).heroVideos).toBeNull()
+  })
+
+  it('version légère prête ou fichier d’origine léger : en ligne ; fichier lourd sans version légère : en préparation', async () => {
+    const data = await dashboard({ media }, { settings: slides([5, null, 6, 7]) })
+    expect(data.heroVideos).toEqual({ ready: 2, pending: [4], failed: [] })
+  })
+
+  it('réglages illisibles : rien n’est affirmé', async () => {
+    expect((await dashboard({ media }, { settings: slides([5]) }, ['find:media'])).heroVideos).toBeNull()
+  })
+})
+

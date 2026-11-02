@@ -331,6 +331,29 @@ Trois niveaux ; commandes, prérequis et contenu : README, « Tests ». Avant un
   pied de page restent affichés. `src/app/global-error.tsx` est la page de dernier recours.
 - **Fiche d'émission par ancre** (`/programme-tv#slug`) : à la fermeture, l'ancre est retirée de l'adresse (un nouveau lien
   vers la même émission la rouvre).
+- **Vidéo de fond des diapositives du carrousel** (`heroSlides[].video`, upload filtré sur `video/`, migration
+  `20261101_235625_video_fond_carrousel`) :
+  - Image de fond facultative avec une vidéo : `heroSlidesAutoCover` (beforeValidate des réglages,
+    `src/hooks/videoAutoMedia.ts`) la tire de la vidéo si elle est vide, ou si la vidéo a changé et que l'image était tirée
+    d'une autre vidéo (même fichier `video-m<n°>` que pour une vidéo du site) ; image choisie gardée.
+  - Version légère `fond-m<n°>.mp4` (`backgroundClip`, `src/hooks/ffmpeg.ts` : 20 premières secondes, réduite à 1920 × 1080
+    au plus, proportions gardées, H.264 High muet, +faststart) préparée hors requête par `prepareBackgroundVideo` (un seul
+    traitement par vidéo, échec mémorisé RETRY_AFTER_MS) : après l'enregistrement des réglages (afterChange, sans
+    l'attendre), au rendu de l'accueil si elle manque (`heroVideoSource`), par `npm run apercus` (`catchUpHeroVideos`) et
+    depuis le tableau de bord. Fichier vidéo remplacé dans la médiathèque : `fond-m<n°>` supprimé avec la couverture.
+  - Sources servies (`heroVideoSources`, `home/heroMedia.ts`) : la version légère (`HERO_VIDEO_LIGHT_TYPE`), puis le
+    fichier d'origine s'il est déjà léger (MP4 ou WebM de 12 Mo au plus, `HERO_VIDEO_DIRECT_MAX`) ; le navigateur garde
+    la première qu'il sait lire (`canPlayType` : le Chromium des tests, sans H.264, lit le WebM).
+  - Lecture (`HeroVideo.tsx`) : vidéo posée sur la photo (position et taille de `img.slide__photo` recopiées, ResizeObserver :
+    photo qui couvre le cadre comme photo entière des téléphones et tablettes), même cadrage (`--focal`, `--focal-m`) et
+    même zoom ; inscrite auprès du pilote des aperçus comme le lecteur d'une fiche (`bindBackgroundVideo`, type
+    « ambient ») seulement sur la diapositive affichée (`SlideActive`, fourni par HeroClient) : jamais en « réduire les
+    animations », en économie de données, onglet masqué, carrousel hors de l'écran, ni aperçus arrêtés (pied de page).
+    `preload="none"`, adresse posée à la première lecture ; apparition en fondu (`.is-on`) à l'événement « playing » ;
+    diapositive suivante : pause, sans revenir à l'image (elle s'efface avec sa diapositive). Sur téléphone, une image
+    pour téléphone de la diapositive l'emporte (aucune vidéo sous 760 px).
+  - Tableau de bord : ligne « Vidéos du carrousel » (`heroVideos`, `backgroundState` : en préparation, illisible), seulement
+    si une diapositive publiée a une vidéo.
 - **Photos de fond de la chaîne et lieu photographié** : le Bargy et le Môle (photos du client) sont l'image de fond
   des en-têtes des pages intérieures (`PageHeader`, prop `photo` « bargy » par défaut ou « mole », réglée page par page
   pour alterner d'une rubrique à l'autre ; `components/ui/headerPhotos.ts` : fichiers et cadrages), pas du carrousel de

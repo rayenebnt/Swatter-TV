@@ -9,9 +9,10 @@ import { eventUrl, programUrl } from '@/lib/urls'
 import { resolveVideo } from '@/lib/video'
 import type { Setting } from '@/payload-types'
 import { CountUp } from './CountUp'
-import { heroPlaces, heroWhole } from './heroMedia'
+import { heroPlaces, heroWhole, type HeroVideoSource } from './heroMedia'
 import { HeroClient, type HeroBadge, type HeroLink, type HeroLive, type HeroSlide } from './HeroClient'
 import { HeroImage } from './HeroImage'
+import { heroVideoSource } from './heroVideoSource'
 import type { LiveSlot } from './LiveProgress'
 import { cutBadges, cutNavLabel, splitTitle } from './liveSlide'
 import '@/styles/hero.css'
@@ -23,6 +24,8 @@ type Draft = Omit<HeroSlide, 'media' | 'whole' | 'thumb'> & {
   image: MediaRef
   /** Image pour téléphone (diapositives des réglages) */
   imageMobile: MediaRef
+  /** Vidéo de fond (diapositives des réglages) */
+  video: MediaRef
   /** Visuels de repli (public/visuels) */
   heroFallback: string
   thumbFallback: string
@@ -94,6 +97,7 @@ function fromSettings(slides: ConfiguredSlide[], live: HeroLive | null): Draft[]
       live: isLive ? live : null,
       image: s.image,
       imageMobile: s.imageMobile,
+      video: s.video,
       heroFallback: fb.hero,
       thumbFallback: fb.thumb,
       requireLarge: false,
@@ -120,6 +124,7 @@ function liveDraft(live: HeroLive): Draft {
     live,
     image: null,
     imageMobile: null,
+    video: null,
     heroFallback: FALLBACKS[0].hero,
     thumbFallback: FALLBACKS[0].thumb,
     requireLarge: true,
@@ -144,6 +149,7 @@ function eveningDraft({ slot, image, when }: EveningProgram): Draft {
     live: null,
     image,
     imageMobile: null,
+    video: null,
     heroFallback: FALLBACKS[1].hero,
     thumbFallback: FALLBACKS[1].thumb,
     requireLarge: true,
@@ -175,6 +181,7 @@ function eventDraft(event: HomeEvent, now: Date): Draft {
     live: null,
     image: event.poster,
     imageMobile: null,
+    video: null,
     heroFallback: FALLBACKS[2].hero,
     thumbFallback: FALLBACKS[2].thumb,
     requireLarge: true,
@@ -196,6 +203,7 @@ function brandDraft(tagline: string | null): Draft {
     live: null,
     image: null,
     imageMobile: null,
+    video: null,
     heroFallback: FALLBACKS[0].hero,
     thumbFallback: FALLBACKS[0].thumb,
     requireLarge: true,
@@ -204,14 +212,14 @@ function brandDraft(tagline: string | null): Draft {
 
 const isLarge = (m: MediaRef) => typeof m === 'object' && m !== null && (m.width ?? 0) >= HERO_MIN_WIDTH
 
-function render({ image, imageMobile, heroFallback, thumbFallback, requireLarge, ...slide }: Draft, index: number): HeroSlide {
+function render({ image, imageMobile, video: _video, heroFallback, thumbFallback, requireLarge, ...slide }: Draft, index: number, video: HeroVideoSource[]): HeroSlide {
   const background = requireLarge && !isLarge(image) ? null : image
   return {
     ...slide,
     // Image LCP : la première diapositive est chargée en priorité, les autres en différé. Dans un cadre en hauteur
     // (téléphone, tablette tenue en hauteur), photo en largeur entière sur fond flou ; sinon, image qui couvre le cadre
     // (sous 760 px : image pour téléphone de la diapositive, ou image de fond recadrée autour de son point focal)
-    media: <HeroImage background={background} phone={imageMobile} fallbackSrc={heroFallback} priority={index === 0} />,
+    media: <HeroImage background={background} phone={imageMobile} fallbackSrc={heroFallback} priority={index === 0} video={video} />,
     whole: heroWhole(background, imageMobile),
     places: heroPlaces(background, imageMobile, heroFallback),
     thumb: <MediaImage media={image} fallbackSrc={thumbFallback} size="thumb" sizes="76px" alt="" />,
@@ -283,7 +291,9 @@ export async function Hero() {
     if (!drafts.length) drafts.push(brandDraft(tagline))
   }
 
+  // vidéos de fond : version légère prête, ou préparée en arrière-plan (l'image seule en attendant)
+  const videos = await Promise.all(drafts.map((d) => heroVideoSource(d.video)))
   const rating = settings?.rating ?? 0
   const views = settings?.viewsCount ?? 0
-  return <HeroClient slides={drafts.map(render)} rating={rating > 0 || views > 0 ? <Rating rating={rating} views={views} /> : undefined} />
+  return <HeroClient slides={drafts.map((d, i) => render(d, i, videos[i]))} rating={rating > 0 || views > 0 ? <Rating rating={rating} views={views} /> : undefined} />
 }

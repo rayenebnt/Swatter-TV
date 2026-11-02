@@ -18,6 +18,11 @@
 .slide__media source { display: none; }
 /* Fond de la photo entière : la même image (même fichier, aucune requête de plus), floutée et assombrie, immobile */
 .slide__backdrop { display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; scale: 1.2; filter: blur(26px) brightness(.45) saturate(1.2); }
+/* Vidéo de fond (HeroVideo.tsx) : posée sur la photo (position et taille recopiées de la photo en direct), même cadrage et
+   même zoom ; elle apparaît en fondu quand elle tourne, la photo reste dessous (chargement, préférences, fichier illisible) */
+.slide__video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--focal, 50% 50%); transform: scale(1.16); opacity: 0; transition: opacity .9s var(--ease); pointer-events: none; }
+.slide.is-active .slide__video, .slide.is-prev .slide__video { animation: kenburns calc(var(--hero-dur) + 2s) var(--ease) forwards; }
+.slide__video.is-on { opacity: 1; }
 @keyframes kenburns { from { transform: scale(1.16) translateX(1.5%); } to { transform: scale(1.03) translateX(0); } }
 .slide::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(4, 10, 22, .92) 0%, rgba(4, 10, 22, .66) 30%, rgba(4, 10, 22, .08) 62%, rgba(4, 10, 22, 0) 100%), linear-gradient(0deg, var(--bg) 0%, rgba(7, 18, 36, .55) 22%, rgba(7, 18, 36, 0) 46%), linear-gradient(180deg, rgba(4, 10, 22, .6) 0%, rgba(4, 10, 22, 0) 18%); }
 .hero__glow { position: absolute; z-index: 1; inset: -10%; pointer-events: none; background: radial-gradient(36% 46% at 70% 32%, rgba(243, 213, 138, .13), rgba(243, 213, 138, 0) 70%); transform: translate3d(calc(var(--px, 0) * 40px), calc(var(--py, 0) * 30px), 0); transition: transform 1.2s var(--ease-out); }
@@ -115,7 +120,7 @@
   .slide::after { background: linear-gradient(0deg, var(--bg) 6%, rgba(4, 10, 22, .8) 42%, rgba(4, 10, 22, .2) 72%, rgba(4, 10, 22, .55) 100%); }
   /* Cadre portrait : image pour téléphone (centrée), ou image de fond centrée sur son point focal (heroMedia.ts) ;
      sans point focal, cadrage par défaut des visuels paysage, dont le sujet est un peu à droite */
-  .slide__photo { object-position: var(--focal-m, 62% 50%); }
+  .slide__photo, .slide__video { object-position: var(--focal-m, 62% 50%); }
   /* Diapositive qui couvre le cadre (sans photo entière : visuel de repli, image en hauteur) : image et voile sur toute
      la diapositive, textes calés juste au-dessus des barres de navigation (maquette) et jamais sous l'en-tête (marge
      haute : le cadre s'allonge si les textes ne tiennent pas) */
@@ -133,6 +138,8 @@
   .slide[data-whole~='phone'] .slide__backdrop { display: block; }
   .slide[data-whole~='phone'] .slide__photo { position: relative; inset: auto; flex: 1 0 min(calc(100cqw / var(--ratio-m)), 40cqw); align-self: center; width: auto; max-width: 100%; height: auto; min-height: 0; max-height: min(calc(100cqw / var(--ratio-m)), calc(var(--hero-h) * .46)); aspect-ratio: var(--ratio-m); object-fit: contain; transform: none; animation: none; }
   .slide[data-whole~='phone'] .slide__content { position: relative; bottom: auto; width: 100%; }
+  /* vidéo de fond sur la photo entière : ni zoom ni débord, elle remplit la boîte de la photo */
+  .slide[data-whole~='phone'] .slide__video { transform: none; animation: none; }
   .slide[data-whole~='phone']::after { background: linear-gradient(0deg, var(--bg) 5%, rgba(4, 10, 22, .72) 32%, rgba(4, 10, 22, 0) 56%); }
   .slide__desc { font-size: 15.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   /* Boutons côte à côte qui se partagent la largeur, chacun sur sa ligne si les libellés ne tiennent pas */
@@ -179,6 +186,7 @@
   .slide[data-whole~='tall'] .slide__backdrop { display: block; }
   .slide[data-whole~='tall'] .slide__photo { position: relative; inset: auto; flex: 0 1 auto; align-self: center; width: auto; max-width: 100%; height: min(calc(100cqw / var(--ratio)), calc(var(--hero-h) * .46)); min-height: 120px; margin-bottom: auto; aspect-ratio: var(--ratio); object-fit: contain; transform: none; animation: none; }
   .slide[data-whole~='tall'] .slide__content { position: relative; bottom: auto; width: 100%; }
+  .slide[data-whole~='tall'] .slide__video { transform: none; animation: none; }
   .slide[data-whole~='tall']::after { background: linear-gradient(0deg, var(--bg) 4%, rgba(4, 10, 22, .72) 30%, rgba(4, 10, 22, 0) 52%); }
 }
 @media (hover: none) {
@@ -187,6 +195,7 @@
 @media (prefers-reduced-motion: reduce) {
   .hero__snow { display: none; }
   .slide__photo { animation: none !important; transform: scale(1.03); }
+  .slide__video { display: none; }
   .slide__media, .hero__glow { transform: none; }
   /* Pas de défilement automatique : la liste se fait défiler à la main */
   .hnav button[aria-selected='true'] .bar i { animation: none !important; transform: scaleX(1); }

@@ -3,7 +3,7 @@ import { Gutter, Link } from '@payloadcms/ui'
 import { formatDayLong, formatTime, timeAgo } from '@/lib/format'
 import { KIND_LABELS } from '@/lib/members/shared'
 import { rangeSearch } from '@/lib/schedule-week'
-import { getDashboardData, programmeSummary, type Featured, type MembersStats, type RecentCollection } from './dashboard-data'
+import { getDashboardData, programmeSummary, type Featured, type HeroVideosStatus, type MembersStats, type RecentCollection } from './dashboard-data'
 import { scheduleSearch } from './menu'
 import { AdminIcon, type IconName } from './icons'
 
@@ -160,6 +160,15 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
               }
               href={global('settings')}
             />
+            {data.heroVideos && (
+              <StatusRow
+                icon="video"
+                label="Vidéos du carrousel"
+                tone={data.heroVideos.failed.length ? 'warn' : 'ok'}
+                value={heroVideosValue(data.heroVideos)}
+                href={global('settings')}
+              />
+            )}
             <StatusRow
               icon="article"
               label="Info du jour"
@@ -321,6 +330,17 @@ type StatusRowProps = {
   href: string
   /** lien vers un autre site, sous le texte (ouvert dans un nouvel onglet) */
   external?: { href: string; label: string }
+}
+
+const slidesList = (slides: number[]) => `${slides.length > 1 ? 'Diapositives' : 'Diapositive'} ${slides.join(', ')}`
+
+/** Vidéos de fond du carrousel : en ligne, en préparation (quelques minutes) ou illisibles (l'image s'affiche à leur place). */
+function heroVideosValue({ ready, pending, failed }: HeroVideosStatus): string {
+  const parts: string[] = []
+  if (failed.length) parts.push(`${slidesList(failed)} : vidéo illisible, l’image de fond s’affiche à sa place (essayez un fichier MP4)`)
+  if (pending.length) parts.push(`${slidesList(pending)} : vidéo en préparation (quelques minutes), l’image de fond s’affiche en attendant`)
+  if (ready) parts.push(`${ready} vidéo${ready > 1 ? 's' : ''} de fond en ligne`)
+  return parts.join(' · ')
 }
 
 function StatusRow({ icon, label, value, tone, href, external }: StatusRowProps) {

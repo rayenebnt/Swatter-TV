@@ -140,6 +140,19 @@ export class AdminApi {
     await this.api.dispose()
   }
 
+  /** Envoie un fichier dans la médiathèque (comme le formulaire de l'administration) ; il est supprimé par cleanup(). */
+  async uploadMedia(name: string, mimeType: string, buffer: Buffer, alt: string): Promise<{ id: number; filename: string; url: string }> {
+    const res = await this.api.fetch('/api/media?depth=0', {
+      method: 'POST',
+      headers: { Authorization: `JWT ${this.token}` },
+      multipart: { file: { name, mimeType, buffer }, _payload: JSON.stringify({ alt }) },
+    })
+    expect(res.ok(), `envoi de ${name} dans la médiathèque : ${res.status()} ${await res.text()}`).toBe(true)
+    const { doc } = (await res.json()) as { doc: { id: number; filename: string; url: string } }
+    this.created.push({ collection: 'media', id: doc.id })
+    return doc
+  }
+
   /** Image de la médiathèque (visuel des contenus de départ) : vignette des vidéos créées, sans téléchargement YouTube. */
   async imageId(): Promise<number> {
     const res = await this.send('GET', '/api/media?limit=100&depth=0')

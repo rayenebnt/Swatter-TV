@@ -7,6 +7,7 @@ import { useNow } from '@/components/video/useNow'
 import type { HeroPlace } from './heroMedia'
 import { LiveProgress } from './LiveProgress'
 import { liveView, type HeroLive, type LiveView } from './liveSlide'
+import { SlideActive } from './slideState'
 import { Snow } from './Snow'
 import { useHydrated, usePageHidden, useReducedMotion } from './useMotion'
 
@@ -219,7 +220,9 @@ export function HeroClient({ slides, rating }: { slides: HeroSlide[]; rating?: R
               data-onair={view ? (view.onAir ? 'antenne' : 'hors-antenne') : undefined}
               inert={!active}
             >
-              <div className="slide__media">{s.media}</div>
+              <SlideActive.Provider value={active}>
+                <div className="slide__media">{s.media}</div>
+              </SlideActive.Provider>
               <div className="container slide__content">
                 <div className="slide__inner">
                   {s.badges.length > 0 && (

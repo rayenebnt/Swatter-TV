@@ -11,7 +11,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { featureRatio, posterThumbSizes } from '@/components/agenda/utils'
 import { HeroImage } from '@/components/home/HeroImage'
-import { heroMobilePosition, heroMobileSizes, heroMobileSource, heroPlaces, heroWhole } from '@/components/home/heroMedia'
+import { HERO_VIDEO_DIRECT_MAX, HERO_VIDEO_LIGHT_TYPE, heroMobilePosition, heroMobileSizes, heroMobileSource, heroPlaces, heroVideoSources, heroWhole } from '@/components/home/heroMedia'
 import { MediaImage } from '@/components/ui/MediaImage'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { PROSE_SIZES, proseUpload } from '@/components/ui/proseUpload'
@@ -437,6 +437,59 @@ describe('en-têtes des pages intérieures : photo de montagne nommée (PageHead
     expect(out).toMatch(/<source media="\(max-width: 760px\)" srcSet="[^"]*%2Fvisuels%2Fmole-portrait\.webp/)
     expect(out).toMatch(/<img[^>]*srcSet="[^"]*%2Fvisuels%2Fmole\.webp/)
     expect(out).toContain('Photo : </span>Le Môle')
+  })
+})
+
+describe('carrousel : vidéo de fond (sources, rendu)', () => {
+  const video = (over: Partial<Media> = {}): Media =>
+    media({ id: 40, filename: 'drone.mp4', mimeType: 'video/mp4', url: 'http://localhost:3000/api/media/file/drone.mp4', width: null, height: null, sizes: {}, filesize: 300 * 1024 * 1024, ...over })
+  const light = video({ id: 41, filename: 'fond-m40.mp4', url: 'http://localhost:3000/api/media/file/fond-m40.mp4', filesize: 4 * 1024 * 1024 })
+
+  it('version légère d’abord (MP4 H.264), puis le fichier d’origine seulement s’il est déjà léger (MP4 ou WebM de 12 Mo au plus)', () => {
+    expect(heroVideoSources(video(), light)).toEqual([{ src: '/api/media/file/fond-m40.mp4', type: HERO_VIDEO_LIGHT_TYPE }])
+    expect(heroVideoSources(video(), null)).toEqual([])
+    const small = video({ filename: 'boucle.webm', mimeType: 'video/webm', url: '/api/media/file/boucle.webm', filesize: HERO_VIDEO_DIRECT_MAX })
+    expect(heroVideoSources(small, null)).toEqual([{ src: '/api/media/file/boucle.webm', type: 'video/webm' }])
+    expect(heroVideoSources(small, light)).toEqual([
+      { src: '/api/media/file/fond-m40.mp4', type: HERO_VIDEO_LIGHT_TYPE },
+      { src: '/api/media/file/boucle.webm', type: 'video/webm' },
+    ])
+    expect(heroVideoSources(video({ filesize: HERO_VIDEO_DIRECT_MAX + 1 }), null)).toEqual([])
+    // taille inconnue : pas de fichier d'origine ; autre format (QuickTime…) : jamais servi tel quel
+    expect(heroVideoSources(video({ filesize: undefined }), null)).toEqual([])
+    expect(heroVideoSources(video({ mimeType: 'video/quicktime', filesize: 1024 }), null)).toEqual([])
+    // pas une vidéo, ou non chargée (numéro seul) : rien
+    expect(heroVideoSources(media(), null)).toEqual([])
+    expect(heroVideoSources(40, light)).toEqual([])
+    expect(heroVideoSources(null, null)).toEqual([])
+  })
+
+  it('rendu : vidéo muette, en boucle, décorative, demandée seulement à la lecture (aucune source au rendu), posée après la photo', () => {
+    const render = (phone: Media | null) =>
+      renderToStaticMarkup(
+        createElement(HeroImage, { background: media(), phone, fallbackSrc: '/visuels/hero-nuit.webp', priority: true, video: [{ src: '/api/media/file/fond-m40.mp4', type: HERO_VIDEO_LIGHT_TYPE }] }),
+      )
+    const html = render(null)
+    expect(html).toMatch(/<img [^>]*class="slide__photo"[^>]*>(<\/picture>)?<video /)
+    const tag = html.match(/<video [^>]*>/)?.[0] ?? ''
+    expect(tag).toContain('class="slide__video"')
+    for (const attr of ['muted=""', 'loop=""', 'playsInline=""', 'preload="none"', 'aria-hidden="true"', 'tabindex="-1"', 'disablePictureInPicture=""']) expect(tag).toContain(attr)
+    expect(tag).not.toMatch(/\ssrc=/)
+    expect(html).not.toContain('<source')
+    // sans vidéo : rien de plus
+    expect(renderToStaticMarkup(createElement(HeroImage, { background: media(), phone: null, fallbackSrc: '/visuels/hero-nuit.webp', priority: true }))).not.toContain('<video')
+  })
+
+  it('hero.css : la vidéo apparaît en fondu quand elle tourne, avec le zoom de la photo, sans zoom sur la photo entière, jamais en « réduire les animations »', () => {
+    const css = readFileSync(join(process.cwd(), 'src/styles/hero.css'), 'utf8')
+    const rule = css.match(/\n\.slide__video \{([^}]*)\}/)?.[1] ?? ''
+    expect(rule).toContain('opacity: 0;')
+    expect(rule).toContain('transform: scale(1.16);')
+    expect(rule).toContain('object-fit: cover;')
+    expect(css).toMatch(/\.slide__video\.is-on \{ opacity: 1; \}/)
+    expect(css).toMatch(/\.slide\[data-whole~='phone'\] \.slide__video \{ transform: none; animation: none; \}/)
+    expect(css).toMatch(/\.slide\[data-whole~='tall'\] \.slide__video \{ transform: none; animation: none; \}/)
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{[^@]*\.slide__video \{ display: none; \}/)
   })
 })
 

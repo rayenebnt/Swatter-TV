@@ -19,6 +19,12 @@ export const MAX_RUNNING = 2
 export const PREVIEW = { seconds: 5, width: 960, height: 540 }
 /** Diaporama : durée de chaque image et du fondu (s), images par seconde. */
 export const SLIDES = { seconds: 2, fade: 0.5, fps: 25 }
+/**
+ * Vidéo de fond du carrousel de l'accueil : version légère de la vidéo choisie, ses 20 premières secondes (une diapositive
+ * reste 8 s à l'écran), dans 1920 × 1080 au plus (proportions gardées, vidéo verticale comprise), 30 images/s au plus.
+ * Délais : vidéo du disque, adresse distante (stockage S3…).
+ */
+export const BACKGROUND = { seconds: 20, width: 1920, height: 1080, timeout: 180_000, remoteTimeout: 240_000 }
 
 /** Vidéo à lire : fichier du disque, ou adresse http(s). */
 export type VideoInput = { path: string } | { url: string }
@@ -41,6 +47,13 @@ const H264 = [
   '-an', '-sn', '-dn',
   '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-maxrate', '1400k', '-bufsize', '2800k',
   '-pix_fmt', 'yuv420p', '-profile:v', 'main', '-movflags', '+faststart', '-map_metadata', '-1', '-map_chapters', '-1',
+]
+
+/** Vidéo de fond : même MP4 H.264 muet, en meilleure qualité (plein écran). */
+const H264_BACKGROUND = [
+  '-an', '-sn', '-dn',
+  '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '24', '-maxrate', '4500k', '-bufsize', '9000k',
+  '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-movflags', '+faststart', '-map_metadata', '-1', '-map_chapters', '-1',
 ]
 
 const even = (n: number) => Math.max(2, Math.round(n / 2) * 2)
@@ -126,6 +139,15 @@ export function clipArgs(input: VideoInput, output: string, start: number): stri
     '-filter_complex', `[0:v:0]${frame16x9(PREVIEW)}[out]`,
     '-map', '[out]', '-t', String(PREVIEW.seconds), '-fpsmax', '30', ...H264, output,
   ]
+}
+
+/**
+ * Arguments ffmpeg de la vidéo de fond : les BACKGROUND.seconds premières secondes, réduites (jamais agrandies) pour
+ * tenir dans 1920 × 1080 en gardant leurs proportions, sans le son.
+ */
+export function backgroundArgs(input: VideoInput, output: string): string[] {
+  const scale = `scale=w='min(${BACKGROUND.width},iw)':h='min(${BACKGROUND.height},ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1`
+  return [...COMMON, ...inputArgs(input), '-map', '0:v:0', '-vf', scale, '-t', String(BACKGROUND.seconds), '-fpsmax', '30', ...H264_BACKGROUND, output]
 }
 
 /**
@@ -293,6 +315,17 @@ export async function videoClip(input: VideoInput, probe: VideoProbe | null): Pr
     await ffmpeg(clipArgs(input, file, clipStart(probe?.duration ?? null)), timeoutFor(input))
     const clip = await output(file, 2000)
     if (!clip) throw new Error('aucune image dans l’extrait')
+    return clip
+  })
+}
+
+/** Vidéo de fond du carrousel (MP4 H.264 muet, 1920 × 1080 au plus, 20 s au plus), tirée d'une vidéo. */
+export async function backgroundClip(input: VideoInput): Promise<Buffer> {
+  return inTempDir(async (dir) => {
+    const file = path.join(dir, 'fond.mp4')
+    await ffmpeg(backgroundArgs(input, file), 'path' in input ? BACKGROUND.timeout : BACKGROUND.remoteTimeout)
+    const clip = await output(file, 2000)
+    if (!clip) throw new Error('aucune image dans la vidéo')
     return clip
   })
 }

@@ -6,6 +6,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  BACKGROUND,
+  backgroundArgs,
   clipArgs,
   clipStart,
   coverArgs,
@@ -136,6 +138,29 @@ describe('arguments de ffmpeg', () => {
     // débit plafonné : 1,4 Mbit/s × 5 s ≈ 875 Ko au pire
     expect(after(args, '-maxrate')).toBe('1400k')
     expect(clipArgs(input, '/tmp/a.mp4', 0)).not.toContain('-ss')
+  })
+
+  it('vidéo de fond du carrousel : 20 premières secondes muettes, réduites (jamais agrandies) à 1920 × 1080 au plus, proportions gardées, H.264 High +faststart', () => {
+    const args = backgroundArgs(input, '/tmp/fond.mp4')
+    expect(args).not.toContain('-ss')
+    expect(after(args, '-t')).toBe(String(BACKGROUND.seconds))
+    expect(BACKGROUND.seconds).toBe(20)
+    expect(after(args, '-map')).toBe('0:v:0')
+    expect(args).toContain('-an')
+    const scale = after(args, '-vf')
+    expect(scale).toContain("w='min(1920,iw)'")
+    expect(scale).toContain("h='min(1080,ih)'")
+    expect(scale).toContain('force_original_aspect_ratio=decrease')
+    expect(scale).toContain('force_divisible_by=2')
+    expect(after(args, '-c:v')).toBe('libx264')
+    expect(after(args, '-pix_fmt')).toBe('yuv420p')
+    expect(after(args, '-profile:v')).toBe('high')
+    expect(after(args, '-movflags')).toBe('+faststart')
+    expect(after(args, '-fpsmax')).toBe('30')
+    // débit plafonné : 4,5 Mbit/s × 20 s ≈ 11 Mo au pire
+    expect(after(args, '-maxrate')).toBe('4500k')
+    expect(args.at(-1)).toBe('/tmp/fond.mp4')
+    expect(args.slice(args.indexOf('-protocol_whitelist'), args.indexOf('-protocol_whitelist') + 2)).toEqual(['-protocol_whitelist', 'file'])
   })
 
   it('diaporama : 3 images de 2 s, recadrées en 16:9, zoom avant / arrière, deux fondus (5 s en tout)', () => {

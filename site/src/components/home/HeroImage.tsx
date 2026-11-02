@@ -2,7 +2,8 @@ import { getImageProps } from 'next/image'
 import type { CSSProperties } from 'react'
 import { isExternal, MOBILE_MEDIA } from '@/components/ui/MediaImage'
 import { mediaFocal, mediaRatio, mediaUrl, type MediaRef } from '@/lib/media'
-import { HERO_SIZES, heroMobileSource, heroWhole } from './heroMedia'
+import { HERO_SIZES, heroMobileSource, heroWhole, type HeroVideoSource } from './heroMedia'
+import { HeroVideo } from './HeroVideo'
 
 type ImgProps = ReturnType<typeof getImageProps>['props']
 
@@ -12,8 +13,22 @@ type ImgProps = ReturnType<typeof getImageProps>['props']
  * fichier téléchargé, quelle que soit la taille de l'écran. Balise <picture> seulement si le téléphone affiche un autre
  * fichier, ou le même à une autre largeur (photo qui couvre le cadre portrait).
  * Géométrie entièrement en CSS : proportions des images (--ratio, --ratio-m) et cadrage de chaque source (--focal, --focal-m).
+ * `video` : vidéo de fond (HeroVideo), posée sur la photo avec le même cadrage ; jamais sur téléphone si la diapositive a
+ * une image pour téléphone.
  */
-export function HeroImage({ background, phone, fallbackSrc, priority }: { background: MediaRef; phone: MediaRef; fallbackSrc: string; priority: boolean }) {
+export function HeroImage({
+  background,
+  phone,
+  fallbackSrc,
+  priority,
+  video = [],
+}: {
+  background: MediaRef
+  phone: MediaRef
+  fallbackSrc: string
+  priority: boolean
+  video?: HeroVideoSource[]
+}) {
   const src = mediaUrl(background, 'hero') || fallbackSrc
   const mobile = heroMobileSource(background, phone, fallbackSrc)
   const mobileSrc = mediaUrl(mobile.media, mobile.size) || mobile.fallbackSrc || src
@@ -22,9 +37,9 @@ export function HeroImage({ background, phone, fallbackSrc, priority }: { backgr
   const img = getImageProps({ src, alt: '', sizes: HERO_SIZES, fill: true, unoptimized: isExternal(src), ...urgency }).props
   const source =
     mobileSrc !== src || mobile.sizes !== HERO_SIZES ? getImageProps({ src: mobileSrc, alt: '', sizes: mobile.sizes, fill: true, unoptimized: isExternal(mobileSrc) }).props : null
+  const focal = { '--focal': mediaFocal(background, 'hero'), '--focal-m': mobile.position } as CSSProperties
   const vars = {
-    '--focal': mediaFocal(background, 'hero'),
-    '--focal-m': mobile.position,
+    ...focal,
     '--ratio': mediaRatio(background, 'hero').toFixed(4),
     '--ratio-m': mediaRatio(mobile.media, mobile.size).toFixed(4),
   } as CSSProperties
@@ -45,6 +60,7 @@ export function HeroImage({ background, phone, fallbackSrc, priority }: { backgr
     <>
       {heroWhole(background, phone) && pic({ ...img, loading: 'lazy', fetchPriority: undefined, 'aria-hidden': true } as ImgProps, 'slide__backdrop')}
       {pic(img, 'slide__photo', vars)}
+      {video.length > 0 && <HeroVideo sources={video} phone={!mediaUrl(phone)} style={focal} />}
     </>
   )
 }

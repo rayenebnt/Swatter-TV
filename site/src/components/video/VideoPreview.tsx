@@ -108,6 +108,54 @@ function bindPreview(el: HTMLVideoElement, src: string, kind: SlotKind, onState?
 }
 
 /**
+ * Vidéo de fond d'une diapositive du carrousel de l'accueil (HeroVideo) : inscrite auprès du pilote comme le lecteur d'une
+ * fiche (servie avant les cartes, en boucle tant qu'elle est à l'écran), et seulement tant que sa diapositive est
+ * affichée. Mêmes règles que les aperçus : jamais en « réduire les animations », en économie de données, dans un onglet
+ * masqué ni une fois les aperçus arrêtés (pied de page). Fichier demandé à la première lecture. `onState` : la vidéo
+ * tourne (true), revient à l'image (false : préférences, sortie de l'écran) ou est illisible (« error »). Le nettoyage
+ * (diapositive suivante) la met en pause sans revenir à l'image : elle s'efface avec sa diapositive, en fondu.
+ */
+export function bindBackgroundVideo(el: HTMLVideoElement, src: string, onState: (state: boolean | 'error') => void): (() => void) | null {
+  if (typeof IntersectionObserver === 'undefined' || typeof window.matchMedia !== 'function') return null
+  const { director, observe } = getRuntime()
+  let leaving = false
+  const id = director.register({
+    kind: 'ambient',
+    play: () => {
+      el.muted = true
+      if (el.getAttribute('src') !== src) el.src = src
+      el.play().catch(() => {})
+    },
+    stop: () => {
+      el.pause()
+      if (!leaving) onState(false)
+    },
+    distance: () => screenDistance(el.getBoundingClientRect(), window.innerWidth, window.innerHeight),
+  })
+  const unobserve = observe(el, id)
+  const onPlaying = () => {
+    if (!director.isPlaying(id)) return el.pause()
+    onState(true)
+  }
+  const onError = () => {
+    leaving = true
+    unobserve()
+    director.unregister(id)
+    onState('error')
+  }
+  el.addEventListener('playing', onPlaying)
+  el.addEventListener('error', onError)
+  return () => {
+    leaving = true
+    el.removeEventListener('playing', onPlaying)
+    el.removeEventListener('error', onError)
+    unobserve()
+    director.unregister(id)
+    el.pause()
+  }
+}
+
+/**
  * Aperçu d'une carte ou d'une tuile (vidéo, replay, Top 10, « Vidéo du jour », espace membres, recherche), placé juste
  * après son image. Purement décoratif : masqué aux lecteurs d'écran, hors du parcours clavier, il laisse passer les
  * clics vers le lien de la carte.

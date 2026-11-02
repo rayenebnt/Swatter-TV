@@ -1458,9 +1458,13 @@ export interface Setting {
         titleLine2?: string | null;
         description?: string | null;
         /**
-         * Photo en largeur, d’au moins 2400 × 1350 pixels. Sur téléphone, le carrousel est en hauteur : seule une bande verticale de la photo reste visible. Réglez son point focal (dans la médiathèque : « Modifier l’image », puis « Point focal », cliquez sur le sujet) pour que le sujet reste au centre, ou ajoutez une image pour téléphone ci-dessous.
+         * Photo en largeur, d’au moins 2400 × 1350 pixels. Sur téléphone, le carrousel est en hauteur : seule une bande verticale de la photo reste visible. Réglez son point focal (dans la médiathèque : « Modifier l’image », puis « Point focal », cliquez sur le sujet) pour que le sujet reste au centre, ou ajoutez une image pour téléphone ci-dessous. Avec une vidéo de fond, elle est facultative : laissée vide, elle est tirée de la vidéo.
          */
-        image: number | Media;
+        image?: (number | null) | Media;
+        /**
+         * Une courte vidéo (MP4, de quelques secondes à une minute) qui tourne en boucle, sans le son, à la place de l’image de fond, sur ordinateur comme sur téléphone (sur téléphone, une image pour téléphone reste prioritaire). Le site en prépare tout seul une version légère (ses 20 premières secondes) en une ou deux minutes. L’image de fond s’affiche en attendant, pendant le chargement, et à la place de la vidéo pour les visiteurs qui ont demandé moins d’animations ou d’économiser leurs données.
+         */
+        video?: (number | null) | Media;
         /**
          * Remplace l’image de fond sur les téléphones. Choisissez une photo en hauteur (1080 × 1350 pixels ou plus), sujet dans la moitié haute : le texte de la diapositive s’affiche en bas. Vide : l’image de fond est recadrée autour de son point focal. Vérifiez avec l’aperçu « Téléphone ».
          */
@@ -1627,6 +1631,7 @@ export interface SettingsSelect<T extends boolean = true> {
         titleLine2?: T;
         description?: T;
         image?: T;
+        video?: T;
         imageMobile?: T;
         navLabel?: T;
         primaryLabel?: T;

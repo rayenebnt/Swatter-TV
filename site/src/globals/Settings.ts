@@ -3,6 +3,7 @@ import { authenticated, isAdminField, publishedStatusOrAuthenticated } from '@/a
 import { globalDraftVersions } from '@/fields/drafts'
 import { videoSourceField } from '@/fields/videoSource'
 import { revalidateGlobal } from '@/hooks/revalidate'
+import { heroSlidesAutoCover, heroSlidesPrepareVideos } from '@/hooks/videoAutoMedia'
 import { isMeasurementId, normalizeMeasurementId } from '@/lib/analytics'
 
 export const Settings: GlobalConfig = {
@@ -18,7 +19,8 @@ export const Settings: GlobalConfig = {
   versions: globalDraftVersions,
   // sans cela, l'administration affiche « Brouillon » (et pas « Modifications non publiées ») dès qu'un brouillon existe
   forceSelect: { _status: true },
-  hooks: { afterChange: [revalidateGlobal] },
+  // diapositives avec une vidéo de fond : image tirée de la vidéo si elle manque, version légère préparée en arrière-plan
+  hooks: { beforeValidate: [heroSlidesAutoCover], afterChange: [revalidateGlobal, heroSlidesPrepareVideos] },
   fields: [
     {
       type: 'tabs',
@@ -82,10 +84,24 @@ export const Settings: GlobalConfig = {
                   label: 'Image de fond (paysage, 2400 px de large conseillés)',
                   type: 'upload',
                   relationTo: 'media',
-                  required: true,
+                  filterOptions: { mimeType: { contains: 'image/' } },
+                  // obligatoire, sauf avec une vidéo de fond : elle en est alors tirée si elle reste vide
+                  validate: (value: unknown, { siblingData }: { siblingData?: { video?: unknown } }) =>
+                    value || siblingData?.video ? true : 'Ajoutez une image de fond (ou une vidéo de fond : l’image en sera tirée).',
                   admin: {
                     description:
-                      'Photo en largeur, d’au moins 2400 × 1350 pixels. Sur téléphone, le carrousel est en hauteur\u00a0: seule une bande verticale de la photo reste visible. Réglez son point focal (dans la médiathèque\u00a0: « Modifier l’image », puis « Point focal », cliquez sur le sujet) pour que le sujet reste au centre, ou ajoutez une image pour téléphone ci-dessous.',
+                      'Photo en largeur, d’au moins 2400 × 1350 pixels. Sur téléphone, le carrousel est en hauteur\u00a0: seule une bande verticale de la photo reste visible. Réglez son point focal (dans la médiathèque\u00a0: « Modifier l’image », puis « Point focal », cliquez sur le sujet) pour que le sujet reste au centre, ou ajoutez une image pour téléphone ci-dessous. Avec une vidéo de fond, elle est facultative\u00a0: laissée vide, elle est tirée de la vidéo.',
+                  },
+                },
+                {
+                  name: 'video',
+                  label: 'Vidéo de fond (facultative)',
+                  type: 'upload',
+                  relationTo: 'media',
+                  filterOptions: { mimeType: { contains: 'video/' } },
+                  admin: {
+                    description:
+                      'Une courte vidéo (MP4, de quelques secondes à une minute) qui tourne en boucle, sans le son, à la place de l’image de fond, sur ordinateur comme sur téléphone (sur téléphone, une image pour téléphone reste prioritaire). Le site en prépare tout seul une version légère (ses 20 premières secondes) en une ou deux minutes. L’image de fond s’affiche en attendant, pendant le chargement, et à la place de la vidéo pour les visiteurs qui ont demandé moins d’animations ou d’économiser leurs données.',
                   },
                 },
                 {

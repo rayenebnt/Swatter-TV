@@ -1,6 +1,7 @@
 // Données du tableau de bord de l'administration : ce qui est affiché sur le site en ce moment, les derniers contenus modifiés
 // et les chiffres de l'espace membres.
 import type { Payload, Where } from 'payload'
+import type { Setting } from '@/payload-types'
 import { runningAdsWhere } from '@/access'
 import { shiftDay, tvDay, tvDayStart } from '@/components/programme/model'
 import { BROADCAST_HOURS_LABEL, BROADCAST_MINUTES, slotOutsideBroadcast } from '@/lib/broadcast'
@@ -9,6 +10,8 @@ import { loadItems } from '@/lib/members/items'
 import type { HistoryKind } from '@/lib/members/shared'
 import { isMeasurementId } from '@/lib/analytics'
 import { resolveVideo } from '@/lib/video'
+import { heroVideoSources } from '@/components/home/heroMedia'
+import { backgroundState, findBackgroundVideo, prepareBackgroundVideo } from '@/hooks/videoAutoMedia'
 
 export type Featured = { id: number; title: string; picked: boolean } | null
 
@@ -33,7 +36,16 @@ export type DashboardData = {
   recent: RecentItem[]
   /** espace membres ; null : aucun compte (le tableau de bord n'en parle pas) */
   members: MembersStats | null
+  /** vidéos de fond des diapositives publiées du carrousel ; null : aucune (le tableau de bord n'en parle pas) */
+  heroVideos: HeroVideosStatus | null
 }
+
+/**
+ * Vidéos de fond du carrousel : nombre de vidéos lues sur le site (version légère prête, ou fichier d'origine déjà léger en
+ * attendant), numéros des diapositives dont la version légère est en préparation, ou en échec (fichier illisible : l'image
+ * de fond s'affiche à sa place).
+ */
+export type HeroVideosStatus = { ready: number; pending: number[]; failed: number[] }
 
 /**
  * État de la grille des 7 soirées proposées sur le site (18 h – 0 h 30), à partir de la soirée en cours ou à venir, en ne
@@ -236,6 +248,30 @@ async function membersStats(payload: Payload): Promise<Omit<MembersStats, 'signu
   return total ? { active, newThisWeek, topWatched: top } : null
 }
 
+/** Vidéos de fond des diapositives publiées : prêtes, en préparation (lancée ici si besoin), en échec. */
+async function heroVideos(payload: Payload, slides: Setting['heroSlides']): Promise<HeroVideosStatus | null> {
+  const rows = (slides ?? [])
+    .map((s, i) => ({ slide: i + 1, id: typeof s.video === 'object' && s.video !== null ? s.video.id : s.video }))
+    .filter((r): r is { slide: number; id: number } => typeof r.id === 'number')
+  if (!rows.length) return null
+  const status: HeroVideosStatus = { ready: 0, pending: [], failed: [] }
+  for (const { slide, id } of rows) {
+    if (await findBackgroundVideo(payload, id)) {
+      status.ready++
+      continue
+    }
+    const original = await payload.findByID({ collection: 'media', id, depth: 0, disableErrors: true })
+    const state = backgroundState(id)
+    // version légère absente (serveur redémarré pendant sa préparation…) : relancée, sans attendre
+    if (state === null) void prepareBackgroundVideo(payload, id)
+    // fichier d'origine déjà léger : lu sur le site en attendant
+    if (heroVideoSources(original, null).length) status.ready++
+    else if (state === 'failed') status.failed.push(slide)
+    else status.pending.push(slide)
+  }
+  return status
+}
+
 export async function getDashboardData(payload: Payload): Promise<DashboardData> {
   const noImage: Where = { and: [LIVE, { thumbnail: { exists: false } }] }
   const [settings, meteo, videoOfDay, infoOfDay, pick, grid, ads, messages, videosNoImage, replaysNoImage, recentItems, members] = await Promise.all([
@@ -273,5 +309,6 @@ export async function getDashboardData(payload: Payload): Promise<DashboardData>
     analyticsId: isMeasurementId(settings?.analytics?.measurementId) ? settings.analytics.measurementId : null,
     recent: recentItems,
     members: members && { ...members, signupOpen: settings?.members?.signupOpen !== false },
+    heroVideos: await attempt(() => heroVideos(payload, settings?.heroSlides), null),
   }
 }

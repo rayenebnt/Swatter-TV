@@ -101,7 +101,8 @@ Après la connexion, le **tableau de bord** rassemble l’essentiel :
   statistiques** vers Google Analytics). Une pastille **À vérifier** signale un oubli, par
   exemple « Rien de prévu : ce soir, sam. 24 » ou « mar. 27 : 1 h 15 sans programme » pour le programme TV ; le lien
   **Modifier** mène directement au bon endroit.
-  Une vidéo ou un replay **sans image** est aussi signalé : la vidéo était injoignable ou illisible au moment de
+  La ligne **Vidéos du carrousel** indique où en sont les vidéos de fond (une vidéo illisible y est signalée **À
+  vérifier**). Une vidéo ou un replay **sans image** est aussi signalé : la vidéo était injoignable ou illisible au moment de
   l’enregistrement ; enregistrez à nouveau la fiche quelques minutes plus tard (le site attend 10 minutes avant de
   réessayer), ou choisissez une image.
   « Information indisponible » : la vérification n’a pas pu se faire à cet instant ; rechargez la page ;
@@ -434,6 +435,17 @@ blanche ») : cliquez sur une diapositive pour la déplier. Pour chaque diaposit
   en haut du carrousel, sous le logo, sur un fond flou tiré de la même photo : rien n’est coupé, vous n’avez rien à
   régler. Si l’image a un **Lieu photographié** dans la médiathèque (partie 17), son nom s’affiche sur la photo
   (« Le Bargy ») ;
+- **Vidéo de fond (facultative)** : une courte vidéo (MP4, de quelques secondes à une minute) qui tourne en boucle,
+  sans le son, à la place de l’image de fond, sur ordinateur comme sur téléphone. Cliquez sur **Ajouter** pour envoyer
+  la vidéo depuis votre ordinateur, ou choisissez-la dans la médiathèque. Bon à savoir :
+  - laissez l’**Image de fond** vide : elle est tirée de la vidéo (vous pouvez la remplacer par une photo de votre
+    choix). Elle s’affiche pendant le chargement de la vidéo, et à sa place pour les visiteurs qui ont demandé moins
+    d’animations, d’économiser leurs données, ou qui ont cliqué sur **Arrêter les aperçus animés** en bas du site ;
+  - le site prépare tout seul une version légère de la vidéo (ses 20 premières secondes, en qualité adaptée au web) en
+    une ou deux minutes : en attendant, l’image s’affiche. Le tableau de bord indique où en est chaque vidéo (ligne
+    **Vidéos du carrousel**) ;
+  - une diapositive reste 8 secondes à l’écran : privilégiez une vidéo dont le début est le plus beau ;
+  - sur téléphone, une **Image pour téléphone** (ci-dessous), si vous en mettez une, reste prioritaire sur la vidéo ;
 - **Image pour téléphone (facultative, portrait 1080 × 1350 ou plus)** : une autre photo, en hauteur, affichée à la
   place de l’image de fond sur les téléphones, où elle remplit tout l’écran. Mettez le sujet dans la moitié haute : le
   texte s’affiche en bas. Ne la remplissez que si vous préférez une photo en hauteur sur les téléphones ; laissée vide,

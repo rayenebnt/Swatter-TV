@@ -4,6 +4,7 @@
 // point focal).
 import type { MobileSource } from '@/components/ui/MediaImage'
 import { coverWidth, focalCover, mediaOrientation, mediaPlace, mediaRatio, mediaUrl, wholeIn, type MediaRef } from '@/lib/media'
+import type { Media } from '@/payload-types'
 
 /** Zoom de départ de l'image (hero.css : scale(1.16)). */
 const ZOOM = 1.16
@@ -76,3 +77,30 @@ export function heroPlaces(background: MediaRef, phone: MediaRef, fallbackSrc: s
   if (desktop === mobile) return desktop ? [{ label: desktop, on: 'all' }] : []
   return [...(desktop ? [{ label: desktop, on: 'd' as const }] : []), ...(mobile ? [{ label: mobile, on: 'm' as const }] : [])]
 }
+
+/** Fichier d'origine servi en fond, en attendant sa version légère, seulement s'il est déjà léger (12 Mo au plus). */
+export const HERO_VIDEO_DIRECT_MAX = 12 * 1024 * 1024
+/** Formats lus par les navigateurs (le fichier d'origine n'est servi qu'en MP4 ou WebM). */
+const PLAYABLE = /^video\/(mp4|webm)$/
+
+/** Type de la version légère : MP4 H.264, profil High, jusqu'au 1080p à 30 images/s (niveau 4.0). */
+export const HERO_VIDEO_LIGHT_TYPE = 'video/mp4; codecs="avc1.640028"'
+
+/** Source de la vidéo de fond : adresse et type (le navigateur garde la première qu'il sait lire, canPlayType). */
+export type HeroVideoSource = { src: string; type: string }
+
+/**
+ * Sources de la vidéo de fond d'une diapositive, par ordre de préférence : sa version légère (fond-m<n°>.mp4, préparée
+ * par le serveur) dès qu'elle existe ; puis le fichier d'origine s'il est déjà léger (MP4 ou WebM de 12 Mo au plus),
+ * qui sert en attendant la version légère, ou aux navigateurs qui ne lisent pas le H.264. Vide : l'image de fond seule.
+ */
+export function heroVideoSources(original: MediaRef, light: Media | null): HeroVideoSource[] {
+  if (!original || typeof original !== 'object' || !original.mimeType?.startsWith('video/')) return []
+  const sources: HeroVideoSource[] = []
+  const ready = light ? mediaUrl(light) : null
+  if (ready) sources.push({ src: ready, type: HERO_VIDEO_LIGHT_TYPE })
+  const direct = PLAYABLE.test(original.mimeType) && (original.filesize ?? Number.POSITIVE_INFINITY) <= HERO_VIDEO_DIRECT_MAX ? mediaUrl(original) : null
+  if (direct) sources.push({ src: direct, type: original.mimeType })
+  return sources
+}
+
