@@ -318,7 +318,8 @@ l’événement à mettre en avant dans « À la une » et sur l’accueil ; c�
 **Émissions** (sous **Programme TV** dans le menu) : la fiche de chaque émission, créée une fois pour toutes : **Titre**, **Genre** (Info,
 Météo, Documentaire, Magazine, Agenda, Divertissement, Sport, Série, Cinéma), **Image**, **Résumé** et, à droite,
 **Inédit** (étiquette affichée dans la grille), puis **Publier les modifications**. Une émission créée ici se choisit
-ensuite dans la grille et dans les replays.
+ensuite dans la grille et dans les replays. **Publiez-la avant de l’utiliser** : une émission jamais publiée n’a pas de
+nom sur le site, et un créneau qui l’utilise est refusé à la publication, avec le nom de l’émission à publier.
 
 **Programme TV** (dans le menu ou sur le tableau de bord) : la grille des programmes, une ligne, appelée **créneau**, par
 diffusion. **Swatter TV Info diffuse tous les jours de 18 h à 0 h 30** (heure de Paris) ; le reste du temps, il ne se
@@ -331,6 +332,14 @@ passe rien. Une soirée appartient au jour où elle commence.
 - Pour ajouter un créneau : **Ajouter**, puis **Jour et heure de début** (heure de Paris, entre 18:00 et 00:25),
   **Durée (minutes)**, **Émission** (choisissez-la dans la liste) et, si besoin, **Titre spécifique (facultatif)** (par
   exemple « Le journal des Alpes — Soir » ; sinon, le titre de l’émission est utilisé). **Publier les modifications**.
+- **Un créneau n’arrive sur le site qu’une fois publié.** Pendant la saisie, il est enregistré automatiquement en
+  brouillon : tant que vous n’avez pas cliqué sur **Publier les modifications**, les visiteurs ne le voient pas (et un
+  créneau modifié reste en ligne dans son ancienne version). Dans la liste, un créneau jamais publié porte la mention
+  **pas en ligne**, un créneau modifié sans être republié **modifié, à publier** ; au-dessus de la liste, le bouton
+  **Publier les N créneaux** (ou **Publier ce créneau**) les publie tous d’un clic. Un créneau refusé (émission pas
+  publiée, horaires d’antenne…) est nommé avec la raison ; les autres sont publiés.
+- Si une émission de la liste **n’a jamais été publiée**, un bandeau le signale avec le bouton **Publier l’émission** :
+  tant qu’elle ne l’est pas, ses créneaux s’affichent sur le site sans son nom, sous le titre « Programme ».
 - **Après minuit** : un créneau entre 0 h et 0 h 30 se saisit **à la date du lendemain** (par exemple mardi 00:15) : il
   appartient à la soirée du lundi. Dans la liste, il est daté du mardi et la mention « soirée du lun. 12 » le rappelle.
 - Un créneau en dehors des horaires d’antenne est **refusé à la publication**, avec la raison sous le champ : début
@@ -350,9 +359,14 @@ semaine d’après (les changements d’heure sont pris en compte). Il ne vous r
   28 octobre**, ou **Reprendre le mercredi 14 octobre** sur une soirée vide).
 - Les anciens créneaux hors antenne ne sont pas recopiés : le message de fin de copie indique combien ont été laissés
   de côté.
+- La copie reprend ce qui est **en ligne** : un créneau jamais publié n’est pas recopié, un créneau modifié l’est dans sa
+  version publiée. Publiez d’abord les créneaux à publier (la confirmation vous le rappelle). Une semaine dont une
+  émission n’est pas publiée ne peut pas être recopiée : publiez l’émission, puis recommencez.
 
-Le tableau de bord vérifie les 7 prochaines soirées (de 18 h à 0 h 30) : il signale les soirées vides, les soirées
-incomplètes (« mar. 27 : 1 h 15 sans programme ») et les créneaux en dehors des horaires d’antenne.
+Le tableau de bord vérifie les 7 prochaines soirées (de 18 h à 0 h 30) : il signale les créneaux à publier (« 2 créneaux
+à publier »), les émissions jamais publiées (leurs créneaux s’affichent sans leur nom), les soirées vides, les soirées
+incomplètes (« mar. 27 : 1 h 15 sans programme ») et les créneaux en dehors des horaires d’antenne. Son lien ouvre la
+soirée à reprendre.
 
 Sur le site, la page « Programme TV » présente le programme soirée par soirée, de 18 h à 0 h 30 : onglets « Ce soir »,
 « Demain soir », puis « Sam. 18 »… Une émission diffusée après minuit (par exemple à 00:15) apparaît à la fin de la

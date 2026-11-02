@@ -5,6 +5,7 @@ import { draftVersions } from '@/fields/drafts'
 import { revalidateHooks } from '@/hooks/revalidate'
 import { BROADCAST_MINUTES, broadcastEvening, slotOutsideBroadcast } from '@/lib/broadcast'
 import { copyWeekEndpoint } from '@/lib/schedule-copy'
+import { offlineProgramMessage, programIdOf } from '@/lib/schedule-programs'
 import { slotWhen } from '@/lib/schedule-week'
 
 /** Règle d'antenne affichée à l'équipe (en tête de la liste de la grille et sous « Jour et heure de début »). */
@@ -35,6 +36,25 @@ const validateDuration: Validate = (value, options) => {
   const start = startsAt ? new Date(startsAt) : null
   if (!start || !broadcastEvening(start)) return true
   return slotOutsideBroadcast(start, value) ?? true
+}
+
+/**
+ * Émission : contrôles habituels (obligatoire, existante), puis en ligne. Une émission seulement enregistrée en brouillon
+ * (« Ajouter » puis saisie, sans « Publier les modifications ») a une fiche principale vide : le site afficherait le
+ * créneau sans son nom (« Programme »). Une émission retirée du site est refusée de même. Comme tous les contrôles, il
+ * s'applique à la publication (pas aux brouillons) et dans le formulaire, où le message, avec le nom saisi, s'affiche sous
+ * le champ (contrôle de champ plutôt que hook : le formulaire de Payload recalcule ses erreurs avec les contrôles des
+ * champs, et effacerait celle d'un hook).
+ */
+const validateProgram: Validate = async (value, options) => {
+  const base = await validations.relationship(value as never, options as Parameters<typeof validations.relationship>[1])
+  const id = programIdOf(value)
+  if (base !== true || id === null) return base
+  const { req } = options
+  const program = await req.payload.findByID({ collection: 'programs', id, depth: 0, req, disableErrors: true, select: { _status: true } })
+  if (program?._status !== 'draft') return true
+  const latest = await req.payload.findByID({ collection: 'programs', id, depth: 0, draft: true, req, disableErrors: true, select: { title: true } })
+  return offlineProgramMessage(latest?.title)
 }
 
 /** Grille de diffusion : une ligne = une émission à une date et une heure, pendant l'antenne (18 h – 0 h 30). */
@@ -101,7 +121,15 @@ export const Schedule: CollectionConfig = {
         },
       ],
     },
-    { name: 'program', label: 'Émission', type: 'relationship', relationTo: 'programs', required: true },
+    {
+      name: 'program',
+      label: 'Émission',
+      type: 'relationship',
+      relationTo: 'programs',
+      required: true,
+      validate: validateProgram,
+      admin: { description: 'L’émission doit être publiée (Programme TV › Émissions › « Publier les modifications ») pour que son nom apparaisse sur le site.' },
+    },
     { name: 'titleOverride', label: 'Titre spécifique (facultatif)', type: 'text', admin: { description: 'Par ex. « Le journal des Alpes — Soir ». Sinon, le titre de l’émission est utilisé.' } },
     // « 18/10/2026 20:30 — Titre » : titre de la fiche et recherche de la liste
     { name: 'label', label: 'Titre de l’émission', type: 'text', admin: { hidden: true } },

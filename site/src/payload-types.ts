@@ -540,6 +540,9 @@ export interface Schedule {
    * Le créneau finit à 0 h 30 au plus tard.
    */
   durationMinutes: number;
+  /**
+   * L’émission doit être publiée (Programme TV › Émissions › « Publier les modifications ») pour que son nom apparaisse sur le site.
+   */
   program: number | Program;
   /**
    * Par ex. « Le journal des Alpes — Soir ». Sinon, le titre de l’émission est utilisé.

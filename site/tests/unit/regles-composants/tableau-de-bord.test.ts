@@ -18,14 +18,28 @@ const ago = (ms: number) => new Date(NOW.getTime() - ms).toISOString()
 const later = (ms: number) => new Date(NOW.getTime() + ms).toISOString()
 
 type Store = Record<string, Doc[]>
-type Args = { collection?: string; slug?: string; where?: Parameters<typeof matches>[1]; sort?: string | string[]; limit?: number; pagination?: boolean }
+type Args = {
+  collection?: string
+  slug?: string
+  where?: Parameters<typeof matches>[1]
+  sort?: string | string[]
+  limit?: number
+  pagination?: boolean
+  draft?: boolean
+}
 
-/** Fausse instance Payload : find / count / findGlobal sur des documents en mémoire ; `failing` simule des requêtes en échec. */
+/**
+ * Fausse instance Payload : find / count / findGlobal sur des documents en mémoire ; `failing` simule des requêtes en échec.
+ * Avec `draft: true`, les dernières versions « collection~brouillons » si le test en fournit, sinon les mêmes documents.
+ */
 function fakePayload(store: Store, globals: Record<string, Doc> = {}, failing: string[] = []) {
   const fail = (key: string) => {
     if (failing.includes(key)) throw new Error(`panne simulée : ${key}`)
   }
-  const select = (args: Args) => (store[args.collection ?? ''] ?? []).filter((d) => matches(d, args.where))
+  const select = (args: Args) => {
+    const latest = `${args.collection}~brouillons`
+    return (store[args.draft && store[latest] ? latest : (args.collection ?? '')] ?? []).filter((d) => matches(d, args.where))
+  }
   const payload = {
     find: vi.fn(async (args: Args) => {
       fail(`find:${args.collection}`)
@@ -148,7 +162,7 @@ describe('programme TV : les 7 prochaines soirées (18 h – 0 h 30) à partir d
     _status: status,
   })
 
-  it('soirées vides, incomplètes (minutes sans programme) et anciens créneaux hors antenne ; brouillons et autres soirées ignorés', async () => {
+  it('soirées vides, incomplètes (minutes sans programme) et anciens créneaux hors antenne ; brouillons comptés à part, autres soirées ignorées', async () => {
     const schedule = [
       at(1, '2026-10-20', '20:00', 60), // soirée de la veille : hors période
       at(2, '2026-10-21', '18:00', 360), // ce soir, de 18 h à minuit…
@@ -167,7 +181,51 @@ describe('programme TV : les 7 prochaines soirées (18 h – 0 h 30) à partir d
       empty: ['2026-10-23', '2026-10-26'],
       incomplete: [{ day: '2026-10-27', missingMinutes: 75 }],
       offAir: { count: 1, firstDay: '2026-10-23' },
+      // le brouillon du lundi 26 : la soirée paraît vide parce qu'il n'est pas publié
+      drafts: { count: 1, firstDay: '2026-10-26' },
+      offlinePrograms: { names: [], firstDay: null },
     })
+  })
+
+  it('émissions jamais publiées : créneaux publiés qui s’affichent sans le nom de leur émission, dans l’ordre de la grille', async () => {
+    const schedule = [
+      { ...at(1, '2026-10-22', '18:00', 60), program: 1 }, // émission en ligne
+      { ...at(2, '2026-10-23', '20:00', 60), program: 2 }, // émission jamais publiée (fiche en ligne vide)
+      { ...at(3, '2026-10-24', '20:00', 60), program: { id: 2 } }, // la même, relation peuplée
+      { ...at(4, '2026-10-25', '20:00', 60), program: 3 }, // émission retirée du site : son nom reste en ligne
+      { ...at(5, '2026-10-26', '20:00', 60, 'draft'), program: 4 }, // créneau en brouillon : compté à part
+      { ...at(6, '2026-10-29', '20:00', 60), program: 4 }, // au-delà des 7 soirées
+    ]
+    const programs = [
+      { id: 1, title: 'Le journal', _status: 'published' },
+      { id: 2, title: null, _status: 'draft' },
+      { id: 3, title: 'La météo', _status: 'draft' },
+      { id: 4, title: null, _status: 'draft' },
+    ]
+    const latest = [
+      { id: 1, title: 'Le journal' },
+      { id: 2, title: 'Le Yodleur des cimes' },
+      { id: 3, title: 'La météo' },
+      { id: 4, title: 'Autre émission' },
+    ]
+    const evenings = (await dashboard({ schedule, programs, 'programs~brouillons': latest })).evenings
+    expect(evenings?.offlinePrograms).toEqual({ names: ['« Le Yodleur des cimes »'], firstDay: '2026-10-23' })
+    // toutes en ligne : rien à signaler
+    const online = programs.map((p) => ({ ...p, _status: 'published' }))
+    expect((await dashboard({ schedule, programs: online })).evenings?.offlinePrograms).toEqual({ names: [], firstDay: null })
+  })
+
+  it('créneaux à publier : dernières versions (brouillons compris) des 7 soirées, jamais publiés ou modifiés depuis', async () => {
+    const schedule = [
+      at(1, '2026-10-22', '18:00', 390),
+      at(2, '2026-10-24', '20:00', 60, 'draft'), // samedi 24 : jamais publié
+      at(3, '2026-10-23', '18:00', 60, 'draft'), // vendredi 23 : publié puis modifié (dernière version : un brouillon)
+      at(4, '2026-10-28', '18:00', 60, 'draft'), // mercredi 28 : au-delà des 7 soirées
+    ]
+    const payload = fakePayload({ schedule })
+    expect((await getDashboardData(payload)).evenings?.drafts).toEqual({ count: 2, firstDay: '2026-10-23' })
+    const calls = (payload.find as unknown as { mock: { calls: [Args & { draft?: boolean }][] } }).mock.calls.map(([args]) => args)
+    expect(calls.some((a) => a.collection === 'schedule' && a.draft === true)).toBe(true)
   })
 
   it('créneau qui finit après 0 h 30 (ancienne donnée) : compté hors antenne, seule sa partie jusqu’à 0 h 30 couvre la soirée', async () => {
@@ -186,7 +244,13 @@ describe('programme TV : les 7 prochaines soirées (18 h – 0 h 30) à partir d
     vi.setSystemTime(parisDateTime('2026-10-22', '00:30')) // 0 h 30 pile : fin d'antenne, place à la soirée de jeudi
     expect((await dashboard({})).evenings?.empty[0]).toBe('2026-10-22')
     vi.setSystemTime(parisDateTime('2026-10-22', '18:00'))
-    expect((await dashboard({})).evenings).toMatchObject({ today: '2026-10-22', incomplete: [], offAir: { count: 0, firstDay: null } })
+    expect((await dashboard({})).evenings).toMatchObject({
+      today: '2026-10-22',
+      incomplete: [],
+      offAir: { count: 0, firstDay: null },
+      drafts: { count: 0, firstDay: null },
+      offlinePrograms: { names: [], firstDay: null },
+    })
   })
 
   it('le créneau de 0 h 15 de la dernière soirée (daté du lendemain) compte bien pour elle', async () => {
@@ -196,7 +260,14 @@ describe('programme TV : les 7 prochaines soirées (18 h – 0 h 30) à partir d
 })
 
 describe('programme TV : la ligne du tableau de bord', () => {
-  const base = { today: '2026-10-21', empty: [], incomplete: [], offAir: { count: 0, firstDay: null } }
+  const base = {
+    today: '2026-10-21',
+    empty: [],
+    incomplete: [],
+    offAir: { count: 0, firstDay: null },
+    drafts: { count: 0, firstDay: null },
+    offlinePrograms: { names: [], firstDay: null },
+  }
 
   it('tout est saisi : « Les 7 prochaines soirées sont complètes »', () => {
     expect(programmeSummary(base)).toEqual({ tone: 'ok', value: 'Les 7 prochaines soirées sont complètes (18 h – 0 h 30)', first: null })
@@ -235,6 +306,47 @@ describe('programme TV : la ligne du tableau de bord', () => {
     expect(programmeSummary({ ...base, incomplete: [{ day: '2026-10-27', missingMinutes: 75 }] }).value).toBe(
       'Soirée incomplète (18 h – 0 h 30) : mar. 27 : 1 h 15 sans programme',
     )
+  })
+
+  it('émissions jamais publiées : nommées, lien vers la soirée de leur premier créneau', () => {
+    expect(programmeSummary({ ...base, offlinePrograms: { names: ['« Le Yodleur des cimes »'], firstDay: '2026-10-23' } })).toEqual({
+      tone: 'warn',
+      value: 'Émission jamais publiée (« Le Yodleur des cimes ») : ses créneaux s’affichent sans son nom, publiez-la',
+      first: '2026-10-23',
+    })
+    expect(programmeSummary({ ...base, offlinePrograms: { names: ['« A »', 'n° 9 (sans titre)'], firstDay: '2026-10-24' } }).value).toBe(
+      '2 émissions jamais publiées (« A », n° 9 (sans titre)) : leurs créneaux s’affichent sans leur nom, publiez-les',
+    )
+  })
+
+  it('créneaux restés en brouillon : signalés en premier (ils expliquent souvent une soirée vide), lien vers la soirée du premier', () => {
+    expect(programmeSummary({ ...base, empty: ['2026-10-26'], drafts: { count: 2, firstDay: '2026-10-26' } })).toEqual({
+      tone: 'warn',
+      value: '2 créneaux à publier (brouillons pas encore visibles sur le site) · Rien de prévu : lun. 26',
+      first: '2026-10-26',
+    })
+    expect(programmeSummary({ ...base, drafts: { count: 1, firstDay: '2026-10-23' } })).toEqual({
+      tone: 'warn',
+      value: '1 créneau à publier (brouillon pas encore visible sur le site)',
+      first: '2026-10-23',
+    })
+    // une soirée vide plus tôt : le lien mène quand même aux brouillons, à publier d'un clic
+    expect(programmeSummary({ ...base, empty: ['2026-10-21'], drafts: { count: 1, firstDay: '2026-10-23' } }).first).toBe('2026-10-23')
+    // émission jamais publiée en plus : signalée juste après, le lien reste celui des brouillons
+    expect(
+      programmeSummary({ ...base, drafts: { count: 1, firstDay: '2026-10-23' }, offlinePrograms: { names: ['« Le Yodleur »'], firstDay: '2026-10-22' } }),
+    ).toEqual({
+      tone: 'warn',
+      value: '1 créneau à publier (brouillon pas encore visible sur le site) · Émission jamais publiée (« Le Yodleur ») : ses créneaux s’affichent sans son nom, publiez-la',
+      first: '2026-10-23',
+    })
+    // rien de publié sur les 7 soirées, mais des brouillons : lien vers la soirée du premier
+    const days = ['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27']
+    expect(programmeSummary({ ...base, empty: days, drafts: { count: 3, firstDay: '2026-10-22' } })).toEqual({
+      tone: 'warn',
+      value: '3 créneaux à publier (brouillons pas encore visibles sur le site) · Aucune émission prévue pour les 7 prochaines soirées',
+      first: '2026-10-22',
+    })
   })
 })
 

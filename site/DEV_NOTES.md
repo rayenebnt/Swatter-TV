@@ -676,6 +676,24 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
     Payload complète par la fiche enregistrée lors d'un PATCH partiel.
   - Brouillons enregistrés automatiquement : pas de contrôle (Payload) ; le refus a lieu à la publication. `label` d'un
     créneau après minuit : « Soirée du JJ/MM/AAAA, 00:15 — Titre » (`slotWhen`).
+  - Brouillons et fiche principale (Payload 3) : « Ajouter » crée aussitôt la fiche principale **vide** en brouillon
+    (`payload.create({ data: {}, draft: true })`, vue Document de `@payloadcms/next`), puis chaque enregistrement
+    automatique n'écrit qu'une version (`_schedule_v`, `_programs_v`) : la fiche principale ne reçoit la saisie qu'à la
+    publication. Conséquences : (1) un créneau jamais publié n'existe pas pour le site ; (2) une émission jamais publiée
+    a une fiche principale sans titre, et le site (relation peuplée depuis la fiche principale) affichait ses créneaux
+    sous « Programme », sauf titre spécifique. D'où : contrôle du champ `program` (`validateProgram`, `Schedule.ts`) qui
+    refuse la publication d'un créneau dont l'émission a sa fiche principale au statut `draft` (message de
+    `offlineProgramMessage`, `src/lib/schedule-programs.ts`) ; la recopie, qui crée des créneaux publiés, est refusée de
+    même (400). Contrôle de champ et non hook `beforeChange` : le formulaire de Payload recalcule ses erreurs avec les
+    `validate` des champs (état du formulaire construit côté serveur, `req` complet) et effaçait l'erreur levée par un
+    hook ; seul le toast générique restait.
+  - Signalement dans la liste (`slotPublication.ts`) : `_displayStatus` des lignes (« draft », « changed »,
+    « published », calculé par la liste de Payload, qui montre les dernières versions) → badges de `SlotTimeCell.tsx`
+    et bandeau « N créneaux à publier » de `ScheduleTools.tsx` ; publication d'un clic = un `PATCH /api/schedule/:id`
+    `{ _status: 'published' }` par créneau (publie la dernière version, contrôles compris ; refus nommés, les autres
+    passent). Émissions jamais publiées (fiche principale `draft` et sans titre ; une émission retirée du site garde son
+    nom en ligne) : `findOfflinePrograms` (deux `GET /api/programs`, fiche principale puis `draft=true` pour le nom
+    saisi) → bandeau et `PATCH /api/programs/:id`.
   - `src/proxy.ts` (le « middleware » de Next 16) redirige `/admin/collections/schedule` sans filtre vers la semaine en
     cours, côté serveur (un filtre posé côté client entrait en concurrence avec la synchronisation d'adresse de Payload
     et chargeait toute la grille).
@@ -690,8 +708,10 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
     serveur). Les bornes sont larges (et non 18 h → 0 h 30) pour que la liste montre aussi les anciens créneaux hors
     antenne.
   - Tableau de bord (`dashboard-data.ts`, `evenings` et `programmeSummary`) : les 7 soirées à partir de la soirée en cours
-    ou à venir ; soirées vides, minutes sans programme (`uncoveredMinutes`, créneaux rognés aux horaires d'antenne),
-    créneaux hors antenne.
+    ou à venir ; créneaux à publier (`find` avec `draft: true` et `_status = draft` : jamais publiés ou modifiés depuis),
+    émissions jamais publiées de créneaux publiés, soirées vides, minutes sans programme (`uncoveredMinutes`, créneaux
+    rognés aux horaires d'antenne), créneaux hors antenne. Le lien mène d'abord à la soirée du premier créneau à publier,
+    puis à celle d'une émission jamais publiée.
   - Anciennes données : `npm run grille:hors-antenne` (`src/scripts/grille-hors-antenne.ts`) liste les créneaux hors
     antenne ; `-- --supprimer` supprime ceux qui commencent hors antenne et raccourcit à 0 h 30 ceux qui finissent après.
     Le script npm se termine par `--` : sans lui, `payload run` (minimist) avale le drapeau `--supprimer`. Un créneau à

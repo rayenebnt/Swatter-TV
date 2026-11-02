@@ -2,13 +2,25 @@
 
 import { Button, toast, useConfig, useListQuery, useRouteTransition } from '@payloadcms/ui'
 import { useRouter } from 'next/navigation'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import type { Where } from 'payload'
 import { shiftDay, tvDay } from '@/components/programme/model'
 import { BROADCAST_HOURS_LABEL, slotOutsideBroadcast } from '@/lib/broadcast'
 import { dateChip, parisDateTime } from '@/lib/format'
 import { currentMonday, dayLabel, mondayOf, rangeFromWhere, rangeLabel, rangeWhere, weekEveningsLabel } from '@/lib/schedule-week'
 import { AdminIcon } from './icons'
+import { programName } from '@/lib/schedule-programs'
+import {
+  findOfflinePrograms,
+  offlineProgramsNotice,
+  programIds,
+  publishPrograms,
+  publishSlots,
+  unpublishedDetail,
+  unpublishedSlots,
+  type OfflineProgram,
+  type PendingSlot,
+} from './slotPublication'
 
 /** Toute la grille : un filtre toujours vrai, pour ne pas revenir automatiquement à la semaine en cours. */
 const ALL: Where = { or: [{ and: [{ startsAt: { exists: true } }] }] }
@@ -33,7 +45,9 @@ function countOffAir(docs: unknown[] | undefined): number {
  * Outils de la liste « Grille des programmes » (admin.components.beforeListTable) : la liste s'ouvre sur la semaine
  * en cours, on passe d'une semaine ou d'une soirée à l'autre, et on recopie une semaine (ou une soirée) entière
  * sur la semaine suivante en un clic. Rappelle les horaires d'antenne (18 h – 0 h 30) et la saisie des créneaux après
- * minuit, à la date du lendemain.
+ * minuit, à la date du lendemain. Signale les créneaux restés en brouillon (jamais publiés, ou modifiés sans être
+ * republiés : les visiteurs ne voient que la version publiée) et les émissions jamais publiées (le site affiche leurs
+ * créneaux sans leur nom), et les publie d'un clic.
  */
 export function ScheduleTools() {
   const { data, query, refineListData } = useListQuery()
@@ -46,6 +60,11 @@ export function ScheduleTools() {
   const replaceId = useId()
   const [replace, setReplace] = useState(false)
   const [busy, setBusy] = useState(false)
+  // publication en cours (créneaux ou émissions) : fiches traitées sur le total
+  const [publishing, setPublishing] = useState<{ what: 'slots' | 'programs'; done: number; total: number } | null>(null)
+  // émissions jamais publiées parmi celles des créneaux affichés : vérifiées à chaque nouvelle liste et après une publication
+  const [offline, setOffline] = useState<{ key: string; programs: OfflineProgram[] }>({ key: '', programs: [] })
+  const [checks, setChecks] = useState(0)
 
   // la liste s'ouvre toujours filtrée sur la semaine en cours (redirection côté serveur : src/proxy.ts)
   const where = query?.where as Where | undefined
@@ -55,6 +74,18 @@ export function ScheduleTools() {
   const tonight = tvDay()
   const total = isTransitioning ? undefined : data?.totalDocs
   const offAir = isTransitioning ? 0 : countOffAir(data?.docs)
+  const pending = unpublishedSlots(isTransitioning ? [] : data?.docs)
+  const toPublish = pending.slots.length
+  const idsKey = programIds(isTransitioning ? [] : data?.docs).join(',')
+  useEffect(() => {
+    if (!idsKey) return
+    const controller = new AbortController()
+    findOfflinePrograms(routes.api, idsKey.split(',').map(Number), controller.signal)
+      .then((programs) => setOffline({ key: idsKey, programs }))
+      .catch(() => {})
+    return () => controller.abort()
+  }, [idsKey, checks, routes.api])
+  const offlinePrograms = idsKey && offline.key === idsKey ? offline.programs : []
 
   const show = (first: string, days: 1 | 7) => refineListData({ where: rangeWhere(first, days), page: 1 })
 
@@ -62,7 +93,12 @@ export function ScheduleTools() {
   const copy = async (first: string, days: 1 | 7) => {
     const target = shiftDay(first, 7)
     const warning = replace ? `\n\nCe qui est déjà saisi sur la ${rangeLabel(target, days)} sera effacé.` : ''
-    if (!window.confirm(`Recopier tous les créneaux de la ${rangeLabel(first, days)} sur la ${rangeLabel(target, days)} ?${warning}`)) return
+    // la recopie reprend ce qui est en ligne : un brouillon jamais publié n'est pas recopié, une modification non publiée non plus
+    const drafts =
+      toPublish && first === range?.first
+        ? `\n\nAttention : ${plural(toPublish, 'créneau est', 'créneaux sont')} à publier. Seule la version en ligne est recopiée : publiez-${toPublish > 1 ? 'les' : 'le'} d’abord.`
+        : ''
+    if (!window.confirm(`Recopier tous les créneaux de la ${rangeLabel(first, days)} sur la ${rangeLabel(target, days)} ?${warning}${drafts}`)) return
     setBusy(true)
     try {
       const res = await fetch(`${routes.api}/schedule/copy-week`, {
@@ -90,6 +126,84 @@ export function ScheduleTools() {
     }
   }
 
+  /** Publie d'un clic les créneaux restés en brouillon de la liste affichée, puis la recharge. */
+  const publish = async (slots: PendingSlot[]) => {
+    const n = slots.length
+    if (!window.confirm(`Publier ${n > 1 ? `ces ${n} créneaux` : 'ce créneau'} ? ${n > 1 ? 'Ils apparaîtront' : 'Il apparaîtra'} aussitôt dans le programme du site.`)) return
+    setPublishing({ what: 'slots', done: 0, total: n })
+    try {
+      const result = await publishSlots(routes.api, slots, (done) => setPublishing({ what: 'slots', done, total: n }))
+      if (result.published) {
+        toast.success(`${plural(result.published, 'créneau publié', 'créneaux publiés')} : ${result.published > 1 ? 'ils sont' : 'il est'} maintenant dans le programme du site.`)
+      }
+      if (result.refused.length) {
+        const r = result.refused.length
+        toast.error(`${plural(r, 'créneau refusé', 'créneaux refusés')} : ${result.refused.join(' · ')}. Corrigez-${r > 1 ? 'les' : 'le'}, puis publiez à nouveau.`)
+      }
+      if (result.interrupted) {
+        toast.error(`Connexion interrompue : ${plural(result.interrupted, 'créneau n’a pas été publié', 'créneaux n’ont pas été publiés')}. Réessayez dans un instant.`)
+      }
+      router.refresh()
+    } finally {
+      setPublishing(null)
+    }
+  }
+
+  /** Publie d'un clic les émissions jamais publiées des créneaux affichés, puis vérifie à nouveau et recharge la liste. */
+  const publishOffline = async (programs: OfflineProgram[]) => {
+    const n = programs.length
+    const question = n > 1 ? `Publier ces ${n} émissions ? Leur nom apparaîtra aussitôt sur le site.` : `Publier l’émission ${programName(programs[0])} ? Son nom apparaîtra aussitôt sur le site.`
+    if (!window.confirm(question)) return
+    setPublishing({ what: 'programs', done: 0, total: n })
+    try {
+      const result = await publishPrograms(routes.api, programs, (done) => setPublishing({ what: 'programs', done, total: n }))
+      if (result.published) {
+        toast.success(`${plural(result.published, 'émission publiée', 'émissions publiées')} : ${result.published > 1 ? 'leur nom apparaît' : 'son nom apparaît'} maintenant sur le site.`)
+      }
+      if (result.refused.length) {
+        const r = result.refused.length
+        toast.error(`${plural(r, 'émission refusée', 'émissions refusées')} : ${result.refused.join(' · ')}. Ouvrez-${r > 1 ? 'les' : 'la'} pour ${r > 1 ? 'les' : 'la'} compléter, puis publiez.`)
+      }
+      if (result.interrupted) {
+        toast.error(`Connexion interrompue : ${plural(result.interrupted, 'émission n’a pas été publiée', 'émissions n’ont pas été publiées')}. Réessayez dans un instant.`)
+      }
+      setChecks((c) => c + 1)
+      router.refresh()
+    } finally {
+      setPublishing(null)
+    }
+  }
+
+  const notice = offlinePrograms.length > 0 ? offlineProgramsNotice(offlinePrograms) : null
+  const offlineBanner = notice && (
+    <div className="sw-week__drafts sw-week__drafts--programs">
+      <p role="status">
+        <strong>{notice.title}</strong>
+        {notice.rest}
+      </p>
+      <Button buttonStyle="primary" size="small" margin={false} disabled={publishing !== null || busy} onClick={() => void publishOffline(offlinePrograms)}>
+        {publishing?.what === 'programs'
+          ? `Publication… ${publishing.done}/${publishing.total}`
+          : offlinePrograms.length > 1
+            ? `Publier les ${offlinePrograms.length} émissions`
+            : 'Publier l’émission'}
+      </Button>
+    </div>
+  )
+
+  const publishBanner = toPublish > 0 && (
+    <div className="sw-week__drafts">
+      <p role="status">
+        <strong>{plural(toPublish, 'créneau', 'créneaux')} à publier</strong> ({unpublishedDetail(pending.draft, pending.changed)}),{' '}
+        {toPublish > 1 ? 'signalés' : 'signalé'} dans la liste. Un créneau saisi ou modifié reste un brouillon tant qu’on n’a pas cliqué sur « Publier les
+        modifications ».
+      </p>
+      <Button buttonStyle="primary" size="small" margin={false} disabled={publishing !== null || busy} onClick={() => void publish(pending.slots)}>
+        {publishing?.what === 'slots' ? `Publication… ${publishing.done}/${publishing.total}` : toPublish > 1 ? `Publier les ${toPublish} créneaux` : 'Publier ce créneau'}
+      </Button>
+    </div>
+  )
+
   const hours = (
     <p className="sw-week__hours">
       <AdminIcon name="tv" className="sw-week__hours-icon" />
@@ -112,6 +226,8 @@ export function ScheduleTools() {
           </div>
         </div>
         {hours}
+        {offlineBanner}
+        {publishBanner}
       </div>
     )
   }
@@ -166,6 +282,9 @@ export function ScheduleTools() {
         })}
       </div>
 
+      {offlineBanner}
+      {publishBanner}
+
       {offAir > 0 && (
         <p className="sw-week__offair" role="status">
           <strong>
@@ -191,7 +310,7 @@ export function ScheduleTools() {
         )}
         <div className="sw-week__copy-actions">
           {empty ? (
-            <Button buttonStyle="primary" size="small" margin={false} disabled={busy} onClick={() => void copy(shiftDay(range.first, -7), range.days)}>
+            <Button buttonStyle="primary" size="small" margin={false} disabled={busy || publishing !== null} onClick={() => void copy(shiftDay(range.first, -7), range.days)}>
               {busy ? 'Copie en cours…' : day ? `Reprendre le ${dayLabel(shiftDay(day, -7))}` : 'Reprendre la semaine précédente'}
             </Button>
           ) : (
@@ -200,7 +319,7 @@ export function ScheduleTools() {
                 <input id={replaceId} type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
                 Remplacer ce qui est déjà saisi
               </label>
-              <Button buttonStyle="primary" size="small" margin={false} disabled={busy} onClick={() => void copy(range.first, range.days)}>
+              <Button buttonStyle="primary" size="small" margin={false} disabled={busy || publishing !== null} onClick={() => void copy(range.first, range.days)}>
                 {busy ? 'Copie en cours…' : day ? `Recopier sur le ${dayLabel(shiftDay(day, 7))}` : 'Recopier sur la semaine suivante'}
               </Button>
             </>

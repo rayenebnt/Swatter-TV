@@ -181,7 +181,7 @@ test.describe('administration', () => {
     await expect(page.getByRole('heading', { name: 'Sur le site en ce moment' })).toBeVisible()
     expect(await page.locator('.sw-status__row').count()).toBeGreaterThanOrEqual(8)
     // grille contrôlée soirée par soirée (18 h – 0 h 30), quelle que soit l'heure du test ; direct annoncé à ses horaires
-    await expect(page.locator('.sw-status__row').filter({ hasText: 'Programme TV' })).toContainText(/soirée|Soirée|Rien de prévu|horaires d’antenne/)
+    await expect(page.locator('.sw-status__row').filter({ hasText: 'Programme TV' })).toContainText(/soirée|Soirée|Rien de prévu|horaires d’antenne|à publier|jamais publiée/)
     await expect(page.locator('.sw-status__row').filter({ hasText: 'Le direct' })).toContainText(/Activé · à l’antenne de 18 h à 0 h 30|Activé, mais|Désactivé/)
     // mesure d'audience : sans ID de mesure (contenus de départ), rien n'est mesuré et le lien vers les réglages est proposé
     const audience = page.locator('.sw-status__row').filter({ hasText: 'Mesure d’audience' })
@@ -244,9 +244,116 @@ test.describe('administration', () => {
     expect(errors).toEqual([])
   })
 
+  test('grille : les créneaux restés en brouillon sont signalés et publiés d’un clic', async ({ page, request }) => {
+    const errors = watchErrors(page)
+    const headers = await adminHeaders(request)
+    const program = ((await (await request.get('/api/programs?limit=1&depth=0&where[_status][equals]=published', { headers })).json()) as { docs: { id: number }[] }).docs[0]
+    test.skip(!program, 'aucune émission (lancez npm run seed)')
+    // semaine du lundi 8 janvier 2052 (heure d'hiver), propre à ce test : rien n'arrive sur la grille des 7 soirées du site
+    const week = new URLSearchParams({
+      'where[or][0][and][0][startsAt][greater_than_equal]': '2052-01-07T23:30:00.000Z',
+      'where[or][0][and][1][startsAt][less_than]': '2052-01-14T23:30:00.000Z',
+    })
+    const created: number[] = []
+    const guest = await visitor()
+    const add = async (path: string, startsAt: string, status: 'draft' | 'published') => {
+      const res = await request.post(path, { headers, data: { startsAt, durationMinutes: 30, program: program.id, _status: status } })
+      expect(res.status()).toBe(201)
+      const id = ((await res.json()) as { doc: { id: number } }).doc.id
+      created.push(id)
+      return id
+    }
+    try {
+      // 20 h : enregistré en brouillon (comme pendant la saisie), jamais publié ; 21 h : publié, puis modifié sans être republié
+      const draft = await add('/api/schedule?draft=true', '2052-01-08T19:00:00.000Z', 'draft')
+      const changed = await add('/api/schedule', '2052-01-08T20:00:00.000Z', 'published')
+      expect((await request.patch(`/api/schedule/${changed}?draft=true`, { headers, data: { titleOverride: 'Titre modifié (e2e)' } })).ok()).toBe(true)
+      // côté visiteurs : le brouillon n'existe pas, l'autre créneau garde sa version publiée
+      const seen = async (id: number) => {
+        const res = await guest.get(`/api/schedule/${id}?depth=0`)
+        return res.ok() ? (((await res.json()) as { titleOverride?: string | null }).titleOverride ?? '(titre de l’émission)') : res.status()
+      }
+      expect(await seen(draft)).toBe(404)
+      expect(await seen(changed)).toBe('(titre de l’émission)')
+
+      await login(page, ADMIN)
+      await page.goto(`/admin/collections/schedule?${week}`)
+      await expect(page.locator('.sw-week__title')).toHaveText(/^Soirées du lundi 8 /)
+      await expect(page.locator('.sw-slot-time__draft--draft')).toHaveText('pas en ligne')
+      await expect(page.locator('.sw-slot-time__draft--changed')).toHaveText('modifié, à publier')
+      await expect(page.locator('.sw-week__drafts')).toContainText(
+        '2 créneaux à publier (1 jamais publié : invisible sur le site ; 1 modifié sans être republié : le site montre encore l’ancienne version)',
+      )
+      page.once('dialog', (dialog) => void dialog.accept())
+      await page.getByRole('button', { name: 'Publier les 2 créneaux' }).click()
+      await expect(page.getByText('2 créneaux publiés : ils sont maintenant dans le programme du site.')).toBeVisible()
+      await expect(page.locator('.sw-week__drafts')).toHaveCount(0)
+      await expect(page.locator('.sw-slot-time__draft')).toHaveCount(0)
+      // en ligne pour les visiteurs, dans leur dernière version
+      expect(await seen(draft)).toBe('(titre de l’émission)')
+      expect(await seen(changed)).toBe('Titre modifié (e2e)')
+      expect(errors).toEqual([])
+    } finally {
+      await guest.dispose()
+      for (const id of created) await request.delete(`/api/schedule/${id}`, { headers })
+    }
+  })
+
+  test('grille : une émission jamais publiée est signalée et publiée d’un clic, puis son créneau', async ({ page, request }) => {
+    const errors = watchErrors(page)
+    const headers = await adminHeaders(request)
+    // semaine du lundi 15 janvier 2052 (heure d'hiver), propre à ce test
+    const week = new URLSearchParams({
+      'where[or][0][and][0][startsAt][greater_than_equal]': '2052-01-14T23:30:00.000Z',
+      'where[or][0][and][1][startsAt][less_than]': '2052-01-21T23:30:00.000Z',
+    })
+    const guest = await visitor()
+    let programId: number | null = null
+    let slotId: number | null = null
+    try {
+      // émission créée comme dans l'administration : fiche vide en brouillon, puis saisie enregistrée automatiquement
+      const program = await request.post('/api/programs?draft=true', { headers, data: { _status: 'draft' } })
+      expect(program.status()).toBe(201)
+      programId = ((await program.json()) as { doc: { id: number } }).doc.id
+      const typed = await request.patch(`/api/programs/${programId}?draft=true&autosave=true`, { headers, data: { title: 'Le Yodleur des cimes (e2e)', genre: 'magazine' } })
+      expect(typed.ok()).toBe(true)
+      // créneau publié : refusé, avec le nom de l'émission et quoi faire ; en brouillon : accepté
+      const slot = { startsAt: '2052-01-15T19:00:00.000Z', durationMinutes: 30, program: programId }
+      const refused = await request.post('/api/schedule', { headers: { ...headers, 'Accept-Language': 'fr' }, data: { ...slot, _status: 'published' } })
+      expect(refused.status()).toBe(400)
+      expect(JSON.stringify(await refused.json())).toContain('« Le Yodleur des cimes (e2e) » n’est pas en ligne : ouvrez-la (Programme TV › Émissions)')
+      const draft = await request.post('/api/schedule?draft=true', { headers, data: { ...slot, _status: 'draft' } })
+      expect(draft.status()).toBe(201)
+      slotId = ((await draft.json()) as { doc: { id: number } }).doc.id
+
+      await login(page, ADMIN)
+      await page.goto(`/admin/collections/schedule?${week}`)
+      const banner = page.locator('.sw-week__drafts--programs')
+      await expect(banner).toContainText('L’émission « Le Yodleur des cimes (e2e) » n’a jamais été publiée : sur le site, ses créneaux s’affichent sans son nom')
+      page.once('dialog', (dialog) => void dialog.accept())
+      await banner.getByRole('button', { name: 'Publier l’émission' }).click()
+      await expect(page.getByText('1 émission publiée : son nom apparaît maintenant sur le site.')).toBeVisible()
+      await expect(banner).toHaveCount(0)
+      page.once('dialog', (dialog) => void dialog.accept())
+      await page.getByRole('button', { name: 'Publier ce créneau' }).click()
+      await expect(page.getByText('1 créneau publié : il est maintenant dans le programme du site.')).toBeVisible()
+      await expect(page.locator('.sw-week__drafts')).toHaveCount(0)
+      // côté visiteurs : le créneau est en ligne, avec le nom de son émission
+      const seen = await guest.get(`/api/schedule/${slotId}?depth=1`)
+      expect(seen.status()).toBe(200)
+      expect(((await seen.json()) as { program?: { title?: string } }).program?.title).toBe('Le Yodleur des cimes (e2e)')
+      expect(errors).toEqual([])
+    } finally {
+      await guest.dispose()
+      if (slotId) await request.delete(`/api/schedule/${slotId}`, { headers })
+      if (programId) await request.delete(`/api/programs/${programId}`, { headers })
+    }
+  })
+
   test('grille : un créneau hors des horaires d’antenne est refusé à l’enregistrement, avec la raison en français', async ({ request }) => {
     const headers = await adminHeaders(request)
-    const program = ((await (await request.get('/api/programs?limit=1&depth=0', { headers })).json()) as { docs: { id: number }[] }).docs[0]
+    // une émission en ligne : avec une émission en brouillon, le créneau serait refusé pour cette autre raison
+    const program = ((await (await request.get('/api/programs?limit=1&depth=0&where[_status][equals]=published', { headers })).json()) as { docs: { id: number }[] }).docs[0]
     test.skip(!program, 'aucune émission (lancez npm run seed)')
     // dates lointaines : rien n'arrive sur la grille du site, même si un contrôle manquait
     const created: number[] = []

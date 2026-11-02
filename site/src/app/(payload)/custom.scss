@@ -71,6 +71,36 @@ html[data-theme='dark'] {
   outline-offset: 2px;
 }
 
+/* ---------- Messages d'erreur des champs, en entier ---------- */
+/* Payload les affiche dans une bulle d'une seule ligne, coupée (« ouvrez-la… » devient « ouvre… »), et la masque sur
+   téléphone : ici, un message rouge au-dessus du champ, sur plusieurs lignes, quelle que soit la taille de l'écran. */
+.field-type__wrap > .field-error.tooltip {
+  position: static;
+  display: block;
+  width: auto;
+  max-width: none;
+  margin: 0 0 6px;
+  padding: 6px 10px;
+  transform: none;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: normal;
+
+  &::after {
+    display: none;
+  }
+
+  .tooltip-content {
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  &:not(.tooltip--show) {
+    display: none;
+  }
+}
+
 /* ---------- Navigation : rubrique active marquée d'or ---------- */
 .nav__link:has(.nav__link-indicator) {
   color: var(--swatter-accent);
@@ -888,7 +918,26 @@ html[data-theme='dark'] {
   color: var(--sw-warn);
 }
 
-/* cellule « Jour et heure de début » : soirée de rattachement après minuit, créneau hors antenne */
+/* créneaux restés en brouillon (jamais publiés, ou modifiés sans être republiés) : publication d'un clic */
+.sw-week__drafts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--theme-elevation-150);
+  background: var(--sw-warn-bg);
+  color: var(--sw-warn);
+  font-size: 13px;
+  line-height: 1.5;
+
+  p {
+    flex: 1 1 320px;
+    margin: 0;
+  }
+}
+
+/* cellule « Jour et heure de début » : soirée de rattachement après minuit, créneau hors antenne ou pas en ligne */
 .sw-slot-time {
   display: inline-flex;
   flex-wrap: wrap;
@@ -900,7 +949,8 @@ html[data-theme='dark'] {
     font-size: 12px;
   }
 
-  &__off {
+  &__off,
+  &__draft {
     padding: 1px 7px;
     border-radius: 999px;
     background: var(--sw-warn-bg);
@@ -908,6 +958,13 @@ html[data-theme='dark'] {
     font-size: 11px;
     font-weight: 700;
     cursor: help;
+  }
+
+  /* modifié, à publier : la version en ligne existe encore (badge en pointillés) */
+  &__draft--changed {
+    padding: 0 6px;
+    border: 1px dashed currentColor;
+    background: transparent;
   }
 }
 

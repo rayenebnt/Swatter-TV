@@ -5,6 +5,7 @@ import type { Setting } from '@/payload-types'
 import { runningAdsWhere } from '@/access'
 import { shiftDay, tvDay, tvDayStart } from '@/components/programme/model'
 import { BROADCAST_HOURS_LABEL, BROADCAST_MINUTES, slotOutsideBroadcast } from '@/lib/broadcast'
+import { programIdOf, programName } from '@/lib/schedule-programs'
 import { durationLabel, eveningShortLabel, uncoveredMinutes } from '@/lib/schedule-week'
 import { loadItems } from '@/lib/members/items'
 import type { HistoryKind } from '@/lib/members/shared'
@@ -63,6 +64,13 @@ export type EveningsStatus = {
   /** anciens créneaux publiés en dehors des horaires d'antenne (début avant 18 h ou à partir de 0 h 30, fin après 0 h 30)
    * dans ces 7 journées TV ; `firstDay` : la journée TV du premier (lien vers la grille) */
   offAir: { count: number; firstDay: string | null }
+  /** créneaux de ces 7 journées TV restés en brouillon (jamais publiés, ou modifiés sans être republiés) : invisibles
+   * sur le site, ou visibles dans leur ancienne version ; `firstDay` : la journée TV du premier (lien vers la grille) */
+  drafts: { count: number; firstDay: string | null }
+  /** émissions jamais publiées (fiche en ligne vide) de créneaux publiés de ces 7 journées TV : le site affiche ces
+   * créneaux sans leur nom (« Programme ») ; `names` : « « nom saisi » » ; `firstDay` : la journée TV du premier de ces
+   * créneaux (lien vers la grille) */
+  offlinePrograms: { names: string[]; firstDay: string | null }
 }
 
 export type MembersStats = {
@@ -120,42 +128,91 @@ async function weekendPick(payload: Payload): Promise<Featured> {
 async function evenings(payload: Payload, now = new Date()): Promise<EveningsStatus> {
   const today = tvDay(now)
   const days = Array.from({ length: 7 }, (_, i) => shiftDay(today, i))
-  const { docs } = await payload.find({
-    collection: 'schedule',
-    where: {
-      and: [
-        LIVE,
-        { startsAt: { greater_than_equal: tvDayStart(today).toISOString() } },
-        { startsAt: { less_than: tvDayStart(shiftDay(today, 7)).toISOString() } },
-      ],
-    },
-    sort: 'startsAt',
-    depth: 0,
-    pagination: false,
-    select: { startsAt: true, durationMinutes: true },
-  })
+  const period: Where[] = [
+    { startsAt: { greater_than_equal: tvDayStart(today).toISOString() } },
+    { startsAt: { less_than: tvDayStart(shiftDay(today, 7)).toISOString() } },
+  ]
+  const [{ docs }, pending] = await Promise.all([
+    payload.find({
+      collection: 'schedule',
+      where: { and: [LIVE, ...period] },
+      sort: 'startsAt',
+      depth: 0,
+      pagination: false,
+      select: { startsAt: true, durationMinutes: true, program: true },
+    }),
+    // dernières versions (draft: true) : un créneau jamais publié, ou modifié depuis sa publication, a pour dernière
+    // version un brouillon ; le premier donne la soirée à ouvrir
+    payload.find({
+      collection: 'schedule',
+      draft: true,
+      where: { and: [{ _status: { equals: 'draft' } }, ...period] },
+      sort: 'startsAt',
+      depth: 0,
+      limit: 1,
+      select: { startsAt: true },
+    }),
+  ])
   const offAir = docs.filter((d) => slotOutsideBroadcast(new Date(d.startsAt), d.durationMinutes) !== null)
   const missing = days.map((day) => ({ day, missingMinutes: uncoveredMinutes(day, docs) }))
+  const offline = await offlinePrograms(payload, docs)
   return {
     today,
     at: now.getTime(),
     empty: missing.filter((m) => m.missingMinutes >= BROADCAST_MINUTES).map((m) => m.day),
     incomplete: missing.filter((m) => m.missingMinutes > 0 && m.missingMinutes < BROADCAST_MINUTES),
     offAir: { count: offAir.length, firstDay: offAir.length ? tvDay(new Date(offAir[0].startsAt)) : null },
+    drafts: { count: pending.totalDocs, firstDay: pending.docs[0]?.startsAt ? tvDay(new Date(pending.docs[0].startsAt)) : null },
+    offlinePrograms: offline,
   }
+}
+
+/**
+ * Émissions jamais publiées parmi celles de créneaux publiés (dans l'ordre de ces créneaux) : fiche principale au statut
+ * « brouillon » et sans titre (vide depuis « Ajouter » ; une émission retirée du site garde son nom en ligne), nommées
+ * d'après leur dernière version (brouillon compris).
+ */
+async function offlinePrograms(payload: Payload, slots: { startsAt: string; program?: unknown }[]): Promise<EveningsStatus['offlinePrograms']> {
+  const ids = [...new Set(slots.map((s) => programIdOf(s.program)).filter((id): id is number => id !== null))]
+  if (!ids.length) return { names: [], firstDay: null }
+  const offline = await payload.find({
+    collection: 'programs',
+    where: { and: [{ id: { in: ids } }, { _status: { equals: 'draft' } }] },
+    depth: 0,
+    pagination: false,
+    select: { title: true },
+  })
+  const empty = offline.docs.filter((p) => !p.title)
+  if (!empty.length) return { names: [], firstDay: null }
+  const offlineIds = new Set(empty.map((p) => p.id))
+  const latest = await payload.find({ collection: 'programs', draft: true, where: { id: { in: [...offlineIds] } }, depth: 0, pagination: false, select: { title: true } })
+  const titles = new Map(latest.docs.map((p) => [p.id, p.title]))
+  const order = ids.filter((id) => offlineIds.has(id))
+  const first = slots.find((s) => offlineIds.has(programIdOf(s.program) ?? NaN))
+  return { names: order.map((id) => programName({ id, title: titles.get(id) })), firstDay: first ? tvDay(new Date(first.startsAt)) : null }
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
 
 /**
- * Ligne « Programme TV » : soirées vides (« Rien de prévu : ce soir, sam. 24 »), incomplètes (« mar. 27 : 1 h 15 sans
- * programme ») et anciens créneaux hors antenne, sinon « Les 7 prochaines soirées sont complètes ». `first` : la première
- * soirée à reprendre (lien vers sa grille) ; null si tout va bien ou si tout est vide (lien vers la semaine).
+ * Ligne « Programme TV » : créneaux restés en brouillon (« 2 créneaux à publier » : c'est souvent pour cela qu'une soirée
+ * paraît vide), émissions jamais publiées (leurs créneaux s'affichent sans leur nom), soirées vides (« Rien de prévu : ce
+ * soir, sam. 24 »), incomplètes (« mar. 27 : 1 h 15 sans programme ») et anciens créneaux hors antenne, sinon « Les 7
+ * prochaines soirées sont complètes ». `first` : la soirée à reprendre (lien vers sa grille) : celle du premier créneau à
+ * publier, ou du premier créneau d'une émission jamais publiée (un clic dans la grille), sinon la première soirée à
+ * compléter ; null si tout va bien ou si tout est vide (lien vers la semaine).
  */
 export function programmeSummary(e: EveningsStatus | null): { tone: 'ok' | 'warn'; value: string; first: string | null } {
   if (!e) return { tone: 'warn', value: 'Information indisponible pour le moment : rechargez la page dans un instant', first: null }
   const label = (d: string) => eveningShortLabel(d, e.today, e.at)
   const parts: string[] = []
+  const drafts = e.drafts.count
+  if (drafts) {
+    parts.push(`${plural(drafts, 'créneau', 'créneaux')} à publier (brouillon${drafts > 1 ? 's' : ''} pas encore visible${drafts > 1 ? 's' : ''} sur le site)`)
+  }
+  const offline = e.offlinePrograms.names
+  if (offline.length === 1) parts.push(`Émission jamais publiée (${offline[0]}) : ses créneaux s’affichent sans son nom, publiez-la`)
+  else if (offline.length) parts.push(`${offline.length} émissions jamais publiées (${offline.join(', ')}) : leurs créneaux s’affichent sans leur nom, publiez-les`)
   if (e.empty.length === 7) parts.push('Aucune émission prévue pour les 7 prochaines soirées')
   else if (e.empty.length) parts.push(`Rien de prévu : ${e.empty.map(label).join(', ')}`)
   if (e.incomplete.length) {
@@ -169,6 +226,8 @@ export function programmeSummary(e: EveningsStatus | null): { tone: 'ok' | 'warn
     )
   }
   if (!parts.length) return { tone: 'ok', value: `Les 7 prochaines soirées sont complètes (${BROADCAST_HOURS_LABEL})`, first: null }
+  const urgent = e.drafts.firstDay ?? e.offlinePrograms.firstDay
+  if (urgent) return { tone: 'warn', value: parts.join(' · '), first: urgent }
   const days = [...e.empty, ...e.incomplete.map((m) => m.day), ...(e.offAir.firstDay ? [e.offAir.firstDay] : [])].sort()
   return { tone: 'warn', value: parts.join(' · '), first: e.empty.length === 7 ? null : (days[0] ?? null) }
 }
