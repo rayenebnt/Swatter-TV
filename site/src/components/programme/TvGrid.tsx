@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Fragment, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
+import { Fragment, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { SectionHead } from '@/components/ui/SectionHead'
 import { Seg } from '@/components/ui/Seg'
@@ -17,13 +17,17 @@ import {
   GRID_HOURS,
   GRID_MINUTES,
   GRID_START,
+  gridLength,
+  gridScale,
+  gridX,
   minutesBetween,
   programImage,
   programmeDayUrl,
   RULER_HOURS,
-  slotMeta,
+  slotGenre,
   tvDay,
   type GridData,
+  type GridScale,
 } from './model'
 import { ProgramDialog } from './ProgramDialog'
 
@@ -34,20 +38,21 @@ const hourLabel = (h: number) => `${String((FIRST_HOUR + h) % 24).padStart(2, '0
 const NAV_KEYS = ['ArrowRight', 'ArrowLeft', 'Home', 'End']
 
 /**
- * Place la frise : minute `mid` au centre (émission ciblée), sinon « maintenant » au tiers gauche quand il tombe dans
- * la soirée affichée, à l'antenne (comme la maquette), sinon le début de la soirée (18 h).
+ * Place la frise : `mid` (minute de frise) au centre (émission ciblée), sinon « maintenant » au tiers gauche quand il
+ * tombe dans la soirée affichée, à l'antenne (comme la maquette), sinon le début de la soirée (18 h).
  */
-function placeGrid(scroller: HTMLDivElement, grid: HTMLDivElement, dayStart: string, mid: number | null, smooth: boolean) {
-  const px = grid.offsetWidth / GRID_MINUTES
+function placeGrid(scroller: HTMLDivElement, grid: HTMLDivElement, scale: GridScale, dayStart: string, mid: number | null, smooth: boolean) {
+  const px = grid.offsetWidth / gridLength(scale)
   const m = (Date.now() - Date.parse(dayStart)) / 60_000
-  const left = mid !== null ? mid * px - scroller.clientWidth / 2 : m > 0 && m < GRID_MINUTES ? m * px - scroller.clientWidth * 0.35 : 0
+  const left = mid !== null ? mid * px - scroller.clientWidth / 2 : m > 0 && m < GRID_MINUTES ? gridX(scale, m) * px - scroller.clientWidth * 0.35 : 0
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   scroller.scrollTo({ left: Math.max(0, left), behavior: smooth && !reduce ? 'smooth' : 'auto' })
 }
 
 /**
- * Grille horaire du programme TV : onglets des soirées, frise de 18 h à 0 h 30, ligne « maintenant » pendant l'antenne
- * (après montage), glisser / molette / tactile, panneau de détail. Hors antenne, sur la soirée à venir : bandeau
+ * Grille horaire du programme TV : onglets des soirées, frise de 18 h à 0 h 30 (émissions courtes élargies pour rester
+ * lisibles : gridScale), ligne « maintenant » pendant l'antenne (après montage), glisser / molette / tactile, panneau de
+ * détail. Hors antenne, sur la soirée à venir : bandeau
  * « Hors antenne · reprise ce soir à 18 h » et bouton « Début de soirée » au lieu de « Maintenant ». Le premier rendu ne
  * dépend que des données du serveur (dont `onAirAtRender`) ; l'heure du visiteur prend le relais après hydratation, ce
  * qui fait basculer à 18 h et à 0 h 30 une page servie depuis le cache ou un onglet resté ouvert.
@@ -92,21 +97,23 @@ export function TvGrid({
   const day = data.days.find((d) => d.key === dayKey) ?? data.days[0]
   const open = opened ?? (linked ? { day: linked.day, id: linked.slot.id } : null)
   const openSlot = open ? data.days.find((d) => d.key === open.day)?.slots.find((s) => s.id === open.id) : undefined
+  // échelle de la frise de la soirée affichée : la météo de 5 min reste lisible, tout le reste suit
+  const scale = useMemo(() => gridScale(day.slots), [day.slots])
 
   // Défilement initial (après montage) et à chaque changement de jour
   const ready = now !== null
   useLayoutEffect(() => {
     const scroller = scrollerRef.current
     const grid = gridRef.current
-    if (ready && scroller && grid) placeGrid(scroller, grid, day.start, null, false)
-  }, [ready, day.start])
+    if (ready && scroller && grid) placeGrid(scroller, grid, scale, day.start, null, false)
+  }, [ready, day.start, scale])
   // Émission liée par l'adresse : centrée
-  const linkedMid = linked && linked.day === day.key ? (linked.slot.from + linked.slot.to) / 2 : null
+  const linkedMid = linked && linked.day === day.key ? (gridX(scale, linked.slot.from) + gridX(scale, linked.slot.to)) / 2 : null
   useLayoutEffect(() => {
     const scroller = scrollerRef.current
     const grid = gridRef.current
-    if (linkedMid !== null && scroller && grid) placeGrid(scroller, grid, day.start, linkedMid, false)
-  }, [linkedMid, day.start])
+    if (linkedMid !== null && scroller && grid) placeGrid(scroller, grid, scale, day.start, linkedMid, false)
+  }, [linkedMid, day.start, scale])
 
   const selectDay = (key: string) => {
     setPicked(key)
@@ -119,7 +126,7 @@ export function TvGrid({
     const key = tvDay(new Date())
     const target = has(key) ? key : data.days[0].key
     if (target !== day.key) selectDay(target)
-    else if (scrollerRef.current && gridRef.current) placeGrid(scrollerRef.current, gridRef.current, day.start, null, true)
+    else if (scrollerRef.current && gridRef.current) placeGrid(scrollerRef.current, gridRef.current, scale, day.start, null, true)
   }
 
   const closeDialog = () => {
@@ -208,12 +215,12 @@ export function TvGrid({
         <div className="grid-fade l" aria-hidden="true" />
         <div className="grid-fade r" aria-hidden="true" />
         <div ref={scrollerRef} className="grid-scroll">
-          <div ref={gridRef} className="tvgrid" style={{ '--hours': GRID_HOURS } as CSSProperties}>
+          <div ref={gridRef} className="tvgrid" style={{ '--hours': gridLength(scale) / 60 } as CSSProperties}>
             <div className="ruler" aria-hidden="true">
               {HOURS.map((h) => (
                 <Fragment key={h}>
-                  <span style={{ '--h': h } as CSSProperties}>{hourLabel(h)}</span>
-                  {h + 0.5 < GRID_HOURS && <i style={{ '--h': h } as CSSProperties} />}
+                  <span style={{ '--x': gridX(scale, h * 60) } as CSSProperties}>{hourLabel(h)}</span>
+                  {h + 0.5 < GRID_HOURS && <i style={{ '--x': gridX(scale, h * 60 + 30) } as CSSProperties} />}
                 </Fragment>
               ))}
             </div>
@@ -225,13 +232,14 @@ export function TvGrid({
                 const progress = now !== null && now >= a && now < b ? (now - a) / (b - a) : null
                 const live = progress !== null
                 const past = now !== null && now >= b
-                const w = s.to - s.from
+                const x = gridX(scale, s.from)
+                const w = gridX(scale, s.to) - x
                 // Image atténuée sous un dégradé : taille fixe (srcset 1x / 2x), plus large pour les longues émissions
                 const iw = (w * 280) / 60 > 384 ? 640 : 384
                 const cls = ['blk', live && 'is-now', past && 'is-past', s.cutL && 'is-cut-l', s.cutR && 'is-cut-r'].filter(Boolean).join(' ')
                 const label = [s.title, `${formatTime(s.start)} – ${formatTime(s.end)}`, p?.genreLabel, p?.isPremiere && 'inédit', live && 'en cours'].filter(Boolean).join(', ')
                 return (
-                  <li key={s.id} className="tvgrid__item" data-preview={`slot-${s.id}`} style={{ '--s': s.from, '--w': w } as CSSProperties}>
+                  <li key={s.id} className="tvgrid__item" data-preview={`slot-${s.id}`} style={{ '--s': x, '--w': w } as CSSProperties}>
                     <button
                       type="button"
                       className={cls}
@@ -253,7 +261,11 @@ export function TvGrid({
                       )}
                       <time dateTime={s.start}>{formatTime(s.start)}</time>
                       <strong>{s.title}</strong>
-                      <small>{slotMeta(p, minutesBetween(s.start, s.end))}</small>
+                      {/* « Info · 45 min » ; dans un bloc étroit (la météo de 5 min), la durée seule : le genre y est masqué */}
+                      <small>
+                        {slotGenre(p) && <span className="blk__genre">{slotGenre(p)} · </span>}
+                        {minutesBetween(s.start, s.end)} min
+                      </small>
                       {live && <span className="pfill" aria-hidden="true" />}
                     </button>
                   </li>
@@ -262,7 +274,7 @@ export function TvGrid({
             </ol>
             {/* pendant l'antenne seulement : « maintenant » tombe alors dans la soirée en cours, entre 18 h et 0 h 30 */}
             {now !== null && nowMin !== null && onAir && nowMin >= 0 && nowMin < GRID_MINUTES && (
-              <div className={`nowline${nowMin < 15 ? ' is-start' : nowMin > GRID_MINUTES - 15 ? ' is-end' : ''}`} style={{ '--now': nowMin } as CSSProperties} aria-hidden="true">
+              <div className={`nowline${nowMin < 15 ? ' is-start' : nowMin > GRID_MINUTES - 15 ? ' is-end' : ''}`} style={{ '--now': gridX(scale, nowMin) } as CSSProperties} aria-hidden="true">
                 <span>{formatTime(new Date(now))}</span>
               </div>
             )}

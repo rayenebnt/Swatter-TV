@@ -95,7 +95,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `meteo/MiniMeteo`, `MeteoWidget({variant: 'aside' \| 'full'})` | météo (en `aside`, ne rend rien sans prévision ; `MiniMeteo` non plus) |
 | `video/VideoPlayer({video, poster, posterPosition, preview, title, autoPlay, live, history})`, `Top10Section`, `VideosSection`, `ReplaySection` | vidéos |
 | `info/InfoSection` | info de l'accueil (contient `MeteoWidget variant="aside"`) |
-| `programme/TvGridSection({variant: 'home' \| 'full', day?})` | grille TV des soirées (18 h – 0 h 30 ; `day` = AAAA-MM-JJ, soirée affichée d'abord, page /programme-tv) ; état « hors antenne » transmis au rendu (`onAirAtRender`) puis recalculé dans le navigateur |
+| `programme/TvGridSection({variant: 'home' \| 'full', day?})` | grille TV des soirées (18 h – 0 h 30 ; `day` = AAAA-MM-JJ, soirée affichée d'abord, page /programme-tv) ; état « hors antenne » transmis au rendu (`onAirAtRender`) puis recalculé dans le navigateur ; émissions de moins de 25 min élargies à 25 « minutes de frise » pour rester lisibles (`gridScale` / `gridX` de `model.ts` : règle, trait « maintenant » et défilement suivent la même échelle) |
 | `agenda/AgendaSection`, `webcams/WebcamsSection({limit})` | agenda, webcams |
 | `lib/import/meteo.ts → importMeteo(payload)`, `lib/import/youtube.ts → importYoutube(payload)` | imports (appelés par `GET /api/cron/import`) |
 | `lib/search.ts → search(payload, q, limit)` | recherche (appelée par `GET /api/search?q=`) |

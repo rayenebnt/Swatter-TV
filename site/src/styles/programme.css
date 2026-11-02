@@ -8,8 +8,9 @@
 @media (hover: hover) and (pointer: fine) {
   .grid-scroll:not(.is-drag) { cursor: grab; }
 }
-/* Frise d'une soirée : largeur proportionnelle à sa durée (--hours = 6,5 h, de 18 h à 0 h 30), toujours plus large que le
-   conteneur (1 820 px ; 1 365 px sous 760 px) : glisser, molette et dégradés gardent leur effet */
+/* Frise d'une soirée : largeur proportionnelle à sa durée (--hours = 6,5 h, de 18 h à 0 h 30, un peu plus quand des
+   émissions courtes y sont élargies : gridScale de model.ts), toujours plus large que le conteneur (1 820 px ; 1 365 px
+   sous 760 px) : glisser, molette et dégradés gardent leur effet */
 .tvgrid { --hw: 280px; position: relative; height: 250px; width: calc(var(--hours) * var(--hw)); }
 
 /* Hors antenne, sur la soirée à venir (après hydratation) : bandeau discret au-dessus de la frise */
@@ -17,13 +18,14 @@
 .grid-offair::before { content: ''; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); flex-shrink: 0; }
 .grid-offair span { font-family: var(--font-display); font-weight: 700; letter-spacing: .02em; color: var(--ink); }
 
-/* Graduations : une par heure pleine (18:00 … 00:00), repère à la demi-heure */
+/* Graduations : une par heure pleine (18:00 … 00:00), repère à la demi-heure ; --x : position en minutes de frise */
 .ruler { position: absolute; inset: 0 0 auto; height: 44px; border-bottom: 1px solid var(--line); }
-.ruler span { position: absolute; top: 13px; left: calc(var(--h) * var(--hw)); font: 600 12.5px var(--font-display); color: var(--muted); transform: translateX(10px); font-variant-numeric: tabular-nums; }
+.ruler span { position: absolute; top: 13px; left: calc(var(--x) * var(--hw) / 60); font: 600 12.5px var(--font-display); color: var(--muted); transform: translateX(10px); font-variant-numeric: tabular-nums; }
 .ruler span::before { content: ''; position: absolute; left: -10px; top: -13px; height: 44px; width: 1px; background: var(--line); }
-.ruler i { position: absolute; bottom: 0; left: calc((var(--h) + .5) * var(--hw)); width: 1px; height: 8px; background: var(--line-2); }
+.ruler i { position: absolute; bottom: 0; left: calc(var(--x) * var(--hw) / 60); width: 1px; height: 8px; background: var(--line-2); }
 
-/* Émissions : position et largeur proportionnelles à l'heure et à la durée (minutes × largeur d'une heure) */
+/* Émissions : position et largeur en minutes de frise (--s, --w) × largeur d'une heure / 60 : proportionnelles à l'heure et
+   à la durée, une émission de moins de 25 min élargie à 25 (MIN_SLOT_MINUTES) pour rester lisible */
 .tvgrid__list { position: absolute; inset: 0; animation: tvg-in .45s var(--ease-out); }
 .tvgrid__item { position: absolute; top: 58px; height: 176px; left: calc(var(--s) * var(--hw) / 60 + 4px); width: max(6px, calc(var(--w) * var(--hw) / 60 - 8px)); container-type: inline-size; }
 .tvgrid__item:hover, .tvgrid__item:focus-within { z-index: 2; }
@@ -48,6 +50,7 @@
 /* Blocs étroits (émissions courtes) */
 @container (max-width: 120px) {
   .blk { padding: 12px 10px; }
+  .blk__genre { display: none; }
   .blk time { font-size: 13.5px; }
   .blk strong { font-size: 14px; }
   .blk small { font-size: 11.5px; }

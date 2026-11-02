@@ -121,6 +121,27 @@ test('programme TV : grille du jour et autre jour', async ({ page }) => {
   // soirées de 18 h à 0 h 30 : en-tête, frise de 18:00 à 00:00, onglet « Ce soir », parties de la soirée
   await expect(page.locator('main')).toContainText(/tous les soirs de 18\sh à 0\sh\s30/)
   await expect(page.locator('.ruler span')).toHaveText(['18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00'])
+  // émissions courtes élargies (la météo de 15 min de la soirée type) : chacune assez large pour lire son heure et son
+  // titre, sans chevaucher la suivante ; les graduations restent alignées sur les émissions (00:00, après la météo)
+  const boxes = (
+    await page.locator('.tvgrid__item').evaluateAll((items) =>
+      items.map((el) => {
+        const r = el.getBoundingClientRect()
+        return { left: r.left, right: r.right, title: el.querySelector('button')?.getAttribute('title') ?? '' }
+      }),
+    )
+  ).sort((a, b) => a.left - b.left)
+  expect(boxes.length, 'émissions de la soirée').toBeGreaterThan(0)
+  for (const [i, b] of boxes.entries()) {
+    expect(b.right - b.left, `largeur de « ${b.title} »`).toBeGreaterThanOrEqual(76)
+    if (i) expect(b.left, `« ${b.title} » après « ${boxes[i - 1].title} »`).toBeGreaterThanOrEqual(boxes[i - 1].right - 1)
+  }
+  const midnight = boxes.find((b) => b.title.endsWith('· 00:00'))
+  if (midnight) {
+    // graduation : bord gauche de son libellé moins 10 px (décalage du libellé) ; émission : 4 px après sa graduation
+    const mark = await page.locator('.ruler span', { hasText: '00:00' }).evaluate((el) => el.getBoundingClientRect().left - 10)
+    expect(Math.abs(midnight.left - 4 - mark), 'graduation 00:00 alignée sur l’émission de minuit').toBeLessThanOrEqual(2)
+  }
   await expect(page.getByRole('tab', { name: /^Ce soir/ })).toBeVisible()
   const parts = await page.locator('#liste .tvl__part h3').allInnerTexts()
   for (const part of parts) expect(['DÉBUT DE SOIRÉE', 'SOIRÉE'], 'partie de la soirée').toContain(part.toUpperCase())

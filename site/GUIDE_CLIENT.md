@@ -369,7 +369,8 @@ incomplètes (« mar. 27 : 1 h 15 sans programme ») et les créneaux en dehors 
 soirée à reprendre.
 
 Sur le site, la page « Programme TV » présente le programme soirée par soirée, de 18 h à 0 h 30 : onglets « Ce soir »,
-« Demain soir », puis « Sam. 18 »… Une émission diffusée après minuit (par exemple à 00:15) apparaît à la fin de la
+« Demain soir », puis « Sam. 18 »… Dans la grille, une émission courte (la météo de 5 minutes) est élargie pour rester
+lisible, avec son heure et sa durée réelles. Une émission diffusée après minuit (par exemple à 00:15) apparaît à la fin de la
 soirée de la veille, avec la mention « après minuit ». En dehors des heures d’antenne, la page l’indique d’elle-même
 (« Hors antenne · reprise ce soir à 18 h »). L’accueil (« en ce moment », « ce soir ») et la page « Le direct » se
 mettent aussi à jour d’après cette grille et ces horaires.

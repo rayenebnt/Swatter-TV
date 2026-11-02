@@ -15,6 +15,54 @@ export const GRID_MINUTES = BROADCAST_MINUTES
 export const GRID_HOURS = GRID_MINUTES / 60
 /** Graduations, une par heure pleine : 18:00, 19:00… 00:00 (7) ; la dernière demi-heure finit au bord droit. */
 export const RULER_HOURS = Math.ceil(GRID_HOURS)
+
+/**
+ * Largeur minimale d'une émission sur la frise, en minutes de frise : une émission plus courte (la météo de 5 min) est
+ * élargie jusque-là, assez pour lire son heure et son titre (environ 110 px sur ordinateur, 80 px sur téléphone).
+ */
+export const MIN_SLOT_MINUTES = 25
+
+/**
+ * Échelle de la frise d'une soirée : points [minute réelle depuis 18 h, minute de frise], croissants, reliés par des
+ * segments. Une minute réelle vaut une minute de frise, sauf dans une émission de moins de MIN_SLOT_MINUTES, étirée à
+ * cette largeur (la soirée s'allonge d'autant) ; deux émissions courtes qui se chevauchent (ancienne donnée) prennent
+ * l'étirement le plus fort. Émissions, graduations, trait « maintenant » et défilement suivent la même échelle : tout
+ * reste aligné, seules les heures qui contiennent une émission courte paraissent un peu plus longues.
+ */
+export type GridScale = [number, number][]
+
+export function gridScale(slots: { from: number; to: number }[]): GridScale {
+  const clamp = (m: number) => Math.min(GRID_MINUTES, Math.max(0, m))
+  const short = slots.map((s) => ({ from: clamp(s.from), to: clamp(s.to) })).filter((s) => s.to > s.from && s.to - s.from < MIN_SLOT_MINUTES)
+  const cuts = [...new Set([0, GRID_MINUTES, ...short.flatMap((s) => [s.from, s.to])])].sort((a, b) => a - b)
+  const scale: GridScale = [[0, 0]]
+  let x = 0
+  for (let i = 1; i < cuts.length; i++) {
+    const a = cuts[i - 1]
+    const b = cuts[i]
+    const stretch = Math.max(1, ...short.filter((s) => s.from <= a && s.to >= b).map((s) => MIN_SLOT_MINUTES / (s.to - s.from)))
+    x += (b - a) * stretch
+    scale.push([b, x])
+  }
+  return scale
+}
+
+/** Position sur la frise (minutes de frise) de la minute réelle `m` depuis 18 h ; hors de la soirée, une pour une. */
+export function gridX(scale: GridScale, m: number): number {
+  if (m <= 0) return m
+  for (let i = 1; i < scale.length; i++) {
+    const [b, xb] = scale[i]
+    if (m <= b) {
+      const [a, xa] = scale[i - 1]
+      return xa + ((m - a) * (xb - xa)) / (b - a)
+    }
+  }
+  const [b, xb] = scale[scale.length - 1]
+  return xb + (m - b)
+}
+
+/** Longueur de la frise, en minutes de frise : 390, plus l'élargissement des émissions courtes. */
+export const gridLength = (scale: GridScale) => scale[scale.length - 1][1]
 /** Soirées proposées : celle en cours (ou à venir) et les six suivantes. */
 export const PROGRAMME_DAYS = 7
 
@@ -204,9 +252,14 @@ export function formatDuration(min: number): string {
   return m ? `${h} h ${String(m).padStart(2, '0')}` : `${h} h`
 }
 
+/** Genre et mention « Inédit » d'un bloc : « Documentaire · Inédit » ; vide sans l'un ni l'autre. */
+export function slotGenre(p: GridProgram | undefined): string {
+  return [p?.genreLabel, p?.isPremiere ? 'Inédit' : null].filter(Boolean).join(' · ')
+}
+
 /** Ligne d'infos d'un bloc : « Documentaire · Inédit · 75 min » (format de la maquette). */
 export function slotMeta(p: GridProgram | undefined, minutes: number): string {
-  return [p?.genreLabel, p?.isPremiere ? 'Inédit' : null, `${minutes} min`].filter(Boolean).join(' · ')
+  return [slotGenre(p), `${minutes} min`].filter(Boolean).join(' · ')
 }
 
 const VISUALS: Record<string, string> = {

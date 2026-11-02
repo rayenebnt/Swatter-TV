@@ -1,8 +1,9 @@
 // Tests unitaires de src/components/programme/model.ts : la chaîne est à l’antenne tous les soirs de 18 h à 0 h 30
 // (heure de Paris) ; de 0 h à 0 h 30, c’est encore la soirée de la veille ; hors antenne le reste du temps. Soirée en
 // cours (tvDay), soirées proposées et leurs libellés, frise de 18 h à 0 h 30 (390 min, créneaux rognés aux bords,
-// changements d’heure), créneaux d’une soirée (frise, liste et JSON-LD), parties de la soirée, « après minuit », durées
-// et prochaine diffusion d’une émission. Tous les instants sont passés en paramètre : rien ne dépend de l’heure du test.
+// changements d’heure), créneaux d’une soirée (frise, liste et JSON-LD), échelle de la frise (émissions courtes élargies),
+// parties de la soirée, « après minuit », durées et prochaine diffusion d’une émission. Tous les instants sont passés en
+// paramètre : rien ne dépend de l’heure du test.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   buildGridData,
@@ -16,7 +17,11 @@ import {
   GRID_HOURS,
   GRID_MINUTES,
   GRID_START,
+  gridLength,
+  gridScale,
+  gridX,
   isAfterMidnight,
+  MIN_SLOT_MINUTES,
   minutesBetween,
   PROGRAMME_DAYS,
   programImage,
@@ -474,5 +479,71 @@ describe('findAiring : prochaine diffusion d’une émission (fiche par ancre /p
     expect(findAiring(grid, 'la-longue-nuit', Date.parse(at(today, '20:00')))).toMatchObject({ day: today, slot: { id: long.id, cutR: true } })
     // à 0 h 45, plus rien à l'antenne : la seule diffusion est passée (la première de la semaine est rendue)
     expect(findAiring(grid, 'la-longue-nuit', Date.parse(at('2026-10-22', '00:45')))?.slot.end).toBe(at('2026-10-22', '00:30'))
+  })
+})
+
+describe('échelle de la frise : une émission courte (la météo de 5 min) est élargie pour rester lisible', () => {
+  /** Largeurs (minutes de frise) des créneaux [début, fin] (minutes réelles depuis 18 h) sur leur propre frise. */
+  const widths = (slots: { from: number; to: number }[]) => {
+    const scale = gridScale(slots)
+    return slots.map((s) => gridX(scale, s.to) - gridX(scale, s.from))
+  }
+
+  it('sans émission courte : une minute réelle vaut une minute de frise, 390 au total', () => {
+    expect(MIN_SLOT_MINUTES).toBe(25)
+    for (const slots of [[], [{ from: 0, to: 45 }, { from: 45, to: 70 }, { from: 70, to: 390 }]]) {
+      const scale = gridScale(slots)
+      expect(scale).toEqual([
+        [0, 0],
+        [390, 390],
+      ])
+      expect(gridLength(scale)).toBe(390)
+      for (const m of [0, 30, 123.5, 390]) expect(gridX(scale, m)).toBe(m)
+    }
+  })
+
+  it('météo de 5 min puis journal de 45 min : la météo prend 25 minutes de frise, la suite est décalée d’autant', () => {
+    const slots = [
+      { from: 0, to: 5 },
+      { from: 5, to: 50 },
+      { from: 50, to: 55 },
+      { from: 55, to: 120 },
+    ]
+    const scale = gridScale(slots)
+    expect(widths(slots)).toEqual([25, 45, 25, 65])
+    expect(gridX(scale, 5)).toBe(25)
+    // 19:00 (60 min réelles) : après deux météos élargies de 20 minutes chacune
+    expect(gridX(scale, 60)).toBe(100)
+    // au milieu de la météo de 18:50 : au milieu de sa largeur élargie
+    expect(gridX(scale, 52.5)).toBe(70 + 12.5)
+    expect(gridLength(scale)).toBe(390 + 2 * 20)
+  })
+
+  it('élargie jusqu’à 25 minutes de frise au plus juste : 15 min → 25, 24 min → 25, 25 min et plus inchangées', () => {
+    expect(widths([{ from: 100, to: 115 }])).toEqual([25])
+    expect(widths([{ from: 100, to: 124 }])).toEqual([25])
+    expect(widths([{ from: 100, to: 125 }])).toEqual([25])
+    expect(widths([{ from: 100, to: 160 }])).toEqual([60])
+  })
+
+  it('ancienne donnée : deux émissions courtes qui se chevauchent restent dans l’ordre, chacune au moins à 25', () => {
+    const slots = [
+      { from: 100, to: 110 },
+      { from: 105, to: 112 },
+    ]
+    const scale = gridScale(slots)
+    for (const w of widths(slots)) expect(w).toBeGreaterThanOrEqual(25)
+    const xs = [0, 100, 105, 110, 112, 390].map((m) => gridX(scale, m))
+    for (let i = 1; i < xs.length; i++) expect(xs[i]).toBeGreaterThan(xs[i - 1])
+  })
+
+  it('créneau rogné aux bords de la soirée (de 0 h 25 à 0 h 30) : élargi aussi, la frise s’allonge à droite', () => {
+    const scale = gridScale([{ from: 385, to: 390 }])
+    expect(gridX(scale, 385)).toBe(385)
+    expect(gridX(scale, 390)).toBe(410)
+    expect(gridLength(scale)).toBe(410)
+    // hors de la soirée : une pour une (avant 18 h, après 0 h 30)
+    expect(gridX(scale, -10)).toBe(-10)
+    expect(gridX(scale, 400)).toBe(420)
   })
 })
