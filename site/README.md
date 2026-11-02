@@ -376,8 +376,8 @@ archive du dossier `media/`. Avec S3 / R2, activez le versionnage du bucket ou s
 ## Tests
 
 ```bash
-npm run test:complet                 # tout, avant une livraison (environ 12 minutes)
-npm run test:complet -- --rapide     # TypeScript, ESLint, tests unitaires et d’intégration (environ 4 minutes)
+npm run test:complet                 # tout, avant une livraison (environ 15 minutes)
+npm run test:complet -- --rapide     # TypeScript, ESLint, tests unitaires et d’intégration (environ 5 minutes)
 npm run test:complet -- --e2e        # seulement les tests de bout en bout
 npm run test:complet -- --garder     # laisse le site de test ouvert à la fin (http://localhost:3100), Ctrl+C pour l’arrêter
 ```
@@ -399,7 +399,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 |---|---|
 | `npm test` | tests unitaires et d’intégration |
 | `npm run test:unit` | tests unitaires : logique pure, sans base (quelques secondes) |
-| `npm run test:integration` | tests d’intégration : Payload complet sur la base `swatter_tests`, recréée à chaque lancement (environ 2 min 30) |
+| `npm run test:integration` | tests d’intégration : Payload complet sur la base `swatter_tests`, recréée à chaque lancement (environ 4 minutes) |
 | `npm run test:e2e` | tests de bout en bout contre un serveur déjà démarré (voir plus bas) |
 | `npx vitest` | tests unitaires et d’intégration relancés à chaque modification, pendant le développement |
 
@@ -407,7 +407,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 
 ### Ce qui est vérifié
 
-- **Tests unitaires** (`tests/unit/`, 1089 tests, quelques secondes) : la logique pure du site.
+- **Tests unitaires** (`tests/unit/`, 1093 tests, quelques secondes) : la logique pure du site.
   - Espace membres et sécurité : validation des champs, mots de passe, jetons et sessions signées, limites anti-abus,
     retours après la connexion et sortie de l’aperçu (près de 300 tentatives de redirection vers un autre site), e-mails,
     export CSV (formules de tableur neutralisées).
@@ -424,7 +424,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
     commande « Arrêter les aperçus animés » : choix lu, écrit, stockage indisponible, autres onglets), images adaptées au téléphone (texte
     riche, carrousel, photo entière sur fond flou, point focal), zones de l’Info (« Autres régions »), gros envois
     réservés à l’équipe et ménage des fichiers temporaires.
-- **Tests d’intégration** (`tests/integration/`, 443 tests, environ 3 min 30) : Payload complet sur la base de test.
+- **Tests d’intégration** (`tests/integration/`, 447 tests, environ 4 minutes) : Payload complet sur la base de test.
   - Droits du public, des éditeurs et des administrateurs sur chaque collection et chaque réglage (REST et GraphQL),
     brouillons, contenus programmés, comptes de l’équipe, membres.
   - Comportements automatiques : adresses uniques, Top 10, couvertures et aperçus animés tirés des vidéos (vrai ffmpeg :
@@ -435,11 +435,13 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - API de l’espace membres (inscription, connexion et blocage, sessions, mot de passe oublié, historique, « Ma liste »,
     export, suppression), formulaire de contact, recherche, tâche planifiée, imports, recopie de la grille, export de la
     lettre d’info.
-- **Tests de bout en bout** (`tests/e2e/`, 183 tests, environ 7 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
+- **Tests de bout en bout** (`tests/e2e/`, 185 tests, environ 8 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
   390 × 844, tactile ; ceux qui ne dépendent pas de l’écran, comme le référencement et l’administration, une seule fois) :
   - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
     horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
-    canonique et JSON-LD valides ; administration et API joignables ; tâche planifiée refusée sans secret ;
+    canonique et JSON-LD valides ; administration et API joignables ; tâche planifiée refusée sans secret ; frise des
+    logos de « Le groupe » (cinq étapes dans l’ordre, images chargées, sur une ligne sur ordinateur, en colonne sur
+    téléphone) ;
   - `antenne.spec.ts` : la chaîne à l’antenne de 18 h à 0 h 30 (horloge du navigateur fixée) : page « Le direct » à 21 h
     et à 10 h, bascule dans un onglet ouvert à 18 h et à 0 h 30, carrousel de l’accueil « En direct » ou « Ce soir dès
     18 h », point rouge du menu jamais dans le HTML du serveur ;
