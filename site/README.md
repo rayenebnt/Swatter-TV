@@ -406,7 +406,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 
 ### Ce qui est vérifié
 
-- **Tests unitaires** (`tests/unit/`, 1058 tests, quelques secondes) : la logique pure du site.
+- **Tests unitaires** (`tests/unit/`, 1065 tests, quelques secondes) : la logique pure du site.
   - Espace membres et sécurité : validation des champs, mots de passe, jetons et sessions signées, limites anti-abus,
     retours après la connexion et sortie de l’aperçu (près de 300 tentatives de redirection vers un autre site), e-mails,
     export CSV (formules de tableur neutralisées).
@@ -423,7 +423,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
     commande « Arrêter les aperçus animés » : choix lu, écrit, stockage indisponible, autres onglets), images adaptées au téléphone (texte
     riche, carrousel, photo entière sur fond flou, point focal), zones de l’Info (« Autres régions »), gros envois
     réservés à l’équipe et ménage des fichiers temporaires.
-- **Tests d’intégration** (`tests/integration/`, 429 tests, environ 3 min 30) : Payload complet sur la base de test.
+- **Tests d’intégration** (`tests/integration/`, 435 tests, environ 3 min 30) : Payload complet sur la base de test.
   - Droits du public, des éditeurs et des administrateurs sur chaque collection et chaque réglage (REST et GraphQL),
     brouillons, contenus programmés, comptes de l’équipe, membres.
   - Comportements automatiques : adresses uniques, Top 10, couvertures et aperçus animés tirés des vidéos (vrai ffmpeg :
@@ -434,7 +434,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - API de l’espace membres (inscription, connexion et blocage, sessions, mot de passe oublié, historique, « Ma liste »,
     export, suppression), formulaire de contact, recherche, tâche planifiée, imports, recopie de la grille, export de la
     lettre d’info.
-- **Tests de bout en bout** (`tests/e2e/`, 178 tests, environ 7 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
+- **Tests de bout en bout** (`tests/e2e/`, 181 tests, environ 7 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
   390 × 844, tactile ; ceux qui ne dépendent pas de l’écran, comme le référencement et l’administration, une seule fois) :
   - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
     horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
