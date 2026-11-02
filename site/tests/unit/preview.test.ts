@@ -91,6 +91,9 @@ describe('previewFocus : page et endroit montrés pour chaque collection', () =>
     expect(previewFocus('replays', undefined, { slug: null })).toEqual({ path: '/replay' })
     expect(previewFocus('pages', undefined, { slug: 'mentions-legales' })).toEqual({ path: '/mentions-legales' })
     expect(previewFocus('pages', undefined, {})).toEqual({ path: '/' })
+    // frise chronologique (« Le groupe » : l'évolution du logo) : l'aperçu y défile quand on la modifie
+    expect(previewFocus('pages', undefined, { slug: 'le-groupe' }, { field: 'timeline' })).toEqual({ path: '/le-groupe', target: 'frise' })
+    expect(previewFocus('pages', undefined, { slug: 'le-groupe' }, { field: 'content' })).toEqual({ path: '/le-groupe' })
   })
 
   it('émissions : leur fiche dans le programme (ancre), sinon le programme', () => {

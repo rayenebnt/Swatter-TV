@@ -22,6 +22,7 @@ import { EVENTS, type RelDay } from './seed/events'
 import { lexical } from './seed/lexical'
 import { MEDIA } from './seed/media'
 import { demoForecast } from './seed/meteo'
+import { LOGO_PAGE, logoTimelineData } from './seed/frise-logos'
 import { PAGES } from './seed/pages'
 import { WEBCAMS } from './seed/webcams'
 import { eveningScheduleData, PROGRAMS } from './seed/programs'
@@ -266,6 +267,8 @@ for (const p of PAGES) {
       content: lexical(p.body),
       footerGroup: p.footerGroup,
       meta: { title: `${p.title} — Swatter TV Info`, description: p.metaDescription },
+      // « Le groupe » : frise des logos successifs de la chaîne
+      ...(p.slug === LOGO_PAGE ? { timeline: logoTimelineData(mediaId) } : {}),
     },
     overrideAccess: true,
     context,

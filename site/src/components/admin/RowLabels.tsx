@@ -35,6 +35,12 @@ export function FlashLabel() {
   return <Label prefix="Message" parts={[data?.label, data?.text]} />
 }
 
+/** Étapes de la frise chronologique d'une page (« Le groupe » : l'évolution du logo) */
+export function StepLabel() {
+  const { data } = useRowLabel<{ date?: string; title?: string }>()
+  return <Label prefix="Étape" parts={[data?.date, data?.title]} />
+}
+
 /** Programme de la journée d'un événement */
 export function MomentLabel() {
   const { data } = useRowLabel<{ time?: string; label?: string }>()

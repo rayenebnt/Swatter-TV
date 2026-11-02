@@ -25,6 +25,7 @@
     "import": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/import.ts",
     "apercus": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/apercus-existants.ts",
     "fonds": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/fonds-montagnes.ts --",
+    "frise-logos": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/frise-logos.ts --",
     "grille:exemple": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/grille-exemple.ts --",
     "grille:hors-antenne": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/grille-hors-antenne.ts --",
     "test": "vitest run",

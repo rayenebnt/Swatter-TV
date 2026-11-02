@@ -1,10 +1,12 @@
-// Médias de départ : visuels de montagne du site (public/visuels), utilisables comme illustrations, et un court clip
-// d'exemple pour le direct (seed/assets/videos), à remplacer par le vrai flux.
+// Médias de départ : visuels de montagne du site (public/visuels), utilisables comme illustrations, les logos successifs
+// de la chaîne (seed/assets/logos, frise de la page « Le groupe ») et un court clip d'exemple pour le direct
+// (seed/assets/videos), à remplacer par le vrai flux.
 
 export type SeedMedia = { key: string; file: string; alt: string; credit?: string; place?: string }
 
 const visual = (key: string, alt: string, place?: string): SeedMedia => ({ key, file: `public/visuels/${key}.webp`, alt, ...(place ? { place } : {}) })
 const clip = (key: string, alt: string): SeedMedia => ({ key, file: `seed/assets/videos/${key}.mp4`, alt, credit: 'Swatter TV Info' })
+const logo = (key: string, alt: string): SeedMedia => ({ key, file: `seed/assets/logos/${key}.webp`, alt, credit: 'Swatter TV Info' })
 
 export const MEDIA: SeedMedia[] = [
   // Photos de la chaîne (images de fond du carrousel et de la page Direct), nommées sur l'image
@@ -31,6 +33,14 @@ export const MEDIA: SeedMedia[] = [
   visual('t-nuit-b', 'Silhouettes de sommets au clair de lune, reflétées dans un lac'),
   visual('t-orage-a', 'Ciel chargé et lumière d’orage au-dessus des sommets'),
   visual('t-orage-b', 'Nuages menaçants au-dessus d’une chaîne de montagnes avant l’orage'),
+
+  // Logos successifs de la chaîne, en un an, du plus ancien au plus récent (frise de la page « Le groupe », frise-logos.ts) :
+  // mis au carré sur leur fond d'origine
+  logo('logo-1-hd', 'Premier logo de Swatter TV : un bouton de lecture doré marqué HD, sur fond noir'),
+  logo('logo-2-triangle', 'Logo Swatter TV : le nom en lettres blanches dans un triangle jaune pointe en bas'),
+  logo('logo-3-info', 'Logo Swatter TV Info : triangle jaune, la mention Info glissée entre le T et le V'),
+  logo('logo-4-contour', 'Logo Swatter TV Info : triangle doré dessiné en contour sur fond noir, Info sous le nom'),
+  logo('logo-5-montagnes', 'Logo actuel de Swatter TV : triangle doré renfermant des montagnes, sur fond noir'),
 
   clip('direct-mont-blanc', 'Vidéo de démonstration : lent zoom sur les sommets au crépuscule'),
 ]

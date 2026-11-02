@@ -59,7 +59,8 @@ export function previewFocus(collection: string | undefined, global: string | un
     case 'replays':
       return { path: has ? replayUrl(data) : '/replay' }
     case 'pages':
-      return { path: has ? pageUrl(data) : '/' }
+      // la frise chronologique, sous le texte, quand on la modifie
+      return { path: has ? pageUrl(data) : '/', target: hint.field === 'timeline' ? 'frise' : undefined }
     case 'schedule': {
       // le jour du créneau, et le créneau lui-même dans la grille
       const day = data?.startsAt && !Number.isNaN(Date.parse(data.startsAt)) ? tvDayOf(data.startsAt) : null

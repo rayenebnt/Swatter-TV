@@ -20,6 +20,41 @@
 .doc__nav a[aria-current='page'] { color: var(--gold-light); }
 .doc__nav a[aria-current='page'] svg { opacity: 1; color: var(--gold); }
 
+/* ----- Frise chronologique, sous le texte d'une page (« Le groupe » : l'évolution du logo) -----
+   Sur une ligne, les étapes se partagent la largeur (--n étapes, sans défilement) ; trait doré d'une pastille à l'autre,
+   la plus récente mise en avant. En colonne quand la place manque (téléphone) : trait à gauche, image à côté du texte. */
+.frise { margin-top: clamp(44px, 6vw, 68px); container-type: inline-size; }
+.frise__heading { font-family: var(--font-display); font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); line-height: 1.15; letter-spacing: -.02em; text-wrap: balance; }
+.frise__intro { max-width: 64ch; margin-top: 10px; color: var(--ink-2); }
+.frise__list { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); margin-top: 30px; }
+.frise__step { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 36px 8px 0; text-align: center; }
+.frise__step::before { content: ''; position: absolute; top: 10px; left: 0; right: 0; height: 2px; background: rgba(217, 170, 69, .45); }
+.frise__step:first-child::before { left: 50%; }
+.frise__step:last-child::before { right: 50%; }
+.frise__step:only-child::before { display: none; }
+.frise__dot { position: absolute; top: 4px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--gold-grad); box-shadow: 0 0 0 4px var(--bg); }
+.frise__step:last-child .frise__dot { top: 2px; width: 18px; height: 18px; margin-left: -9px; box-shadow: 0 0 0 4px var(--bg), 0 0 18px rgba(243, 213, 138, .55); }
+.frise__img { width: 100%; max-width: 150px; aspect-ratio: 1; overflow: hidden; border-radius: 18px; border: 1px solid var(--line); background: var(--surface-2); box-shadow: 0 18px 40px -24px rgba(0, 0, 0, .9); }
+.frise__step:last-child .frise__img { border-color: rgba(217, 170, 69, .55); }
+.frise__img img { width: 100%; height: 100%; object-fit: contain; }
+.frise__body { min-width: 0; margin-top: 14px; }
+.frise__date { color: var(--gold-light); font: 700 12.5px var(--font-display); letter-spacing: .08em; text-transform: uppercase; }
+.frise__title { margin-top: 4px; font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1.25; text-wrap: balance; overflow-wrap: anywhere; }
+.frise__text { margin-top: 6px; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+@container (max-width: 560px) {
+  .frise__list { grid-template-columns: minmax(0, 1fr); }
+  .frise__step { flex-direction: row; align-items: flex-start; gap: 16px; padding: 0 0 28px 36px; text-align: left; }
+  .frise__step:last-child { padding-bottom: 0; }
+  .frise__step::before, .frise__step:first-child::before, .frise__step:last-child::before { top: 0; bottom: 0; left: 10px; right: auto; width: 2px; height: auto; }
+  .frise__step:first-child::before { top: 11px; }
+  .frise__step:last-child::before { bottom: auto; height: 11px; }
+  .frise__step:first-child:last-child::before { display: none; }
+  .frise__dot, .frise__step:last-child .frise__dot { left: 4px; margin-left: 0; }
+  .frise__step:last-child .frise__dot { left: 2px; }
+  .frise__img { flex: 0 0 96px; max-width: 96px; border-radius: 14px; }
+  .frise__body { margin-top: 0; padding-top: 2px; }
+}
+
 /* ----- Liens vers les rubriques (404, recherche) ----- */
 .qlinks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .qlinks > li { display: flex; }

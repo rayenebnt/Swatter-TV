@@ -664,6 +664,31 @@ export interface Page {
     [k: string]: unknown;
   } | null;
   /**
+   * Facultatif : une frise affichée sous le texte de la page (par exemple l’évolution du logo). Elle n’apparaît que si elle contient au moins une étape avec une image.
+   */
+  timeline?: {
+    title?: string | null;
+    intro?: string | null;
+    /**
+     * De la plus ancienne à la plus récente. Pour changer l’ordre, faites glisser une étape par sa poignée.
+     */
+    steps?:
+      | {
+          /**
+           * Par ex. « Novembre 2025 » (facultatif).
+           */
+          date?: string | null;
+          title: string;
+          image: number | Media;
+          /**
+           * Une ou deux phrases (facultatif).
+           */
+          text?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
    * Pour ajouter un lien vers cette page en bas du site.
    */
   footerGroup?: ('chaine' | 'swatter') | null;
@@ -1198,6 +1223,21 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   intro?: T;
   content?: T;
+  timeline?:
+    | T
+    | {
+        title?: T;
+        intro?: T;
+        steps?:
+          | T
+          | {
+              date?: T;
+              title?: T;
+              image?: T;
+              text?: T;
+              id?: T;
+            };
+      };
   footerGroup?: T;
   slug?: T;
   meta?:

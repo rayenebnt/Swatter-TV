@@ -6,6 +6,7 @@ import * as migration_20261030_115356_apercu_video_image_mobile from './20261030
 import * as migration_20261030_225851_autres_regions_info from './20261030_225851_autres_regions_info';
 import * as migration_20261101_185903_lieu_photo from './20261101_185903_lieu_photo';
 import * as migration_20261101_235625_video_fond_carrousel from './20261101_235625_video_fond_carrousel';
+import * as migration_20261102_155648_frise_chronologique from './20261102_155648_frise_chronologique';
 
 export const migrations = [
   {
@@ -47,5 +48,10 @@ export const migrations = [
     up: migration_20261101_235625_video_fond_carrousel.up,
     down: migration_20261101_235625_video_fond_carrousel.down,
     name: '20261101_235625_video_fond_carrousel',
+  },
+  {
+    up: migration_20261102_155648_frise_chronologique.up,
+    down: migration_20261102_155648_frise_chronologique.down,
+    name: '20261102_155648_frise_chronologique',
   },
 ];

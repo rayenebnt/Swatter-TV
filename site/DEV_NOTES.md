@@ -137,7 +137,7 @@ Chaque composant ci-dessous existe déjà (stub) avec sa signature ; il peut êt
 | `/videos`, `/videos/[slug]` | vidéos, vidéo |
 | `/webcams` | webcams |
 | `/recherche?q=` | résultats de recherche |
-| `/[...slug]` | pages éditoriales (canaux de réception, le groupe, crédits, vie privée, mentions légales) et redirections des anciennes adresses |
+| `/[...slug]` | pages éditoriales (canaux de réception, le groupe, crédits, vie privée, mentions légales) et redirections des anciennes adresses ; sous le contenu, la frise chronologique facultative de la page (`timeline` de la collection Pages, `components/ui/Timeline.tsx`, étapes affichables : `timelineSteps` de `lib/timeline.ts`, image d'origine car les tailles de la médiathèque sont recadrées en 16:9). « Le groupe » : les logos successifs de la chaîne (`seed/assets/logos`, `scripts/seed/frise-logos.ts` ; site en ligne : `npm run frise-logos`) |
 | `/inscription`, `/connexion`, `/mot-de-passe-oublie` | espace membres : créer un compte, se connecter, recevoir un lien de nouveau mot de passe |
 | `/compte`, `/compte/historique`, `/compte/ma-liste`, `/compte/profil` | « Mon espace » (membre connecté, sinon `/connexion?retour=<chemin>`) |
 | `/compte/nouveau-mot-de-passe?token=` | lien de l'e-mail « mot de passe oublié » des membres |

@@ -6,10 +6,12 @@ import { Icon } from '@/components/ui/Icon'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { RichText } from '@/components/ui/RichText'
+import { Timeline } from '@/components/ui/Timeline'
 import { formatDate } from '@/lib/format'
 import { mediaAlt, mediaSize, mediaUrl } from '@/lib/media'
 import { getPayloadClient } from '@/lib/payload'
 import { safe } from '@/lib/safe'
+import { timelineSteps } from '@/lib/timeline'
 import { absoluteUrl, SITE_NAME, SITE_URL } from '@/lib/site'
 import { articleUrl, eventUrl, pageUrl, replayUrl, videoUrl } from '@/lib/urls'
 import type { Page, Redirect } from '@/payload-types'
@@ -148,6 +150,8 @@ export default async function EditorialPage({ params }: { params: Params }) {
   const { page } = route
   const nav = await getPagesNav()
   const hasContent = Boolean(page.content?.root?.children?.length)
+  // frise chronologique sous le texte (« Le groupe » : l'évolution du logo) ; une page qui n'a qu'elle n'est pas « en cours de rédaction »
+  const hasTimeline = timelineSteps(page.timeline).length > 0
 
   return (
     <>
@@ -156,7 +160,7 @@ export default async function EditorialPage({ params }: { params: Params }) {
         <article className="doc__main" aria-label={page.title}>
           {hasContent ? (
             <RichText data={page.content} className="doc__prose" />
-          ) : (
+          ) : hasTimeline ? null : (
             <div className="empty">
               <Icon name="news" />
               <p>
@@ -165,6 +169,7 @@ export default async function EditorialPage({ params }: { params: Params }) {
               </p>
             </div>
           )}
+          <Timeline timeline={page.timeline} />
           <p className="doc__updated">
             <Icon name="clock" />
             <span>

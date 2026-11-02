@@ -24,6 +24,42 @@ export const Pages: CollectionConfig = {
     { name: 'intro', label: 'Introduction', type: 'textarea' },
     { name: 'content', label: 'Contenu', type: 'richText' },
     {
+      // frise affichée sous le texte de la page (« Le groupe » : l'évolution du logo), seulement si elle a des étapes
+      name: 'timeline',
+      label: 'Frise chronologique',
+      type: 'group',
+      admin: {
+        description:
+          'Facultatif : une frise affichée sous le texte de la page (par exemple l’évolution du logo). Elle n’apparaît que si elle contient au moins une étape avec une image.',
+      },
+      fields: [
+        { name: 'title', label: 'Titre de la frise', type: 'text', admin: { placeholder: 'Notre histoire' } },
+        { name: 'intro', label: 'Texte d’introduction', type: 'textarea' },
+        {
+          name: 'steps',
+          label: 'Étapes',
+          labels: { singular: 'Étape', plural: 'Étapes' },
+          type: 'array',
+          admin: {
+            description: 'De la plus ancienne à la plus récente. Pour changer l’ordre, faites glisser une étape par sa poignée.',
+            initCollapsed: true,
+            components: { RowLabel: '/components/admin/RowLabels#StepLabel' },
+          },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                { name: 'date', label: 'Date ou période', type: 'text', admin: { width: '40%', description: 'Par ex. « Novembre 2025 » (facultatif).' } },
+                { name: 'title', label: 'Titre', type: 'text', required: true, admin: { width: '60%' } },
+              ],
+            },
+            { name: 'image', label: 'Image', type: 'upload', relationTo: 'media', required: true },
+            { name: 'text', label: 'Texte', type: 'textarea', admin: { description: 'Une ou deux phrases (facultatif).' } },
+          ],
+        },
+      ],
+    },
+    {
       name: 'footerGroup',
       label: 'Lien dans le pied de page',
       type: 'select',

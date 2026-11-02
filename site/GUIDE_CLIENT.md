@@ -518,6 +518,16 @@ page a un **Titre**, une **Introduction**, un **Contenu** (même éditeur que le
 pied de page** : **Colonne « La chaîne »**, **Colonne « Swatter TV Info »** ou aucun. Une nouvelle page est accessible à
 l’adresse `/son-adresse` (champ **Adresse web (automatique)**) une fois publiée.
 
+**Frise chronologique (facultative)** : sous le contenu, une frise d’étapes reliées par un trait doré, de la plus ancienne
+à la plus récente. Sur la page « Le groupe », elle retrace l’évolution du logo (« Notre logo au fil du temps »).
+
+- **Titre de la frise** et **Texte d’introduction** : au-dessus des étapes.
+- **Étapes** : chacune a une **Date ou période** (facultative, par exemple « Novembre 2025 »), un **Titre**, une **Image**
+  (choisie dans la médiathèque ou envoyée) et un **Texte** court (facultatif). **Ajouter Étape** en ajoute une à la fin ;
+  pour changer l’ordre, faites glisser une étape par sa poignée (les six points à gauche).
+- La dernière étape est mise en avant (la plus récente). Sur téléphone, la frise s’affiche en colonne.
+- Une page sans étape n’a pas de frise. **Publier les modifications** pour la mettre en ligne.
+
 ## 16. La météo
 
 **La Météo** : les prévisions d’Auvergne-Rhône-Alpes arrivent **automatiquement toutes les heures** grâce à
