@@ -5,8 +5,11 @@ import { defineConfig, devices } from '@playwright/test'
  *   npm run test:e2e                                         → lance « npm run start » (après npm run build)
  *   E2E_BASE_URL=http://localhost:3000 npx playwright test   → contre un serveur déjà démarré (dev ou prod)
  * La base doit contenir le jeu de démonstration (npm run seed).
+ * PLAYWRIGHT_CHROMIUM_EXECUTABLE (facultatif) : chemin d'un Chrome ou Chromium déjà installé, quand celui de cette version
+ * de Playwright ne l'est pas (environnement fourni avec un autre navigateur, par exemple /opt/pw-browsers/chromium).
  */
 const baseURL = process.env.E2E_BASE_URL || 'http://localhost:3000'
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -21,6 +24,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL,
+    ...(executablePath ? { launchOptions: { executablePath } } : {}),
     locale: 'fr-FR',
     timezoneId: 'Europe/Paris',
     trace: 'retain-on-failure',
