@@ -154,10 +154,22 @@ export function slotWhen(startsAt: string | Date): string {
 const wallTime = new Intl.DateTimeFormat('fr-FR', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
 
 /**
- * Même jour de la semaine et même heure de Paris, sept jours plus tard (changements d'heure compris). Une soirée (18 h →
+ * Même heure de Paris, `days` jours plus tard (ou plus tôt si négatif), changements d'heure compris. Une soirée (18 h →
  * 0 h 30) ne croise jamais un changement d'heure (2 h / 3 h) : la copie d'un créneau d'antenne reste à l'antenne.
  */
-export function nextWeekSameTime(startsAt: string | Date): Date {
+export function sameTimeDaysLater(startsAt: string | Date, days: number): Date {
   const date = new Date(startsAt)
-  return parisDateTime(shiftDay(parisDay(date), 7), wallTime.format(date))
+  return parisDateTime(shiftDay(parisDay(date), days), wallTime.format(date))
+}
+
+/** Même jour de la semaine et même heure de Paris, sept jours plus tard (recopie d'une semaine sur la suivante). */
+export const nextWeekSameTime = (startsAt: string | Date): Date => sameTimeDaysLater(startsAt, 7)
+
+/** Nombre de jours du jour `from` au jour `to` (AAAA-MM-JJ), négatif si `to` est avant : 2026-11-16 → 2026-11-18 = 2. */
+export function daysBetween(from: string, to: string): number {
+  const utc = (day: string) => {
+    const [y, m, d] = day.split('-').map(Number)
+    return Date.UTC(y, m - 1, d)
+  }
+  return Math.round((utc(to) - utc(from)) / 86_400_000)
 }

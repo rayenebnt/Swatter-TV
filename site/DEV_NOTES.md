@@ -700,10 +700,16 @@ après l'ajout ou le renommage d'un composant : `npm run generate:importmap`. St
   - `ScheduleTools.tsx` (au-dessus du tableau de la liste) filtre par soirée, rappelle les horaires d'antenne et compte
     les créneaux hors antenne de la liste affichée ; `SlotTimeCell.tsx` rappelle la soirée d'un créneau après minuit et
     marque « hors antenne ».
-  - Recopie : `POST /api/schedule/copy-week` `{ from, days: 7 | 1, replace }` (`src/lib/schedule-copy.ts`), à la même
-    heure de Paris sept jours plus tard, dans une transaction (tout ou rien). Refus (409) si l'arrivée n'est pas vide sans
+  - Recopie : `POST /api/schedule/copy-week` `{ from, days: 7 | 1, to?, replace }` (`src/lib/schedule-copy.ts`), à la
+    même heure de Paris sept jours plus tard (`sameTimeDaysLater`), ou, pour une soirée (`days: 1`), sur la soirée `to`
+    de n'importe quel autre jour (« Copier cette soirée » puis « Coller sur le … » ; `to` égal à `from` refusé : avec
+    `replace`, la soirée serait effacée), dans une transaction (tout ou rien). Refus (409) si l'arrivée n'est pas vide sans
     `replace`. Les créneaux hors antenne sont ignorés et comptés : réponse `{ copied, skipped, replaced, target }` ; un
     refus des contrôles de Payload (`ValidationError`) donne un 400 avec sa raison.
+  - Soirée copiée en attente d'être collée : `sessionStorage` (`swatter-grille-soiree-copiee`), lue avec
+    `useSyncExternalStore` (rien au rendu serveur) ; elle tient d'une semaine à l'autre et après un rechargement. Tant
+    qu'elle est copiée, la boîte de collage remplace celle de la recopie ; « Coller » attend « Remplacer ce qui est déjà
+    saisi » sur une soirée non vide (case décochée à chaque changement de plage : `replaceFor`).
   - Semaines et soirées : journées TV de 0 h 30 à 0 h 30 (`tvDayStart`, `src/lib/schedule-week.ts`, partagé client /
     serveur). Les bornes sont larges (et non 18 h → 0 h 30) pour que la liste montre aussi les anciens créneaux hors
     antenne.

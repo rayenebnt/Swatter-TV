@@ -363,6 +363,20 @@ semaine d’après (les changements d’heure sont pris en compte). Il ne vous r
   version publiée. Publiez d’abord les créneaux à publier (la confirmation vous le rappelle). Une semaine dont une
   émission n’est pas publiée ne peut pas être recopiée : publiez l’émission, puis recommencez.
 
+**Copier le programme d’un jour et le coller sur un autre jour.** Cliquez sur le jour à copier (par exemple **mar. 17**),
+puis sur **Copier cette soirée** : le jour porte la mention « copiée ». Cliquez ensuite sur le jour où la coller, de la
+même semaine ou d’une autre (boutons **Semaine suivante** / **Semaine précédente**), puis sur **Coller sur le mercredi
+18 novembre** : tous les créneaux de la soirée copiée y sont recopiés aux mêmes heures, directement en ligne (le créneau
+de 0 h 15 compris, à la date du lendemain).
+
+- Vous pouvez coller la même soirée sur plusieurs jours à la suite : cliquez sur un autre jour, puis à nouveau sur
+  **Coller**. Quand vous avez fini, cliquez sur **Terminer** (ou **Annuler la copie** si vous n’avez rien collé).
+- Si le jour d’arrivée contient déjà des créneaux, cochez d’abord **Remplacer ce qui est déjà saisi** : ils sont effacés
+  et remplacés par ceux de la soirée copiée (la confirmation vous le rappelle).
+- Comme pour la recopie, seule la version **en ligne** de la soirée copiée est collée, et ses anciens créneaux hors
+  antenne sont laissés de côté.
+- La soirée reste copiée tant que l’onglet est ouvert : vous pouvez changer de semaine, et même recharger la page.
+
 Le tableau de bord vérifie les 7 prochaines soirées (de 18 h à 0 h 30) : il signale les créneaux à publier (« 2 créneaux
 à publier »), les émissions jamais publiées (leurs créneaux s’affichent sans leur nom), les soirées vides, les soirées
 incomplètes (« mar. 27 : 1 h 15 sans programme ») et les créneaux en dehors des horaires d’antenne. Son lien ouvre la

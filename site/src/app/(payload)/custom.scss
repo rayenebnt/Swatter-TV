@@ -843,6 +843,12 @@ html[data-theme='dark'] {
     gap: 12px;
   }
 
+  /* soirée copiée, en attente d'être collée : la boîte de collage se distingue (filet et fond dorés) */
+  &__copy--clip {
+    background: rgba(217, 170, 69, 0.12);
+    box-shadow: inset 4px 0 0 var(--swatter-gold);
+  }
+
   &__replace {
     display: inline-flex;
     align-items: center;
@@ -885,6 +891,16 @@ html[data-theme='dark'] {
 
   &[aria-pressed='true'] &__today {
     color: var(--swatter-gold-light);
+  }
+
+  /* soirée copiée (« Copier cette soirée »), en attente d'être collée */
+  &__clip {
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--swatter-gold);
+    color: var(--swatter-navy);
+    font-size: 11px;
+    font-weight: 700;
   }
 }
 
@@ -975,6 +991,11 @@ html[data-theme='dark'] .sw-day[aria-pressed='true'] {
 
   .sw-day__today {
     color: var(--swatter-navy);
+  }
+
+  .sw-day__clip {
+    background: var(--swatter-navy);
+    color: var(--swatter-gold-light);
   }
 }
 

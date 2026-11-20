@@ -1,14 +1,17 @@
 // Tests unitaires de src/lib/schedule-week.ts : semaines et soirées de la grille (antenne de 18 h à 0 h 30 ; journées TV
 // de 0 h 30 à 0 h 30, outil de la grille de l’administration, recopie de semaine et tableau de bord) : lundi d’une
 // semaine, filtres et adresses de la liste, plage affichée, libellés en français, couverture d’une soirée, titre d’un
-// créneau, et décalage d’une semaine à la même heure de Paris, changements d’heure compris. Instants toujours explicites.
+// créneau, et décalage d’une semaine (ou de n’importe quel nombre de jours : soirée collée sur un autre jour) à la même
+// heure de Paris, changements d’heure compris. Instants toujours explicites.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Where } from 'payload'
 import { shiftDay, tvDay } from '@/components/programme/model'
+import { broadcastEvening, eveningWindow } from '@/lib/broadcast'
 import { parisDateTime } from '@/lib/format'
 import {
   currentMonday,
   dayLabel,
+  daysBetween,
   durationLabel,
   eveningShortLabel,
   mondayOf,
@@ -17,6 +20,7 @@ import {
   rangeLabel,
   rangeSearch,
   rangeWhere,
+  sameTimeDaysLater,
   slotWhen,
   uncoveredMinutes,
   weekEveningsLabel,
@@ -248,6 +252,47 @@ describe('nextWeekSameTime : même jour et même heure de Paris, sept jours plus
 
   it('du 31 décembre au 7 janvier', () => {
     expect(nextWeekSameTime(paris('2026-12-31', '23:30')).toISOString()).toBe(paris('2027-01-07', '23:30'))
+  })
+})
+
+describe('daysBetween et sameTimeDaysLater : soirée collée sur un autre jour, à la même heure de Paris', () => {
+  const paris = (day: string, time: string) => parisDateTime(day, time).toISOString()
+
+  it('daysBetween : jours du calendrier, négatif vers le passé (changements d’heure, de mois, d’année, 29 février)', () => {
+    expect(daysBetween('2026-11-16', '2026-11-18')).toBe(2)
+    expect(daysBetween('2026-11-18', '2026-11-16')).toBe(-2)
+    expect(daysBetween('2026-11-16', '2026-11-16')).toBe(0)
+    expect(daysBetween('2026-10-24', '2026-10-26')).toBe(2)
+    expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2)
+    expect(daysBetween('2026-12-31', '2027-01-01')).toBe(1)
+    expect(daysBetween('2028-02-28', '2028-03-01')).toBe(2)
+    expect(daysBetween('2026-11-16', '2027-11-16')).toBe(365)
+  })
+
+  it('sameTimeDaysLater : même heure de Paris, en avant ou en arrière', () => {
+    expect(sameTimeDaysLater(paris('2026-11-16', '20:30'), 1).toISOString()).toBe(paris('2026-11-17', '20:30'))
+    expect(sameTimeDaysLater(paris('2026-11-17', '00:15'), 2).toISOString()).toBe(paris('2026-11-19', '00:15'))
+    expect(sameTimeDaysLater(paris('2026-11-18', '18:00'), -2).toISOString()).toBe(paris('2026-11-16', '18:00'))
+    // du mercredi 28 octobre (heure d'hiver) au samedi 24 (heure d'été) : même heure affichée, une heure UTC plus tôt ;
+    // la nuit du samedi au dimanche, 0 h 15 est encore à l'heure d'été (le changement a lieu à 3 h)
+    expect(sameTimeDaysLater(paris('2026-10-28', '20:00'), -4).toISOString()).toBe('2026-10-24T18:00:00.000Z')
+    expect(sameTimeDaysLater(paris('2026-10-29', '00:15'), -4).toISOString()).toBe('2026-10-24T22:15:00.000Z')
+    expect(nextWeekSameTime(paris('2026-10-12', '20:30')).toISOString()).toBe(sameTimeDaysLater(paris('2026-10-12', '20:30'), 7).toISOString())
+  })
+
+  it('chaque instant d’une soirée collée ailleurs tombe dans la soirée d’arrivée, toujours à l’antenne', () => {
+    // soirées autour des changements d'heure (mars et octobre) et du nouvel an, collées en avant et en arrière
+    for (const day of ['2026-03-27', '2026-03-28', '2026-03-29', '2026-10-23', '2026-10-24', '2026-10-25', '2026-12-31']) {
+      const { start, end } = eveningWindow(day)
+      for (const shift of [-8, -3, -1, 1, 2, 5, 30]) {
+        const target = shiftDay(day, shift)
+        for (const instant of everyQuarter(start.toISOString(), end.toISOString())) {
+          const copy = sameTimeDaysLater(instant, shift)
+          expect(broadcastEvening(copy), `${instant.toISOString()} (${day}) → ${copy.toISOString()} (${target})`).toBe(target)
+          expect(inRange(copy, rangeWhere(target, 1)), `${instant.toISOString()} → ${target}`).toBe(true)
+        }
+      }
+    }
   })
 })
 

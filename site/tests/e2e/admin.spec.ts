@@ -392,6 +392,104 @@ test.describe('administration', () => {
     expect(((await empty.json()) as { error: string }).error).toMatch(/ne contient aucun créneau/)
   })
 
+  test('grille : une soirée copiée se colle sur d’autres jours (vide, déjà remplie, autre semaine), aux mêmes heures', async ({ page, request }) => {
+    const errors = watchErrors(page)
+    const headers = await adminHeaders(request)
+    const program = ((await (await request.get('/api/programs?limit=1&depth=0&where[_status][equals]=published', { headers })).json()) as { docs: { id: number }[] }).docs[0]
+    test.skip(!program, 'aucune émission (lancez npm run seed)')
+    type Slot = { id: number; startsAt: string; durationMinutes: number; titleOverride?: string | null }
+    // semaines du lundi 22 et du lundi 29 janvier 2052 (heure d'hiver : Paris = UTC + 1), propres à ce test
+    const slotsBetween = async (from: string, to: string) => {
+      const params = new URLSearchParams({ depth: '0', limit: '100', sort: 'startsAt', 'where[startsAt][greater_than_equal]': from, 'where[startsAt][less_than]': to })
+      return ((await (await request.get(`/api/schedule?${params}`, { headers })).json()) as { docs: Slot[] }).docs
+    }
+    // soirée du jour J (18 h → 0 h 30) : de J 0 h 30 à J+1 0 h 30, heure de Paris (la veille à 23 h 30 UTC → J à 23 h 30 UTC)
+    const dayBefore = (day: string) => new Date(Date.parse(`${day}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
+    const evening = (day: string) => slotsBetween(`${dayBefore(day)}T23:30:00.000Z`, `${day}T23:30:00.000Z`)
+    const add = async (startsAt: string, durationMinutes: number, titleOverride?: string) => {
+      const res = await request.post('/api/schedule', { headers, data: { startsAt, durationMinutes, program: program.id, titleOverride, _status: 'published' } })
+      expect(res.status()).toBe(201)
+      return ((await res.json()) as { doc: Slot }).doc
+    }
+    const shape = (slots: Slot[]) => slots.map((s) => [s.startsAt, s.durationMinutes, s.titleOverride ?? null])
+    try {
+      // mardi 23 : 19 h (30 min) et mercredi 0 h 15 (15 min, fin de la soirée du mardi) ; jeudi 25 : un créneau à 20 h
+      await add('2052-01-23T18:00:00.000Z', 30)
+      await add('2052-01-23T23:15:00.000Z', 15, 'Fin de soirée (e2e copie)')
+      const thursday = await add('2052-01-25T19:00:00.000Z', 30, 'Déjà saisi (e2e copie)')
+      const week = new URLSearchParams({
+        'where[or][0][and][0][startsAt][greater_than_equal]': '2052-01-21T23:30:00.000Z',
+        'where[or][0][and][1][startsAt][less_than]': '2052-01-28T23:30:00.000Z',
+      })
+
+      await login(page, ADMIN)
+      await page.goto(`/admin/collections/schedule?${week}`)
+      await expect(page.locator('.sw-week__title')).toHaveText(/^Soirées du lundi 22 /)
+      await page.getByRole('button', { name: 'Soirée du mardi 23 janvier' }).click()
+      await expect(page.locator('.sw-week__count')).toHaveText('Soirée du mardi 23 janvier : 2 créneaux')
+      await page.getByRole('button', { name: 'Copier cette soirée' }).click()
+      const clipBox = page.locator('.sw-week__copy--clip')
+      await expect(clipBox).toContainText('Soirée du mardi 23 janvier copiée.')
+      await expect(page.getByRole('button', { name: 'Soirée du mardi 23 janvier (copiée)' })).toContainText('copiée')
+
+      // mercredi 24, soirée vide : collée aux mêmes heures, 0 h 15 compris (daté du jeudi)
+      await page.getByRole('button', { name: 'Soirée du mercredi 24 janvier' }).click()
+      await expect(clipBox).toContainText('Collez-la sur cette soirée')
+      page.once('dialog', (dialog) => void dialog.accept())
+      await page.getByRole('button', { name: 'Coller sur le mercredi 24 janvier' }).click()
+      await expect(page.getByText('2 créneaux collés sur la soirée du mercredi 24 janvier.')).toBeVisible()
+      await expect(clipBox).toContainText('Elle est collée sur cette soirée.')
+      await expect(page.locator('.sw-week__count')).toHaveText('Soirée du mercredi 24 janvier : 2 créneaux')
+      expect(shape(await evening('2052-01-24'))).toEqual([
+        ['2052-01-24T18:00:00.000Z', 30, null],
+        ['2052-01-24T23:15:00.000Z', 15, 'Fin de soirée (e2e copie)'],
+      ])
+
+      // jeudi 25, déjà rempli : « Coller » attend « Remplacer ce qui est déjà saisi », puis remplace le créneau de 20 h
+      await page.getByRole('button', { name: 'Soirée du jeudi 25 janvier' }).click()
+      await expect(clipBox).toContainText('Cette soirée contient déjà 1 créneau')
+      const pasteThursday = page.getByRole('button', { name: 'Coller sur le jeudi 25 janvier' })
+      await expect(pasteThursday).toBeDisabled()
+      await clipBox.getByLabel('Remplacer ce qui est déjà saisi').check()
+      page.once('dialog', (dialog) => {
+        expect(dialog.message()).toContain('Ce qui est déjà saisi sur la soirée du jeudi 25 janvier sera effacé.')
+        void dialog.accept()
+      })
+      await pasteThursday.click()
+      await expect(page.getByText('2 créneaux collés sur la soirée du jeudi 25 janvier.')).toBeVisible()
+      expect(shape(await evening('2052-01-25'))).toEqual([
+        ['2052-01-25T18:00:00.000Z', 30, null],
+        ['2052-01-25T23:15:00.000Z', 15, 'Fin de soirée (e2e copie)'],
+      ])
+      expect((await request.get(`/api/schedule/${thursday.id}`, { headers })).status()).toBe(404)
+
+      // la semaine suivante : la soirée copiée attend toujours, collée sur le lundi 29
+      await page.getByRole('button', { name: /Semaine suivante/ }).click()
+      await expect(page.locator('.sw-week__title')).toHaveText(/^Soirées du lundi 29 /)
+      await expect(clipBox).toContainText('Choisissez ci-dessus le jour où la coller')
+      await page.getByRole('button', { name: 'Soirée du lundi 29 janvier' }).click()
+      page.once('dialog', (dialog) => void dialog.accept())
+      await page.getByRole('button', { name: 'Coller sur le lundi 29 janvier' }).click()
+      await expect(page.getByText('2 créneaux collés sur la soirée du lundi 29 janvier.')).toBeVisible()
+      expect(shape(await evening('2052-01-29'))).toEqual([
+        ['2052-01-29T18:00:00.000Z', 30, null],
+        ['2052-01-29T23:15:00.000Z', 15, 'Fin de soirée (e2e copie)'],
+      ])
+
+      // « Terminer » : la recopie habituelle revient ; la soirée copiée est restée intacte
+      await page.getByRole('button', { name: 'Terminer' }).click()
+      await expect(clipBox).toHaveCount(0)
+      await expect(page.getByRole('button', { name: 'Copier cette soirée' })).toBeVisible()
+      expect(shape(await evening('2052-01-23'))).toEqual([
+        ['2052-01-23T18:00:00.000Z', 30, null],
+        ['2052-01-23T23:15:00.000Z', 15, 'Fin de soirée (e2e copie)'],
+      ])
+      expect(errors).toEqual([])
+    } finally {
+      for (const slot of await slotsBetween('2052-01-21T23:30:00.000Z', '2052-02-04T23:30:00.000Z')) await request.delete(`/api/schedule/${slot.id}`, { headers })
+    }
+  })
+
   test('Top 10 : une vidéo mise à la place 1 est 1re sur l’accueil, les autres se décalent', async ({ page, request }) => {
     const headers = await adminHeaders(request)
     type V = { id: number; title: string; top10Rank?: number | null }

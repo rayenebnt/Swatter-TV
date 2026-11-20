@@ -474,7 +474,8 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
     l’accord du bandeau cookies, jamais après un refus ou un choix expiré, arrêté et cookies effacés au retrait de l’accord ;
   - `admin.spec.ts` (bureau, en série) : tableau de bord, aide, menu sur téléphone et tablette (par-dessus le contenu,
     fermé à l’arrivée, ni voile ni page bloquée avant l’hydratation, contenu derrière inerte, refermé par un lien, le
-    voile ou Échap) et sur ordinateur (ni voile ni contenu inerte), grille et recopie de semaine, Top 10, éditeurs,
+    voile ou Échap) et sur ordinateur (ni voile ni contenu inerte), grille, recopie de semaine et soirée copiée puis
+    collée sur d’autres jours, Top 10, éditeurs,
     brouillons et aperçu en direct, direct Twitch, import YouTube (faux YouTube), blocage après 5 mauvais mots de passe,
     parcours complet d’un membre et sa gestion dans « Membres du site ».
 

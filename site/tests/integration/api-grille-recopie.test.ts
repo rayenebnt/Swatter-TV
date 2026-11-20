@@ -3,7 +3,8 @@
 // veille), puis recopie (POST /api/schedule/copy-week) : connexion de l'équipe exigée, refus clairs (semaine invalide, rien
 // à recopier, arrivée déjà remplie), remplacement ou non de ce qui est déjà saisi, créneaux recopiés sept jours plus tard
 // à la même heure de Paris (changements d'heure compris), anciens créneaux hors antenne laissés de côté et comptés, tout
-// ou rien. Chaque test travaille sur ses propres semaines de 2030.
+// ou rien ; soirée collée sur un autre jour (`to` : « Copier cette soirée » puis « Coller sur le … »). Chaque test
+// travaille sur ses propres semaines de 2030.
 import { ValidationError, type Payload } from 'payload'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { parisDateTime } from '@/lib/format'
@@ -303,6 +304,65 @@ describe('recopie de la grille', () => {
     expect(again.body).toEqual({
       error: 'La soirée du mercredi 15 mai contient déjà 3 créneaux. Cochez « Remplacer ce qui est déjà saisi » pour les effacer avant la copie.',
     })
+  })
+
+  it('collage : une soirée collée sur un autre jour (to), en avant ou en arrière, aux mêmes heures et directement en ligne', async () => {
+    // soirée du mardi 15 octobre 2030 (0 h 15 du mercredi compris), collée sur le jeudi 17, puis sur le lundi 14
+    const day = [
+      await slot('2030-10-15', '18:00', { program: magazine.id, titleOverride: 'Le magazine — Spécial', durationMinutes: 45 }),
+      await slot('2030-10-15', '21:00'),
+      await slot('2030-10-16', '00:15', { durationMinutes: 15 }),
+    ]
+    const wednesday = await slot('2030-10-16', '20:00')
+    const shifted = (days: number) => day.map((s) => new Date(Date.parse(s.startsAt) + days * 86_400_000).toISOString())
+
+    const res = await copy({ from: '2030-10-15', days: 1, to: '2030-10-17' }, await editorToken())
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ copied: 3, skipped: 0, replaced: 0, target: '2030-10-17' })
+    const pasted = await slotsBetween(['2030-10-17', '00:30'], ['2030-10-18', '00:30'])
+    expect(pasted.map((s) => s.startsAt)).toEqual(shifted(2))
+    pasted.forEach((c, i) => {
+      expect(c.program).toBe(day[i].program)
+      expect(c.durationMinutes).toBe(day[i].durationMinutes)
+      expect(c.titleOverride ?? null).toBe(day[i].titleOverride ?? null)
+      expect(c._status).toBe('published')
+    })
+    expect(pasted[2].label).toBe('Soirée du 17/10/2030, 00:15 — Le journal des tests')
+
+    // collée une deuxième fois sur le jeudi : refusée sans « Remplacer », remplacée avec
+    const again = await copy({ from: '2030-10-15', days: 1, to: '2030-10-17' })
+    expect(again.status).toBe(409)
+    expect(again.body).toEqual({
+      error: 'La soirée du jeudi 17 octobre contient déjà 3 créneaux. Cochez « Remplacer ce qui est déjà saisi » pour les effacer avant la copie.',
+    })
+    expect((await copy({ from: '2030-10-15', days: 1, to: '2030-10-17', replace: true })).body).toEqual({ copied: 3, skipped: 0, replaced: 3, target: '2030-10-17' })
+    expect((await slotsBetween(['2030-10-17', '00:30'], ['2030-10-18', '00:30'])).map((s) => s.startsAt)).toEqual(shifted(2))
+
+    // collée la veille, en arrière
+    expect((await copy({ from: '2030-10-15', days: 1, to: '2030-10-14' })).body).toEqual({ copied: 3, skipped: 0, replaced: 0, target: '2030-10-14' })
+    expect((await slotsBetween(['2030-10-14', '00:30'], ['2030-10-15', '00:30'])).map((s) => s.startsAt)).toEqual(shifted(-1))
+
+    // sur elle-même : refusée, même avec « Remplacer » (elle serait effacée) ; la soirée copiée et le mercredi sont intacts
+    const self = await copy({ from: '2030-10-15', days: 1, to: '2030-10-15', replace: true })
+    expect(self.status).toBe(400)
+    expect(self.body).toEqual({ error: 'La soirée du mardi 15 octobre ne peut pas être collée sur elle-même : choisissez un autre jour.' })
+    expect((await slotsBetween(['2030-10-15', '00:30'], ['2030-10-17', '00:30'])).map((s) => s.id)).toEqual([...day, wednesday].map((s) => s.id))
+  })
+
+  it('collage : un jour d’arrivée mal écrit, ou donné pour une semaine entière, est refusé (400) sans rien modifier', async () => {
+    await slot('2030-08-06', '20:00')
+    for (const body of [
+      { from: '2030-08-06', days: 1, to: 'jeudi' },
+      { from: '2030-08-06', days: 1, to: '2030-08-32' },
+      { from: '2030-08-06', days: 1, to: null },
+      { from: '2030-08-06', to: '2030-08-08' },
+      { from: '2030-08-05', days: 7, to: '2030-08-19' },
+    ]) {
+      const res = await copy(body)
+      expect(res.status, JSON.stringify(body)).toBe(400)
+      expect(res.body).toEqual(INVALID)
+    }
+    expect(await slotsBetween(['2030-08-07', '00:30'], ['2030-08-26', '00:30'])).toEqual([])
   })
 
   it('recopie : tout ou rien — une erreur en cours de copie ne crée ni n’efface aucun créneau', async () => {

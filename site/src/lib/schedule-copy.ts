@@ -1,9 +1,10 @@
-// Recopie d'une semaine (ou d'une soirée) de la grille des programmes sur la semaine suivante
-// (outil de la liste « Grille des programmes », voir src/components/admin/ScheduleTools.tsx).
+// Recopie d'une semaine (ou d'une soirée) de la grille des programmes sur la semaine suivante, et collage d'une soirée
+// sur un autre jour (« Copier cette soirée » puis « Coller sur le … ») : outils de la liste « Grille des programmes », voir
+// src/components/admin/ScheduleTools.tsx.
 import { commitTransaction, initTransaction, killTransaction, ValidationError, type Endpoint, type Payload, type PayloadRequest } from 'payload'
 import { shiftDay } from '@/components/programme/model'
 import { BROADCAST_HOURS_LABEL, slotOutsideBroadcast } from './broadcast'
-import { mondayOf, nextWeekSameTime, rangeLabel, rangeWhere } from './schedule-week'
+import { dayLabel, daysBetween, mondayOf, rangeLabel, rangeWhere, sameTimeDaysLater } from './schedule-week'
 
 /**
  * `copied` : créneaux recopiés ; `skipped` : anciens créneaux hors des horaires d'antenne (début avant 18 h ou à partir
@@ -23,13 +24,15 @@ class CopyWeekError extends Error {
 const slots = (n: number) => `${n} créneau${n > 1 ? 'x' : ''}`
 
 /**
- * Recopie les créneaux des soirées [first, first + days) sept jours plus tard, à la même heure de Paris.
+ * Recopie les créneaux des soirées [first, first + days) sur les soirées [target, target + days), à la même heure de
+ * Paris : sept jours plus tard pour une semaine, n'importe quel autre jour pour une soirée collée. Les deux plages ne se
+ * chevauchent jamais (une semaine va sur la suivante, une soirée sur une autre soirée).
  * `replace` efface d'abord ce qui est déjà saisi sur la plage d'arrivée ; sinon, une plage d'arrivée non vide est refusée.
  * Les anciens créneaux hors antenne (saisis avant les horaires 18 h – 0 h 30) ne sont pas recopiés, mais comptés : leur
  * copie serait refusée par le contrôle de la grille (src/collections/Schedule.ts) et ferait échouer toute la recopie.
  */
-async function copyRange(payload: Payload, req: PayloadRequest, first: string, days: number, replace: boolean): Promise<CopyResult> {
-  const target = shiftDay(first, 7)
+async function copyRange(payload: Payload, req: PayloadRequest, first: string, days: number, target: string, replace: boolean): Promise<CopyResult> {
+  const shift = daysBetween(first, target)
   const context = { disableRevalidate: true }
   const source = await payload.find({ collection: 'schedule', where: rangeWhere(first, days), sort: 'startsAt', pagination: false, depth: 0, req })
   if (source.docs.length === 0) throw new CopyWeekError(`La ${rangeLabel(first, days)} ne contient aucun créneau : il n’y a rien à recopier.`, 400)
@@ -60,7 +63,7 @@ async function copyRange(payload: Payload, req: PayloadRequest, first: string, d
         data: {
           // en ligne aussitôt, comme la semaine recopiée
           _status: 'published',
-          startsAt: nextWeekSameTime(slot.startsAt).toISOString(),
+          startsAt: sameTimeDaysLater(slot.startsAt, shift).toISOString(),
           durationMinutes: slot.durationMinutes,
           // émission supprimée depuis : null, refusé par le contrôle « Émission obligatoire » (400, voir plus bas)
           program: slot.program && typeof slot.program === 'object' ? slot.program.id : slot.program,
@@ -95,20 +98,26 @@ function isDay(value: unknown): value is string {
 }
 
 /**
- * POST /api/schedule/copy-week { from: 'AAAA-MM-JJ', days?: 7 | 1, replace?: boolean }
- * days = 7 (par défaut) : la semaine contenant `from` ; days = 1 : la seule soirée `from`.
+ * POST /api/schedule/copy-week { from: 'AAAA-MM-JJ', days?: 7 | 1, to?: 'AAAA-MM-JJ', replace?: boolean }
+ * days = 7 (par défaut) : la semaine contenant `from`, recopiée sur la suivante ; days = 1 : la seule soirée `from`,
+ * recopiée sur le même jour de la semaine suivante, ou, avec `to`, collée sur la soirée `to` (n'importe quel autre jour).
  */
 export const copyWeekEndpoint: Endpoint = {
   path: '/copy-week',
   method: 'post',
   handler: async (req) => {
     if (!req.user) return Response.json({ error: 'Connectez-vous pour modifier la grille.' }, { status: 401 })
-    const body = ((await req.json?.().catch(() => null)) ?? {}) as { from?: unknown; days?: unknown; replace?: unknown }
+    const body = ((await req.json?.().catch(() => null)) ?? {}) as { from?: unknown; days?: unknown; to?: unknown; replace?: unknown }
     const from = isDay(body.from) ? body.from : null
     const days = body.days === 1 ? 1 : body.days === undefined || body.days === 7 ? 7 : null
-    if (!from || !days) return Response.json({ error: 'Semaine ou soirée manquante ou invalide.' }, { status: 400 })
+    // soirée d'arrivée choisie : pour une soirée seulement (days: 1)
+    const to = body.to === undefined ? undefined : isDay(body.to) && days === 1 ? body.to : null
+    if (!from || !days || to === null) return Response.json({ error: 'Semaine ou soirée manquante ou invalide.' }, { status: 400 })
+    // collée sur elle-même, avec « Remplacer », la soirée serait effacée
+    if (to === from) return Response.json({ error: `La soirée du ${dayLabel(from)} ne peut pas être collée sur elle-même : choisissez un autre jour.` }, { status: 400 })
+    const first = days === 7 ? mondayOf(from) : from
     try {
-      const result = await copyRange(req.payload, req, days === 7 ? mondayOf(from) : from, days, body.replace === true)
+      const result = await copyRange(req.payload, req, first, days, to ?? shiftDay(first, 7), body.replace === true)
       try {
         const { revalidatePath } = await import('next/cache')
         revalidatePath('/', 'layout')

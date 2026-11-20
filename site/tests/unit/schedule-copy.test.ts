@@ -2,7 +2,8 @@
 // le point d’entrée est appelé avec une fausse requête et un faux Payload en mémoire. Vérifie la validation, les
 // plages de départ et d’arrivée (soirées de 18 h à 0 h 30, créneaux de 0 h à 0 h 30 datés du lendemain), les messages
 // en français, le décalage des créneaux (changements d’heure compris), les anciens créneaux hors antenne laissés de côté
-// et comptés, le refus d’écraser une semaine déjà remplie, la transaction (tout ou rien) et la régénération du site.
+// et comptés, le refus d’écraser une semaine déjà remplie, la transaction (tout ou rien) et la régénération du site,
+// ainsi que le collage d’une soirée sur un autre jour (« Copier cette soirée » puis « Coller sur le … » : `to`).
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ValidationError, type PayloadRequest, type Where } from 'payload'
 import { parisDateTime } from '@/lib/format'
@@ -207,6 +208,82 @@ describe('recopie de semaine : arrivée déjà remplie', () => {
     expect(payload.delete.mock.invocationCallOrder[0]).toBeLessThan(payload.create.mock.invocationCallOrder[0])
     expect(payload.store.filter((d) => old.some((o) => o.id === d.id))).toEqual([])
     expect(payload.store.map((d) => d.startsAt).sort()).toEqual([source.startsAt, paris('2026-10-19', '20:00')].sort())
+  })
+})
+
+describe('soirée collée sur un autre jour (days: 1, to)', () => {
+  it('collée le lendemain : mêmes heures de Paris (0 h 15 daté du surlendemain), même durée, émission et titre', async () => {
+    const before = slotAt('2026-11-16', '23:00') // soirée du lundi 16 : pas copiée
+    const day = [
+      slotAt('2026-11-17', '18:00', { durationMinutes: 45 }),
+      slotAt('2026-11-17', '21:00', { titleOverride: 'Spécial' }),
+      slotAt('2026-11-18', '00:15', { durationMinutes: 15 }),
+    ]
+    const payload = fakePayload([before, ...day])
+    const res = await call(payload, { from: '2026-11-17', days: 1, to: '2026-11-18' })
+    expect(res).toEqual({ status: 200, json: { copied: 3, skipped: 0, replaced: 0, target: '2026-11-18' } })
+    expect(payload.find).toHaveBeenCalledWith(expect.objectContaining({ where: rangeWhere('2026-11-17', 1) }))
+    expect(payload.count).toHaveBeenCalledWith(expect.objectContaining({ where: rangeWhere('2026-11-18', 1) }))
+    expect(payload.create.mock.calls.map(([args]) => args.data)).toEqual([
+      { _status: 'published', startsAt: paris('2026-11-18', '18:00'), durationMinutes: 45, program: 4, titleOverride: null },
+      { _status: 'published', startsAt: paris('2026-11-18', '21:00'), durationMinutes: 30, program: 4, titleOverride: 'Spécial' },
+      { _status: 'published', startsAt: paris('2026-11-19', '00:15'), durationMinutes: 15, program: 4, titleOverride: null },
+    ])
+    expect(payload.db.commitTransaction).toHaveBeenCalledWith('transaction-1')
+    expect(revalidatePath).toHaveBeenCalledWith('/', 'layout')
+  })
+
+  it('collée sur un jour passé ou d’une autre semaine, à travers un changement d’heure : même heure affichée', async () => {
+    // mercredi 28 octobre (heure d'hiver) → samedi 24 (heure d'été ; le dimanche à 0 h 15 est encore à l'heure d'été)
+    const payload = fakePayload([slotAt('2026-10-28', '20:00'), slotAt('2026-10-29', '00:15', { durationMinutes: 15 })])
+    const res = await call(payload, { from: '2026-10-28', days: 1, to: '2026-10-24' })
+    expect(res.json).toEqual({ copied: 2, skipped: 0, replaced: 0, target: '2026-10-24' })
+    expect(payload.create.mock.calls.map(([args]) => args.data.startsAt)).toEqual(['2026-10-24T18:00:00.000Z', '2026-10-24T22:15:00.000Z'])
+    // samedi 24 octobre (heure d'été) → vendredi 13 novembre (heure d'hiver)
+    const later = fakePayload([slotAt('2026-10-24', '20:00')])
+    expect((await call(later, { from: '2026-10-24', days: 1, to: '2026-11-13' })).json).toMatchObject({ copied: 1, target: '2026-11-13' })
+    expect(later.create.mock.calls.map(([args]) => args.data.startsAt)).toEqual(['2026-11-13T19:00:00.000Z'])
+  })
+
+  it('soirée d’arrivée déjà remplie : 409 sans « Remplacer » ; avec, seule cette soirée est vidée puis remplie', async () => {
+    const source = slotAt('2026-11-17', '20:00')
+    const old = [slotAt('2026-11-19', '19:00'), slotAt('2026-11-20', '00:10', { durationMinutes: 20 })] // soirée du jeudi 19
+    const neighbours = [slotAt('2026-11-18', '20:00'), slotAt('2026-11-20', '20:00')]
+    const payload = fakePayload([source, ...old, ...neighbours])
+    expect(await call(payload, { from: '2026-11-17', days: 1, to: '2026-11-19' })).toEqual({
+      status: 409,
+      json: { error: 'La soirée du jeudi 19 novembre contient déjà 2 créneaux. Cochez « Remplacer ce qui est déjà saisi » pour les effacer avant la copie.' },
+    })
+    expect(payload.delete).not.toHaveBeenCalled()
+    expect(payload.create).not.toHaveBeenCalled()
+    const res = await call(payload, { from: '2026-11-17', days: 1, to: '2026-11-19', replace: true })
+    expect(res).toEqual({ status: 200, json: { copied: 1, skipped: 0, replaced: 2, target: '2026-11-19' } })
+    expect(payload.delete).toHaveBeenCalledWith(expect.objectContaining({ where: rangeWhere('2026-11-19', 1) }))
+    expect(payload.store.map((d) => d.startsAt).sort()).toEqual([source, ...neighbours].map((d) => d.startsAt).concat(paris('2026-11-19', '20:00')).sort())
+  })
+
+  it('collée sur elle-même : 400 (avec « Remplacer », elle serait effacée), rien n’est lu ni écrit', async () => {
+    const payload = fakePayload([slotAt('2026-11-17', '20:00')])
+    for (const replace of [false, true]) {
+      expect(await call(payload, { from: '2026-11-17', days: 1, to: '2026-11-17', replace })).toEqual({
+        status: 400,
+        json: { error: 'La soirée du mardi 17 novembre ne peut pas être collée sur elle-même : choisissez un autre jour.' },
+      })
+    }
+    expect(payload.find).not.toHaveBeenCalled()
+    expect(payload.store).toHaveLength(1)
+  })
+
+  it('jour d’arrivée mal écrit, ou donné pour une semaine : 400, rien n’est lu', async () => {
+    const payload = fakePayload([slotAt('2026-11-17', '20:00')])
+    for (const to of [null, '', 'mercredi', '18/11/2026', '2026-11-31', '2026-02-29', 20261118, '2026-11-18T00:00']) {
+      expect(await call(payload, { from: '2026-11-17', days: 1, to }), String(to)).toEqual({ status: 400, json: { error: 'Semaine ou soirée manquante ou invalide.' } })
+    }
+    // une semaine ne se colle pas sur un jour choisi : elle se recopie sur la suivante
+    for (const days of [undefined, 7]) {
+      expect((await call(payload, { from: '2026-11-16', days, to: '2026-11-30' })).status, String(days)).toBe(400)
+    }
+    expect(payload.find).not.toHaveBeenCalled()
   })
 })
 
