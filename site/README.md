@@ -383,7 +383,8 @@ npm run test:complet -- --garder     # laisse le site de test ouvert à la fin (
 ```
 
 **Prérequis** : PostgreSQL démarré (`docker start swatter-db`), `npm install`, et une seule fois le navigateur des tests
-(`npx playwright install --with-deps chromium`). Le compte PostgreSQL de `.env` doit pouvoir créer des bases : c’est le
+(`npx playwright install --with-deps chromium`) ; à défaut, un Chrome déjà installé peut servir :
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE=/chemin/vers/chrome npm run test:complet`. Le compte PostgreSQL de `.env` doit pouvoir créer des bases : c’est le
 cas du conteneur Docker ; avec un PostgreSQL installé sur la machine :
 `sudo -u postgres psql -c "ALTER ROLE swatter CREATEDB;"`. Aucun accès à Internet n’est nécessaire.
 
@@ -407,7 +408,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
 
 ### Ce qui est vérifié
 
-- **Tests unitaires** (`tests/unit/`, 1093 tests, quelques secondes) : la logique pure du site.
+- **Tests unitaires** (`tests/unit/`, 1101 tests, quelques secondes) : la logique pure du site.
   - Espace membres et sécurité : validation des champs, mots de passe, jetons et sessions signées, limites anti-abus,
     retours après la connexion et sortie de l’aperçu (près de 300 tentatives de redirection vers un autre site), e-mails,
     export CSV (formules de tableur neutralisées).
@@ -424,7 +425,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
     commande « Arrêter les aperçus animés » : choix lu, écrit, stockage indisponible, autres onglets), images adaptées au téléphone (texte
     riche, carrousel, photo entière sur fond flou, point focal), zones de l’Info (« Autres régions »), gros envois
     réservés à l’équipe et ménage des fichiers temporaires.
-- **Tests d’intégration** (`tests/integration/`, 447 tests, environ 4 minutes) : Payload complet sur la base de test.
+- **Tests d’intégration** (`tests/integration/`, 449 tests, environ 4 minutes) : Payload complet sur la base de test.
   - Droits du public, des éditeurs et des administrateurs sur chaque collection et chaque réglage (REST et GraphQL),
     brouillons, contenus programmés, comptes de l’équipe, membres.
   - Comportements automatiques : adresses uniques, Top 10, couvertures et aperçus animés tirés des vidéos (vrai ffmpeg :
@@ -435,7 +436,7 @@ propres médias (`.tests/`), sa propre construction de production (`.next-test/`
   - API de l’espace membres (inscription, connexion et blocage, sessions, mot de passe oublié, historique, « Ma liste »,
     export, suppression), formulaire de contact, recherche, tâche planifiée, imports, recopie de la grille, export de la
     lettre d’info.
-- **Tests de bout en bout** (`tests/e2e/`, 185 tests, environ 8 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
+- **Tests de bout en bout** (`tests/e2e/`, 186 tests, environ 9 minutes, dans les projets `bureau` 1440 × 900 et `mobile`
   390 × 844, tactile ; ceux qui ne dépendent pas de l’écran, comme le référencement et l’administration, une seule fois) :
   - `pages.spec.ts` : chaque adresse répond 200 (404 pour une adresse inconnue), un seul `h1`, aucun débordement
     horizontal, aucune erreur JavaScript, de console (hydratation comprise) ni réponse HTTP en erreur, langue, URL
