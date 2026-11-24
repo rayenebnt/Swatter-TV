@@ -2,8 +2,9 @@
 # Sauvegarde de Swatter TV Info sur le serveur (Docker Compose) : base PostgreSQL (pg_dump, format compressé) et fichiers
 # envoyés (volume « media »), dans SAUVEGARDE_DIR (/var/backups/swatter par défaut). La base est gardée SAUVEGARDE_JOURS
 # jours (14 par défaut) ; l'archive des médias, copie complète des photos et vidéos chaque jour, SAUVEGARDE_MEDIA_JOURS
-# jours (7 par défaut). Les anciennes sauvegardes sont effacées avant d'écrire celles du jour, et l'archive des médias
-# n'est faite que s'il reste assez de place (sinon, code d'erreur et message : la base, elle, est sauvegardée).
+# jours (3 par défaut : sur le disque de 40 Go du VPS-1, deux semaines de copies des vidéos l'avaient rempli). Les
+# anciennes sauvegardes sont effacées avant d'écrire celles du jour, et l'archive des médias n'est faite que s'il reste
+# assez de place (sinon, code d'erreur et message : la base, elle, est sauvegardée).
 # Lancé chaque nuit par cron (tâche installée par deploy/installer.sh) ; code d'erreur si quelque chose échoue.
 # Restauration : deploy/restaurer.sh AAAA-MM-JJ.
 set -euo pipefail
@@ -13,7 +14,7 @@ umask 077
 cd "$(dirname "$0")/.."
 DEST="${SAUVEGARDE_DIR:-/var/backups/swatter}"
 JOURS="${SAUVEGARDE_JOURS:-14}"
-JOURS_MEDIA="${SAUVEGARDE_MEDIA_JOURS:-7}"
+JOURS_MEDIA="${SAUVEGARDE_MEDIA_JOURS:-3}"
 MEDIA_VOLUME="${MEDIA_VOLUME:-swatter-tv_media}"
 DATE="$(date +%F)"
 base="$DEST/swatter-$DATE.dump"

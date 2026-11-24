@@ -98,7 +98,7 @@ provisoire y mènent. Déclarez enfin le site dans **Google Search Console** ave
 | puis les supprimer (ceux qui finissent après 0 h 30 sont raccourcis à 0 h 30) ; la sauvegarde de la nuit les garde | `cd ~/Swatter-TV/site && docker compose run --rm tools npm run grille:hors-antenne -- --supprimer` |
 
 Les sauvegardes se font seules chaque nuit, dans `/var/backups/swatter` : la base est gardée 14 jours, l’archive des
-images et vidéos 7 jours (une copie complète chaque jour, la plus lourde). L’option Sauvegarde automatique d’OVHcloud en
+images et vidéos 3 jours (une copie complète chaque jour, la plus lourde). L’option Sauvegarde automatique d’OVHcloud en
 garde une copie ailleurs.
 
 ### Disque plein
