@@ -12,6 +12,12 @@ import '@/styles/footer.css'
 
 type FooterLink = { href: string; label: string }
 
+/**
+ * Concepteur du site : crédit discret au bas de chaque page, avec un lien ordinaire (suivi par les moteurs de recherche,
+ * sans « nofollow »), lisible et souligné comme tout lien dans un texte, jamais masqué.
+ */
+const CREDIT = { name: 'LTNS', url: 'https://ltns.fr/' }
+
 /** Pages éditoriales rattachées à une colonne du pied de page (canaux de réception, le groupe, crédits…). */
 async function getFooterPages() {
   return safe(
@@ -137,7 +143,9 @@ export async function Footer() {
         </div>
 
         <div className="footer__bottom">
-          <span>© {years} Swatter TV Info · Tous droits réservés</span>
+          <span>
+            © {years} Swatter TV Info · Tous droits réservés · Site réalisé par <a href={CREDIT.url}>{CREDIT.name}</a>
+          </span>
           {settings?.protectNotice && (
             <span className="protect">
               <Icon name="shield" />

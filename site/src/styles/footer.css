@@ -17,6 +17,8 @@
 .footer__grid ul a:hover, .footer__grid ul button:hover { color: var(--gold-light); transform: translateX(3px); }
 .wordmark { margin-top: 56px; font-family: var(--font-display); font-weight: 900; font-size: clamp(37px, 9.9vw, 156px); line-height: .82; letter-spacing: -.035em; text-align: center; color: transparent; background: linear-gradient(180deg, rgba(243, 213, 138, .32) 0%, rgba(217, 170, 69, .1) 55%, rgba(217, 170, 69, 0) 92%); -webkit-background-clip: text; background-clip: text; user-select: none; white-space: nowrap; }
 .footer__bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.footer__bottom a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; transition: color .25s; }
+.footer__bottom a:hover { color: var(--gold-light); }
 .protect { display: flex; align-items: center; gap: 8px; }
 .protect svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--gold); }
 

@@ -58,7 +58,7 @@ export const PAGES: SeedPage[] = [
     metaDescription: 'Crédits du site Swatter TV Info : conception, visuels, données et logiciels utilisés.',
     body: [
       '## Conception et réalisation',
-      'Conception et développement du site : LTNS.',
+      'Conception et développement du site : [LTNS](https://ltns.fr/), création de sites internet et de logiciels sur mesure.',
       '## Images et vidéos',
       'Sauf mention contraire, les photographies et les vidéos sont la propriété de Swatter TV Info.',
       '## Données',
@@ -123,7 +123,7 @@ export const PAGES: SeedPage[] = [
       '## Hébergeur',
       '[à compléter : nom, adresse et téléphone de l’hébergeur du nouveau site].',
       '## Conception et réalisation',
-      'Site conçu et développé par LTNS (voir les [crédits](/credits)).',
+      'Site conçu et développé par [LTNS](https://ltns.fr/) (voir les [crédits](/credits)).',
       '## Contenu du site',
       'Les informations publiées sur www.swatter-tv.fr le sont à titre informatif. SWATTER TV & INFO s’efforce d’en assurer l’exactitude et la mise à jour, sans pouvoir garantir qu’elles soient exemptes d’erreurs ou d’omissions. Les contenus peuvent être modifiés à tout moment, sans préavis.',
       'Pour signaler une erreur, un contenu qui vous semble illicite ou exercer un droit de réponse, écrivez-nous à [contact@swatter-tv.fr](mailto:contact@swatter-tv.fr) ou utilisez le formulaire [Nous contacter](/contact?sujet=autre).',

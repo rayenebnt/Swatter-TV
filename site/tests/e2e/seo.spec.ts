@@ -6,8 +6,8 @@ import { AdminApi, deleteMember, SITE, signupMember, unique } from './outils-con
 /**
  * Référencement : plan du site (XML valide, chaque adresse en 200, rien de l'administration, de l'API ni de l'espace
  * membres), robots.txt, balises de chaque page principale (titre unique et non vide, description, URL canonique, Open
- * Graph avec une image accessible, données structurées JSON-LD valides, un seul h1, langue), en-têtes de sécurité et
- * pages de l'espace membres non indexées.
+ * Graph avec une image accessible, données structurées JSON-LD valides, un seul h1, langue), crédit du concepteur au bas
+ * de chaque page (lien suivi), en-têtes de sécurité et pages de l'espace membres non indexées.
  *
  * Les pages sont lues dans le HTML envoyé par le serveur, navigateur sans JavaScript : c'est ce que lisent les robots
  * d'indexation et les aperçus des réseaux sociaux. Balises et en-têtes ne dépendent pas de la largeur d'écran : ces tests
@@ -384,6 +384,19 @@ test.describe('plan du site et robots.txt', () => {
 })
 
 /* ----- En-têtes de sécurité ----- */
+
+test('pied de page : crédit « Site réalisé par LTNS », lien ordinaire (suivi) vers ltns.fr, lisible, sur chaque page', async ({ page }) => {
+  for (const url of ['/', '/info', '/programme-tv', '/credits']) {
+    await page.goto(url, { waitUntil: 'domcontentloaded' })
+    const bottom = page.locator('.footer__bottom')
+    await expect(bottom, url).toContainText('Tous droits réservés · Site réalisé par LTNS')
+    const link = bottom.getByRole('link', { name: 'LTNS', exact: true })
+    await expect(link, url).toHaveAttribute('href', 'https://ltns.fr/')
+    // un lien que les moteurs suivent : ni nofollow, ni sponsored, ni ugc ; jamais masqué
+    await expect(link, url).not.toHaveAttribute('rel', /nofollow|sponsored|ugc/)
+    await expect(link, url).toBeVisible()
+  }
+})
 
 test('en-têtes de sécurité sur les pages, l’API, les fichiers et les erreurs', async ({ request }) => {
   const home = await (await request.get('/')).text()
