@@ -52,6 +52,14 @@ x-build-args: &build-args
   NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?Renseignez NEXT_PUBLIC_SITE_URL dans .env}
   NEXT_PUBLIC_BUNNY_LIBRARY_ID: ${NEXT_PUBLIC_BUNNY_LIBRARY_ID:-}
 
+# Journaux des conteneurs (« docker compose logs ») : 3 fichiers de 10 Mo au plus par conteneur, les plus anciens
+# effacés (sans limite, ils grossiraient jusqu'à remplir le disque)
+x-logs: &logs
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
 # Image « tools » du Dockerfile : sources complètes + CLI Payload (migrations, jeu de démonstration, imports).
 # Une seule image pour « migrate » et « tools » : « docker compose up -d --build » la reconstruit (service « migrate »),
 # donc « docker compose run tools … » n'utilise jamais une version du code plus ancienne que le site.
@@ -64,6 +72,7 @@ x-tools: &tools
   environment: *app-env
   volumes:
     - media:/app/media
+  logging: *logs
   depends_on:
     db:
       condition: service_healthy
@@ -72,6 +81,7 @@ services:
   db:
     image: postgres:16
     restart: unless-stopped
+    logging: *logs
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-swatter}
       POSTGRES_USER: ${POSTGRES_USER:-swatter}
@@ -103,6 +113,7 @@ services:
       args: *build-args
     image: swatter-tv:latest
     restart: unless-stopped
+    logging: *logs
     environment: *app-env
     ports:
       # Écoute locale uniquement : à publier derrière un reverse proxy HTTPS (Caddy, Nginx, Traefik ou le proxy de Coolify).
@@ -120,6 +131,7 @@ services:
   cron:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
+    logging: *logs
     init: true
     environment:
       CRON_SECRET: ${CRON_SECRET:?Renseignez CRON_SECRET dans .env}

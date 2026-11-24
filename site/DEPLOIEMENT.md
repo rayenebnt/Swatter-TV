@@ -97,8 +97,36 @@ provisoire y mènent. Déclarez enfin le site dans **Google Search Console** ave
 | lister les anciens créneaux de la grille en dehors des horaires d’antenne (18 h – 0 h 30), sans rien modifier | `cd ~/Swatter-TV/site && docker compose run --rm tools npm run grille:hors-antenne` |
 | puis les supprimer (ceux qui finissent après 0 h 30 sont raccourcis à 0 h 30) ; la sauvegarde de la nuit les garde | `cd ~/Swatter-TV/site && docker compose run --rm tools npm run grille:hors-antenne -- --supprimer` |
 
-Les sauvegardes se font seules chaque nuit (base et images, 14 jours gardés, dans `/var/backups/swatter`) ; l’option
-Sauvegarde automatique d’OVHcloud en garde une copie ailleurs.
+Les sauvegardes se font seules chaque nuit, dans `/var/backups/swatter` : la base est gardée 14 jours, l’archive des
+images et vidéos 7 jours (une copie complète chaque jour, la plus lourde). L’option Sauvegarde automatique d’OVHcloud en
+garde une copie ailleurs.
+
+### Disque plein
+
+Symptôme : une commande, ou la mise à jour, s’arrête sur « no space left on device ». Le site continue de tourner. La
+mise à jour vérifie la place avant de commencer : sous 8 Go libres, elle vide le cache de construction de Docker
+(reconstruit à la mise à jour suivante) ; sous 4 Go, elle s’arrête sans rien modifier. La sauvegarde n’écrit l’archive
+des images et vidéos que s’il reste assez de place, et efface les anciennes sauvegardes avant d’écrire celles du jour.
+Les journaux des conteneurs sont limités à 30 Mo chacun.
+
+Voir ce qui prend la place :
+
+```bash
+df -h /
+du -sh /var/backups/swatter
+docker system df
+```
+
+Libérer de la place sans risque (ni le site, ni la base, ni les fichiers du client ne sont touchés) : les anciennes
+archives d’images et de vidéos, sauf les 2 plus récentes, le cache de construction et les anciennes versions du site.
+
+```bash
+ls -1t /var/backups/swatter/media-*.tar.gz | tail -n +3 | xargs -r rm -f
+docker builder prune -af
+docker image prune -af
+```
+
+Jamais `docker volume prune` ni `docker compose down -v` : ils effaceraient la base et les fichiers du client.
 
 ## Bon à savoir
 

@@ -4,6 +4,12 @@ services:
   caddy:
     image: caddy:2
     restart: unless-stopped
+    # 3 fichiers de journal de 10 Mo au plus (comme les services de docker-compose.yml)
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     ports:
       - '80:80'
       - '443:443'

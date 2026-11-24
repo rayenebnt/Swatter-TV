@@ -345,7 +345,8 @@ pour remplacer sans attendre les prévisions de démonstration.
 ## Sauvegardes
 
 À automatiser chaque nuit, avec une copie hors du serveur, et à tester en restauration de temps en temps. Sur le serveur,
-`scripts/sauvegarde.sh` s’en charge chaque nuit (base et médias, 14 jours gardés ; tâche posée par `deploy/installer.sh`),
+`scripts/sauvegarde.sh` s’en charge chaque nuit (base gardée 14 jours, médias 7 jours, anciennes sauvegardes effacées
+d’abord, archive des médias seulement s’il reste la place ; tâche posée par `deploy/installer.sh`),
 et `deploy/restaurer.sh AAAA-MM-JJ` restaure une date. À la main :
 
 ```bash
