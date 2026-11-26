@@ -267,12 +267,17 @@ function MutedIcon() {
   )
 }
 
-type FullscreenVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void }
+type WebkitDocument = Document & { webkitFullscreenEnabled?: boolean; webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => void }
+type WebkitElement = HTMLElement & { webkitRequestFullscreen?: () => void }
+
+/** Élément affiché en plein écran (API standard ou préfixée des anciens Safari). */
+const fullscreenElement = () => document.fullscreenElement ?? (document as WebkitDocument).webkitFullscreenElement ?? null
 
 /**
  * Fichier MP4 ou flux HLS : lecteur natif du navigateur. Pour le direct, pas de commandes natives : elles affichent la
  * durée et la barre de lecture (un fichier diffusé comme un direct montrerait « 00:16 / -05:55 ») ; à la place, lecture /
- * pause, son et plein écran (sur iPhone, le plein écran est celui du système, avec ses propres commandes).
+ * pause, son et plein écran, les mêmes partout. Plein écran du bloc du lecteur (boutons compris) ; là où une page ne peut
+ * pas en demander (iPhone, dont le plein écran système remettrait sa barre de lecture), le lecteur couvre tout l'écran.
  */
 function Native({
   video,
@@ -311,6 +316,8 @@ function Native({
   const [paused, setPaused] = useState(true)
   const [muted, setMuted] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
+  // plein écran simulé : le lecteur couvre la fenêtre (iPhone)
+  const [filled, setFilled] = useState(false)
   const pauseButton = useRef<HTMLButtonElement>(null)
   // Lecture lancée au bouton : le focus passera au bouton pause dès qu'il apparaît
   const focusControls = useRef(false)
@@ -415,10 +422,31 @@ function Native({
 
   useEffect(() => {
     if (!live) return
-    const update = () => setFullscreen(Boolean(document.fullscreenElement))
+    const update = () => setFullscreen(Boolean(fullscreenElement()))
     document.addEventListener('fullscreenchange', update)
-    return () => document.removeEventListener('fullscreenchange', update)
+    document.addEventListener('webkitfullscreenchange', update)
+    return () => {
+      document.removeEventListener('fullscreenchange', update)
+      document.removeEventListener('webkitfullscreenchange', update)
+    }
   }, [live])
+
+  useEffect(() => {
+    const box = ref.current?.closest<HTMLElement>('.vp')
+    if (!filled || !box) return
+    // le lecteur couvre la fenêtre, la page derrière ne défile plus ; Échap en sort
+    box.classList.add('vp--fill')
+    document.documentElement.classList.add('vp-fill-open')
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFilled(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      box.classList.remove('vp--fill')
+      document.documentElement.classList.remove('vp-fill-open')
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [filled])
 
   useEffect(() => {
     if (started && focusControls.current) {
@@ -472,13 +500,16 @@ function Native({
   }
 
   const toggleFullscreen = () => {
-    const el = ref.current as FullscreenVideo | null
-    if (!el) return
+    const doc = document as WebkitDocument
+    if (filled) return setFilled(false)
     if (document.fullscreenElement) return void document.exitFullscreen().catch(() => {})
-    const box = el.closest<HTMLElement>('.vp')
-    // iPhone : pas de plein écran pour un bloc de la page, seulement celui du système pour la vidéo
-    if (box && document.fullscreenEnabled) box.requestFullscreen().catch(() => {})
-    else el.webkitEnterFullscreen?.()
+    if (doc.webkitFullscreenElement) return doc.webkitExitFullscreen?.()
+    const box = ref.current?.closest<WebkitElement>('.vp')
+    if (!box) return
+    if (document.fullscreenEnabled && typeof box.requestFullscreen === 'function') box.requestFullscreen().catch(() => setFilled(true))
+    else if (doc.webkitFullscreenEnabled && typeof box.webkitRequestFullscreen === 'function') box.webkitRequestFullscreen()
+    // iPhone : pas de plein écran pour un bloc de la page (seulement celui du système, avec sa barre de lecture)
+    else setFilled(true)
   }
 
   return (
@@ -544,7 +575,7 @@ function Native({
           <button type="button" className="vp__ctrl" onClick={toggleMute} aria-label={muted ? 'Remettre le son' : 'Couper le son'}>
             {muted ? <MutedIcon /> : <SoundIcon />}
           </button>
-          <button type="button" className="vp__ctrl vp__ctrl--end" onClick={toggleFullscreen} aria-label={fullscreen ? 'Quitter le plein écran' : 'Plein écran'}>
+          <button type="button" className="vp__ctrl vp__ctrl--end" onClick={toggleFullscreen} aria-label={fullscreen || filled ? 'Quitter le plein écran' : 'Plein écran'}>
             <Icon name="expand" />
           </button>
         </div>

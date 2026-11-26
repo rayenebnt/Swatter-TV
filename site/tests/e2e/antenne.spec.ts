@@ -66,8 +66,48 @@ test.describe('page Direct selon l’antenne', () => {
     await player.getByRole('button', { name: muted ? 'Remettre le son' : 'Couper le son' }).click()
     await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.muted), { message: 'son basculé' }).toBe(!muted)
     await expect(player.getByRole('button', { name: muted ? 'Couper le son' : 'Remettre le son' })).toBeVisible()
-    await expect(player.getByRole('button', { name: 'Plein écran' })).toBeVisible()
+    // plein écran du bloc du lecteur, boutons compris (ou lecteur sur toute la fenêtre si le navigateur le refuse)
+    await player.getByRole('button', { name: 'Plein écran' }).click()
+    const full = () => page.evaluate(() => Boolean(document.fullscreenElement?.classList.contains('vp') || document.querySelector('.vp--fill')))
+    await expect.poll(full, { message: 'plein écran' }).toBe(true)
+    await page.getByRole('button', { name: 'Quitter le plein écran' }).click()
+    await expect.poll(full, { message: 'sortie du plein écran' }).toBe(false)
     expect(errors, errors.join('\n')).toEqual([])
+  })
+
+  test('21 h, iPhone (pas de plein écran pour la page) : le lecteur couvre l’écran avec ses boutons, sans barre de lecture', async ({ page }) => {
+    const settings = await liveSettings(page)
+    test.skip(!liveOn(settings), 'direct coupé ou sans flux dans les réglages')
+    // comme Safari sur iPhone : ni plein écran standard, ni préfixé, pour un bloc de la page
+    await page.addInitScript(() => {
+      for (const name of ['fullscreenEnabled', 'webkitFullscreenEnabled']) Object.defineProperty(Document.prototype, name, { configurable: true, get: () => false })
+    })
+    await atParisTime(page, '21:00')
+    await page.goto('/direct')
+    const player = page.getByRole('region', { name: /lecteur vidéo/i }).first()
+    const video = player.locator('video')
+    await expect(player).toBeVisible()
+    test.skip((await video.count()) === 0, 'direct dans un lecteur externe (YouTube, Twitch)')
+    const start = player.getByRole('button', { name: /^Lire la vidéo/ })
+    const pause = player.getByRole('button', { name: 'Mettre le direct en pause' })
+    await expect(pause.or(start)).toBeVisible()
+    if (await start.isVisible()) await start.click({ timeout: 3000 }).catch(() => undefined)
+    await player.getByRole('button', { name: 'Plein écran' }).click()
+    await expect(page.locator('.vp--fill')).toHaveCount(1)
+    const viewport = page.viewportSize()!
+    const box = (await player.boundingBox())!
+    expect([Math.round(box.x), Math.round(box.y), Math.round(box.width), Math.round(box.height)]).toEqual([0, 0, viewport.width, viewport.height])
+    // boutons du site au-dessus de tout, toujours sans commandes natives
+    await expect(pause).toBeVisible()
+    // au-dessus de l'en-tête et de la barre d'onglets : en haut et en bas de l'écran, c'est le lecteur
+    expect(await page.evaluate(() => [5, innerHeight - 5].every((y) => Boolean(document.elementFromPoint(innerWidth / 2, y)?.closest('.vp'))))).toBe(true)
+    await expect(video).not.toHaveAttribute('controls')
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe('hidden')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.vp--fill')).toHaveCount(0)
+    await player.getByRole('button', { name: 'Plein écran' }).click()
+    await page.getByRole('button', { name: 'Quitter le plein écran' }).click()
+    await expect(page.locator('.vp--fill')).toHaveCount(0)
   })
 
   test('10 h : écran « Le direct reprend ce soir à 18 h », pas de lecteur ni de point rouge', async ({ page }) => {
