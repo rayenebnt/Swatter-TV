@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { expectNoHorizontalOverflow, expectSeo, firstDoc, settle, watchErrors } from './helpers'
+import { AdminApi, unique } from './outils-contenus'
 
 // Adresses principales du site (voir DEV_NOTES.md).
 const ROUTES = [
@@ -86,6 +87,46 @@ test('« Le groupe » : frise des logos, du plus ancien au plus récent (sur une
   }
   await expectNoHorizontalOverflow(page)
   expect(errors, errors.join('\n')).toEqual([])
+})
+
+test.describe('page à plusieurs frises (page créée pour le test)', () => {
+  let admin: AdminApi | null = null
+  test.beforeAll(async () => {
+    admin = await AdminApi.open()
+    test.skip(!admin, 'identifiants administrateur indisponibles (E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD)')
+  })
+  test.afterAll(async () => {
+    await admin?.dispose()
+  })
+
+  test('deux frises l’une sous l’autre, dans l’ordre, chacune avec son titre ; une frise vide n’est pas affichée', async ({ page }) => {
+    const errors = watchErrors(page)
+    const image = await admin!.imageId()
+    const slug = unique('frises')
+    const step = (date: string, title: string) => ({ date, title, image })
+    await admin!.create('pages', {
+      title: 'Frises (test)',
+      slug,
+      timelines: [
+        { title: 'Notre logo au fil du temps (test)', intro: 'Les logos.', steps: [step('Novembre', '2025'), step('Avril', '2026')] },
+        { title: 'Frise vide (test)', steps: [] },
+        { title: 'Notre matériel au fil du temps (test)', intro: 'En un an, Swatter TV Info a connu une évolution de son matériel.', steps: [step('La caméra reportage', '2026'), step('La caméra spectacle', '2026')] },
+      ],
+    })
+    await page.goto(`/${slug}`)
+    const regions = page.locator('section.frise')
+    await expect(regions).toHaveCount(2)
+    await expect(regions.getByRole('heading', { level: 2 })).toHaveText(['Notre logo au fil du temps (test)', 'Notre matériel au fil du temps (test)'])
+    // titres aux identifiants uniques : chaque frise est une région nommée par le sien
+    const equipment = page.getByRole('region', { name: 'Notre matériel au fil du temps (test)' })
+    await expect(equipment).toContainText('En un an, Swatter TV Info a connu une évolution de son matériel.')
+    await expect(equipment.locator('.frise__date')).toHaveText(['La caméra reportage', 'La caméra spectacle'])
+    await expect(page.getByRole('region', { name: 'Notre logo au fil du temps (test)' }).getByRole('listitem')).toHaveCount(2)
+    const [first, second] = await regions.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top))
+    expect(second, 'frise du matériel sous celle des logos').toBeGreaterThan(first)
+    await expectNoHorizontalOverflow(page)
+    expect(errors, errors.join('\n')).toEqual([])
+  })
 })
 
 test('une adresse inconnue renvoie 404 avec des liens utiles', async ({ page }) => {

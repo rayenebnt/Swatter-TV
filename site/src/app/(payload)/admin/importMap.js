@@ -33,6 +33,7 @@ import { MomentLabel as MomentLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../
 import { SlotTimeCell as SlotTimeCell_33f74273138c7627b38e5753ac9f410b } from '../../../components/admin/SlotTimeCell'
 import { ScheduleTools as ScheduleTools_abf2b2e3656b47d854bf2cfdc3f414db } from '../../../components/admin/ScheduleTools'
 import { StepLabel as StepLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../../../components/admin/RowLabels'
+import { TimelineLabel as TimelineLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../../../components/admin/RowLabels'
 import { MembersExport as MembersExport_ba3a3b33d51edad1c3f1250dd43f453a } from '../../../components/admin/MembersExport'
 import { BadgeLabel as BadgeLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../../../components/admin/RowLabels'
 import { SlideLabel as SlideLabel_a30613d846a340cabc3fc2ee7ca0f9f2 } from '../../../components/admin/RowLabels'
@@ -85,6 +86,7 @@ export const importMap = {
   "/components/admin/SlotTimeCell#SlotTimeCell": SlotTimeCell_33f74273138c7627b38e5753ac9f410b,
   "/components/admin/ScheduleTools#ScheduleTools": ScheduleTools_abf2b2e3656b47d854bf2cfdc3f414db,
   "/components/admin/RowLabels#StepLabel": StepLabel_a30613d846a340cabc3fc2ee7ca0f9f2,
+  "/components/admin/RowLabels#TimelineLabel": TimelineLabel_a30613d846a340cabc3fc2ee7ca0f9f2,
   "/components/admin/MembersExport#MembersExport": MembersExport_ba3a3b33d51edad1c3f1250dd43f453a,
   "/components/admin/RowLabels#BadgeLabel": BadgeLabel_a30613d846a340cabc3fc2ee7ca0f9f2,
   "/components/admin/RowLabels#SlideLabel": SlideLabel_a30613d846a340cabc3fc2ee7ca0f9f2,

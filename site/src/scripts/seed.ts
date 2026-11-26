@@ -268,7 +268,7 @@ for (const p of PAGES) {
       footerGroup: p.footerGroup,
       meta: { title: `${p.title} — Swatter TV Info`, description: p.metaDescription },
       // « Le groupe » : frise des logos successifs de la chaîne
-      ...(p.slug === LOGO_PAGE ? { timeline: logoTimelineData(mediaId) } : {}),
+      ...(p.slug === LOGO_PAGE ? { timelines: [logoTimelineData(mediaId)] } : {}),
     },
     overrideAccess: true,
     context,

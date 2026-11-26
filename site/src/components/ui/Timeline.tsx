@@ -1,21 +1,22 @@
 import Image from 'next/image'
 import type { CSSProperties } from 'react'
-import { DEFAULT_TIMELINE_TITLE, timelineSteps } from '@/lib/timeline'
-import type { Page } from '@/payload-types'
+import { DEFAULT_TIMELINE_TITLE, timelineSteps, type PageTimeline } from '@/lib/timeline'
 
 /**
- * Frise chronologique d'une page, sous son texte (« Le groupe » : l'évolution du logo) : étapes de la plus ancienne à
+ * Une frise chronologique d'une page, sous son texte (« Le groupe » : l'évolution du logo, puis du matériel ; `index` :
+ * rang de la frise, pour un titre à l'identifiant unique) : étapes de la plus ancienne à
  * la plus récente (image, date, titre, texte), reliées par un trait doré, la plus récente mise en avant. Sur une ligne
  * quand la colonne est assez large (les étapes se partagent la place, sans défilement), en colonne sur téléphone.
  * Rien sans étape affichable. `data-preview` : l'aperçu de l'administration y défile quand on modifie la frise.
  */
-export function Timeline({ timeline }: { timeline: Page['timeline'] }) {
+export function Timeline({ timeline, index = 0 }: { timeline: PageTimeline | null | undefined; index?: number }) {
   const steps = timelineSteps(timeline)
   if (!steps.length) return null
   const intro = timeline?.intro?.trim()
+  const titleId = `frise-title-${index}`
   return (
-    <section className="frise" aria-labelledby="frise-title" data-preview="frise">
-      <h2 id="frise-title" className="frise__heading">
+    <section className="frise" aria-labelledby={titleId} data-preview="frise">
+      <h2 id={titleId} className="frise__heading">
         {timeline?.title?.trim() || DEFAULT_TIMELINE_TITLE}
       </h2>
       {intro && <p className="frise__intro">{intro}</p>}

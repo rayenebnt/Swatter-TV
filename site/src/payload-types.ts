@@ -664,30 +664,33 @@ export interface Page {
     [k: string]: unknown;
   } | null;
   /**
-   * Facultatif : une frise affichée sous le texte de la page (par exemple l’évolution du logo). Elle n’apparaît que si elle contient au moins une étape avec une image.
+   * Facultatif : une ou plusieurs frises affichées sous le texte de la page, dans cet ordre (par exemple l’évolution du logo, puis celle du matériel). Une frise n’apparaît que si elle contient au moins une étape avec une image. « Ajouter une frise » pour en créer une autre.
    */
-  timeline?: {
-    title?: string | null;
-    intro?: string | null;
-    /**
-     * De la plus ancienne à la plus récente. Pour changer l’ordre, faites glisser une étape par sa poignée.
-     */
-    steps?:
-      | {
-          /**
-           * Par ex. « Novembre 2025 » (facultatif).
-           */
-          date?: string | null;
-          title: string;
-          image: number | Media;
-          /**
-           * Une ou deux phrases (facultatif).
-           */
-          text?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
+  timelines?:
+    | {
+        title?: string | null;
+        intro?: string | null;
+        /**
+         * De la plus ancienne à la plus récente. Pour changer l’ordre, faites glisser une étape par sa poignée.
+         */
+        steps?:
+          | {
+              /**
+               * Par ex. « Novembre 2025 » (facultatif).
+               */
+              date?: string | null;
+              title: string;
+              image: number | Media;
+              /**
+               * Une ou deux phrases (facultatif).
+               */
+              text?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * Pour ajouter un lien vers cette page en bas du site.
    */
@@ -1223,7 +1226,7 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   intro?: T;
   content?: T;
-  timeline?:
+  timelines?:
     | T
     | {
         title?: T;
@@ -1237,6 +1240,7 @@ export interface PagesSelect<T extends boolean = true> {
               text?: T;
               id?: T;
             };
+        id?: T;
       };
   footerGroup?: T;
   slug?: T;

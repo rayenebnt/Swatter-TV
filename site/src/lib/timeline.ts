@@ -1,7 +1,11 @@
-// Frise chronologique d'une page éditoriale (« Le groupe » : l'évolution du logo) : étapes affichables, logique pure
-// (testée en unitaire). Rendu : src/components/ui/Timeline.tsx ; champ : collection Pages (« Frise chronologique »).
+// Frises chronologiques d'une page éditoriale (« Le groupe » : l'évolution du logo, puis du matériel) : étapes
+// affichables, logique pure (testée en unitaire). Rendu : src/components/ui/Timeline.tsx ; champ : collection Pages
+// (« Frises chronologiques », une liste de frises).
 import type { Page } from '@/payload-types'
 import { mediaAlt, mediaSize, mediaUrl } from './media'
+
+/** Une frise de la page : titre, introduction, étapes. */
+export type PageTimeline = NonNullable<Page['timelines']>[number]
 
 export type TimelineStep = {
   key: string
@@ -20,7 +24,7 @@ export const DEFAULT_TIMELINE_TITLE = 'Notre histoire'
  * est ignorée. Image : fichier d'origine (les tailles de la médiathèque sont recadrées en 16:9, un logo serait coupé),
  * description de la médiathèque, sinon le titre de l'étape.
  */
-export function timelineSteps(timeline: Page['timeline']): TimelineStep[] {
+export function timelineSteps(timeline: Partial<PageTimeline> | null | undefined): TimelineStep[] {
   return (timeline?.steps ?? []).flatMap((step, i) => {
     const title = step.title?.trim()
     const src = mediaUrl(step.image)
@@ -36,4 +40,9 @@ export function timelineSteps(timeline: Page['timeline']): TimelineStep[] {
       },
     ]
   })
+}
+
+/** Frises affichables d'une page, dans l'ordre saisi : celles qui ont au moins une étape affichable. */
+export function visibleTimelines(timelines: Page['timelines']): PageTimeline[] {
+  return (timelines ?? []).filter((t) => timelineSteps(t).length > 0)
 }

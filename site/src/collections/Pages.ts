@@ -24,13 +24,16 @@ export const Pages: CollectionConfig = {
     { name: 'intro', label: 'Introduction', type: 'textarea' },
     { name: 'content', label: 'Contenu', type: 'richText' },
     {
-      // frise affichée sous le texte de la page (« Le groupe » : l'évolution du logo), seulement si elle a des étapes
-      name: 'timeline',
-      label: 'Frise chronologique',
-      type: 'group',
+      // frises affichées sous le texte de la page, dans l'ordre (« Le groupe » : l'évolution du logo, puis du matériel),
+      // chacune seulement si elle a des étapes
+      name: 'timelines',
+      label: 'Frises chronologiques',
+      labels: { singular: 'Frise', plural: 'Frises' },
+      type: 'array',
       admin: {
         description:
-          'Facultatif : une frise affichée sous le texte de la page (par exemple l’évolution du logo). Elle n’apparaît que si elle contient au moins une étape avec une image.',
+          'Facultatif : une ou plusieurs frises affichées sous le texte de la page, dans cet ordre (par exemple l’évolution du logo, puis celle du matériel). Une frise n’apparaît que si elle contient au moins une étape avec une image. « Ajouter une frise » pour en créer une autre.',
+        components: { RowLabel: '/components/admin/RowLabels#TimelineLabel' },
       },
       fields: [
         { name: 'title', label: 'Titre de la frise', type: 'text', admin: { placeholder: 'Notre histoire' } },

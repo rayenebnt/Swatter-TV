@@ -7,6 +7,7 @@ import * as migration_20261030_225851_autres_regions_info from './20261030_22585
 import * as migration_20261101_185903_lieu_photo from './20261101_185903_lieu_photo';
 import * as migration_20261101_235625_video_fond_carrousel from './20261101_235625_video_fond_carrousel';
 import * as migration_20261102_155648_frise_chronologique from './20261102_155648_frise_chronologique';
+import * as migration_20261126_225258_frises_multiples from './20261126_225258_frises_multiples';
 
 export const migrations = [
   {
@@ -53,5 +54,10 @@ export const migrations = [
     up: migration_20261102_155648_frise_chronologique.up,
     down: migration_20261102_155648_frise_chronologique.down,
     name: '20261102_155648_frise_chronologique',
+  },
+  {
+    up: migration_20261126_225258_frises_multiples.up,
+    down: migration_20261126_225258_frises_multiples.down,
+    name: '20261126_225258_frises_multiples',
   },
 ];

@@ -11,7 +11,7 @@ import { formatDate } from '@/lib/format'
 import { mediaAlt, mediaSize, mediaUrl } from '@/lib/media'
 import { getPayloadClient } from '@/lib/payload'
 import { safe } from '@/lib/safe'
-import { timelineSteps } from '@/lib/timeline'
+import { visibleTimelines } from '@/lib/timeline'
 import { absoluteUrl, SITE_NAME, SITE_URL } from '@/lib/site'
 import { articleUrl, eventUrl, pageUrl, replayUrl, videoUrl } from '@/lib/urls'
 import type { Page, Redirect } from '@/payload-types'
@@ -150,8 +150,10 @@ export default async function EditorialPage({ params }: { params: Params }) {
   const { page } = route
   const nav = await getPagesNav()
   const hasContent = Boolean(page.content?.root?.children?.length)
-  // frise chronologique sous le texte (« Le groupe » : l'évolution du logo) ; une page qui n'a qu'elle n'est pas « en cours de rédaction »
-  const hasTimeline = timelineSteps(page.timeline).length > 0
+  // frises chronologiques sous le texte (« Le groupe » : l'évolution du logo, puis du matériel) ; une page qui n'a qu'elles
+  // n'est pas « en cours de rédaction »
+  const timelines = visibleTimelines(page.timelines)
+  const hasTimeline = timelines.length > 0
 
   return (
     <>
@@ -169,7 +171,9 @@ export default async function EditorialPage({ params }: { params: Params }) {
               </p>
             </div>
           )}
-          <Timeline timeline={page.timeline} />
+          {timelines.map((timeline, i) => (
+            <Timeline key={timeline.id ?? i} timeline={timeline} index={i} />
+          ))}
           <p className="doc__updated">
             <Icon name="clock" />
             <span>

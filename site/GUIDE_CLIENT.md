@@ -532,15 +532,20 @@ page a un **Titre**, une **Introduction**, un **Contenu** (même éditeur que le
 pied de page** : **Colonne « La chaîne »**, **Colonne « Swatter TV Info »** ou aucun. Une nouvelle page est accessible à
 l’adresse `/son-adresse` (champ **Adresse web (automatique)**) une fois publiée.
 
-**Frise chronologique (facultative)** : sous le contenu, une frise d’étapes reliées par un trait doré, de la plus ancienne
-à la plus récente. Sur la page « Le groupe », elle retrace l’évolution du logo (« Notre logo au fil du temps »).
+**Frises chronologiques (facultatives)** : sous le contenu, une ou plusieurs frises d’étapes reliées par un trait doré,
+de la plus ancienne à la plus récente, affichées l’une sous l’autre dans l’ordre de la liste. Sur la page « Le groupe »,
+la première retrace l’évolution du logo (« Notre logo au fil du temps »), la suivante celle du matériel.
 
-- **Titre de la frise** et **Texte d’introduction** : au-dessus des étapes.
+- **Ajouter une frise** en crée une nouvelle à la fin de la liste ; faites-la glisser par sa poignée pour changer l’ordre
+  des frises. Chaque frise se replie ; son libellé rappelle son titre et son nombre d’étapes.
+- **Titre de la frise** et **Texte d’introduction** : au-dessus de ses étapes.
 - **Étapes** : chacune a une **Date ou période** (facultative, par exemple « Novembre 2025 »), un **Titre**, une **Image**
   (choisie dans la médiathèque ou envoyée) et un **Texte** court (facultatif). **Ajouter Étape** en ajoute une à la fin ;
   pour changer l’ordre, faites glisser une étape par sa poignée (les six points à gauche).
 - La dernière étape est mise en avant (la plus récente). Sur téléphone, la frise s’affiche en colonne.
-- Une page sans étape n’a pas de frise. **Publier les modifications** pour la mettre en ligne.
+- Une frise sans étape n’est pas affichée. **Publier les modifications** pour mettre les frises en ligne.
+- Pour déplacer une étape d’une frise à une autre : ajoutez-la dans la frise voulue (même image, choisie dans la
+  médiathèque), puis supprimez-la de l’autre.
 
 ## 16. La météo
 
