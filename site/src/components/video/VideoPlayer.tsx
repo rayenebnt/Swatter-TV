@@ -250,7 +250,30 @@ function SoundIcon() {
   )
 }
 
-/** Fichier MP4 ou flux HLS : lecteur natif du navigateur. */
+function PauseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor" />
+    </svg>
+  )
+}
+
+function MutedIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" />
+      <path d="m16 9.5 5 5m0-5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+type FullscreenVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void }
+
+/**
+ * Fichier MP4 ou flux HLS : lecteur natif du navigateur. Pour le direct, pas de commandes natives : elles affichent la
+ * durée et la barre de lecture (un fichier diffusé comme un direct montrerait « 00:16 / -05:55 ») ; à la place, lecture /
+ * pause, son et plein écran (sur iPhone, le plein écran est celui du système, avec ses propres commandes).
+ */
 function Native({
   video,
   poster,
@@ -284,6 +307,13 @@ function Native({
   // Pause demandée par le lecteur lui-même (direct sorti de l'écran), à distinguer d'une pause de l'internaute
   const autoPausing = useRef(false)
   const motion = useAutoplayAllowed()
+  // Commandes du direct : état de la lecture, du son et du plein écran
+  const [paused, setPaused] = useState(true)
+  const [muted, setMuted] = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
+  const pauseButton = useRef<HTMLButtonElement>(null)
+  // Lecture lancée au bouton : le focus passera au bouton pause dès qu'il apparaît
+  const focusControls = useRef(false)
   const posterSrc = poster ? posterUrl(poster) : undefined
   // Fichier diffusé comme un direct (démonstration, boucle d'attente) : lecture en boucle
   const loop = live && kind === 'mp4'
@@ -383,6 +413,27 @@ function Native({
     }
   }, [autoPlay, motion])
 
+  useEffect(() => {
+    if (!live) return
+    const update = () => setFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener('fullscreenchange', update)
+    return () => document.removeEventListener('fullscreenchange', update)
+  }, [live])
+
+  useEffect(() => {
+    if (started && focusControls.current) {
+      focusControls.current = false
+      pauseButton.current?.focus()
+    }
+  }, [started])
+
+  /** Le bouton qui a le focus disparaît : il passe au lecteur (commandes natives au clavier) ou, en direct, au bouton pause. */
+  const keepFocus = () => {
+    if (!live) return ref.current?.focus()
+    if (pauseButton.current) pauseButton.current.focus()
+    else focusControls.current = true
+  }
+
   const play = () => {
     const el = ref.current
     if (!el) return
@@ -391,8 +442,7 @@ function Native({
     auto.current = false
     el.muted = false
     el.play().catch(() => {})
-    // Le bouton disparaît : le focus passe au lecteur (commandes natives au clavier)
-    el.focus()
+    keepFocus()
   }
 
   const unmute = () => {
@@ -401,8 +451,34 @@ function Native({
     takeover.current = true
     el.muted = false
     if (el.paused) el.play().catch(() => {})
-    // Le bouton disparaît : le focus passe au lecteur (commandes natives au clavier)
-    el.focus()
+    keepFocus()
+  }
+
+  const togglePlay = () => {
+    const el = ref.current
+    if (!el) return
+    takeover.current = true
+    if (!el.paused) return el.pause()
+    auto.current = false
+    el.play().catch(() => {})
+  }
+
+  const toggleMute = () => {
+    const el = ref.current
+    if (!el) return
+    takeover.current = true
+    el.muted = !el.muted
+    if (!el.muted && el.paused) el.play().catch(() => {})
+  }
+
+  const toggleFullscreen = () => {
+    const el = ref.current as FullscreenVideo | null
+    if (!el) return
+    if (document.fullscreenElement) return void document.exitFullscreen().catch(() => {})
+    const box = el.closest<HTMLElement>('.vp')
+    // iPhone : pas de plein écran pour un bloc de la page, seulement celui du système pour la vidéo
+    if (box && document.fullscreenEnabled) box.requestFullscreen().catch(() => {})
+    else el.webkitEnterFullscreen?.()
   }
 
   return (
@@ -410,7 +486,7 @@ function Native({
       <video
         ref={ref}
         className="vp__video"
-        controls
+        controls={!live}
         playsInline
         preload="metadata"
         poster={posterSrc}
@@ -419,17 +495,20 @@ function Native({
         aria-label={title}
         onPlay={() => {
           setStarted(true)
+          setPaused(false)
           if (!auto.current) onStart()
         }}
         onPlaying={(e) => {
           if (auto.current && e.currentTarget.muted) setMutedAuto(true)
         }}
         onPause={() => {
+          setPaused(true)
           // Pause choisie par l'internaute (commandes du lecteur) : le direct ne repart plus tout seul
           if (autoPausing.current) autoPausing.current = false
           else takeover.current = true
         }}
         onVolumeChange={(e) => {
+          setMuted(e.currentTarget.muted)
           if (e.currentTarget.muted) return
           setMutedAuto(false)
           // Son activé : la lecture devient une vraie lecture (historique du membre)
@@ -456,6 +535,19 @@ function Native({
           <SoundIcon />
           Activer le son
         </button>
+      )}
+      {live && started && (
+        <div className="vp__controls">
+          <button ref={pauseButton} type="button" className="vp__ctrl" onClick={togglePlay} aria-label={paused ? 'Reprendre le direct' : 'Mettre le direct en pause'}>
+            {paused ? <Icon name="play" /> : <PauseIcon />}
+          </button>
+          <button type="button" className="vp__ctrl" onClick={toggleMute} aria-label={muted ? 'Remettre le son' : 'Couper le son'}>
+            {muted ? <MutedIcon /> : <SoundIcon />}
+          </button>
+          <button type="button" className="vp__ctrl vp__ctrl--end" onClick={toggleFullscreen} aria-label={fullscreen ? 'Quitter le plein écran' : 'Plein écran'}>
+            <Icon name="expand" />
+          </button>
+        </div>
       )}
     </>
   )

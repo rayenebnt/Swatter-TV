@@ -38,6 +38,38 @@ test.describe('page Direct selon l’antenne', () => {
     expect(errors, errors.join('\n')).toEqual([])
   })
 
+  test('21 h : direct sans durée ni barre de lecture ; pause, son et plein écran à la place', async ({ page }) => {
+    const settings = await liveSettings(page)
+    test.skip(!liveOn(settings), 'direct coupé ou sans flux dans les réglages')
+    const errors = watchErrors(page)
+    await atParisTime(page, '21:00')
+    await page.goto('/direct')
+    const player = page.getByRole('region', { name: /lecteur vidéo/i }).first()
+    await expect(player).toBeVisible()
+    const video = player.locator('video')
+    test.skip((await video.count()) === 0, 'direct dans un lecteur externe (YouTube, Twitch) : ses propres commandes')
+    // pas de commandes natives : elles affichent la durée du fichier diffusé comme un direct
+    await expect(video).not.toHaveAttribute('controls')
+    // lancé seul, sans le son, ou au bouton de lecture
+    const pause = player.getByRole('button', { name: 'Mettre le direct en pause' })
+    const start = player.getByRole('button', { name: /^Lire la vidéo/ })
+    await expect(pause.or(start)).toBeVisible()
+    if (await start.isVisible()) await start.click({ timeout: 3000 }).catch(() => undefined)
+    await expect(pause).toBeVisible()
+    await pause.click()
+    const resume = player.getByRole('button', { name: 'Reprendre le direct' })
+    await expect(resume).toBeVisible()
+    expect(await video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true)
+    await resume.click()
+    await expect.poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused), { message: 'direct repris' }).toBe(true)
+    const muted = await video.evaluate((v: HTMLVideoElement) => v.muted)
+    await player.getByRole('button', { name: muted ? 'Remettre le son' : 'Couper le son' }).click()
+    await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.muted), { message: 'son basculé' }).toBe(!muted)
+    await expect(player.getByRole('button', { name: muted ? 'Couper le son' : 'Remettre le son' })).toBeVisible()
+    await expect(player.getByRole('button', { name: 'Plein écran' })).toBeVisible()
+    expect(errors, errors.join('\n')).toEqual([])
+  })
+
   test('10 h : écran « Le direct reprend ce soir à 18 h », pas de lecteur ni de point rouge', async ({ page }) => {
     const settings = await liveSettings(page)
     test.skip(!liveOn(settings), 'direct coupé ou sans flux dans les réglages')
