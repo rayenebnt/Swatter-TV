@@ -490,6 +490,26 @@ test.describe('administration', () => {
     }
   })
 
+  test('« Le groupe » s’ouvre directement en modification, depuis le menu et depuis le tableau de bord', async ({ page }) => {
+    const errors = watchErrors(page)
+    await login(page, ADMIN)
+    await page.goto('/admin')
+    // tableau de bord : tuile « Le groupe »
+    await page.locator('.sw-tile', { hasText: 'Le groupe' }).click()
+    await expect(page).toHaveURL(/\/admin\/collections\/pages\/\d+$/)
+    await expect(page.locator('input[name="title"]')).toHaveValue('Le groupe')
+    await expect(page.getByText('Frises chronologiques').first()).toBeVisible()
+    // menu : « Pages : Le groupe, Crédits… », puis « Le groupe » juste en dessous
+    await page.goto('/admin/collections/videos')
+    const nav = page.locator('aside.nav')
+    if (!(await nav.getByRole('link', { name: 'Le groupe', exact: true }).isVisible())) await page.locator('.nav-toggler').first().click()
+    await expect(nav.getByRole('link', { name: 'Pages : Le groupe, Crédits…' })).toBeVisible()
+    await nav.getByRole('link', { name: 'Le groupe', exact: true }).click()
+    await expect(page).toHaveURL(/\/admin\/collections\/pages\/\d+$/)
+    await expect(page.locator('input[name="title"]')).toHaveValue('Le groupe')
+    expect(errors).toEqual([])
+  })
+
   test('Top 10 : une vidéo mise à la place 1 est 1re sur l’accueil, les autres se décalent', async ({ page, request }) => {
     const headers = await adminHeaders(request)
     type V = { id: number; title: string; top10Rank?: number | null }

@@ -34,24 +34,25 @@ describe('sections du menu', () => {
     expect(labels(main.slice(1))).toEqual(site)
   })
 
-  it('sous-rubriques juste sous leur rubrique : Chaîne YouTube sous Vidéos, Émissions sous Programme TV', () => {
-    const items = section('Les rubriques du site').items
+  it('sous-rubriques juste sous leur rubrique : Chaîne YouTube sous Vidéos, Émissions sous Programme TV, Le groupe sous les pages', () => {
+    const items = MENU.flatMap((s) => s.items)
     const under = (label: string) => items[items.findIndex((i) => i.label === label) - 1]?.label
-    expect(items.filter((i) => i.sub).map((i) => i.label)).toEqual(['Chaîne YouTube', 'Émissions'])
+    expect(items.filter((i) => i.sub).map((i) => i.label)).toEqual(['Chaîne YouTube', 'Émissions', 'Le groupe'])
     expect(under('Chaîne YouTube')).toBe('Vidéos')
     expect(under('Émissions')).toBe('Programme TV')
+    expect(under('Le groupe')).toBe('Pages : Le groupe, Crédits…')
     for (const s of MENU) expect(s.items[0]?.sub).toBeFalsy()
   })
 
-  it('Également : publicités, pages du pied de page, messages reçus et médiathèque', () => {
-    expect(labels(section('Également').items)).toEqual(['Publicités', 'Pages (pied de page)', 'Messages reçus', 'Médiathèque'])
+  it('Également : publicités, pages (dont « Le groupe », ouverte directement), messages reçus et médiathèque', () => {
+    expect(labels(section('Également').items)).toEqual(['Publicités', 'Pages : Le groupe, Crédits…', 'Le groupe', 'Messages reçus', 'Médiathèque'])
     expect(section('Également').adminOnly).toBeFalsy()
     expect(section('Les rubriques du site').adminOnly).toBeFalsy()
   })
 
-  it('chaque lien mène à une collection ou à un global, sans doublon', () => {
+  it('chaque lien mène à une collection, à un global ou au raccourci « Le groupe », sans doublon', () => {
     const paths = MENU.flatMap((s) => s.items.map((i) => i.path))
-    for (const p of paths) expect(p).toMatch(/^\/(collections|globals)\/[a-z-]+$/)
+    for (const p of paths) expect(p).toMatch(/^\/((collections|globals)\/[a-z-]+|le-groupe)$/)
     expect(new Set(paths).size).toBe(paths.length)
     expect(new Set(MENU.flatMap((s) => s.items.map((i) => i.label))).size).toBe(paths.length)
   })

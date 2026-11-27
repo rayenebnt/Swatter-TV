@@ -45,7 +45,9 @@ export const MENU: MenuSection[] = [
     title: 'Également',
     items: [
       { label: 'Publicités', path: '/collections/ads', icon: 'ad' },
-      { label: 'Pages (pied de page)', path: '/collections/pages', icon: 'page' },
+      { label: 'Pages : Le groupe, Crédits…', path: '/collections/pages', icon: 'page' },
+      // la page la plus souvent modifiée (présentation, frises du logo et du matériel), ouverte directement
+      { label: 'Le groupe', path: '/le-groupe', icon: 'page', sub: true },
       { label: 'Messages reçus', path: '/collections/messages', icon: 'mail' },
       { label: 'Médiathèque', path: '/collections/media', icon: 'media' },
     ],

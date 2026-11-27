@@ -47,9 +47,9 @@ Quelques informations ne pouvaient pas être inventées : merci de les renseigne
 |---|---|
 | **Accueil et direct** › onglet **Chaîne et contact** › **Réseaux sociaux** | les adresses de vos pages Facebook, Instagram, YouTube et TikTok (une case vide = l’icône n’apparaît pas) |
 | **Accueil et direct** › onglet **Chaîne et contact** › **Contact** › **Téléphone** | votre numéro, ou une mention comme « Uniquement par mail » |
-| **Pages (pied de page)** › **Mentions légales** | le numéro RCS (avec la ville du greffe), le SIRET, le numéro de TVA intracommunautaire et l’hébergeur du site : remplacez chaque « [à compléter] ». Vérifiez aussi la raison sociale, le capital et le directeur de la publication déjà indiqués |
-| **Pages (pied de page)** › **Canaux de réception** | les box des opérateurs et numéros de canal |
-| **Pages (pied de page)** › **Vie privée** | relisez les parties « Votre espace membre » et « Mesure d’audience (Google Analytics) » (données des membres, cookies, durées de conservation) et faites-les valider si besoin |
+| **Pages : Le groupe, Crédits…** › **Mentions légales** | le numéro RCS (avec la ville du greffe), le SIRET, le numéro de TVA intracommunautaire et l’hébergeur du site : remplacez chaque « [à compléter] ». Vérifiez aussi la raison sociale, le capital et le directeur de la publication déjà indiqués |
+| **Pages : Le groupe, Crédits…** › **Canaux de réception** | les box des opérateurs et numéros de canal |
+| **Pages : Le groupe, Crédits…** › **Vie privée** | relisez les parties « Votre espace membre » et « Mesure d’audience (Google Analytics) » (données des membres, cookies, durées de conservation) et faites-les valider si besoin |
 | **Accueil et direct** › onglet **Mesure d’audience** | l’« ID de mesure » de Google Analytics, si vous voulez suivre la fréquentation du site (partie 22) |
 
 Une fois une page complétée, cliquez sur **Publier les modifications** pour la mettre en ligne.
@@ -120,7 +120,8 @@ s’ouvre sur le côté : touchez la partie assombrie de la page pour le referme
 - **Les rubriques du site** : **Accueil et direct** (carrousel, direct, flash info, coordonnées de la chaîne),
   **Vidéos** (avec, juste en dessous, **Chaîne YouTube**), **L’Info**, **La Météo**, **Programme TV** (avec, juste en
   dessous, **Émissions**), **Agenda**, **Webcams**, **Le Replay** ;
-- **Également** : **Publicités**, **Pages (pied de page)**, **Messages reçus** (partie 20), **Médiathèque** ;
+- **Également** : **Publicités**, **Pages : Le groupe, Crédits…** (avec, juste en dessous, **Le groupe**, qui ouvre
+  directement cette page), **Messages reçus** (partie 20), **Médiathèque** ;
 - en bas : **Voir le site** (dans un nouvel onglet) et **Aide** (ce guide).
 
 Les administrateurs voient en plus une rubrique **Administration** : **Membres du site** (partie 21), **Utilisateurs**
@@ -527,7 +528,7 @@ Le bandeau apparaît dans l’aperçu de la page d’accueil : vérifiez-le, pui
 
 ## 15. Les pages (mentions légales, le groupe…)
 
-**Pages (pied de page)** : les pages fixes (Canaux de réception, Le groupe, Crédits, Vie privée, Mentions légales). Chaque
+**Pages : Le groupe, Crédits…** : les pages fixes (Canaux de réception, Le groupe, Crédits, Vie privée, Mentions légales). La page **Le groupe** s’ouvre aussi directement par **Le groupe**, dans le menu (sous les pages) et sur le tableau de bord. Chaque
 page a un **Titre**, une **Introduction**, un **Contenu** (même éditeur que les articles) et, à droite, un **Lien dans le
 pied de page** : **Colonne « La chaîne »**, **Colonne « Swatter TV Info »** ou aucun. Une nouvelle page est accessible à
 l’adresse `/son-adresse` (champ **Adresse web (automatique)**) une fois publiée.

@@ -59,6 +59,7 @@ export async function Dashboard({ payload, user }: AdminViewServerProps) {
     { href: `${collection('schedule')}${scheduleSearch()}`, icon: 'grid', title: 'Programme TV', text: 'La grille de la semaine' },
     { href: collection('webcams'), icon: 'webcam', title: 'Webcams', text: 'Les vues en direct' },
     { href: collection('ads'), icon: 'ad', title: 'Publicités', text: 'Les bannières des annonceurs' },
+    { href: `${admin}/le-groupe`, icon: 'page', title: 'Le groupe', text: 'Présentation et frises (logos, matériel)' },
     { href: collection('media'), icon: 'media', title: 'Médiathèque', text: 'Toutes les images et vidéos' },
   ]
 
