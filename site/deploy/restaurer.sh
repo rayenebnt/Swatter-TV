@@ -14,7 +14,10 @@ MEDIA_VOLUME="${MEDIA_VOLUME:-swatter-tv_media}"
 
 docker compose stop app cron
 docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' < "$DEST/swatter-$DATE.dump"
-if [ -f "$DEST/media-$DATE.tar.gz" ]; then
+# archive des médias : .tar (non compressée), ou .tar.gz pour les sauvegardes d'avant
+if [ -f "$DEST/media-$DATE.tar" ]; then
+  docker run --rm -v "$MEDIA_VOLUME":/media -v "$DEST":/sauvegarde:ro alpine:3 tar xf "/sauvegarde/media-$DATE.tar" -C /media
+elif [ -f "$DEST/media-$DATE.tar.gz" ]; then
   docker run --rm -v "$MEDIA_VOLUME":/media -v "$DEST":/sauvegarde:ro alpine:3 tar xzf "/sauvegarde/media-$DATE.tar.gz" -C /media
 fi
 docker compose up -d --force-recreate app cron

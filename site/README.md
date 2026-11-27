@@ -354,7 +354,7 @@ et `deploy/restaurer.sh AAAA-MM-JJ` restaure une date. À la main :
 docker compose exec -T db pg_dump -U swatter -Fc swatter > swatter-$(date +%F).dump
 # Médias (volume « media », si les fichiers ne sont pas sur S3 / R2)
 docker run --rm -v swatter-tv_media:/media:ro -v "$PWD":/sauvegarde alpine \
-  tar czf /sauvegarde/media-$(date +%F).tar.gz -C /media .
+  tar cf /sauvegarde/media-$(date +%F).tar -C /media .
 ```
 
 Restauration (site arrêté : `docker compose stop app cron`, puis `docker compose start app cron`) :

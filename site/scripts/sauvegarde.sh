@@ -18,7 +18,7 @@ JOURS_MEDIA="${SAUVEGARDE_MEDIA_JOURS:-3}"
 MEDIA_VOLUME="${MEDIA_VOLUME:-swatter-tv_media}"
 DATE="$(date +%F)"
 base="$DEST/swatter-$DATE.dump"
-media="$DEST/media-$DATE.tar.gz"
+media="$DEST/media-$DATE.tar"
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
 if ! mkdir -p "$DEST" 2> /dev/null || [ ! -w "$DEST" ]; then
@@ -31,7 +31,7 @@ trap 'rm -f "$base.part" "$media.part"' EXIT
 
 # Anciennes sauvegardes effacées d'abord : la place qu'elles occupaient sert à celles du jour
 find "$DEST" -maxdepth 1 -type f -name 'swatter-*.dump' -mtime +"$JOURS" -delete
-find "$DEST" -maxdepth 1 -type f -name 'media-*.tar.gz' -mtime +"$JOURS_MEDIA" -delete
+find "$DEST" -maxdepth 1 -type f \( -name 'media-*.tar' -o -name 'media-*.tar.gz' \) -mtime +"$JOURS_MEDIA" -delete
 
 docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > "$base.part"
 # L'archive doit être lisible par pg_restore
@@ -41,16 +41,24 @@ log "base : $base ($(du -h "$base" | cut -f1))"
 
 # Médias : volume Docker (rien à archiver si les fichiers sont sur S3 / R2)
 if docker volume inspect "$MEDIA_VOLUME" > /dev/null 2>&1; then
-  # Place nécessaire : la taille des fichiers (photos et vidéos déjà compressées : l'archive n'est guère plus petite),
-  # plus 1 Go de marge. Faute de place, pas d'archive : le disque plein arrêterait aussi le site.
+  # Place nécessaire : la taille des fichiers (l'archive fait la même), plus 1 Go de marge. Faute de place, pas
+  # d'archive : le disque plein arrêterait aussi le site.
   besoin=$(($(docker run --rm -v "$MEDIA_VOLUME":/media:ro alpine:3 du -sk /media | cut -f1) + 1048576))
   libre=$(df -Pk "$DEST" | awk 'NR == 2 { print $4 }')
   if [ "$libre" -lt "$besoin" ]; then
     log "médias : pas assez de place dans $DEST ($((libre / 1048576)) Go libres, $((besoin / 1048576 + 1)) Go nécessaires) : archive non faite. Voir DEPLOIEMENT.md, « Disque plein »."
     exit 1
   fi
-  docker run --rm -v "$MEDIA_VOLUME":/media:ro alpine:3 tar czf - -C /media . > "$media.part"
+  # Archive écrite par le conteneur directement dans le dossier des sauvegardes, jamais par sa sortie standard : Docker
+  # recopie celle-ci dans le journal du conteneur, quatre fois plus gros que l'archive (2,7 Go de vidéos : 11 Go de
+  # journal, de quoi remplir le disque). Sans compression : photos et vidéos le sont déjà (elle ne faisait gagner presque
+  # rien et occupait le processeur plusieurs minutes). Fichier rendu au compte qui sauvegarde, lisible par lui seul.
+  docker run --rm --log-driver none -v "$MEDIA_VOLUME":/media:ro -v "$DEST":/sauvegarde alpine:3 \
+    sh -c 'tar cf "/sauvegarde/$1" -C /media . && chown "$2" "/sauvegarde/$1" && chmod 600 "/sauvegarde/$1"' archive \
+    "$(basename "$media.part")" "$(id -u):$(id -g)"
   mv "$media.part" "$media"
+  # archive compressée du même jour (format d'avant) : remplacée
+  rm -f "$DEST/media-$DATE.tar.gz"
   log "médias : $media ($(du -h "$media" | cut -f1))"
 else
   log "médias : pas de volume $MEDIA_VOLUME (fichiers sur S3 / R2 ?), rien à archiver"
