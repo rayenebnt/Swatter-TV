@@ -2,7 +2,8 @@
 // le site en ligne) : les étapes qui parlent de caméra ou de matériel, ajoutées à la suite des logos dans la première
 // frise, passent dans l'ordre dans une frise « Notre matériel au fil du temps » placée juste après ; aperçu sans rien
 // modifier ; brouillon du client (caméras pas encore publiées) publié avec ; frise du matériel déjà là : complétée ;
-// rien à déplacer : rien n'est modifié ; page absente : refus. Le site (versions publiées) montre les deux frises.
+// caméras retirées de la page avant de publier : reprises de son historique ; rien à déplacer : rien n'est modifié ; page
+// absente : refus. Le site (versions publiées) montre les deux frises.
 import path from 'node:path'
 import type { Payload } from 'payload'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -76,7 +77,7 @@ describe('frise du matériel de la page « Le groupe »', () => {
     await groupPage([{ title: 'L’évolution du logo', steps: [LOGO_STEPS[0], CAMERA_STEPS[0], LOGO_STEPS[1], CAMERA_STEPS[1]] }])
     const before = shape(await latest())
     const summary = (s: [string, string]) => ({ date: s[0], title: s[1] })
-    expect(await move(false)).toEqual({ status: 'ready', moved: CAMERA_STEPS.map(summary), kept: LOGO_STEPS.map(summary), draft: false, existing: false })
+    expect(await move(false)).toEqual({ status: 'ready', moved: CAMERA_STEPS.map(summary), kept: LOGO_STEPS.map(summary), draft: false, existing: false, fromVersion: null })
     expect(shape(await latest())).toEqual(before)
 
     expect((await move(true)).status).toBe('done')
@@ -126,6 +127,33 @@ describe('frise du matériel de la page « Le groupe »', () => {
       { title: EQUIPMENT_TIMELINE.title, steps: CAMERA_STEPS },
     ])
     expect((await latest())._status).toBe('published')
+  })
+
+  it('caméras retirées de la page avant de publier : reprises de son historique, avec leurs images ; les logos ne bougent pas', async () => {
+    const page = await groupPage([{ title: 'L’évolution du logo', steps: [...LOGO_STEPS, ...CAMERA_STEPS] }])
+    const camerasImages = (await latest()).timelines?.[0]?.steps?.slice(2).map((s) => s.image)
+    // le client retire ses caméras et publie la page avec les seuls logos (puis un brouillon sans caméra)
+    await payload.update({
+      collection: 'pages',
+      id: page.id,
+      data: { _status: 'published', timelines: [{ title: 'L’évolution du logo', steps: LOGO_STEPS.map(([date, title], i) => ({ date, title, image: images[i] })) }] },
+      overrideAccess: true,
+      context: CONTEXT,
+    })
+    await payload.update({ collection: 'pages', id: page.id, draft: true, data: { _status: 'draft', intro: 'Brouillon sans caméra.' }, overrideAccess: true, context: CONTEXT })
+
+    const preview = await move(false)
+    expect(preview).toMatchObject({ status: 'ready', moved: CAMERA_STEPS.map(([date, title]) => ({ date, title })), kept: LOGO_STEPS.map(([date, title]) => ({ date, title })) })
+    expect(preview.status === 'ready' && preview.fromVersion).toEqual(expect.any(String))
+    expect((await move(true)).status).toBe('done')
+    const after = await latest()
+    expect(shape(after)).toEqual([
+      { title: 'L’évolution du logo', steps: LOGO_STEPS },
+      { title: EQUIPMENT_TIMELINE.title, steps: CAMERA_STEPS },
+    ])
+    expect(after.timelines?.[1]?.steps?.map((s) => s.image)).toEqual(camerasImages)
+    // déjà faite : rien de plus
+    expect((await move(true)).status).toBe('nothing-to-move')
   })
 
   it('frise du matériel déjà là : les caméras restées avec les logos y sont ajoutées à la fin', async () => {

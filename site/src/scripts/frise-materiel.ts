@@ -24,13 +24,17 @@ switch (report.status) {
     code = 1
     break
   case 'nothing-to-move':
-    console.log('Aucune étape de la frise des logos ne parle de caméra ou de matériel : rien à déplacer. Étapes actuelles :')
+    console.log('Aucune étape de caméra ou de matériel, ni dans la page ni dans son historique : rien à déplacer. Étapes actuelles :')
     report.steps.forEach((s) => console.log(line(s)))
     break
   default:
+    if (report.fromVersion) {
+      const at = new Date(report.fromVersion).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' })
+      console.log(`La page n’a plus d’étape de caméra : reprises de son historique (version enregistrée le ${at}).`)
+    }
     console.log(`Vers la frise « ${EQUIPMENT_TIMELINE.title} »${report.existing ? ' (existante, à la suite)' : ' (nouvelle, juste après celle des logos)'} :`)
     report.moved.forEach((s) => console.log(line(s)))
-    console.log('Restent dans la frise des logos :')
+    console.log('Frise des logos (inchangée, sauf les caméras qui en sortent) :')
     report.kept.forEach((s) => console.log(line(s)))
     if (report.draft) console.log('\nLa page a des modifications pas encore publiées : elles seront publiées en même temps.')
     if (report.status === 'ready') console.log('\nRien n’a été modifié. Pour le faire : npm run frise-materiel -- --confirmer')
